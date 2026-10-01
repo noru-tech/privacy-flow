@@ -169,6 +169,8 @@ pub struct Hop {
     pub line: u32,
     pub column: u32,
     pub text: String,
+    /// The field a `read` or `write` hop reads or writes.
+    pub field: Option<String>,
     pub note: Option<String>,
 }
 
@@ -432,7 +434,9 @@ pub fn build(p: &Program, f: &Facts, reaches: &[Reach], ctx: &Context) -> Result
                 }),
                 HitKind::Gap { kind, detail } => {
                     let loc = a.loc_of_stmt(f.hits[h as usize].stmt);
-                    let e = reached.entry((*kind, detail.clone())).or_default();
+                    let e = reached
+                        .entry((*kind, normalize_gap_detail(detail)))
+                        .or_default();
                     e.0.insert(GapLoc {
                         path: loc.path,
                         line: Some(loc.line),
@@ -691,6 +695,34 @@ pub fn build(p: &Program, f: &Facts, reaches: &[Reach], ctx: &Context) -> Result
     Ok(doc)
 }
 
+/// One gap per API, not per chain: consecutive repeats collapse (`where().where().where()` →
+/// `where()`), and long chains keep their first three and last three segments.
+pub fn normalize_gap_detail(detail: &str) -> String {
+    let (module, path) = match detail.split_once(':') {
+        Some((m, p)) => (Some(m), p),
+        None => (None, detail),
+    };
+    let mut segs: Vec<&str> = Vec::new();
+    for seg in path.split('.') {
+        if segs.last() != Some(&seg) {
+            segs.push(seg);
+        }
+    }
+    let body = if segs.len() > 8 {
+        format!(
+            "{}.….{}",
+            segs[..3].join("."),
+            segs[segs.len() - 3..].join(".")
+        )
+    } else {
+        segs.join(".")
+    };
+    match module {
+        Some(m) => format!("{m}:{body}"),
+        None => body,
+    }
+}
+
 fn host_rec(h: &Host) -> Option<HostRec> {
     match h {
         Host::None => None,
@@ -764,6 +796,7 @@ fn hops(p: &Program, f: &Facts, cat: &Catalogue, seed: u32, hit: u32, steps: &[S
         line: s.pos.line,
         column: s.pos.column,
         text: s.text.clone(),
+        field: None,
         note: Some(note),
     });
     let stmt_hop = |stmt: u32, kind: &str, note: Option<String>| {
@@ -774,6 +807,7 @@ fn hops(p: &Program, f: &Facts, cat: &Catalogue, seed: u32, hit: u32, steps: &[S
             line: st.pos.line,
             column: st.pos.column,
             text: st.text.clone(),
+            field: None,
             note,
         }
     };
@@ -782,14 +816,22 @@ fn hops(p: &Program, f: &Facts, cat: &Catalogue, seed: u32, hit: u32, steps: &[S
             Step::Edge(stmt) => {
                 let kind = match &p.stmts[*stmt as usize].kind {
                     GKind::Copy { .. } => "assign",
-                    GKind::Load { .. } => "read",
-                    GKind::Store { .. } => "write",
+                    GKind::Load { .. } | GKind::ThisLoad { .. } => "read",
+                    GKind::Store { .. } | GKind::ThisStore { .. } => "write",
                     GKind::Concat { .. } => "concat",
                     GKind::Call { .. } => "call",
                     GKind::Return { .. } => "return",
                     _ => "step",
                 };
-                stmt_hop(*stmt, kind, None)
+                let mut hop = stmt_hop(*stmt, kind, None);
+                hop.field = match &p.stmts[*stmt as usize].kind {
+                    GKind::Load { field: Some(k), .. }
+                    | GKind::Store { field: Some(k), .. }
+                    | GKind::ThisLoad { field: k, .. }
+                    | GKind::ThisStore { field: k, .. } => Some(p.syms.str(*k).to_string()),
+                    _ => None,
+                };
+                hop
             }
             Step::Enter { site, formal } => {
                 let site = &f.sites[*site as usize];
@@ -983,7 +1025,7 @@ pub fn derive(doc: &mut Document, classifier: &Classifier) -> Result<()> {
                 return;
             }
             let severity = if src.needs_review {
-                s.severity.min(Severity::Warning)
+                s.severity.min(Severity::Info)
             } else {
                 s.severity
             };
@@ -1047,7 +1089,24 @@ pub fn derive(doc: &mut Document, classifier: &Classifier) -> Result<()> {
                 processor.clone(),
             );
         }
-        if credential && (snk.class == SinkClass::Log || external) {
+        // A credential written into request headers authenticates to that host; that is how
+        // credentials are meant to travel over HTTP, not a leak of them.
+        let as_auth_header = snk.class == SinkClass::Http
+            && fl.path.iter().any(|h| {
+                h.kind == "write"
+                    && h.field.as_deref().is_some_and(|f| {
+                        matches!(
+                            f.to_ascii_lowercase().as_str(),
+                            "headers"
+                                | "authorization"
+                                | "auth"
+                                | "x-api-key"
+                                | "api-key"
+                                | "proxy-authorization"
+                        )
+                    })
+            });
+        if credential && (snk.class == SinkClass::Log || external) && !as_auth_header {
             fire(
                 "PF005",
                 format!(
@@ -1057,7 +1116,10 @@ pub fn derive(doc: &mut Document, classifier: &Classifier) -> Result<()> {
                 processor.clone(),
             );
         }
-        if snk.class == SinkClass::Http && snk.host.as_ref().is_some_and(|h| h.kind == "dynamic") {
+        if snk.class == SinkClass::Http
+            && snk.host.as_ref().is_some_and(|h| h.kind == "dynamic")
+            && !(credential && as_auth_header)
+        {
             fire(
                 "PF006",
                 format!("{what} is sent over HTTP to a host computed at run time, at {at}"),
@@ -1357,6 +1419,16 @@ mod tests {
         assert!(suppressed(&d, "2026-09-01"));
         assert!(suppressed(&d, "2026-09-30"));
         assert!(!suppressed(&d, "2026-10-01"));
+    }
+
+    #[test]
+    fn gap_details_collapse_chains() {
+        assert_eq!(
+            normalize_gap_detail("db.select().where().where().where.<cb0>.and"),
+            "db.select().where().where.<cb0>.and"
+        );
+        assert_eq!(normalize_gap_detail("m:a.b.b.b.c"), "m:a.b.c");
+        assert_eq!(normalize_gap_detail("a.b.c.d.e.f.g.h.i.j"), "a.b.c.….h.i.j");
     }
 
     #[test]

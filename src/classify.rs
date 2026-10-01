@@ -52,6 +52,8 @@ pub struct Classifier {
     taxonomy: BTreeSet<String>,
     /// Extra names (catalogue `field` sources, config, data map): normalized name → (category, by).
     extra: BTreeMap<String, Vec<(String, String)>>,
+    /// Names a project's config declares not personal.
+    suppressed: HashSet<String>,
 }
 
 /// The table's own normalization: lowercase, every run of non-alphanumerics collapsed to `_`,
@@ -116,6 +118,7 @@ impl Classifier {
             special: special.fides_keys,
             taxonomy: taxonomy.into_iter().map(|e| e.fides_key).collect(),
             extra: BTreeMap::new(),
+            suppressed: HashSet::new(),
         })
     }
 
@@ -132,6 +135,13 @@ impl Classifier {
             }
         }
         Ok(())
+    }
+
+    /// Declare a name not personal (config `not_personal`): the table no longer classifies it.
+    pub fn not_personal(&mut self, name: &str) {
+        for k in keys(name) {
+            self.suppressed.insert(k);
+        }
     }
 
     pub fn check_category(&self, category: &str) -> Result<()> {
@@ -166,7 +176,10 @@ impl Classifier {
         if !out.is_empty() {
             return out;
         }
-        if ks.iter().any(|k| self.operational.contains(k)) {
+        if ks
+            .iter()
+            .any(|k| self.operational.contains(k) || self.suppressed.contains(k))
+        {
             return out;
         }
         for k in &ks {

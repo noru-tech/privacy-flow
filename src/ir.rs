@@ -107,7 +107,11 @@ pub struct FuncIr {
 #[derive(Clone, Debug)]
 pub struct ClassIr {
     pub name: String,
+    /// The instance as methods see it: shared by every instance (flow-insensitive).
     pub this: Var,
+    /// The instance inside the constructor, which the constructor returns: each `new C(...)`
+    /// gets the constructor's summary, so instances do not share what they were built with.
+    pub ctor_this: Option<Var>,
     /// (method name, function) in declaration order.
     pub methods: Vec<(String, FuncIdx)>,
     pub pos: Pos,
@@ -231,6 +235,29 @@ pub enum StmtKind {
     },
     Import {
         import: u32,
+    },
+    /// `dst = this.field` in a method: the field's own variable `var` (one per class and field)
+    /// is the value read, so `this.config.url` keeps `config`'s fields apart. `obj` is the
+    /// class's shared instance, for provenance and citations.
+    ThisLoad {
+        dst: Var,
+        obj: Var,
+        field: String,
+        var: Var,
+    },
+    /// `this.field = src`: the value goes into the field's own variable `var`.
+    ThisStore {
+        obj: Var,
+        field: String,
+        src: Var,
+        var: Var,
+    },
+    /// `dst` is declared with the type `ty` names (a TypeScript or Python annotation). Only
+    /// provenance reads it: a parameter typed `Logger` from `pino` is a pino logger, one typed
+    /// with a local class is an instance of it. No data flows.
+    TypeRef {
+        dst: Var,
+        ty: Var,
     },
 }
 

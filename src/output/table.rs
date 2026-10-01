@@ -55,7 +55,14 @@ pub fn render(doc: &Document) -> String {
             .map(|f| f.rule_id.len())
             .max()
             .unwrap_or(5);
+        let mut review: std::collections::BTreeMap<&str, usize> = std::collections::BTreeMap::new();
         for f in &doc.findings {
+            // `info` findings are the review queue (names the table marks maybe-personal): counted
+            // here, listed in full in the JSON and SARIF.
+            if f.severity == crate::config::Severity::Info {
+                *review.entry(f.rule_id.as_str()).or_default() += 1;
+                continue;
+            }
             let loc = f
                 .location
                 .as_ref()
@@ -90,6 +97,15 @@ pub fn render(doc: &Document) -> String {
                 loc
             );
             let _ = writeln!(out, "{:<width$}           {}{}", "", f.message, tags);
+        }
+        if !review.is_empty() {
+            let counts: Vec<String> = review.iter().map(|(k, v)| format!("{k} {v}")).collect();
+            let _ = writeln!(
+                out,
+                "\n{} finding(s) at info severity need review ({}): data whose names only may be personal. They are listed in the JSON and SARIF output; record names that are not personal under not_personal in .privacy-flow.yml.",
+                review.values().sum::<usize>(),
+                counts.join(", ")
+            );
         }
     }
     out.push('\n');

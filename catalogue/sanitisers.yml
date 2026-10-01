@@ -27,7 +27,7 @@ sanitisers:
     language: javascript
     description: Methods and functions that return a boolean or a position, not the data.
     methods: [includes, startsWith, endsWith, test, has, indexOf, lastIndexOf, localeCompare, isValid]
-    calls: ["Array.isArray", "Number.{isNaN,isFinite,isInteger}", "{isNaN,isFinite}", "Object.is"]
+    calls: ["Array.isArray", "Number.{isNaN,isFinite,isInteger}", "{isNaN,isFinite}", "Object.is", "{bcrypt,bcryptjs,@node-rs/bcrypt}:{compare,compareSync}", "{argon2,@node-rs/argon2}:verify"]
     removes: ["*"]
 
   - id: py.password-hash

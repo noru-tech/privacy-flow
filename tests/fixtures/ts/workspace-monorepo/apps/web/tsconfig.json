@@ -1,0 +1,5 @@
+{
+  "extends": "@acme/tsconfig/base.json",
+  // app-local aliases
+  "compilerOptions": { "baseUrl": ".", "paths": { "~/*": ["./app/*"] } }
+}

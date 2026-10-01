@@ -60,6 +60,13 @@ pub const DEFAULT_EXCLUDES: &[&str] = &[
     "**/playwright/**",
     "**/*.stories.*",
     "**/storybook-static/**",
+    // Seed data and mocks.
+    "**/seed/**",
+    "**/seeds/**",
+    "**/seeders/**",
+    "**/*.seed.*",
+    "**/mocks/**",
+    "**/__generated__/**",
 ];
 
 /// Extensions of languages that carry application logic but are not analysed in v0.1.
@@ -405,52 +412,6 @@ pub fn strip_jsonc(text: &str) -> String {
     out
 }
 
-/// TypeScript path aliases from `tsconfig.json` (or `jsconfig.json`) at the scan root.
-pub fn aliases_from(text: &str) -> crate::program::Aliases {
-    let mut out = crate::program::Aliases::default();
-    let Ok(v) = serde_json::from_str::<serde_json::Value>(&strip_jsonc(text)) else {
-        return out;
-    };
-    let opts = v.get("compilerOptions");
-    let base = opts
-        .and_then(|o| o.get("baseUrl"))
-        .and_then(|b| b.as_str())
-        .map(|b| b.trim_start_matches("./").trim_end_matches('/').to_string());
-    let base_dir = base.clone().unwrap_or_default();
-    if let Some(paths) = opts
-        .and_then(|o| o.get("paths"))
-        .and_then(|p| p.as_object())
-    {
-        let mut entries: Vec<(String, Vec<String>)> = paths
-            .iter()
-            .map(|(k, v)| {
-                let targets = v
-                    .as_array()
-                    .map(|a| {
-                        a.iter()
-                            .filter_map(|t| t.as_str())
-                            .map(|t| {
-                                let t = t.trim_start_matches("./");
-                                if base_dir.is_empty() || base_dir == "." {
-                                    t.to_string()
-                                } else {
-                                    format!("{base_dir}/{t}")
-                                }
-                            })
-                            .collect()
-                    })
-                    .unwrap_or_default();
-                (k.clone(), targets)
-            })
-            .collect();
-        // Longest prefix first, as TypeScript matches.
-        entries.sort_by(|a, b| b.0.len().cmp(&a.0.len()).then(a.0.cmp(&b.0)));
-        out.paths = entries;
-    }
-    out.base_url = base.filter(|b| !b.is_empty() && b != ".");
-    out
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -475,16 +436,5 @@ mod tests {
         assert!(e.excluded("types/global.d.ts"));
         assert!(!e.excluded("src/api/users.ts"));
         assert!(!e.excluded("src/latest/x.ts"));
-    }
-
-    #[test]
-    fn tsconfig_paths() {
-        let a = aliases_from(
-            r#"{ // comment
-          "compilerOptions": { "baseUrl": ".", "paths": { "@/*": ["./src/*"], "@lib/*": ["lib/*",], } } }"#,
-        );
-        assert_eq!(a.paths[0].0, "@lib/*");
-        assert_eq!(a.paths[1].1, vec!["src/*".to_string()]);
-        assert_eq!(a.base_url, None);
     }
 }

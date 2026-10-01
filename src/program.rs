@@ -22,8 +22,13 @@ pub type Sym = u32;
 
 /// Longest API path kept, in segments; longer paths stop growing.
 const MAX_PATH_SEGMENTS: usize = 16;
-/// Most provenance values kept per variable; the smallest are kept.
-const MAX_PROVS: usize = 16;
+/// Most API paths kept per variable (the smallest are kept): paths can grow without bound
+/// through loops and chains, so they are capped.
+const MAX_API_PROVS: usize = 16;
+/// Most provenance values of any kind per variable. Functions, classes and modules are finite
+/// and every one matters (a component's render callbacks from all of its call sites), so this
+/// is only a safety bound.
+const MAX_PROVS: usize = 4096;
 
 #[derive(Default, Debug)]
 pub struct Interner {
@@ -101,6 +106,7 @@ pub struct GClass {
     pub file: FileId,
     pub name: String,
     pub this: VarId,
+    pub ctor_this: Option<VarId>,
     pub methods: Vec<(String, FuncId)>,
     pub pos: Pos,
 }
@@ -188,6 +194,22 @@ pub enum GKind {
     Import {
         import: u32,
     },
+    TypeRef {
+        dst: VarId,
+        ty: VarId,
+    },
+    ThisLoad {
+        dst: VarId,
+        obj: VarId,
+        field: Sym,
+        var: VarId,
+    },
+    ThisStore {
+        obj: VarId,
+        field: Sym,
+        src: VarId,
+        var: VarId,
+    },
 }
 
 #[derive(Clone, Debug)]
@@ -247,13 +269,7 @@ pub struct CallTargets {
     pub plain_method: Option<(VarId, Sym)>,
 }
 
-/// TypeScript `compilerOptions.paths` and `baseUrl`, relative to the scan root.
-#[derive(Clone, Debug, Default)]
-pub struct Aliases {
-    pub base_url: Option<String>,
-    /// (pattern with at most one `*`, targets with at most one `*`)
-    pub paths: Vec<(String, Vec<String>)>,
-}
+pub use crate::resolve::Resolver;
 
 pub struct Program {
     pub files: Vec<FileInfo>,
@@ -272,17 +288,40 @@ pub struct Program {
     /// Call statement index → targets.
     pub calls: HashMap<u32, CallTargets>,
     file_index: BTreeMap<String, FileId>,
+    /// Memo for [`Program::api_member`] and [`Program::api_call`]: the fixpoint asks for the
+    /// same extensions every round.
+    path_cache: HashMap<(Sym, String), Option<Sym>>,
+    call_cache: HashMap<Sym, Option<Sym>>,
+    /// The variables put into containers reached through an API path: a read sees their
+    /// provenance and their fields'.
+    path_containers: HashMap<Sym, BTreeSet<VarId>>,
 }
 
 fn add_prov(set: &mut Vec<Prov>, p: Prov) -> bool {
+    let is_path = |x: &Prov| matches!(x, Prov::Api(_) | Prov::Unresolved(_));
     match set.binary_search(&p) {
         Ok(_) => false,
         Err(i) => {
-            if set.len() >= MAX_PROVS && i >= MAX_PROVS {
+            if set.len() >= MAX_PROVS {
                 return false;
             }
+            if is_path(&p) {
+                let paths = set.iter().filter(|x| is_path(x)).count();
+                if paths >= MAX_API_PROVS {
+                    // Keep the smallest paths: drop the largest one if `p` sorts before it.
+                    let Some(last) = set.iter().rposition(is_path) else {
+                        return false;
+                    };
+                    if p > set[last] {
+                        return false;
+                    }
+                    set.remove(last);
+                    let i = set.binary_search(&p).unwrap_err();
+                    set.insert(i, p);
+                    return true;
+                }
+            }
             set.insert(i, p);
-            set.truncate(MAX_PROVS);
             true
         }
     }
@@ -325,7 +364,7 @@ fn join(dir: &str, rel: &str) -> String {
 const JS_EXTS: &[&str] = &[".ts", ".tsx", ".mts", ".cts", ".js", ".jsx", ".mjs", ".cjs"];
 
 impl Program {
-    pub fn build(mut files: Vec<FileIr>, aliases: &Aliases) -> Program {
+    pub fn build(mut files: Vec<FileIr>, resolver: &Resolver) -> Program {
         files.sort_by(|a, b| a.path.cmp(&b.path));
         let file_index: BTreeMap<String, FileId> = files
             .iter()
@@ -347,6 +386,9 @@ impl Program {
             fprov: HashMap::new(),
             calls: HashMap::new(),
             file_index,
+            path_cache: HashMap::new(),
+            call_cache: HashMap::new(),
+            path_containers: HashMap::new(),
         };
         let mut pending_reexports: Vec<(FileId, Vec<String>)> = Vec::new();
         for (fi, f) in files.into_iter().enumerate() {
@@ -394,6 +436,7 @@ impl Program {
                     file: fid,
                     name: c.name.clone(),
                     this: c.this + vo,
+                    ctor_this: c.ctor_this.map(|t| t + vo),
                     methods: c.methods.iter().map(|(n, m)| (n.clone(), m + fo)).collect(),
                     pos: c.pos,
                 });
@@ -473,6 +516,32 @@ impl Program {
                     StmtKind::Import { import } => GKind::Import {
                         import: import + io,
                     },
+                    StmtKind::TypeRef { dst, ty } => GKind::TypeRef {
+                        dst: dst + vo,
+                        ty: ty + vo,
+                    },
+                    StmtKind::ThisLoad {
+                        dst,
+                        obj,
+                        field,
+                        var,
+                    } => GKind::ThisLoad {
+                        dst: dst + vo,
+                        obj: obj + vo,
+                        field: p.syms.intern(field),
+                        var: var + vo,
+                    },
+                    StmtKind::ThisStore {
+                        obj,
+                        field,
+                        src,
+                        var,
+                    } => GKind::ThisStore {
+                        obj: obj + vo,
+                        field: p.syms.intern(field),
+                        src: src + vo,
+                        var: var + vo,
+                    },
                 };
                 p.stmts.push(GStmt {
                     file: fid,
@@ -523,10 +592,10 @@ impl Program {
         // Resolve imports and re-exports.
         for i in 0..p.imports.len() {
             let (file, module) = (p.imports[i].file, p.imports[i].module.clone());
-            p.imports[i].target = p.resolve(file, &module, aliases);
+            p.imports[i].target = p.resolve(file, &module, resolver);
         }
         for (fid, specs) in pending_reexports {
-            let targets: Vec<Target> = specs.iter().map(|s| p.resolve(fid, s, aliases)).collect();
+            let targets: Vec<Target> = specs.iter().map(|s| p.resolve(fid, s, resolver)).collect();
             if p.files[fid as usize].lang == Lang::Python {
                 p.files[fid as usize].star = targets;
             } else {
@@ -579,7 +648,7 @@ impl Program {
         None
     }
 
-    fn resolve(&self, from: FileId, spec: &str, aliases: &Aliases) -> Target {
+    fn resolve(&self, from: FileId, spec: &str, resolver: &Resolver) -> Target {
         let file = &self.files[from as usize];
         match file.lang {
             Lang::Python => self.resolve_py(&file.path, spec),
@@ -592,28 +661,39 @@ impl Program {
                         None => Target::Unresolved(spec.to_string()),
                     };
                 }
-                for (pattern, targets) in &aliases.paths {
-                    let captured = match pattern.split_once('*') {
-                        Some((pre, post)) => spec
-                            .strip_prefix(pre)
-                            .and_then(|r| r.strip_suffix(post))
-                            .map(|s| s.to_string()),
-                        None => (spec == pattern).then(String::new),
-                    };
-                    if let Some(c) = captured {
-                        for t in targets {
-                            let candidate = normalize_path(&t.replacen('*', &c, 1));
-                            if let Some(f) = self.js_candidates(&candidate) {
-                                return Target::Local(f);
+                if let Some(aliases) = resolver.tsconfig_for(&file.path) {
+                    for (pattern, targets) in &aliases.paths {
+                        let captured = match pattern.split_once('*') {
+                            Some((pre, post)) => spec
+                                .strip_prefix(pre)
+                                .and_then(|r| r.strip_suffix(post))
+                                .map(|s| s.to_string()),
+                            None => (spec == pattern).then(String::new),
+                        };
+                        if let Some(c) = captured {
+                            for t in targets {
+                                let candidate = normalize_path(&t.replacen('*', &c, 1));
+                                if let Some(f) = self.js_candidates(&candidate) {
+                                    return Target::Local(f);
+                                }
                             }
+                            // An alias that names no scanned file may still be a workspace
+                            // package or an external module.
                         }
-                        return Target::Unresolved(spec.to_string());
+                    }
+                    if let Some(base) = &aliases.base_url
+                        && let Some(f) = self.js_candidates(&join(base, spec))
+                    {
+                        return Target::Local(f);
                     }
                 }
-                if let Some(base) = &aliases.base_url
-                    && let Some(f) = self.js_candidates(&join(base, spec))
-                {
-                    return Target::Local(f);
+                if let Some(candidates) = resolver.package_candidates(spec) {
+                    for c in candidates {
+                        if let Some(f) = self.js_candidates(&c) {
+                            return Target::Local(f);
+                        }
+                    }
+                    return Target::Unresolved(spec.to_string());
                 }
                 Target::External(spec.strip_prefix("node:").unwrap_or(spec).to_string())
             }
@@ -745,6 +825,16 @@ impl Program {
 
     /// Extend an API path by a member: `m:` + `a` → `m:a`, `m:a` + `b` → `m:a.b`.
     pub fn api_member(&mut self, base: Sym, member: &str) -> Option<Sym> {
+        let key = (base, member.to_string());
+        if let Some(r) = self.path_cache.get(&key) {
+            return *r;
+        }
+        let r = self.api_member_uncached(base, member);
+        self.path_cache.insert(key, r);
+        r
+    }
+
+    fn api_member_uncached(&mut self, base: Sym, member: &str) -> Option<Sym> {
         let s = self.syms.str(base);
         if s.matches('.').count() + 1 >= MAX_PATH_SEGMENTS {
             return None;
@@ -760,6 +850,15 @@ impl Program {
     }
 
     pub fn api_call(&mut self, base: Sym) -> Option<Sym> {
+        if let Some(r) = self.call_cache.get(&base) {
+            return *r;
+        }
+        let r = self.api_call_uncached(base);
+        self.call_cache.insert(base, r);
+        r
+    }
+
+    fn api_call_uncached(&mut self, base: Sym) -> Option<Sym> {
         let s = self.syms.str(base);
         if s.matches("()").count() >= MAX_PATH_SEGMENTS / 2 {
             return None;
@@ -906,10 +1005,92 @@ impl Program {
                 changed |= self.step(i);
             }
             if !changed || rounds > 64 {
+                if std::env::var_os("PIIFLOW_DEBUG_IR").is_some() {
+                    eprintln!("provenance: {rounds} round(s), converged: {}", !changed);
+                }
                 break;
             }
         }
         self.resolve_calls();
+    }
+
+    /// Functions passed to an external API get parameters that are "what that API hands its
+    /// callback": `prisma.$transaction(tx => ...)` gives `tx` the path
+    /// `@prisma/client:PrismaClient().$transaction.<cb0>`, so calls on it resolve against the
+    /// catalogue like any other call into that module.
+    fn callback_params(&mut self, api: Sym, args: &[GArg]) -> bool {
+        let mut changed = false;
+        for a in args {
+            // A function argument, or a function in a field of an options or props object
+            // (`<Controller render={...} />`, `fastify.route({ handler })`).
+            let mut funcs: Vec<(String, FuncId)> = Vec::new();
+            for p in &self.prov[a.var as usize] {
+                if let Prov::Func(f) = p {
+                    funcs.push(("cb".to_string(), *f));
+                }
+            }
+            for (k, ps) in self.fields_of(a.var) {
+                for p in ps {
+                    if let Prov::Func(f) = p {
+                        funcs.push((self.syms.str(k).to_string(), f));
+                    }
+                }
+            }
+            for (label, f) in funcs {
+                let params: Vec<VarId> = self.funcs[f as usize]
+                    .params
+                    .iter()
+                    .map(|q| q.var)
+                    .collect();
+                for (j, var) in params.into_iter().enumerate() {
+                    if let Some(path) = self.api_member(api, &format!("<{label}{j}>")) {
+                        changed |= add_prov(&mut self.prov[var as usize], Prov::Api(path));
+                    }
+                }
+            }
+        }
+        changed
+    }
+
+    /// A local call's arguments give its parameters their provenance (context-insensitive), so
+    /// a callback passed in by the caller resolves inside the callee: `onChange(v)` in a
+    /// component reaches the handler the parent passed.
+    fn bind_formals(&mut self, f: FuncId, bound: bool, args: &[GArg]) -> bool {
+        let params: Vec<GParam> = self.funcs[f as usize]
+            .params
+            .iter()
+            .skip(usize::from(bound))
+            .cloned()
+            .collect();
+        let mut changed = false;
+        let mut pos = 0usize;
+        for a in args {
+            let targets: Vec<VarId> = match &a.kind {
+                GArgKind::Positional => {
+                    let t = match params.get(pos) {
+                        Some(q) if !q.rest && !q.kwrest => vec![q.var],
+                        _ => params.iter().filter(|q| q.rest).map(|q| q.var).collect(),
+                    };
+                    pos += 1;
+                    t
+                }
+                GArgKind::Keyword(k) => params
+                    .iter()
+                    .filter(|q| &q.name == k || q.kwrest)
+                    .map(|q| q.var)
+                    .take(1)
+                    .collect(),
+                GArgKind::Spread | GArgKind::KwSpread => params.iter().map(|q| q.var).collect(),
+            };
+            for t in targets {
+                let ps = self.prov[a.var as usize].clone();
+                changed |= union_into(&mut self.prov[t as usize], &ps);
+                for (k, fps) in self.fields_of(a.var) {
+                    changed |= self.fadd(t, k, &fps);
+                }
+            }
+        }
+        changed
     }
 
     pub fn fget(&self, v: VarId, k: Sym) -> Option<&Vec<Prov>> {
@@ -935,9 +1116,17 @@ impl Program {
     }
 
     fn step(&mut self, i: usize) -> bool {
-        let kind = self.stmts[i].kind.clone();
+        // This runs for every statement in every round: take the statement out rather than
+        // clone it, and put it back.
+        let kind = std::mem::replace(&mut self.stmts[i].kind, GKind::Return { src: 0 });
+        let changed = self.step_kind(i, &kind);
+        self.stmts[i].kind = kind;
+        changed
+    }
+
+    fn step_kind(&mut self, i: usize, kind: &GKind) -> bool {
         let file = self.stmts[i].file;
-        match kind {
+        match *kind {
             GKind::Copy { dst, src } => {
                 let ps = self.prov[src as usize].clone();
                 let mut changed = self.set(dst, &ps);
@@ -965,19 +1154,43 @@ impl Program {
                 }
                 self.fadd(obj, k, &ps)
             }
+            // Computed keys: `{ [lang]: i18n }` and `instances[lang]` meet in the container's
+            // elements; a computed read also sees every named field.
+            GKind::Store {
+                obj,
+                field: None,
+                src,
+            } => {
+                let ps = self.prov[src as usize].clone();
+                let elem = self.syms.intern("[]");
+                self.fadd(obj, elem, &ps)
+            }
+            GKind::Load {
+                dst,
+                obj,
+                field: None,
+            } => {
+                let mut ps: Vec<Prov> = Vec::new();
+                for (_, fps) in self.fields_of(obj) {
+                    ps.extend(fps);
+                }
+                self.set(dst, &ps)
+            }
             GKind::Call {
                 dst,
-                callee,
+                ref callee,
+                ref args,
                 is_new,
-                ..
             } => {
                 let mut out = Vec::new();
-                for p in self.callee_provs(&callee) {
+                let mut changed = false;
+                for p in self.callee_provs(callee) {
                     match p {
                         Prov::Api(s) => {
                             if let Some(c) = self.api_call(s) {
                                 out.push(Prov::Api(c));
                             }
+                            changed |= self.callback_params(s, args);
                         }
                         Prov::Unresolved(s) => {
                             if let Some(c) = self.api_call(s) {
@@ -987,23 +1200,146 @@ impl Program {
                         Prov::Func(f) => {
                             let ret = self.funcs[f as usize].ret;
                             out.extend(self.prov[ret as usize].iter().cloned());
+                            // `return { client: x }`: the result carries the object's fields.
+                            for (k, ps) in self.fields_of(ret) {
+                                changed |= self.fadd(dst, k, &ps);
+                            }
+                            let bound = self.funcs[f as usize].bound_self
+                                && self.funcs[f as usize].class.is_some();
+                            changed |= self.bind_formals(f, bound, args);
                         }
-                        Prov::Class(c) => out.push(Prov::Instance(c)),
+                        Prov::Class(c) => {
+                            out.push(Prov::Instance(c));
+                            if let Some(ctor) = self.ctor(c) {
+                                let bound = self.funcs[ctor as usize].bound_self;
+                                changed |= self.bind_formals(ctor, bound, args);
+                            }
+                        }
                         _ => {}
                     }
                 }
                 let _ = is_new;
-                self.set(dst, &out)
+                // A method on a plain value with a callback (`xs.reduce(f, {})`, `xs.map(f)`):
+                // the result is what the callback returns.
+                if let GCallee::Method { recv, .. } = callee
+                    && self.prov[*recv as usize].is_empty()
+                {
+                    let funcs: Vec<FuncId> = args
+                        .iter()
+                        .flat_map(|a| self.prov[a.var as usize].iter())
+                        .filter_map(|p| match p {
+                            Prov::Func(f) => Some(*f),
+                            _ => None,
+                        })
+                        .collect();
+                    for f in funcs {
+                        let ret = self.funcs[f as usize].ret;
+                        out.extend(self.prov[ret as usize].iter().cloned());
+                        for (k, ps) in self.fields_of(ret) {
+                            changed |= self.fadd(dst, k, &ps);
+                        }
+                    }
+                }
+                // Containers: what goes in through `set`/`push` comes out of `get`/`pop`
+                // (`globalThis.cache.set(k, new Client())` … `cache.get(k).send()`).
+                let dst_ref = &dst;
+                if let GCallee::Method { recv, name } = callee {
+                    let elem = self.syms.intern("[]");
+                    // A container reached through an API path (`globalThis.cache`) is the same
+                    // container at every access, whatever temporary holds it.
+                    let paths: Vec<Sym> = self.prov[*recv as usize]
+                        .iter()
+                        .filter_map(|p| match p {
+                            Prov::Api(s) => Some(*s),
+                            _ => None,
+                        })
+                        .collect();
+                    match self.syms.str(*name) {
+                        "set" | "add" | "push" | "unshift" | "append" | "setdefault" => {
+                            if let Some(last) = args.last() {
+                                let ps = self.prov[last.var as usize].clone();
+                                changed |= self.fadd(*recv, elem, &ps);
+                                for p in paths {
+                                    changed |=
+                                        self.path_containers.entry(p).or_default().insert(last.var);
+                                }
+                            }
+                        }
+                        "get" | "pop" | "shift" | "at" | "find" | "first" | "last"
+                        | "getOrThrow" => {
+                            if let Some(ps) = self.fget(*recv, elem).cloned() {
+                                out.extend(ps);
+                            }
+                            for p in paths {
+                                let vars: Vec<VarId> = self
+                                    .path_containers
+                                    .get(&p)
+                                    .map(|v| v.iter().copied().collect())
+                                    .unwrap_or_default();
+                                for v in vars {
+                                    out.extend(self.prov[v as usize].iter().cloned());
+                                    for (k, fps) in self.fields_of(v) {
+                                        changed |= self.fadd(*dst_ref, k, &fps);
+                                    }
+                                }
+                            }
+                        }
+                        _ => {}
+                    }
+                }
+                changed | self.set(dst, &out)
             }
             GKind::Return { src } => {
                 let ret = self.funcs[self.stmts[i].func as usize].ret;
                 let ps = self.prov[src as usize].clone();
-                self.set(ret, &ps)
+                let mut changed = self.set(ret, &ps);
+                for (k, fps) in self.fields_of(src) {
+                    changed |= self.fadd(ret, k, &fps);
+                }
+                changed
+            }
+            GKind::ThisLoad {
+                dst,
+                obj,
+                field,
+                var,
+            } => {
+                let mut ps = self.member(obj, field);
+                ps.extend(self.prov[var as usize].iter().cloned());
+                let mut changed = self.set(dst, &ps);
+                for (k, fps) in self.fields_of(var) {
+                    changed |= self.fadd(dst, k, &fps);
+                }
+                changed
+            }
+            GKind::ThisStore {
+                obj,
+                field,
+                src,
+                var,
+            } => {
+                let ps = self.prov[src as usize].clone();
+                let mut changed = self.set(var, &ps);
+                for (k, fps) in self.fields_of(src) {
+                    changed |= self.fadd(var, k, &fps);
+                }
+                changed | self.fadd(obj, field, &ps)
+            }
+            GKind::TypeRef { dst, ty } => {
+                let ps: Vec<Prov> = self.prov[ty as usize]
+                    .iter()
+                    .filter_map(|p| match p {
+                        Prov::Api(s) => Some(Prov::Api(*s)),
+                        Prov::Class(c) => Some(Prov::Instance(*c)),
+                        _ => None,
+                    })
+                    .collect();
+                self.set(dst, &ps)
             }
             GKind::FuncRef { dst, func } => self.set(dst, &[Prov::Func(func)]),
             GKind::ClassRef { dst, class } => self.set(dst, &[Prov::Class(class)]),
-            GKind::Global { dst, name } => {
-                let ps = self.global_prov(file, &name);
+            GKind::Global { dst, ref name } => {
+                let ps = self.global_prov(file, name);
                 self.set(dst, &ps)
             }
             GKind::Import { import } => {
@@ -1147,6 +1483,7 @@ impl Program {
                 | GKind::Load { dst, .. }
                 | GKind::Concat { dst, .. }
                 | GKind::Call { dst, .. }
+                | GKind::ThisLoad { dst, .. }
                 | GKind::FuncRef { dst, .. }
                 | GKind::ClassRef { dst, .. }
                 | GKind::Global { dst, .. } => Some(*dst),

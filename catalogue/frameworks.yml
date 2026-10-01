@@ -28,7 +28,8 @@ frameworks:
   - { name: Nuxt / h3, language: javascript, modules: [nuxt, h3], supported: false }
   - { name: Restify, language: javascript, modules: [restify], supported: false }
   - { name: AdonisJS, language: javascript, modules: ["@adonisjs/core"], supported: false }
-  - { name: tRPC, language: javascript, modules: ["@trpc/server"], supported: false }
+  - { name: tRPC, language: javascript, modules: ["@trpc/server", "@hono/trpc-server"], supported: false }
+  - { name: ts-rest server, language: javascript, modules: ["@ts-rest/serverless", "@ts-rest/express", "@ts-rest/nest", "@ts-rest/fastify"], supported: false }
   - { name: GraphQL servers, language: javascript, modules: ["@apollo/server", apollo-server, apollo-server-express, graphql-yoga, mercurius, type-graphql], supported: false }
 
   # Python — supported

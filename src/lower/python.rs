@@ -394,6 +394,15 @@ impl<'s> Py<'s> {
                 // `email: str` in a class body declares a field; elsewhere it binds nothing.
                 if in_class && let Some(l) = left.filter(|l| l.kind() == "identifier") {
                     self.class_field(l);
+                    if let (Some(t), Some(&c)) =
+                        (node.child_by_field_name("type"), self.b.class_stack.last())
+                    {
+                        let this = self.b.ir.classes[c as usize].this;
+                        let v = self.b.temp(self.b.pos(node));
+                        self.type_ref(v, t);
+                        let name = self.text(l).to_string();
+                        self.b.store_member(node, this, Some(name), v);
+                    }
                 }
                 return self.b.lit(node, None);
             }
@@ -405,14 +414,7 @@ impl<'s> Py<'s> {
                 if let Some(&c) = self.b.class_stack.last() {
                     let this = self.b.ir.classes[c as usize].this;
                     let name = self.text(l).to_string();
-                    self.b.emit(
-                        node,
-                        StmtKind::Store {
-                            obj: this,
-                            field: Some(name),
-                            src: v,
-                        },
-                    );
+                    self.b.store_member(node, this, Some(name), v);
                 }
             }
             self.assign_to(l, v);
@@ -420,6 +422,11 @@ impl<'s> Py<'s> {
                 && let Some(var) = self.b.lookup(self.text(l))
             {
                 self.b.ir.annots.push((var, a));
+            }
+            if let (Some(t), "identifier") = (node.child_by_field_name("type"), l.kind())
+                && let Some(var) = self.b.lookup(self.text(l))
+            {
+                self.type_ref(var, t);
             }
         }
         v
@@ -475,14 +482,7 @@ impl<'s> Py<'s> {
                 let field = left
                     .child_by_field_name("attribute")
                     .map(|a| self.text(a).to_string());
-                self.b.emit(
-                    left,
-                    StmtKind::Store {
-                        obj: o,
-                        field,
-                        src: v,
-                    },
-                );
+                self.b.store_member(left, o, field, v);
             }
             "subscript" => {
                 let Some(obj) = left.child_by_field_name("value") else {
@@ -552,7 +552,7 @@ impl<'s> Py<'s> {
                 let field = node
                     .child_by_field_name("attribute")
                     .map(|a| self.text(a).to_string());
-                self.b.load(node, obj, field)
+                self.b.load_member(node, obj, field)
             }
             "subscript" => {
                 let obj = match node.child_by_field_name("value") {
@@ -970,6 +970,12 @@ impl<'s> Py<'s> {
         };
         let f = self.b.begin_function(display, node, class);
         self.b.ir.funcs[f as usize].decorators = decorators.iter().map(|(v, _)| *v).collect();
+        let outer_ctor = self.b.ctor_this.take();
+        let is_ctor = name == "__init__" && !is_static;
+        if let (true, Some(c)) = (is_ctor, class) {
+            let pos = self.b.pos(node);
+            self.b.begin_ctor(c, pos);
+        }
         // Pre-scan the body for locals and `global` declarations.
         let mut names = Vec::new();
         let mut globals = HashSet::new();
@@ -1000,11 +1006,18 @@ impl<'s> Py<'s> {
         }
         if let Some(rt) = node.child_by_field_name("return_type") {
             self.b.ir.funcs[f as usize].ret_annot = reduce_type_name(self.text(rt));
+            let ret = self.b.ret_var();
+            self.type_ref(ret, rt);
         }
         if let Some(body) = node.child_by_field_name("body") {
             self.stmts(body);
         }
         self.globals.pop();
+        if is_ctor && class.is_some() {
+            let pos = self.b.pos(node);
+            self.b.end_ctor(pos);
+        }
+        self.b.ctor_this = outer_ctor;
         self.b.end_function(f);
         match (class, binding) {
             (Some(c), _) => {
@@ -1064,7 +1077,11 @@ impl<'s> Py<'s> {
         let name = self.text(name_node).to_string();
         let var = if is_self {
             let c = *self.b.class_stack.last().expect("method inside a class");
-            let this = self.b.ir.classes[c as usize].this;
+            // In `__init__`, `self` is the constructor's own instance.
+            let this = match self.b.ctor_this {
+                Some((_, t)) => t,
+                None => self.b.ir.classes[c as usize].this,
+            };
             self.b
                 .scopes
                 .last_mut()
@@ -1087,9 +1104,85 @@ impl<'s> Py<'s> {
         if let (Some(a), false) = (annot, is_self) {
             self.b.ir.annots.push((var, a));
         }
+        if let (Some(t), false) = (p.child_by_field_name("type"), is_self) {
+            self.type_ref(var, t);
+        }
         if let Some(d) = default {
             let dv = self.expr(d);
             self.b.copy(d, var, dv);
+        }
+    }
+
+    /// Record that `var` is declared with the type an annotation names.
+    fn type_ref(&mut self, var: Var, annotation: Node) {
+        if let Some(ty) = self.type_expr(annotation) {
+            self.b.emit(annotation, StmtKind::TypeRef { dst: var, ty });
+        }
+    }
+
+    /// The value an annotation names, if it names one in scope (`Session`, `logging.Logger`,
+    /// `Optional[Mailer]` → `Mailer`, `"Mailer"`). Unknown names create nothing.
+    fn type_expr(&mut self, node: Node) -> Option<Var> {
+        const WRAPPERS: &[&str] = &[
+            "Optional",
+            "Annotated",
+            "List",
+            "list",
+            "Sequence",
+            "Iterable",
+            "Iterator",
+            "Awaitable",
+            "Type",
+            "type",
+            "Union",
+            "Final",
+            "ClassVar",
+        ];
+        match node.kind() {
+            "type" => {
+                let inner = named_children(node).into_iter().next()?;
+                self.type_expr(inner)
+            }
+            "identifier" => self.b.lookup(self.text(node)),
+            "attribute" => {
+                let base = self.type_expr(node.child_by_field_name("object")?)?;
+                let field = self
+                    .text(node.child_by_field_name("attribute")?)
+                    .to_string();
+                Some(self.b.load(node, base, Some(field)))
+            }
+            "generic_type" | "subscript" => {
+                let parts = named_children(node);
+                let head = node
+                    .child_by_field_name("value")
+                    .or_else(|| parts.first().copied())?;
+                let last = self.text(head).rsplit('.').next().unwrap_or("").to_string();
+                if WRAPPERS.contains(&last.as_str()) {
+                    let params = parts.iter().find(|c| c.kind() == "type_parameter").copied();
+                    let first = match params {
+                        Some(tp) => named_children(tp)
+                            .into_iter()
+                            .find(|c| self.text(*c) != "None")?,
+                        None => node.child_by_field_name("subscript")?,
+                    };
+                    self.type_expr(first)
+                } else {
+                    self.type_expr(head)
+                }
+            }
+            "union_type" | "binary_operator" => {
+                let src = self.b.src;
+                named_children(node)
+                    .into_iter()
+                    .filter(|c| &src[c.byte_range()] != "None")
+                    .find_map(|c| self.type_expr(c))
+            }
+            "string" => {
+                let name = string_content(node, self.b.src);
+                let first = name.split(['.', '[']).next().unwrap_or("").to_string();
+                self.b.lookup(&first)
+            }
+            _ => None,
         }
     }
 
@@ -1121,6 +1214,7 @@ impl<'s> Py<'s> {
             self.stmts(body);
         }
         self.b.pop_scope();
+        self.b.finish_class(c);
         self.b.class_stack.pop();
         if self
             .b

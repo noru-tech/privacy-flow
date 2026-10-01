@@ -116,6 +116,30 @@ sinks:
     processor: Twilio
     calls: ["twilio:**.{messages,calls}.create", "twilio:**.verifications.create"]
 
+  - id: js.nodemailer
+    language: javascript
+    class: messaging
+    description: Nodemailer; the receiving SMTP provider is configured at run time, so no processor is named.
+    calls: ["nodemailer:**.sendMail"]
+
+  - id: js.resend
+    language: javascript
+    class: messaging
+    processor: Resend
+    calls: ["resend:**.emails.{send,create}", "resend:**.batch.send"]
+
+  - id: js.mailgun
+    language: javascript
+    class: messaging
+    processor: Mailgun
+    calls: ["mailgun.js:**.messages.create"]
+
+  - id: js.aws-ses
+    language: javascript
+    class: messaging
+    processor: Amazon SES
+    calls: ["{@aws-sdk/client-ses,@aws-sdk/client-sesv2}:**.send"]
+
   # ------------------------------------------------------------------ LLM providers
   - id: js.openai
     language: javascript
@@ -177,6 +201,67 @@ sinks:
       Vercel AI SDK model calls. The provider is chosen by the `model` argument at run time, so
       no processor is named; PF003 still applies.
     calls: ["ai:{generateText,streamText,generateObject,streamObject,embed,embedMany}"]
+
+  # ------------------------------------------------------------------ other third-party SDKs
+  - id: js.stripe
+    language: javascript
+    class: third_party
+    processor: Stripe
+    calls: ["stripe:**.{customers,checkout.sessions,paymentIntents,subscriptions,invoices,setupIntents,paymentLinks}.{create,update}"]
+
+  - id: js.aws-s3
+    language: javascript
+    class: third_party
+    processor: Amazon S3
+    calls: ["@aws-sdk/client-s3:**.send", "@aws-sdk/lib-storage:Upload()"]
+
+  - id: js.azure-blob
+    language: javascript
+    class: third_party
+    processor: Azure Storage
+    calls: ["@azure/storage-blob:**.{upload,uploadData,uploadStream,uploadFile}"]
+
+  - id: js.gcs
+    language: javascript
+    class: third_party
+    processor: Google Cloud Storage
+    calls: ["@google-cloud/storage:**.{save,upload,createWriteStream}"]
+
+  - id: js.algolia
+    language: javascript
+    class: third_party
+    processor: Algolia
+    calls: ["{algoliasearch,algoliasearch/lite}:**.{saveObject,saveObjects,partialUpdateObject,partialUpdateObjects,addOrUpdateObject}"]
+
+  - id: js.intercom
+    language: javascript
+    class: third_party
+    processor: Intercom
+    calls: ["intercom-client:**.{contacts,events,conversations,messages}.{create,update,reply}"]
+
+  - id: js.hubspot
+    language: javascript
+    class: third_party
+    processor: HubSpot
+    calls: ["@hubspot/api-client:**.{create,update,upsert,batchApi.create}"]
+
+  - id: js.slack
+    language: javascript
+    class: messaging
+    processor: Slack
+    calls: ["@slack/web-api:**.chat.{postMessage,postEphemeral,update}", "@slack/webhook:IncomingWebhook().send"]
+
+  - id: js.inngest
+    language: javascript
+    class: third_party
+    processor: Inngest
+    calls: ["inngest:**.send"]
+
+  - id: js.trigger-dev
+    language: javascript
+    class: third_party
+    processor: Trigger.dev
+    calls: ["@trigger.dev/sdk{,/v3}:**.{trigger,batchTrigger,triggerAndWait}"]
 
   # ------------------------------------------------------------------ outbound HTTP
   - id: js.fetch
@@ -360,6 +445,37 @@ sinks:
     class: llm
     processor: Mistral
     calls: ["langchain_mistralai.{ChatMistralAI,MistralAIEmbeddings}().{invoke,ainvoke,stream,astream,batch,abatch,embed_query,embed_documents}"]
+
+  # ------------------------------------------------------------------ other third-party SDKs
+  - id: py.stripe
+    language: python
+    class: third_party
+    processor: Stripe
+    calls: ["stripe.{Customer,checkout.Session,PaymentIntent,Subscription,Invoice,SetupIntent}.{create,modify}", "stripe.StripeClient().**.{create,update}"]
+
+  - id: py.boto3-s3
+    language: python
+    class: third_party
+    processor: Amazon S3
+    calls: ["boto3.client().{put_object,upload_file,upload_fileobj}", "boto3.resource().**.{put,upload_file,upload_fileobj}"]
+
+  - id: py.boto3-ses
+    language: python
+    class: messaging
+    processor: Amazon SES
+    calls: ["boto3.client().{send_email,send_raw_email,send_templated_email}"]
+
+  - id: py.slack
+    language: python
+    class: messaging
+    processor: Slack
+    calls: ["slack_sdk.WebClient().chat_{postMessage,postEphemeral,update}", "slack_sdk.webhook.WebhookClient().send"]
+
+  - id: py.gcs
+    language: python
+    class: third_party
+    processor: Google Cloud Storage
+    calls: ["google.cloud.storage.**.upload_from_{string,filename,file}"]
 
   # ------------------------------------------------------------------ outbound HTTP
   - id: py.requests

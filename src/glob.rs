@@ -63,9 +63,10 @@ fn translate(
             '*' => {
                 if chars.get(*i + 1) == Some(&'*') {
                     *i += 2;
-                    if mode == Mode::Path && chars.get(*i) == Some(&'/') {
+                    // `**/` and `**.` match zero or more whole segments.
+                    if chars.get(*i) == Some(&sep) {
                         *i += 1;
-                        out.push_str("(?:.*/)?");
+                        out.push_str(&format!("(?:.*{})?", regex::escape(&sep.to_string())));
                     } else {
                         out.push_str(".*");
                     }
@@ -107,6 +108,10 @@ mod tests {
         let g = Glob::api("pino:()**.{info,warn}").unwrap();
         assert!(g.is_match("pino:().info"));
         assert!(g.is_match("pino:().child().warn"));
+        let g = Glob::api("posthog-js:**.capture").unwrap();
+        assert!(g.is_match("posthog-js:capture"));
+        assert!(g.is_match("posthog-js:default.capture"));
+        assert!(!g.is_match("posthog-js:xcapture"));
         let g = Glob::api("@sentry/*:setUser").unwrap();
         assert!(g.is_match("@sentry/node:setUser"));
         assert!(!g.is_match("@sentry/node:x.setUser"));

@@ -167,11 +167,16 @@ pub fn analyze(
             }
         }
     }
-    let aliases = ["tsconfig.json", "jsconfig.json"]
+    let resolver_inputs: Vec<(String, String)> = listing
+        .files
         .iter()
-        .find_map(|p| tree.get(p))
-        .map(|b| files::aliases_from(&String::from_utf8_lossy(&b)))
-        .unwrap_or_default();
+        .filter(|f| crate::resolve::wants(f) && !f.split('/').any(|seg| seg == "node_modules"))
+        .filter_map(|f| {
+            tree.get(f)
+                .map(|b| (f.clone(), String::from_utf8_lossy(&b).into_owned()))
+        })
+        .collect();
+    let resolver = crate::resolve::Resolver::from_files(&resolver_inputs);
 
     let t0 = Instant::now();
     // Read and lower in parallel; results are collected in sorted path order.
@@ -218,7 +223,7 @@ pub fn analyze(
     let lower_ms = t0.elapsed().as_millis();
 
     let t1 = Instant::now();
-    let mut program = Program::build(irs, &aliases);
+    let mut program = Program::build(irs, &resolver);
     let program_ms = t1.elapsed().as_millis();
     if std::env::var_os("PIIFLOW_DEBUG_IR").is_some() {
         program.dump(&mut std::io::stderr());
@@ -241,7 +246,9 @@ pub fn analyze(
     }
     let facts_ms = t2.elapsed().as_millis();
 
-    let max_depth = config.max_call_depth.unwrap_or(8);
+    let max_depth = config
+        .max_call_depth
+        .unwrap_or(crate::engine::DEFAULT_MAX_DEPTH);
     let opts = Options { max_depth };
     let t3 = Instant::now();
     let reaches = match engine_kind {

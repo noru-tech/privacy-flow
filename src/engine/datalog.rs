@@ -6,8 +6,9 @@
 //! Relation glossary: `fr` is summary reachability from a formal parameter (function, class,
 //! formal, start token, variable, token, depth); `sum` is a summary entry (function, class,
 //! formal, start token, kind, a, b, depth) where kind 0 is a return (a = token), 1 a hit
-//! (a = hit), 2 a shared variable (a = variable, b = token) and 3 a depth-bound gap (a = call
-//! site); `tr` is reachability from a seed.
+//! (a = hit) and 2 a shared variable (a = variable, b = token); `sumgap` is a depth-bound gap
+//! a summary carries (a call site); `tr` is reachability from a seed. The depth-bound rules
+//! use negation over reachability, so they sit in a second stratum.
 
 use std::collections::BTreeSet;
 
@@ -49,6 +50,11 @@ ascent! {
     relation tr_app(u32, u32, u32, u32, u32, u32, u32);
     relation reach(u32, u32);
     relation reach_gap(u32, u32);
+    relation sumgap(u32, u32, u32, u32, u32);
+    relation fr_reached(u32, u32, u32, u32, u32, u32);
+    relation sum_hit(u32, u32, u32, u32, u32);
+    relation sum_glob(u32, u32, u32, u32, u32, u32);
+    relation tr_reached(u32, u32, u32);
 
     // ---------------------------------------------------------------- summaries
     fr(g, c, j, t0, v, t0, 0) <-- summ_func(g), class(c), formal(g, j, v), token_seed(g, t0);
@@ -85,10 +91,7 @@ ascent! {
         loads(h, tk), !loads(g, tk), sum(h, c, jj, tk, kind, a, b, dh);
 
     fr(g, c, j, t0, dst, a, raw + 2) <-- fr_app(g, c, j, t0, s, kind, a, _b, raw), if *kind == 0, maxd(m), if raw + 2 <= *m, site(s, _h, dst);
-    sum(g, c, j, t0, 3, s, 0, 0) <-- fr_app(g, c, j, t0, s, kind, _a, _b, raw), if *kind == 0, maxd(m), if raw + 2 > *m;
     sum(g, c, j, t0, 1, a, 0, raw + 1) <-- fr_app(g, c, j, t0, _s, kind, a, _b, raw), if *kind == 1, maxd(m), if raw + 1 <= *m;
-    sum(g, c, j, t0, 3, s, 0, 0) <-- fr_app(g, c, j, t0, s, kind, _a, _b, raw), if *kind == 1 || *kind == 2, maxd(m), if raw + 1 > *m;
-    sum(g, c, j, t0, 3, a, 0, 0) <-- fr_app(g, c, j, t0, _s, kind, a, _b, _raw), if *kind == 3;
     sum(g, c, j, t0, 2, a, b, raw + 1) <-- fr_app(g, c, j, t0, _s, kind, a, b, raw), if *kind == 2, maxd(m), if raw + 1 <= *m;
 
     // ---------------------------------------------------------------- seeds
@@ -101,7 +104,6 @@ ascent! {
     reach(s, h) <-- tr(s, _c, v, _t, _d), hitarg(v, h);
 
     tr(s, c, dst, t, d + 1) <-- tr(s, c, v, t, d), ret(g, v), site(_st, g, dst), maxd(m), if d + 1 <= *m;
-    reach_gap(s, st) <-- tr(s, _c, v, _t, d), ret(g, v), site(st, g, _dst), maxd(m), if d + 1 > *m;
 
     tr_app(s, c, st, kind, a, b, d + dh) <--
         tr(s, c, v, t1, d), if *t1 == TOP, binding(v, st, jj), site(st, h, _dst), sum(h, c, jj, &TOP, kind, a, b, dh);
@@ -114,11 +116,43 @@ ascent! {
         let b2 = if *kind == 2 && *b == PHI { *t1 } else { *b };
 
     tr(s, c, dst, a, raw + 2) <-- tr_app(s, c, st, kind, a, _b, raw), if *kind == 0, maxd(m), if raw + 2 <= *m, site(st, _h, dst);
-    reach_gap(s, st) <-- tr_app(s, _c, st, kind, _a, _b, raw), if *kind == 0, maxd(m), if raw + 2 > *m;
     reach(s, a) <-- tr_app(s, _c, _st, kind, a, _b, raw), if *kind == 1, maxd(m), if raw + 1 <= *m;
-    reach_gap(s, st) <-- tr_app(s, _c, st, kind, _a, _b, raw), if *kind == 1 || *kind == 2, maxd(m), if raw + 1 > *m;
-    reach_gap(s, a) <-- tr_app(s, _c, _st, kind, a, _b, _raw), if *kind == 3;
     tr(s, c, a, b, raw + 1) <-- tr_app(s, c, _st, kind, a, b, raw), if *kind == 2, maxd(m), if raw + 1 <= *m;
+
+    // ---------------------------------------------------------------- depth-bound gaps
+    // A second stratum: the bound is a gap only where it cut a witness to something not
+    // reached within the bound some other way (normative; see engine/mod.rs).
+    fr_reached(g, c, j, t0, v, t) <-- fr(g, c, j, t0, v, t, _d);
+    sum_hit(g, c, j, t0, h) <-- sum(g, c, j, t0, k, h, _b, _d), if *k == 1;
+    sum_glob(g, c, j, t0, v, t) <-- sum(g, c, j, t0, k, v, t, _d), if *k == 2;
+    tr_reached(s, v, t) <-- tr(s, _c, v, t, _d);
+
+    sumgap(g, c, j, t0, s) <-- fr_app(g, c, j, t0, s, kind, a, _b, raw), if *kind == 0, maxd(m), if raw + 2 > *m,
+        site(s, _h, dst), !fr_reached(g, c, j, t0, dst, a);
+    sumgap(g, c, j, t0, s) <-- fr_app(g, c, j, t0, s, kind, a, _b, raw), if *kind == 1, maxd(m), if raw + 1 > *m,
+        !sum_hit(g, c, j, t0, a);
+    sumgap(g, c, j, t0, s) <-- fr_app(g, c, j, t0, s, kind, a, b, raw), if *kind == 2, maxd(m), if raw + 1 > *m,
+        !sum_glob(g, c, j, t0, a, b);
+    // Gaps a callee's summary carries, by the same key matching as the other entries.
+    sumgap(g, c, j, t0, s2) <-- fr(g, c, j, t0, v, t1, _d), if *t1 == TOP, !shared(v), binding(v, s, jj), site(s, h, _dst),
+        sumgap(h, c, jj, &TOP, s2);
+    sumgap(g, c, j, t0, s2) <-- fr(g, c, j, t0, v, t1, _d), if *t1 >= 2, !shared(v), binding(v, s, jj), site(s, h, _dst),
+        loads(h, t1), sumgap(h, c, jj, t1, s2);
+    sumgap(g, c, j, t0, s2) <-- fr(g, c, j, t0, v, t1, _d), if *t1 >= 2, !shared(v), binding(v, s, jj), site(s, h, _dst),
+        !loads(h, t1), sumgap(h, c, jj, &PHI, s2);
+    sumgap(g, c, j, t0, s2) <-- fr(g, c, j, t0, v, t1, _d), if *t1 == PHI, !shared(v), binding(v, s, jj), site(s, h, _dst),
+        sumgap(h, c, jj, &PHI, s2);
+    sumgap(g, c, j, t0, s2) <-- fr(g, c, j, t0, v, t1, _d), if *t1 == PHI, !shared(v), binding(v, s, jj), site(s, h, _dst),
+        loads(h, tk), !loads(g, tk), sumgap(h, c, jj, tk, s2);
+
+    reach_gap(s, st) <-- tr_app(s, _c, st, kind, a, _b, raw), if *kind == 0, maxd(m), if raw + 2 > *m,
+        site(st, _h, dst), !tr_reached(s, dst, a);
+    reach_gap(s, st) <-- tr_app(s, _c, st, kind, a, _b, raw), if *kind == 1, maxd(m), if raw + 1 > *m, !reach(s, a);
+    reach_gap(s, st) <-- tr_app(s, _c, st, kind, a, b, raw), if *kind == 2, maxd(m), if raw + 1 > *m, !tr_reached(s, a, b);
+    reach_gap(s, st) <-- tr(s, _c, v, t, d), ret(g, v), site(st, g, dst), maxd(m), if d + 1 > *m, !tr_reached(s, dst, t);
+    reach_gap(s, s2) <-- tr(s, c, v, t1, _d), if *t1 == TOP, binding(v, st, jj), site(st, h, _dst), sumgap(h, c, jj, &TOP, s2);
+    reach_gap(s, s2) <-- tr(s, c, v, t1, _d), if *t1 >= 2, binding(v, st, jj), site(st, h, _dst), loads(h, t1), sumgap(h, c, jj, t1, s2);
+    reach_gap(s, s2) <-- tr(s, c, v, t1, _d), if *t1 >= 2, binding(v, st, jj), site(st, h, _dst), !loads(h, t1), sumgap(h, c, jj, &PHI, s2);
 }
 
 /// Every (seed, target) pair the program reaches.

@@ -31,7 +31,8 @@ propagators:
       - "{String,Number,Boolean,BigInt,Symbol,Date,URL,URLSearchParams,Map,Set,WeakMap,WeakSet,Error,TypeError,RangeError,SyntaxError,Headers,Request,Response,FormData,Blob,TextEncoder,TextDecoder,AbortController}"
       - "{String,Number,Boolean,BigInt,Symbol,Date,URL,URLSearchParams,Map,Set,WeakMap,WeakSet,Error,TypeError,RangeError,SyntaxError,Headers,Request,Response,FormData,Blob,TextEncoder,TextDecoder,AbortController}()**"
       - "{Array,Object,Promise,Buffer,Math,Intl,Reflect,Number,String,Date,Response}.**"
-      - "{structuredClone,encodeURIComponent,encodeURI,decodeURIComponent,decodeURI,escape,unescape,btoa,atob,parseInt,parseFloat,require,setTimeout,setInterval,setImmediate,clearTimeout,clearInterval,queueMicrotask}"
+      - "{structuredClone,encodeURIComponent,encodeURI,decodeURIComponent,decodeURI,escape,unescape,btoa,atob,parseInt,parseFloat,require,setTimeout,setInterval,setImmediate,clearTimeout,clearInterval,queueMicrotask,requestAnimationFrame,cancelAnimationFrame,dispatchEvent,addEventListener,removeEventListener}"
+      - "{Uint8Array,Uint16Array,Uint32Array,Int8Array,Int16Array,Int32Array,Float32Array,Float64Array,BigInt64Array,ArrayBuffer,DataView,File,FileReader,Event,CustomEvent,StorageEvent,MessageEvent,ResizeObserver,IntersectionObserver,MutationObserver,ClipboardItem,AbortSignal,ReadableStream,WritableStream,TransformStream,Image,Option}{,()}**"
       - "{process,globalThis,window,document,navigator,performance}.**"
     flow: args_to_result
 
@@ -57,14 +58,24 @@ propagators:
     methods: [map, forEach, filter, find, findLast, findIndex, some, every, flatMap, sort, then]
     flow: receiver_to_callback
 
+  - id: js.databases
+    language: javascript
+    description: >-
+      Database and cache clients. Writing personal data to the system's own store is data at
+      rest, which privacy-datamap maps; a query's result is the stored record, not its filter
+      values, so nothing flows from the arguments to the result. Read fields of the result are
+      classified by name like any other.
+    calls:
+      - "{@prisma/client,drizzle-orm,mongoose,typeorm,sequelize,knex,kysely,pg,postgres,mysql2,better-sqlite3,sqlite3,mongodb,redis,ioredis,@upstash/redis,@neondatabase/serverless,@vercel/postgres,@planetscale/database,@libsql/client}:**"
+      - "{drizzle-orm,@prisma/client,mongodb}/*:**"
+    flow: none
+
   - id: js.internal-modules
     language: javascript
     description: >-
-      Storage, validation, formatting, cryptography and framework plumbing inside the system's
-      own boundary. Calls propagate and are not gaps.
+      Validation, formatting, cryptography, user interface and framework plumbing inside the
+      system's own boundary. Calls propagate and are not gaps.
     calls:
-      - "{@prisma/client,drizzle-orm,mongoose,typeorm,sequelize,knex,kysely,pg,mysql2,better-sqlite3,sqlite3,mongodb,redis,ioredis}:**"
-      - "{drizzle-orm,@prisma/client,mongodb}/*:**"
       - "{zod,yup,joi,class-validator,class-transformer,valibot,ajv,superstruct}:**"
       - "{lodash,lodash-es,ramda,underscore,immer}:**"
       - "lodash/*:**"
@@ -75,6 +86,15 @@ propagators:
       - "{path,fs,fs/promises,os,url,util,events,stream,zlib,buffer,querystring,assert,child_process,worker_threads,timers,timers/promises,string_decoder}:**"
       - "{dotenv,dotenv/config,@t3-oss/env-nextjs,@t3-oss/env-core}:**"
       - "{clsx,classnames,tailwind-merge,class-variance-authority}:**"
+      - "{react-hook-form,@hookform/resolvers,@hookform/resolvers/zod,formik,@tanstack/react-query,@tanstack/react-table,@tanstack/react-router,swr,zustand,jotai,valtio,mobx,redux,@reduxjs/toolkit,react-redux}:**"
+      - "{@radix-ui/*,@headlessui/react,@heroicons/react/*,lucide-react,framer-motion,motion,motion/react,sonner,react-hot-toast,react-toastify,cmdk,vaul,recharts,konva,react-konva,react-dropzone,react-pdf,react-markdown}:**"
+      - "{@lingui/*,@lingui/core/macro,@lingui/react/macro,i18next,react-i18next,next-intl,next-i18next,@formatjs/*,react-intl}:**"
+      - "{ts-pattern,remeda,type-fest,superjson,devalue,nanoid/non-secure,p-limit,p-map,p-queue,async,eventemitter3,mitt}:**"
+      - "{@trpc/client,@trpc/react-query,@trpc/next,@ts-rest/core,@ts-rest/react-query,react-router,react-router-dom,@remix-run/react,next-auth/react,@auth/core,next-themes}:**"
+      - "{pdf-lib,@cantoo/pdf-lib,@libpdf/core,pdfjs-dist,pdfjs-dist/*,sharp,jimp,qrcode,papaparse,csv-parse,csv-parse/sync,csv-stringify,xlsx,exceljs,marked,dompurify,isomorphic-dompurify,sanitize-html,he,entities,mime,mime-types,file-type,fflate,jszip,content-disposition,@sindresorhus/slugify,ua-parser-js,isbot,colord}:**"
+      - "{react-email,@react-email/*,nuqs,react-call,@hello-pangea/dnd,react-colorful,remix-themes,fumadocs-ui/*,fumadocs-core/*,@dnd-kit/*,react-day-picker,embla-carousel-react,input-otp,react-resizable-panels,usehooks-ts,@uidotdev/usehooks}:**"
+      - "{@noble/*,@scure/*,@oslojs/*,oslo,oslo/*,arctic,@simplewebauthn/*,otplib,speakeasy,uuidv7,@paralleldrive/cuid2}:**"
+      - "{pino,winston,bunyan,nodemailer,ai,@ai-sdk/*,stripe,inngest,@aws-sdk/*,@azure/*,@google-cloud/*,@slack/*}:**"
     flow: args_to_result
 
   # ------------------------------------------------------------------ Python
@@ -103,6 +123,15 @@ propagators:
     methods: [append, extend, insert, add, update, setdefault, appendleft, extendleft]
     flow: args_to_receiver
 
+  - id: py.databases
+    language: python
+    description: >-
+      Database and cache clients and ORMs: data at rest (privacy-datamap's job), and a query's
+      result is the stored record, not its filter values.
+    calls:
+      - "{sqlalchemy,sqlmodel,peewee,tortoise,pymongo,motor,redis,psycopg,psycopg2,asyncpg,aiosqlite,sqlite3,django.db,mongoengine,databases,prisma}.**"
+    flow: none
+
   - id: py.internal-modules
     language: python
     description: >-
@@ -111,5 +140,5 @@ propagators:
     calls:
       - "{json,pickle,marshal,base64,binascii,copy,dataclasses,typing,typing_extensions,datetime,time,calendar,uuid,re,string,textwrap,unicodedata,math,cmath,decimal,fractions,random,secrets,statistics,enum,functools,itertools,operator,collections,heapq,bisect,array,contextlib,abc,inspect,types,weakref,warnings,traceback,io,os,sys,pathlib,shutil,glob,tempfile,csv,configparser,argparse,getpass,locale,gettext,hashlib,hmac,zlib,gzip,zipfile,tarfile,struct,codecs,asyncio,threading,multiprocessing,concurrent,queue,signal,subprocess,socket,select,selectors,ssl,email,mimetypes,html,xml,urllib.parse,ipaddress,platform,importlib,pkgutil,pprint,dis,ast,tokenize,unittest,doctest}.**"
       - "{json,copy,uuid,re,os,time,random,secrets,hashlib,hmac,base64,math,datetime,dataclasses,functools,itertools,typing}"
-      - "{pydantic,pydantic_settings,sqlalchemy,sqlmodel,alembic,django,flask,fastapi,starlette,werkzeug,jinja2,marshmallow,attrs,attr,peewee,tortoise,motor,pymongo,redis,psycopg,psycopg2,asyncpg,aiosqlite,celery,rq,dramatiq,jwt,jose,passlib,bcrypt,argon2,cryptography,nacl,itsdangerous,dotenv,click,typer,rich,tqdm,numpy,pandas,yaml,toml,tomllib,orjson,ujson,msgpack,dateutil,pytz,zoneinfo,babel,email_validator,phonenumbers,validators,slugify,unidecode,bleach,markdown,uvicorn,gunicorn}.**"
+      - "{pydantic,pydantic_settings,alembic,django,flask,fastapi,starlette,werkzeug,jinja2,marshmallow,attrs,attr,celery,rq,dramatiq,jwt,jose,passlib,bcrypt,argon2,cryptography,nacl,itsdangerous,dotenv,click,typer,rich,tqdm,numpy,pandas,yaml,toml,tomllib,orjson,ujson,msgpack,dateutil,pytz,zoneinfo,babel,email_validator,phonenumbers,validators,slugify,unidecode,bleach,markdown,uvicorn,gunicorn}.**"
     flow: args_to_result

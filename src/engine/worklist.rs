@@ -70,6 +70,14 @@ impl Tail {
     }
 }
 
+/// What a witness cut by the depth bound was about to reach.
+#[derive(Clone, Copy)]
+enum Cut {
+    State(VarId, Token),
+    Hit(u32),
+    Global(VarId, Token),
+}
+
 #[derive(Clone, Copy, PartialEq, Eq)]
 enum Mode {
     Summary(FuncId),
@@ -228,6 +236,8 @@ impl<'a> Ctx<'a> {
         let mut heap: BinaryHeap<Reverse<(u32, u32, VarId, Token)>> = BinaryHeap::new();
         // (target, depth) → (dist, state, tail)
         let mut found: BTreeMap<(STarget, u32), (u32, Key, Tail)> = BTreeMap::new();
+        // Where the depth bound stopped a witness, and what that witness was going to reach.
+        let mut cuts: Vec<(Cut, u32, u32, u32, Key, Tail)> = Vec::new();
         let start_key = (start.0, start.1, 0);
         best.insert(start_key, 0);
         via.insert(start_key, Via::Start);
@@ -317,14 +327,14 @@ impl<'a> Ctx<'a> {
                         STarget::Ret(t3) => {
                             let nd = depth + entry.depth + 2;
                             if nd > max {
-                                record(
-                                    &mut found,
-                                    STarget::DepthBound(b.site),
+                                cuts.push((
+                                    Cut::State(site.dst, sub(t3)),
+                                    b.site,
                                     depth,
                                     d,
                                     key,
                                     enter_only(),
-                                );
+                                ));
                                 continue;
                             }
                             relax(
@@ -345,14 +355,7 @@ impl<'a> Ctx<'a> {
                         STarget::Hit(hh) => {
                             let nd = depth + entry.depth + 1;
                             if nd > max {
-                                record(
-                                    &mut found,
-                                    STarget::DepthBound(b.site),
-                                    depth,
-                                    d,
-                                    key,
-                                    enter_only(),
-                                );
+                                cuts.push((Cut::Hit(hh), b.site, depth, d, key, enter_only()));
                             } else {
                                 record(&mut found, STarget::Hit(hh), nd, d, key, splice());
                             }
@@ -364,14 +367,11 @@ impl<'a> Ctx<'a> {
                         STarget::Global(gv, t3) => {
                             let nd = depth + entry.depth + 1;
                             if nd > max {
-                                record(
-                                    &mut found,
-                                    STarget::DepthBound(b.site),
-                                    depth,
-                                    d,
-                                    key,
-                                    enter_only(),
-                                );
+                                let cut = match mode {
+                                    Mode::Summary(_) => Cut::Global(gv, sub(t3)),
+                                    Mode::Seed => Cut::State(gv, sub(t3)),
+                                };
+                                cuts.push((cut, b.site, depth, d, key, enter_only()));
                             } else if let Mode::Summary(_) = mode {
                                 record(
                                     &mut found,
@@ -406,18 +406,18 @@ impl<'a> Ctx<'a> {
             {
                 for &s in &f.callers[g as usize] {
                     let nd = depth + 1;
+                    let dst = f.sites[s as usize].dst;
                     if nd > max {
-                        record(
-                            &mut found,
-                            STarget::DepthBound(s),
+                        cuts.push((
+                            Cut::State(dst, t),
+                            s,
                             depth,
                             d,
                             key,
                             Tail::Steps(vec![Step::Exit { site: s }]),
-                        );
+                        ));
                         continue;
                     }
-                    let dst = f.sites[s as usize].dst;
                     relax(
                         &mut heap,
                         &mut best,
@@ -427,6 +427,21 @@ impl<'a> Ctx<'a> {
                         Via::Step(key, Step::Exit { site: s }),
                     );
                 }
+            }
+        }
+        // The bound is reported only where it cut a witness to something not reached within
+        // it some other way: a recursive call that would go round again, or a longer path to a
+        // sink already found, is not a gap.
+        let reached_states: std::collections::HashSet<(VarId, Token)> =
+            best.keys().map(|(v, t, _)| (*v, *t)).collect();
+        for (cut, site, depth, d, at, tail) in cuts {
+            let reached = match cut {
+                Cut::State(v, t) => reached_states.contains(&(v, t)),
+                Cut::Hit(h) => found.keys().any(|(t, _)| *t == STarget::Hit(h)),
+                Cut::Global(v, t) => found.keys().any(|(x, _)| *x == STarget::Global(v, t)),
+            };
+            if !reached {
+                record(&mut found, STarget::DepthBound(site), depth, d, at, tail);
             }
         }
         found

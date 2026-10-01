@@ -60,6 +60,13 @@ pub struct FieldDecl {
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
 #[serde(deny_unknown_fields)]
+pub struct NotPersonalDecl {
+    pub name: String,
+    pub citation: String,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
+#[serde(deny_unknown_fields)]
 pub struct ProcessorDecl {
     pub name: String,
     #[serde(default)]
@@ -117,6 +124,8 @@ pub struct Config {
     #[serde(default)]
     pub fields: Vec<FieldDecl>,
     #[serde(default)]
+    pub not_personal: Vec<NotPersonalDecl>,
+    #[serde(default)]
     pub sources: Vec<SourceDef>,
     #[serde(default)]
     pub sinks: Vec<SinkDef>,
@@ -140,6 +149,7 @@ impl Default for Config {
             datamap: None,
             max_call_depth: None,
             fields: Vec::new(),
+            not_personal: Vec::new(),
             sources: Vec::new(),
             sinks: Vec::new(),
             sanitisers: Vec::new(),
@@ -201,6 +211,9 @@ impl Config {
     pub fn apply_fields(&self, classifier: &mut Classifier) -> Result<()> {
         for f in &self.fields {
             classifier.add(&f.name, &f.category, &format!("config:{}", f.name))?;
+        }
+        for n in &self.not_personal {
+            classifier.not_personal(&n.name);
         }
         for s in &self.sources {
             if let Some(c) = &s.category {

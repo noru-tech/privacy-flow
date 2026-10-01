@@ -23,6 +23,7 @@ pub mod lower;
 pub mod output;
 pub mod program;
 pub mod report;
+pub mod resolve;
 pub mod rules;
 
 /// Process exit codes. They are part of the public interface: a code's meaning never changes,

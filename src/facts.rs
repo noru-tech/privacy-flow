@@ -309,6 +309,7 @@ impl<'a, 'p> Builder<'a, 'p> {
                 | GKind::Load { dst, .. }
                 | GKind::Concat { dst, .. }
                 | GKind::Call { dst, .. }
+                | GKind::ThisLoad { dst, .. }
                 | GKind::FuncRef { dst, .. }
                 | GKind::ClassRef { dst, .. }
                 | GKind::Global { dst, .. } => *dst,
@@ -418,6 +419,18 @@ impl<'a, 'p> Builder<'a, 'p> {
                         self.assign_sink(stmt, *obj, *k, *src, lang);
                     }
                 }
+                GKind::ThisLoad {
+                    dst,
+                    obj,
+                    field,
+                    var,
+                } => {
+                    let name = self.p.syms.str(*field).to_string();
+                    self.edge(*var, *dst, EdgeKind::Copy, stmt);
+                    self.field_read(stmt, *obj, *dst, &name);
+                    self.read_source(stmt, *dst, lang);
+                }
+                GKind::ThisStore { src, var, .. } => self.edge(*src, *var, EdgeKind::Copy, stmt),
                 GKind::Concat { dst, parts } => {
                     for part in parts {
                         if let GPart::Var(v) = part {
@@ -438,10 +451,14 @@ impl<'a, 'p> Builder<'a, 'p> {
     }
 
     fn field_read(&mut self, stmt: u32, obj: VarId, dst: VarId, name: &str) {
-        // `models.User`, `Mailer.send`: a member of code, not of data.
-        if self.p.prov[obj as usize]
-            .iter()
-            .any(|p| matches!(p, Prov::Module(_) | Prov::Package(_) | Prov::Class(_)))
+        // `models.User`, `Mailer.send`: a member of code, not of data. An instance (`this`) is
+        // data, even though it carries its class as provenance.
+        let instance = matches!(self.p.vars[obj as usize].kind, VarKind::This)
+            || self.p.classes.iter().any(|c| c.ctor_this == Some(obj));
+        if !instance
+            && self.p.prov[obj as usize]
+                .iter()
+                .any(|p| matches!(p, Prov::Module(_) | Prov::Package(_) | Prov::Class(_)))
         {
             return;
         }
@@ -575,10 +592,15 @@ impl<'a, 'p> Builder<'a, 'p> {
                 *propagated = true;
             }
         };
-        // Instances carry what their class's `this` holds.
+        // A class with a constructor: the instance is what its constructor returns (through the
+        // constructor's summary, per call site). Without one, it is the class's shared `this`
+        // (field initializers).
         for &c in &t.classes {
-            let this = self.p.classes[c as usize].this;
-            self.edge(this, dst, EdgeKind::Copy, stmt);
+            let class = &self.p.classes[c as usize];
+            if class.ctor_this.is_none() {
+                let this = class.this;
+                self.edge(this, dst, EdgeKind::Copy, stmt);
+            }
         }
         for &(f, bound) in &t.funcs {
             if let Some(si) = self.local_sanitiser(f) {
@@ -598,45 +620,57 @@ impl<'a, 'p> Builder<'a, 'p> {
             .iter()
             .map(|s| self.p.syms.str(*s).to_string())
             .collect();
+        // A call is explained when it reaches a local function, a class, or an API path the
+        // catalogue knows. Only an unexplained call is a coverage gap; the other possible
+        // targets of an explained call are not (`remember()` returns both a cache entry and
+        // the Prisma client it holds).
+        let mut explained = !t.funcs.is_empty() || !t.classes.is_empty();
+        let mut unknown = Vec::new();
         for path in &apis {
-            if self.api_call(stmt, dst, path, args, recv, lang) {
-                continue;
+            if self.api_call(stmt, dst, path, args, recv, lang)
+                || self.name_heuristic_sink(stmt, path, args, lang)
+            {
+                explained = true;
+            } else if let Some(r) = recv.filter(|_| is_runtime_global(path, lang)) {
+                // A method on a run-time global the catalogue does not name (`globalThis.cache`,
+                // a declared global): treated like a method on a plain value.
+                let name = path.rsplit('.').next().unwrap_or(path).to_string();
+                if self.data_method(stmt, dst, r, &name, args, lang) {
+                    explained = true;
+                } else {
+                    unknown.push(path.clone());
+                }
+            } else {
+                unknown.push(path.clone());
             }
-            // An external call the catalogue does not know: assume it propagates, and report
-            // personal data reaching it as a coverage gap.
-            propagate(self, &mut propagated);
-            self.hit(
-                stmt,
-                HitKind::Gap {
-                    kind: GapKind::UnresolvedCallee,
-                    detail: path.clone(),
-                },
-                Self::arg_vars(args),
-            );
         }
-        for s in &t.unresolved {
+        // Calls into an unsupported framework are covered by that framework's own gap.
+        let before = unknown.len();
+        unknown.retain(|p| !self.in_unsupported_framework(p, lang));
+        if unknown.len() < before && unknown.is_empty() && t.unresolved.is_empty() && !t.dynamic {
             propagate(self, &mut propagated);
-            let detail = self.p.syms.str(*s).to_string();
-            self.hit(
-                stmt,
-                HitKind::Gap {
-                    kind: GapKind::UnresolvedImport,
-                    detail,
-                },
-                Self::arg_vars(args),
-            );
+            explained = true;
         }
-        if t.dynamic {
-            propagate(self, &mut propagated);
-            let detail = callee_text(&self.p.stmts[stmt as usize].text);
-            self.hit(
-                stmt,
-                HitKind::Gap {
-                    kind: GapKind::DynamicCall,
-                    detail,
-                },
-                Self::arg_vars(args),
-            );
+        if !explained {
+            let gaps = unknown
+                .into_iter()
+                .map(|p| (GapKind::UnresolvedCallee, p))
+                .chain(
+                    t.unresolved
+                        .iter()
+                        .map(|s| (GapKind::UnresolvedImport, self.p.syms.str(*s).to_string())),
+                )
+                .chain(t.dynamic.then(|| {
+                    (
+                        GapKind::DynamicCall,
+                        callee_text(&self.p.stmts[stmt as usize].text),
+                    )
+                }));
+            for (kind, detail) in gaps.collect::<Vec<_>>() {
+                // Assume the call propagates, and report personal data reaching it as a gap.
+                propagate(self, &mut propagated);
+                self.hit(stmt, HitKind::Gap { kind, detail }, Self::arg_vars(args));
+            }
         }
         if let Some((r, name)) = t.plain_method {
             let name = self.p.syms.str(name).to_string();
@@ -891,21 +925,8 @@ impl<'a, 'p> Builder<'a, 'p> {
                 return;
             }
         }
-        for (i, s) in cat.sanitisers.iter().enumerate() {
-            if s.def.language == lang && s.def.methods.iter().any(|m| m == name) {
-                let mut vars = Self::arg_vars(args);
-                vars.push(recv);
-                for v in vars {
-                    self.edge(v, dst, EdgeKind::Sanitize(i as u32), stmt);
-                }
-                return;
-            }
-        }
-        for prop in &cat.propagators {
-            if prop.def.language == lang && prop.def.methods.iter().any(|m| m == name) {
-                self.apply_flow(stmt, dst, prop.def.flow, Some(recv), args);
-                return;
-            }
+        if self.data_method(stmt, dst, recv, name, args, lang) {
+            return;
         }
         // An unknown method on a receiver with no known origin: the receiver's own data flows
         // to the result, and arguments handed to it are a coverage gap.
@@ -926,6 +947,87 @@ impl<'a, 'p> Builder<'a, 'p> {
             },
             Self::arg_vars(args),
         );
+    }
+
+    /// The receiver-name heuristic for an API path the catalogue does not know: `ctx.logger.info`
+    /// handed to a handler by an unmodelled framework is still a logger.
+    fn name_heuristic_sink(&mut self, stmt: u32, path: &str, args: &[GArg], lang: &str) -> bool {
+        let mut segs = path.rsplit(['.', ':']);
+        let (Some(method), Some(receiver)) = (segs.next(), segs.next()) else {
+            return false;
+        };
+        let receiver = receiver.trim_end_matches("()");
+        let cat = self.inp.catalogue;
+        for (si, sink) in cat.sinks.iter().enumerate() {
+            if sink.def.language == lang
+                && sink.def.receivers.iter().any(|r| r == receiver)
+                && sink.def.methods.iter().any(|m| m == method)
+            {
+                let selected = Self::select_args(&sink.def.args, &sink.def.keywords, args);
+                self.hit(
+                    stmt,
+                    HitKind::Sink {
+                        sink: si as u32,
+                        heuristic: true,
+                        host: Host::None,
+                    },
+                    selected,
+                );
+                return true;
+            }
+        }
+        false
+    }
+
+    fn in_unsupported_framework(&self, path: &str, lang: &str) -> bool {
+        let module = match lang {
+            "python" => path.split('.').next().unwrap_or(path),
+            _ => match path.split_once(':') {
+                Some((m, _)) => m,
+                None => return false,
+            },
+        };
+        let sep = if lang == "python" { "." } else { "/" };
+        self.inp.catalogue.frameworks.iter().any(|fw| {
+            !fw.supported
+                && fw.language == lang
+                && fw.modules.iter().any(|m| {
+                    module == m
+                        || module.starts_with(&format!("{m}{sep}"))
+                        || m.starts_with(&format!("{module}{sep}"))
+                })
+        })
+    }
+
+    /// A method the catalogue lists by name for plain values (sanitisers like `includes`,
+    /// propagators like `toLowerCase`, `push`, `map`). Returns true when it applied one.
+    fn data_method(
+        &mut self,
+        stmt: u32,
+        dst: VarId,
+        recv: VarId,
+        name: &str,
+        args: &[GArg],
+        lang: &str,
+    ) -> bool {
+        let cat = self.inp.catalogue;
+        for (i, s) in cat.sanitisers.iter().enumerate() {
+            if s.def.language == lang && s.def.methods.iter().any(|m| m == name) {
+                let mut vars = Self::arg_vars(args);
+                vars.push(recv);
+                for v in vars {
+                    self.edge(v, dst, EdgeKind::Sanitize(i as u32), stmt);
+                }
+                return true;
+            }
+        }
+        for prop in &cat.propagators {
+            if prop.def.language == lang && prop.def.methods.iter().any(|m| m == name) {
+                self.apply_flow(stmt, dst, prop.def.flow, Some(recv), args);
+                return true;
+            }
+        }
+        false
     }
 
     // ------------------------------------------------------------------ string constants
@@ -1474,12 +1576,18 @@ impl<'a, 'p> Builder<'a, 'p> {
             self.f.static_gaps.push(StaticGap {
                 kind: GapKind::UnsupportedFramework,
                 detail: format!(
-                    "{name}: request input is not modelled, so handler parameters are not sources"
+                    "{name}: request input is not modelled, so handler parameters are not sources, and calls into it are not analysed"
                 ),
                 locations: locs,
             });
         }
     }
+}
+
+/// An API path rooted at a JavaScript global the catalogue does not name (a declared global,
+/// `globalThis.cache`): no module, so it is a run-time object of the program's own.
+fn is_runtime_global(path: &str, lang: &str) -> bool {
+    lang == "javascript" && !path.contains(':')
 }
 
 /// The module a specifier belongs to: `@scope/pkg/sub` → `@scope/pkg`, `pkg/sub` → `pkg`,

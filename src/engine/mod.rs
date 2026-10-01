@@ -61,6 +61,11 @@ pub struct Reach {
     pub path: Vec<Step>,
 }
 
+/// The default call-depth bound. Measured on a 220k-line TypeScript monorepo: at 8 the bound
+/// cut 451 witnesses, at 16 it cut 56, at 24 two, at 32 none, with no measurable change in run
+/// time (see NOTES.md).
+pub const DEFAULT_MAX_DEPTH: u32 = 32;
+
 #[derive(Clone, Copy, Debug)]
 pub struct Options {
     pub max_depth: u32,
@@ -68,7 +73,9 @@ pub struct Options {
 
 impl Default for Options {
     fn default() -> Self {
-        Options { max_depth: 8 }
+        Options {
+            max_depth: DEFAULT_MAX_DEPTH,
+        }
     }
 }
 

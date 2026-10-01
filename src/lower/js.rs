@@ -323,6 +323,9 @@ impl<'s> Js<'s> {
             .child_by_field_name("type")
             .and_then(|t| reduce_type_name(self.text(t)));
         let bound = self.bind(name, value, Some(function_scoped));
+        if let (Some(t), Some(v)) = (d.child_by_field_name("type"), bound) {
+            self.type_ref(v, t);
+        }
         if let (Some(a), Some(v)) = (annot, bound) {
             self.b.ir.annots.push((v, a));
         }
@@ -469,14 +472,7 @@ impl<'s> Js<'s> {
                 }
                 let Some(obj) = obj else { return };
                 let o = self.expr(obj);
-                self.b.emit(
-                    left,
-                    StmtKind::Store {
-                        obj: o,
-                        field: prop_name,
-                        src: v,
-                    },
-                );
+                self.b.store_member(left, o, prop_name, v);
             }
             "subscript_expression" => {
                 let Some(obj) = left.child_by_field_name("object") else {
@@ -550,9 +546,10 @@ impl<'s> Js<'s> {
                 }
                 self.b.resolve(name, node)
             }
-            "this" => match self.b.class_stack.last() {
-                Some(&c) => self.b.ir.classes[c as usize].this,
-                None => self.b.lit(node, None),
+            "this" => match (self.b.ctor_this, self.b.class_stack.last()) {
+                (Some((_, t)), _) => t,
+                (None, Some(&c)) => self.b.ir.classes[c as usize].this,
+                _ => self.b.lit(node, None),
             },
             "super" => self.b.lit(node, None),
             "member_expression" => {
@@ -563,7 +560,7 @@ impl<'s> Js<'s> {
                 let field = node
                     .child_by_field_name("property")
                     .map(|p| self.text(p).trim_start_matches('#').to_string());
-                self.b.load(node, obj, field)
+                self.b.load_member(node, obj, field)
             }
             "subscript_expression" => {
                 let obj = match node.child_by_field_name("object") {
@@ -727,6 +724,9 @@ impl<'s> Js<'s> {
             | "function"
             | "generator_function"
             | "class" => self.expr_named(node, None),
+            "jsx_element" | "jsx_self_closing_element" if self.jsx_component(node).is_some() => {
+                self.jsx_call(node)
+            }
             "jsx_element"
             | "jsx_self_closing_element"
             | "jsx_fragment"
@@ -768,6 +768,177 @@ impl<'s> Js<'s> {
                 self.b.union(node, &vars)
             }
         }
+    }
+
+    /// Record that `var` is declared with the type an annotation names.
+    fn type_ref(&mut self, var: Var, annotation: Node) {
+        if let Some(ty) = self.type_expr(annotation) {
+            self.b.emit(annotation, StmtKind::TypeRef { dst: var, ty });
+        }
+    }
+
+    /// The value a type annotation names, if it names one in scope: an imported or local
+    /// class or namespace (`Logger`, `Prisma.TransactionClient`, `Promise<Mailer>` → `Mailer`).
+    /// Unknown names create nothing: a type is never a global.
+    fn type_expr(&mut self, node: Node) -> Option<Var> {
+        const WRAPPERS: &[&str] = &[
+            "Promise",
+            "Array",
+            "ReadonlyArray",
+            "Readonly",
+            "Partial",
+            "Required",
+            "NonNullable",
+            "Awaited",
+        ];
+        match node.kind() {
+            "type_annotation"
+            | "parenthesized_type"
+            | "readonly_type"
+            | "opting_type_annotation" => {
+                let inner = named_children(node).into_iter().next()?;
+                self.type_expr(inner)
+            }
+            "type_identifier" | "identifier" => self.b.lookup(self.text(node)),
+            "nested_type_identifier" | "nested_identifier" | "member_expression" => {
+                let module = node
+                    .child_by_field_name("module")
+                    .or_else(|| node.child_by_field_name("object"))?;
+                let name = node
+                    .child_by_field_name("name")
+                    .or_else(|| node.child_by_field_name("property"))?;
+                let base = self.type_expr(module)?;
+                let field = self.text(name).to_string();
+                Some(self.b.load(node, base, Some(field)))
+            }
+            "generic_type" => {
+                let name = node.child_by_field_name("name")?;
+                let last = self.text(name).rsplit('.').next().unwrap_or("");
+                if WRAPPERS.contains(&last) {
+                    let args = node.child_by_field_name("type_arguments")?;
+                    let first = named_children(args).into_iter().next()?;
+                    self.type_expr(first)
+                } else {
+                    self.type_expr(name)
+                }
+            }
+            "union_type" => named_children(node)
+                .into_iter()
+                .filter(|c| c.kind() != "literal_type")
+                .find_map(|c| self.type_expr(c)),
+            "array_type" => {
+                let inner = named_children(node).into_iter().next()?;
+                self.type_expr(inner)
+            }
+            _ => None,
+        }
+    }
+
+    /// The name node of a JSX element that renders a component (`<UserCard>`, `<Ui.Button>`),
+    /// as opposed to a DOM element (`<div>`).
+    fn jsx_component<'t>(&self, node: Node<'t>) -> Option<Node<'t>> {
+        let open = if node.kind() == "jsx_element" {
+            node.child_by_field_name("open_tag")?
+        } else {
+            node
+        };
+        let name = open.child_by_field_name("name")?;
+        let text = self.text(name);
+        let is_component = match name.kind() {
+            "identifier" => text.chars().next().is_some_and(|c| c.is_uppercase()),
+            "member_expression" | "nested_identifier" => true,
+            _ => false,
+        };
+        is_component.then_some(name)
+    }
+
+    /// `<Comp a={x} {...rest}>child</Comp>` is `Comp({ a: x, ...rest, children: child })`.
+    fn jsx_call(&mut self, node: Node) -> Var {
+        let name = self.jsx_component(node).expect("checked by the caller");
+        let callee = self.expr(name);
+        let open = if node.kind() == "jsx_element" {
+            node.child_by_field_name("open_tag").unwrap_or(node)
+        } else {
+            node
+        };
+        let props = self.b.temp(self.b.pos(node));
+        self.b.emit(
+            open,
+            StmtKind::Lit {
+                dst: props,
+                value: None,
+            },
+        );
+        for attr in named_children(open) {
+            match attr.kind() {
+                "jsx_attribute" => {
+                    let parts = named_children(attr);
+                    let Some(key) = parts.first() else { continue };
+                    let field = Some(self.text(*key).to_string());
+                    let value = match parts.get(1) {
+                        Some(v) if v.kind() == "jsx_expression" => match v.named_child(0) {
+                            Some(e) => self.expr_named(e, field.clone()),
+                            None => continue,
+                        },
+                        Some(v) => self.expr(*v),
+                        None => self.b.lit(attr, None),
+                    };
+                    self.b.emit(
+                        attr,
+                        StmtKind::Store {
+                            obj: props,
+                            field,
+                            src: value,
+                        },
+                    );
+                }
+                "jsx_expression" => {
+                    // `{...rest}`
+                    if let Some(inner) = attr.named_child(0) {
+                        let v = self.expr(inner);
+                        self.b.copy(attr, props, v);
+                    }
+                }
+                _ => {}
+            }
+        }
+        if node.kind() == "jsx_element" {
+            let mut children = Vec::new();
+            for c in named_children(node) {
+                match c.kind() {
+                    "jsx_expression"
+                    | "jsx_element"
+                    | "jsx_self_closing_element"
+                    | "jsx_fragment" => children.push(self.expr(c)),
+                    _ => {}
+                }
+            }
+            if !children.is_empty() {
+                let v = self.b.union(node, &children);
+                self.b.emit(
+                    node,
+                    StmtKind::Store {
+                        obj: props,
+                        field: Some("children".into()),
+                        src: v,
+                    },
+                );
+            }
+        }
+        let dst = self.b.temp(self.b.pos(node));
+        self.b.emit(
+            open,
+            StmtKind::Call {
+                dst,
+                callee: Callee::Value(callee),
+                args: vec![Arg {
+                    var: props,
+                    kind: ArgKind::Positional,
+                }],
+                is_new: false,
+            },
+        );
+        dst
     }
 
     fn template(&mut self, node: Node) -> Var {
@@ -999,6 +1170,14 @@ impl<'s> Js<'s> {
         };
         let is_ctor = class.is_some() && name.as_deref() == Some("constructor");
         let f = self.b.begin_function(display, node, class);
+        let outer_ctor = self.b.ctor_this.take();
+        if let (true, Some(c)) = (is_ctor, class) {
+            let pos = self.b.pos(node);
+            self.b.begin_ctor(c, pos);
+        } else if node.kind() == "arrow_function" {
+            // Arrow functions see the enclosing `this`, including a constructor's.
+            self.b.ctor_this = outer_ctor;
+        }
         if let Some(params) = node.child_by_field_name("parameters") {
             for p in named_children(params) {
                 self.param(p, is_ctor);
@@ -1008,6 +1187,8 @@ impl<'s> Js<'s> {
             self.param(p, false);
         }
         if let Some(rt) = node.child_by_field_name("return_type") {
+            let ret = self.b.ret_var();
+            self.type_ref(ret, rt);
             self.b.ir.funcs[f as usize].ret_annot = reduce_type_name(self.text(rt));
         }
         if let Some(body) = node.child_by_field_name("body") {
@@ -1021,6 +1202,11 @@ impl<'s> Js<'s> {
                 self.b.emit(body, StmtKind::Return { src: v });
             }
         }
+        if is_ctor {
+            let pos = self.b.pos(node);
+            self.b.end_ctor(pos);
+        }
+        self.b.ctor_this = outer_ctor;
         self.b.end_function(f);
         f
     }
@@ -1065,6 +1251,12 @@ impl<'s> Js<'s> {
         };
         let pos = self.b.pos(pattern);
         let var = self.b.declare_param(&name, pos);
+        if let Some(t) = p
+            .child_by_field_name("type")
+            .filter(|_| matches!(p.kind(), "required_parameter" | "optional_parameter"))
+        {
+            self.type_ref(var, t);
+        }
         let f = self.b.func as usize;
         self.b.ir.funcs[f].params.push(Param {
             var,
@@ -1089,15 +1281,11 @@ impl<'s> Js<'s> {
             && !name.is_empty()
             && let Some(&c) = self.b.class_stack.last()
         {
-            let this = self.b.ir.classes[c as usize].this;
-            self.b.emit(
-                p,
-                StmtKind::Store {
-                    obj: this,
-                    field: Some(name.clone()),
-                    src: var,
-                },
-            );
+            let this = match self.b.ctor_this {
+                Some((_, t)) => t,
+                None => self.b.ir.classes[c as usize].this,
+            };
+            self.b.store_member(p, this, Some(name.clone()), var);
             let class_name = self.b.ir.classes[c as usize].name.clone();
             if let Some(t) = self
                 .b
@@ -1157,14 +1345,13 @@ impl<'s> Js<'s> {
                         }
                         if let Some(value) = m.child_by_field_name("value") {
                             let v = self.expr_named(value, key.clone());
-                            self.b.emit(
-                                m,
-                                StmtKind::Store {
-                                    obj: this,
-                                    field: key,
-                                    src: v,
-                                },
-                            );
+                            self.b.store_member(m, this, key.clone(), v);
+                        }
+                        // `private readonly logger: Logger;` says what `this.logger` is.
+                        if let Some(t) = m.child_by_field_name("type") {
+                            let v = self.b.temp(self.b.pos(m));
+                            self.type_ref(v, t);
+                            self.b.store_member(m, this, key, v);
                         }
                     }
                     "class_static_block" => {
@@ -1176,6 +1363,7 @@ impl<'s> Js<'s> {
                 }
             }
         }
+        self.b.finish_class(c);
         self.b.class_stack.pop();
         var
     }
@@ -1250,14 +1438,8 @@ impl<'s> Js<'s> {
             return;
         };
         let module = unquote(self.text(source));
-        // `import type { X } from 'm'` binds nothing at runtime.
-        let mut cursor = node.walk();
-        if node
-            .children(&mut cursor)
-            .any(|c| c.kind() == "type" && !c.is_named())
-        {
-            return;
-        }
+        // `import type { X } from 'm'` binds nothing at run time, but it names what annotated
+        // values are; it is bound like any import, and only type references read it.
         for clause in named_children(node) {
             if clause.kind() != "import_clause" {
                 continue;
@@ -1279,13 +1461,6 @@ impl<'s> Js<'s> {
                     "named_imports" => {
                         for spec in named_children(c) {
                             if spec.kind() != "import_specifier" {
-                                continue;
-                            }
-                            let mut sc = spec.walk();
-                            if spec
-                                .children(&mut sc)
-                                .any(|t| t.kind() == "type" && !t.is_named())
-                            {
                                 continue;
                             }
                             let Some(name) = spec.child_by_field_name("name") else {

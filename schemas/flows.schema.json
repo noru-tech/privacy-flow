@@ -168,13 +168,14 @@
             "items": {
               "type": "object",
               "additionalProperties": false,
-              "required": ["kind", "path", "line", "column", "text", "note"],
+              "required": ["kind", "path", "line", "column", "text", "field", "note"],
               "properties": {
                 "kind": { "enum": ["source", "assign", "read", "write", "concat", "call", "return", "step", "sink"] },
                 "path": { "type": "string" },
                 "line": { "type": "integer", "minimum": 1 },
                 "column": { "type": "integer", "minimum": 1 },
                 "text": { "type": "string" },
+                "field": { "type": ["string", "null"], "description": "The field a read or write hop reads or writes." },
                 "note": { "type": ["string", "null"] }
               }
             }
@@ -310,7 +311,7 @@
     "severity": { "enum": ["info", "warning", "medium", "high"] },
     "rule_id": { "enum": ["PF001", "PF002", "PF003", "PF004", "PF005", "PF006", "PFC01"] },
     "category": { "type": "string", "pattern": "^(unknown|[a-z0-9_]+(\\.[a-z0-9_]+)*)$" },
-    "sink_class": { "enum": ["log", "error_tracking", "analytics", "messaging", "llm", "http", "browser_storage"] },
+    "sink_class": { "enum": ["log", "error_tracking", "analytics", "messaging", "llm", "http", "browser_storage", "third_party"] },
     "loc": {
       "type": "object",
       "additionalProperties": false,

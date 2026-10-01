@@ -44,6 +44,10 @@ pub struct Builder<'s> {
     pub func: FuncIdx,
     pub class_stack: Vec<ClassIdx>,
     globals: HashMap<(FuncIdx, String), Var>,
+    /// One variable per (class, field) for `this.field` in methods.
+    field_vars: HashMap<(ClassIdx, String), Var>,
+    /// The constructor being lowered and its own `this`.
+    pub ctor_this: Option<(ClassIdx, Var)>,
 }
 
 const TEXT_MAX: usize = 80;
@@ -70,6 +74,8 @@ impl<'s> Builder<'s> {
             func: 0,
             class_stack: Vec::new(),
             globals: HashMap::new(),
+            field_vars: HashMap::new(),
+            ctor_this: None,
         };
         // Function 0 is the module: it owns top-level statements and module-level bindings.
         let ret = b.raw_var("<return>", VarKind::Ret, 0, Pos { line: 1, column: 1 });
@@ -359,10 +365,149 @@ impl<'s> Builder<'s> {
         self.ir.classes.push(ClassIr {
             name: name.to_string(),
             this,
+            ctor_this: None,
             methods: Vec::new(),
             pos,
         });
+        // `this` is an instance of the class, so `this.method()` resolves.
+        self.instance_of(this, idx, pos);
         idx
+    }
+
+    /// Give `var` the provenance "an instance of `class`".
+    fn instance_of(&mut self, var: Var, class: ClassIdx, pos: Pos) {
+        let c = self.raw_var("", VarKind::Temp, self.func, pos);
+        self.emit_at(pos, "this".into(), StmtKind::ClassRef { dst: c, class });
+        self.emit_at(pos, "this".into(), StmtKind::TypeRef { dst: var, ty: c });
+    }
+
+    /// The class whose shared instance `v` is, if it is one.
+    pub fn class_of_this(&self, v: Var) -> Option<ClassIdx> {
+        self.ir
+            .classes
+            .iter()
+            .position(|c| c.this == v)
+            .map(|i| i as ClassIdx)
+    }
+
+    /// The variable holding `this.<field>` for a class.
+    pub fn field_var(&mut self, class: ClassIdx, field: &str) -> Var {
+        if let Some(&v) = self.field_vars.get(&(class, field.to_string())) {
+            return v;
+        }
+        let this = self.ir.classes[class as usize].this;
+        let (func, pos) = (
+            self.ir.vars[this as usize].func,
+            self.ir.vars[this as usize].pos,
+        );
+        let v = self.raw_var(&format!("this.{field}"), VarKind::This, func, pos);
+        self.field_vars.insert((class, field.to_string()), v);
+        v
+    }
+
+    pub fn this_load(&mut self, node: Node, class: ClassIdx, field: &str) -> Var {
+        let var = self.field_var(class, field);
+        let obj = self.ir.classes[class as usize].this;
+        let dst = self.temp(self.pos(node));
+        self.emit(
+            node,
+            StmtKind::ThisLoad {
+                dst,
+                obj,
+                field: field.to_string(),
+                var,
+            },
+        );
+        dst
+    }
+
+    pub fn this_store(&mut self, node: Node, class: ClassIdx, field: &str, src: Var) {
+        let var = self.field_var(class, field);
+        let obj = self.ir.classes[class as usize].this;
+        self.emit(
+            node,
+            StmtKind::ThisStore {
+                obj,
+                field: field.to_string(),
+                src,
+                var,
+            },
+        );
+    }
+
+    /// A write to `obj.field`, where `obj` may be an instance: in a method it goes to the
+    /// field's variable, in the constructor to the constructor's own `this` and the field's
+    /// variable, and otherwise it is a plain field write.
+    pub fn store_member(&mut self, node: Node, obj: Var, field: Option<String>, src: Var) {
+        if let Some(f) = &field {
+            if let Some(c) = self.class_of_this(obj) {
+                self.this_store(node, c, f, src);
+                return;
+            }
+            if let Some((c, t)) = self.ctor_this
+                && t == obj
+            {
+                self.emit(
+                    node,
+                    StmtKind::Store {
+                        obj: t,
+                        field: field.clone(),
+                        src,
+                    },
+                );
+                self.this_store(node, c, f, src);
+                return;
+            }
+        }
+        self.emit(node, StmtKind::Store { obj, field, src });
+    }
+
+    /// A read of `obj.field`, through the field's variable when `obj` is a method's `this`.
+    pub fn load_member(&mut self, node: Node, obj: Var, field: Option<String>) -> Var {
+        if let (Some(f), Some(c)) = (&field, self.class_of_this(obj)) {
+            return self.this_load(node, c, f);
+        }
+        self.load(node, obj, field)
+    }
+
+    /// At the end of a class: the whole instance holds every field (`log(this)`).
+    pub fn finish_class(&mut self, class: ClassIdx) {
+        let this = self.ir.classes[class as usize].this;
+        let pos = self.ir.classes[class as usize].pos;
+        let mut fields: Vec<(String, Var)> = self
+            .field_vars
+            .iter()
+            .filter(|((c, _), _)| *c == class)
+            .map(|((_, f), v)| (f.clone(), *v))
+            .collect();
+        fields.sort();
+        for (f, v) in fields {
+            self.emit_at(
+                pos,
+                format!("this.{f}"),
+                StmtKind::Store {
+                    obj: this,
+                    field: Some(f),
+                    src: v,
+                },
+            );
+        }
+    }
+
+    /// Start lowering a constructor: its `this` is its own local, an instance of the class.
+    pub fn begin_ctor(&mut self, class: ClassIdx, pos: Pos) -> Var {
+        let t = self.raw_var("this", VarKind::Local, self.func, pos);
+        self.instance_of(t, class, pos);
+        self.ir.classes[class as usize].ctor_this = Some(t);
+        self.ctor_this = Some((class, t));
+        t
+    }
+
+    /// End a constructor: it returns its `this`.
+    pub fn end_ctor(&mut self, pos: Pos) {
+        if let Some((_, t)) = self.ctor_this.take() {
+            self.emit_at(pos, "this".into(), StmtKind::Return { src: t });
+        }
     }
 
     pub fn note(&mut self, kind: NoteKind, node: Node, detail: String) {

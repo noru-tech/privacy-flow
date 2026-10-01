@@ -38,7 +38,7 @@
       "type": "integer",
       "minimum": 1,
       "maximum": 64,
-      "description": "Call boundaries a witness path may cross (default 8). Beyond it, a depth_bound coverage gap is reported."
+      "description": "Call boundaries a witness path may cross (default 32). Beyond it, a depth_bound coverage gap is reported."
     },
     "fields": {
       "type": "array",
@@ -50,6 +50,19 @@
         "properties": {
           "name": { "type": "string", "minLength": 1 },
           "category": { "$ref": "#/$defs/category" },
+          "citation": { "$ref": "#/$defs/citation" }
+        }
+      }
+    },
+    "not_personal": {
+      "type": "array",
+      "description": "Field names that are not personal data in this codebase, overriding the classification table (typically names the table marks maybe_pii, such as `payload` or `title`).",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["name", "citation"],
+        "properties": {
+          "name": { "type": "string", "minLength": 1 },
           "citation": { "$ref": "#/$defs/citation" }
         }
       }
@@ -149,7 +162,7 @@
       "properties": {
         "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9_.-]*$" },
         "language": { "$ref": "#/$defs/language" },
-        "class": { "enum": ["log", "error_tracking", "analytics", "messaging", "llm", "http", "browser_storage"] },
+        "class": { "enum": ["log", "error_tracking", "analytics", "messaging", "llm", "http", "browser_storage", "third_party"] },
         "processor": { "type": ["string", "null"] },
         "description": { "type": "string" },
         "calls": { "$ref": "#/$defs/patterns" },

@@ -39,6 +39,8 @@ pub enum SinkClass {
     Llm,
     Http,
     BrowserStorage,
+    /// Other third-party SDKs: payments, CRM and support, cloud storage, search, queues.
+    ThirdParty,
 }
 
 impl SinkClass {
@@ -51,6 +53,7 @@ impl SinkClass {
             SinkClass::Llm => "llm",
             SinkClass::Http => "http",
             SinkClass::BrowserStorage => "browser_storage",
+            SinkClass::ThirdParty => "third_party",
         }
     }
 
