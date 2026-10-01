@@ -1,0 +1,115 @@
+# Propagators: calls that carry data through without sending it anywhere.
+#
+# A call the catalogue does not know is assumed to propagate its arguments to its result AND is
+# reported as a coverage gap when personal data reaches it, because it might be a sink. The
+# entries here are known not to be sinks: building strings and objects, validation, ORM and
+# cache access inside the system's own boundary (data at rest is privacy-datamap's job), and
+# framework plumbing. They propagate and are never gaps.
+#
+# flow: args_to_result       arguments (and the receiver) flow to the result
+#       args_to_receiver     arguments flow into the receiver (`xs.push(x)`) and the result
+#       receiver_to_callback the receiver's elements flow into a callback's first parameter,
+#                            and the callback's return value to the result (`xs.map(f)`)
+#       none                 nothing flows
+
+version: "0.1.0"
+
+non_propagating_fields:
+  javascript: [length, size, byteLength]
+
+propagators:
+  # ------------------------------------------------------------------ JavaScript / TypeScript
+  - id: js.json
+    language: javascript
+    calls: ["JSON.{stringify,parse}"]
+    flow: args_to_result
+
+  - id: js.globals
+    language: javascript
+    description: Language and platform built-ins that transform values.
+    calls:
+      - "{String,Number,Boolean,BigInt,Symbol,Date,URL,URLSearchParams,Map,Set,WeakMap,WeakSet,Error,TypeError,RangeError,SyntaxError,Headers,Request,Response,FormData,Blob,TextEncoder,TextDecoder,AbortController}"
+      - "{String,Number,Boolean,BigInt,Symbol,Date,URL,URLSearchParams,Map,Set,WeakMap,WeakSet,Error,TypeError,RangeError,SyntaxError,Headers,Request,Response,FormData,Blob,TextEncoder,TextDecoder,AbortController}()**"
+      - "{Array,Object,Promise,Buffer,Math,Intl,Reflect,Number,String,Date,Response}.**"
+      - "{structuredClone,encodeURIComponent,encodeURI,decodeURIComponent,decodeURI,escape,unescape,btoa,atob,parseInt,parseFloat,require,setTimeout,setInterval,setImmediate,clearTimeout,clearInterval,queueMicrotask}"
+      - "{process,globalThis,window,document,navigator,performance}.**"
+    flow: args_to_result
+
+  - id: js.data-methods
+    language: javascript
+    description: Methods of strings, arrays, promises and responses that return data derived from the receiver.
+    methods:
+      [toLowerCase, toUpperCase, toLocaleLowerCase, toLocaleUpperCase, trim, trimStart, trimEnd, split, slice, substring, substr,
+       replace, replaceAll, concat, join, toString, padStart, padEnd, normalize, at, charAt, charCodeAt, codePointAt, repeat,
+       toFixed, toPrecision, toISOString, toJSON, toUTCString, toDateString, valueOf, flat, reverse, entries, keys, values,
+       catch, finally, json, text, clone, get, getAll, reduce, reduceRight, match, matchAll, search, format, encode, decode]
+    flow: args_to_result
+
+  - id: js.mutators
+    language: javascript
+    description: Methods that put their arguments into the receiver.
+    methods: [push, unshift, splice, add, set, append, fill]
+    flow: args_to_receiver
+
+  - id: js.callbacks
+    language: javascript
+    description: Methods that call a callback with the receiver's elements (or a promise's value).
+    methods: [map, forEach, filter, find, findLast, findIndex, some, every, flatMap, sort, then]
+    flow: receiver_to_callback
+
+  - id: js.internal-modules
+    language: javascript
+    description: >-
+      Storage, validation, formatting, cryptography and framework plumbing inside the system's
+      own boundary. Calls propagate and are not gaps.
+    calls:
+      - "{@prisma/client,drizzle-orm,mongoose,typeorm,sequelize,knex,kysely,pg,mysql2,better-sqlite3,sqlite3,mongodb,redis,ioredis}:**"
+      - "{drizzle-orm,@prisma/client,mongodb}/*:**"
+      - "{zod,yup,joi,class-validator,class-transformer,valibot,ajv,superstruct}:**"
+      - "{lodash,lodash-es,ramda,underscore,immer}:**"
+      - "lodash/*:**"
+      - "{date-fns,dayjs,moment,luxon,uuid,nanoid,cuid,@paralleldrive/cuid2,slugify,validator,qs,query-string}:**"
+      - "{crypto,jsonwebtoken,jose,bcrypt,bcryptjs,argon2}:**"
+      - "{react,react-dom,react-dom/server,next,next/server,next/navigation,next/cache,next/router,next/link,next/image,next/font/*}:**"
+      - "{express,fastify,cors,helmet,body-parser,cookie-parser,express-session,compression,morgan}:**"
+      - "{path,fs,fs/promises,os,url,util,events,stream,zlib,buffer,querystring,assert,child_process,worker_threads,timers,timers/promises,string_decoder}:**"
+      - "{dotenv,dotenv/config,@t3-oss/env-nextjs,@t3-oss/env-core}:**"
+      - "{clsx,classnames,tailwind-merge,class-variance-authority}:**"
+    flow: args_to_result
+
+  # ------------------------------------------------------------------ Python
+  - id: py.builtins
+    language: python
+    calls:
+      - "builtins.{str,repr,ascii,int,float,complex,dict,list,tuple,set,frozenset,sorted,reversed,enumerate,zip,map,filter,min,max,sum,format,iter,next,bytes,bytearray,round,abs,vars,super,getattr,setattr,open,range,object,slice,divmod,pow,chr,ord,hex,oct,bin,memoryview,property,staticmethod,classmethod}"
+      - "builtins.{Exception,ValueError,TypeError,KeyError,IndexError,RuntimeError,AttributeError,NotImplementedError,PermissionError,LookupError,AssertionError,StopIteration,OSError,IOError}"
+      - "builtins.super()**"
+    flow: args_to_result
+
+  - id: py.data-methods
+    language: python
+    description: Methods of strings, bytes, containers and models that return data derived from the receiver.
+    methods:
+      [lower, upper, strip, lstrip, rstrip, split, rsplit, splitlines, replace, join, format, format_map, encode, decode,
+       title, capitalize, casefold, swapcase, zfill, ljust, rjust, center, partition, rpartition, removeprefix, removesuffix,
+       expandtabs, translate, copy, items, keys, values, get, getlist, pop, popitem, model_dump, model_dump_json, dict, json,
+       to_dict, to_json, isoformat, strftime, hex, hexdigest, digest, first, all, one, one_or_none, scalar, scalars, fetchone,
+       fetchall, fetchmany]
+    flow: args_to_result
+
+  - id: py.mutators
+    language: python
+    description: Methods that put their arguments into the receiver.
+    methods: [append, extend, insert, add, update, setdefault, appendleft, extendleft]
+    flow: args_to_receiver
+
+  - id: py.internal-modules
+    language: python
+    description: >-
+      Standard library, storage, validation, serialisation and framework plumbing inside the
+      system's own boundary. Calls propagate and are not gaps.
+    calls:
+      - "{json,pickle,marshal,base64,binascii,copy,dataclasses,typing,typing_extensions,datetime,time,calendar,uuid,re,string,textwrap,unicodedata,math,cmath,decimal,fractions,random,secrets,statistics,enum,functools,itertools,operator,collections,heapq,bisect,array,contextlib,abc,inspect,types,weakref,warnings,traceback,io,os,sys,pathlib,shutil,glob,tempfile,csv,configparser,argparse,getpass,locale,gettext,hashlib,hmac,zlib,gzip,zipfile,tarfile,struct,codecs,asyncio,threading,multiprocessing,concurrent,queue,signal,subprocess,socket,select,selectors,ssl,email,mimetypes,html,xml,urllib.parse,ipaddress,platform,importlib,pkgutil,pprint,dis,ast,tokenize,unittest,doctest}.**"
+      - "{json,copy,uuid,re,os,time,random,secrets,hashlib,hmac,base64,math,datetime,dataclasses,functools,itertools,typing}"
+      - "{pydantic,pydantic_settings,sqlalchemy,sqlmodel,alembic,django,flask,fastapi,starlette,werkzeug,jinja2,marshmallow,attrs,attr,peewee,tortoise,motor,pymongo,redis,psycopg,psycopg2,asyncpg,aiosqlite,celery,rq,dramatiq,jwt,jose,passlib,bcrypt,argon2,cryptography,nacl,itsdangerous,dotenv,click,typer,rich,tqdm,numpy,pandas,yaml,toml,tomllib,orjson,ujson,msgpack,dateutil,pytz,zoneinfo,babel,email_validator,phonenumbers,validators,slugify,unidecode,bleach,markdown,uvicorn,gunicorn}.**"
+    flow: args_to_result

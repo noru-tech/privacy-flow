@@ -1,0 +1,137 @@
+# Sources: where personal data enters a value, beyond the classification table.
+#
+# Field names are classified by the vendored privacy-datamap table
+# (vendor/classification/classification.json); this file adds request input from supported
+# frameworks. Request bodies and queries have category `unknown` unless a typed schema narrows
+# them (`typed: true`: a parameter annotated with a type the analysis knows seeds that type's
+# classified fields instead).
+#
+# kind: handler       functions registered as request handlers — passed to a call matching
+#                     `registrations`, decorated by something matching `decorators`, or (with
+#                     neither) any function in files matching `files`
+# kind: route_export  functions exported under `exports` from files matching `files`
+# kind: read          reads (`reads`) and calls (`calls`) of API paths that return request input
+#
+# `params` select handler parameters by `index` (after `self`), `name`, or `all`, and say what
+# they carry: `whole` (the parameter itself), `fields` (named fields of it), `methods` (calls of
+# its methods), `provenance` (an API path, so calls on a response object resolve).
+
+version: "0.1.0"
+
+sources:
+  # ------------------------------------------------------------------ JavaScript / TypeScript
+  - id: js.express.handler
+    language: javascript
+    kind: handler
+    framework: Express
+    registrations: ["express:**.{get,post,put,patch,delete,all,use,options,head}"]
+    params:
+      - index: 0
+        fields:
+          body: unknown
+          query: unknown
+          params: unknown
+          cookies: unknown
+          signedCookies: unknown
+          headers: unknown
+          ip: user.device.ip_address
+          ips: user.device.ip_address
+      - index: 1
+        provenance: "express:Response"
+
+  - id: js.fastify.handler
+    language: javascript
+    kind: handler
+    framework: Fastify
+    registrations: ["fastify:**.{get,post,put,patch,delete,all,route,options,head}"]
+    params:
+      - index: 0
+        fields:
+          body: unknown
+          query: unknown
+          params: unknown
+          cookies: unknown
+          headers: unknown
+          ip: user.device.ip_address
+      - index: 1
+        provenance: "fastify:Reply"
+
+  - id: js.next.app-route
+    language: javascript
+    kind: route_export
+    framework: Next.js
+    description: App Router route handlers (app/**/route.ts).
+    files: ["**/app/**/route.{ts,tsx,js,jsx,mjs}"]
+    exports: [GET, POST, PUT, PATCH, DELETE, HEAD, OPTIONS]
+    params:
+      - index: 0
+        methods: { json: unknown, formData: unknown, text: unknown, blob: unknown, arrayBuffer: unknown }
+        fields: { nextUrl: unknown, url: unknown, headers: unknown, cookies: unknown, body: unknown, ip: user.device.ip_address }
+
+  - id: js.next.pages-api
+    language: javascript
+    kind: route_export
+    framework: Next.js
+    description: Pages Router API routes (pages/api/**).
+    files: ["**/pages/api/**"]
+    exports: [default]
+    params:
+      - index: 0
+        fields: { body: unknown, query: unknown, cookies: unknown, headers: unknown }
+      - index: 1
+        provenance: "next:NextApiResponse"
+
+  - id: js.next.headers
+    language: javascript
+    kind: read
+    framework: Next.js
+    description: "`cookies()` and `headers()` from next/headers in server components and actions."
+    calls: ["next/headers:{cookies,headers}"]
+    category: unknown
+
+  # ------------------------------------------------------------------ Python
+  - id: py.flask.request
+    language: python
+    kind: read
+    framework: Flask
+    reads: ["flask.request.{form,args,values,json,files,cookies,headers,data,authorization,remote_addr}"]
+    calls: ["flask.request.{get_json,get_data}"]
+    category: unknown
+
+  - id: py.fastapi.handler
+    language: python
+    kind: handler
+    framework: FastAPI
+    decorators: ["fastapi.{FastAPI,APIRouter}().{get,post,put,patch,delete,api_route,websocket}()"]
+    params:
+      - all: true
+        whole: unknown
+        typed: true
+        by_name: true
+        skip_types: [Session, AsyncSession, BackgroundTasks, Response, JSONResponse, WebSocket]
+        skip_names: [db, session, background_tasks, response, settings]
+        by_type:
+          Request:
+            methods: { json: unknown, form: unknown, body: unknown }
+            fields: { query_params: unknown, path_params: unknown, headers: unknown, cookies: unknown }
+
+  - id: py.django.view
+    language: python
+    kind: handler
+    framework: Django
+    description: >-
+      Function and class-based views (and Django REST framework views) in views modules: the
+      `request` parameter's input attributes.
+    files: ["**/views.py", "**/views/**.py", "**/viewsets.py", "**/api/views.py"]
+    params:
+      - name: request
+        fields:
+          POST: unknown
+          GET: unknown
+          body: unknown
+          COOKIES: unknown
+          FILES: unknown
+          META: unknown
+          headers: unknown
+          data: unknown
+          query_params: unknown

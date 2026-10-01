@@ -1,0 +1,213 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/noru-tech/privacy-flow/blob/main/schemas/config.schema.json",
+  "title": "privacy-flow configuration (.privacy-flow.yml)",
+  "description": "Project configuration for piiflow: extra catalogue entries (each with a citation), declared processors, exclusions and policy.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version"],
+  "properties": {
+    "version": { "const": 1, "description": "Configuration format version." },
+    "system": {
+      "type": "object",
+      "description": "The system this repository is, for Fides egress output.",
+      "additionalProperties": false,
+      "required": ["fides_key"],
+      "properties": {
+        "fides_key": { "$ref": "#/$defs/fides_key" },
+        "name": { "type": "string" }
+      }
+    },
+    "exclude": {
+      "type": "array",
+      "description": "File globs to leave out, relative to the scan root (`**/` matches any directories).",
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "default_excludes": {
+      "type": "boolean",
+      "description": "Exclude tests, fixtures, vendored and generated code (default true)."
+    },
+    "datamap": {
+      "description": "Data maps whose field classifications to ingest. `false` turns off auto-detection of .fides/datamap.yml and privacy-datamap's derived facts.",
+      "oneOf": [
+        { "const": false },
+        { "type": "array", "items": { "type": "string", "minLength": 1 } }
+      ]
+    },
+    "max_call_depth": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 64,
+      "description": "Call boundaries a witness path may cross (default 8). Beyond it, a depth_bound coverage gap is reported."
+    },
+    "fields": {
+      "type": "array",
+      "description": "Field names that are personal data of a category, in addition to the classification table.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["name", "category", "citation"],
+        "properties": {
+          "name": { "type": "string", "minLength": 1 },
+          "category": { "$ref": "#/$defs/category" },
+          "citation": { "$ref": "#/$defs/citation" }
+        }
+      }
+    },
+    "sources": { "type": "array", "items": { "$ref": "#/$defs/source" } },
+    "sinks": { "type": "array", "items": { "$ref": "#/$defs/sink" } },
+    "sanitisers": { "type": "array", "items": { "$ref": "#/$defs/sanitiser" } },
+    "propagators": { "type": "array", "items": { "$ref": "#/$defs/propagator" } },
+    "processors": {
+      "type": "array",
+      "description": "Processors the organisation has a contract or vendor record for. A flow to a declared processor is an egress fact, not a PF002 finding.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["name", "citation"],
+        "properties": {
+          "name": { "type": "string", "minLength": 1, "description": "Matches a catalogue sink's processor (case-insensitive)." },
+          "fides_key": { "$ref": "#/$defs/fides_key" },
+          "sinks": { "type": "array", "items": { "type": "string" }, "description": "Sink id globs this processor receives through." },
+          "hosts": { "type": "array", "items": { "type": "string" }, "description": "Hosts (or parent domains) for outbound HTTP." },
+          "citation": { "$ref": "#/$defs/citation" }
+        }
+      }
+    },
+    "policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "fail_on": { "$ref": "#/$defs/severity" },
+        "rules": {
+          "type": "object",
+          "propertyNames": { "pattern": "^PF(00[1-6]|C01)$" },
+          "additionalProperties": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "enabled": { "type": "boolean" },
+              "severity": { "$ref": "#/$defs/severity" }
+            }
+          }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "citation": {
+      "type": "string",
+      "minLength": 3,
+      "description": "Where this entry comes from: a DPA, a vendor record, an internal ticket, a code review."
+    },
+    "severity": { "enum": ["info", "warning", "medium", "high"] },
+    "fides_key": { "type": "string", "pattern": "^[a-zA-Z0-9_.<>-]+$" },
+    "category": {
+      "type": "string",
+      "pattern": "^(unknown|[a-z0-9_]+(\\.[a-z0-9_]+)*)$",
+      "description": "A Fideslang data category key from the vendored taxonomy, or `unknown`."
+    },
+    "language": { "enum": ["javascript", "python"] },
+    "patterns": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+    "param_rule": {
+      "type": "object",
+      "properties": {
+        "whole": { "$ref": "#/$defs/category" },
+        "fields": { "type": "object", "additionalProperties": { "$ref": "#/$defs/category" } },
+        "methods": { "type": "object", "additionalProperties": { "$ref": "#/$defs/category" } },
+        "typed": { "type": "boolean" },
+        "skip_types": { "$ref": "#/$defs/patterns" },
+        "skip_names": { "$ref": "#/$defs/patterns" },
+        "by_name": { "type": "boolean" },
+        "provenance": { "type": "string" }
+      }
+    },
+    "source": {
+      "type": "object",
+      "required": ["id", "language", "kind", "citation"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9_.-]*$" },
+        "language": { "$ref": "#/$defs/language" },
+        "kind": { "enum": ["handler", "route_export", "read"] },
+        "framework": { "type": "string" },
+        "description": { "type": "string" },
+        "registrations": { "$ref": "#/$defs/patterns" },
+        "decorators": { "$ref": "#/$defs/patterns" },
+        "files": { "$ref": "#/$defs/patterns" },
+        "exports": { "$ref": "#/$defs/patterns" },
+        "params": { "type": "array", "items": { "type": "object" } },
+        "reads": { "$ref": "#/$defs/patterns" },
+        "calls": { "$ref": "#/$defs/patterns" },
+        "category": { "$ref": "#/$defs/category" },
+        "citation": { "$ref": "#/$defs/citation" }
+      },
+      "additionalProperties": false
+    },
+    "sink": {
+      "type": "object",
+      "required": ["id", "language", "class", "citation"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9_.-]*$" },
+        "language": { "$ref": "#/$defs/language" },
+        "class": { "enum": ["log", "error_tracking", "analytics", "messaging", "llm", "http", "browser_storage"] },
+        "processor": { "type": ["string", "null"] },
+        "description": { "type": "string" },
+        "calls": { "$ref": "#/$defs/patterns" },
+        "assigns": { "$ref": "#/$defs/patterns" },
+        "receivers": { "$ref": "#/$defs/patterns" },
+        "methods": { "$ref": "#/$defs/patterns" },
+        "args": { "oneOf": [{ "const": "all" }, { "type": "array", "items": { "type": "integer", "minimum": 0 } }] },
+        "keywords": { "$ref": "#/$defs/patterns" },
+        "host": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "arg": { "type": "integer", "minimum": 0 },
+            "keyword": { "type": "string" },
+            "field": { "type": "string" },
+            "base_url": { "type": "boolean" }
+          }
+        },
+        "citation": { "$ref": "#/$defs/citation" }
+      },
+      "additionalProperties": false
+    },
+    "sanitiser": {
+      "type": "object",
+      "required": ["id", "language", "removes", "citation"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9_.-]*$" },
+        "language": { "$ref": "#/$defs/language" },
+        "description": { "type": "string" },
+        "calls": { "$ref": "#/$defs/patterns" },
+        "methods": { "$ref": "#/$defs/patterns" },
+        "functions": {
+          "type": "array",
+          "description": "Local functions as `path/to/file:functionName` (globs allowed).",
+          "items": { "type": "string", "pattern": "^.+:.+$" }
+        },
+        "removes": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "oneOf": [{ "const": "*" }, { "$ref": "#/$defs/category" }] }
+        },
+        "citation": { "$ref": "#/$defs/citation" }
+      },
+      "additionalProperties": false
+    },
+    "propagator": {
+      "type": "object",
+      "required": ["id", "language", "flow", "citation"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9_.-]*$" },
+        "language": { "$ref": "#/$defs/language" },
+        "description": { "type": "string" },
+        "calls": { "$ref": "#/$defs/patterns" },
+        "methods": { "$ref": "#/$defs/patterns" },
+        "flow": { "enum": ["args_to_result", "args_to_receiver", "receiver_to_callback", "none"] },
+        "citation": { "$ref": "#/$defs/citation" }
+      },
+      "additionalProperties": false
+    }
+  }
+}

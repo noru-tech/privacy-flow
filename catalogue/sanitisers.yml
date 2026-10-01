@@ -1,0 +1,50 @@
+# Sanitisers: calls whose result no longer carries some categories of personal data.
+#
+# `removes` lists category prefixes (`user.authorization` covers `user.authorization.password`);
+# `*` removes everything, including `unknown`. The default list is deliberately small:
+#
+# - password hashing removes credentials (a password hash is not the password), and
+# - predicates (`includes`, `startsWith`, `len`, `isinstance`) return booleans or numbers.
+#
+# General-purpose hashing (SHA-256 of an email) is NOT a sanitiser here: a hashed identifier is
+# pseudonymised data, which is still personal data (GDPR Recital 26). If a team's assessment
+# says a particular construction is anonymisation, declare it in `.privacy-flow.yml` with a
+# citation to that assessment.
+
+version: "0.1.0"
+
+sanitisers:
+  - id: js.password-hash
+    language: javascript
+    description: Password hashing functions.
+    calls:
+      - "{bcrypt,bcryptjs,@node-rs/bcrypt}:{hash,hashSync}"
+      - "{argon2,@node-rs/argon2}:hash"
+      - "crypto:{scrypt,scryptSync,pbkdf2,pbkdf2Sync}"
+    removes: [user.authorization]
+
+  - id: js.predicates
+    language: javascript
+    description: Methods and functions that return a boolean or a position, not the data.
+    methods: [includes, startsWith, endsWith, test, has, indexOf, lastIndexOf, localeCompare, isValid]
+    calls: ["Array.isArray", "Number.{isNaN,isFinite,isInteger}", "{isNaN,isFinite}", "Object.is"]
+    removes: ["*"]
+
+  - id: py.password-hash
+    language: python
+    description: Password hashing functions.
+    calls:
+      - "bcrypt.hashpw"
+      - "passlib.**.{hash,encrypt}"
+      - "argon2.PasswordHasher().hash"
+      - "werkzeug.security.generate_password_hash"
+      - "django.contrib.auth.hashers.make_password"
+      - "hashlib.{pbkdf2_hmac,scrypt}"
+    removes: [user.authorization]
+
+  - id: py.predicates
+    language: python
+    description: Builtins and methods that return a boolean, a number or a type, not the data.
+    methods: [startswith, endswith, isdigit, isalpha, isalnum, islower, isupper, isspace, isidentifier, count, find, rfind, index, rindex]
+    calls: ["builtins.{len,bool,isinstance,issubclass,hasattr,callable,id,type,hash}"]
+    removes: ["*"]

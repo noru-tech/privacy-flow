@@ -1,0 +1,49 @@
+# Web frameworks, by the modules that identify them.
+#
+# A supported framework's request input is modelled in sources.yml. Importing a module of an
+# unsupported framework is reported as a coverage gap (PFC01): its handlers' parameters are
+# request input the analysis does not treat as sources, so an empty result from such a
+# codebase would not mean "no flows".
+
+version: "0.1.0"
+
+frameworks:
+  # JavaScript / TypeScript — supported
+  - { name: Express, language: javascript, modules: [express], supported: true }
+  - { name: Fastify, language: javascript, modules: [fastify], supported: true }
+  - name: Next.js
+    language: javascript
+    modules: [next, next/server, next/headers]
+    supported: true
+    note: App Router route handlers and Pages Router API routes; server actions are reported as a gap.
+
+  # JavaScript / TypeScript — not supported in v0.1
+  - { name: Koa, language: javascript, modules: [koa, "@koa/router", koa-router], supported: false }
+  - { name: Hapi, language: javascript, modules: ["@hapi/hapi", hapi], supported: false }
+  - { name: NestJS, language: javascript, modules: ["@nestjs/core", "@nestjs/common"], supported: false, note: "Controller parameters (@Body, @Query) are not modelled." }
+  - { name: Hono, language: javascript, modules: [hono], supported: false }
+  - { name: Elysia, language: javascript, modules: [elysia], supported: false }
+  - { name: Remix, language: javascript, modules: ["@remix-run/node", "@remix-run/server-runtime", "@remix-run/cloudflare"], supported: false }
+  - { name: SvelteKit, language: javascript, modules: ["@sveltejs/kit"], supported: false }
+  - { name: Nuxt / h3, language: javascript, modules: [nuxt, h3], supported: false }
+  - { name: Restify, language: javascript, modules: [restify], supported: false }
+  - { name: AdonisJS, language: javascript, modules: ["@adonisjs/core"], supported: false }
+  - { name: tRPC, language: javascript, modules: ["@trpc/server"], supported: false }
+  - { name: GraphQL servers, language: javascript, modules: ["@apollo/server", apollo-server, apollo-server-express, graphql-yoga, mercurius, type-graphql], supported: false }
+
+  # Python — supported
+  - { name: FastAPI, language: python, modules: [fastapi], supported: true }
+  - { name: Flask, language: python, modules: [flask], supported: true }
+  - { name: Django, language: python, modules: [django, rest_framework], supported: true, note: "Views in views modules; the request parameter's input attributes." }
+
+  # Python — not supported in v0.1
+  - { name: aiohttp server, language: python, modules: [aiohttp.web], supported: false }
+  - { name: Tornado, language: python, modules: [tornado], supported: false }
+  - { name: Sanic, language: python, modules: [sanic], supported: false }
+  - { name: Falcon, language: python, modules: [falcon], supported: false }
+  - { name: Pyramid, language: python, modules: [pyramid], supported: false }
+  - { name: Bottle, language: python, modules: [bottle], supported: false }
+  - { name: Quart, language: python, modules: [quart], supported: false }
+  - { name: Litestar, language: python, modules: [litestar], supported: false }
+  - { name: Starlette (direct), language: python, modules: [starlette.applications, starlette.routing], supported: false }
+  - { name: GraphQL servers, language: python, modules: [graphene, strawberry, ariadne], supported: false }

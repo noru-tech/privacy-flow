@@ -1,0 +1,44 @@
+privacy-flow
+Copyright (c) 2026 Noru
+
+This product includes software developed by Noru (https://noru.tech), licensed under the MIT
+License. See LICENSE.
+
+--------------------------------------------------------------------------------
+Third-party content
+--------------------------------------------------------------------------------
+
+Fideslang taxonomy
+------------------
+Files:   vendor/taxonomy/data_categories.json
+         vendor/taxonomy/data_subjects.json
+         vendor/taxonomy/data_uses.json
+Source:  https://github.com/ethyca/fideslang
+         src/fideslang/default_taxonomy/{data_categories,data_uses,data_subjects}.py
+Author:  © Ethyca, Inc.
+License: Creative Commons Attribution 4.0 International (CC BY 4.0)
+         https://creativecommons.org/licenses/by/4.0/
+
+This is a MODIFIED redistribution: the upstream Python definitions were reformatted to JSON and
+reduced to the `fides_key`, `name` and `description` fields. No other change was made to the
+meaning of any entry. The files are verbatim copies of the snapshot maintained in
+noru-tech/noru-grc-engineering (contract/lib/taxonomy/), taxonomy directory last modified at
+upstream commit 21eb1746904d (2024-11-04), latest published release at snapshot time 3.1.3.
+Provenance and the refresh recipe are in vendor/SOURCE.md.
+
+vendor/taxonomy/special_categories.json selects which Fideslang keys GDPR Articles 9 and 10
+treat as special. The keys are Ethyca's under CC BY 4.0; the selection is Noru's own and is
+MIT-licensed with the rest of the code.
+
+Field-name classification table
+-------------------------------
+File:    vendor/classification/classification.json
+Source:  noru-tech/noru-grc-engineering, plugins/privacy-datamap/references/classification.json
+Author:  Noru
+License: MIT
+
+The table maps field names to Fideslang data category keys (CC BY 4.0, above). It is reused
+verbatim so that privacy-datamap (which maps what a repository stores) and privacy-flow (which
+maps where it sends it) classify a field name the same way.
+
+This repository's own code is MIT-licensed. The vendored taxonomy data remains CC BY 4.0.

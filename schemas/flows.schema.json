@@ -1,0 +1,347 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/noru-tech/privacy-flow/blob/main/schemas/flows.schema.json",
+  "title": "privacy-flow flow facts, version 0.1",
+  "description": "What piiflow writes: sources, sinks and the cited flows between them (facts); coverage gaps; and the findings, egress and summary derived from them. Stable and versioned: a breaking change bumps schema_version. Serialized as RFC 8785 canonical JSON; `digest` is SHA-256 over the canonical bytes of the document with `digest` set to the empty string and every finding's `disposition` set to null.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "$schema", "schema_version", "tool", "catalogue", "config", "subject", "analysis", "policy", "system",
+    "processors", "sources", "sinks", "flows", "coverage", "egress", "findings", "summary", "cited_files", "diff", "digest"
+  ],
+  "properties": {
+    "$schema": { "const": "https://github.com/noru-tech/privacy-flow/blob/main/schemas/flows.schema.json" },
+    "schema_version": { "const": "0.1" },
+    "tool": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "version"],
+      "properties": { "name": { "const": "privacy-flow" }, "version": { "type": "string" } }
+    },
+    "catalogue": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["version", "digest"],
+      "properties": { "version": { "type": "string" }, "digest": { "$ref": "#/$defs/digest" } }
+    },
+    "config": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "digest"],
+      "properties": {
+        "path": { "type": ["string", "null"] },
+        "digest": { "oneOf": [{ "$ref": "#/$defs/digest" }, { "type": "null" }] }
+      }
+    },
+    "subject": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["enumerated_by", "commit", "dirty", "files", "languages"],
+      "properties": {
+        "enumerated_by": { "enum": ["git", "walk", "git_revision"] },
+        "commit": { "type": ["string", "null"], "pattern": "^[0-9a-f]{40,64}$" },
+        "dirty": { "type": ["boolean", "null"] },
+        "files": { "$ref": "#/$defs/count" },
+        "languages": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["language", "files", "lines"],
+            "properties": {
+              "language": { "enum": ["javascript", "typescript", "python"] },
+              "files": { "$ref": "#/$defs/count" },
+              "lines": { "$ref": "#/$defs/count" }
+            }
+          }
+        }
+      }
+    },
+    "analysis": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["engine", "max_call_depth", "datamaps"],
+      "properties": {
+        "engine": { "enum": ["worklist", "datalog"] },
+        "max_call_depth": { "type": "integer", "minimum": 1, "maximum": 64 },
+        "datamaps": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["fail_on", "rules"],
+      "properties": {
+        "fail_on": { "$ref": "#/$defs/severity" },
+        "rules": {
+          "type": "object",
+          "propertyNames": { "$ref": "#/$defs/rule_id" },
+          "additionalProperties": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["enabled", "severity"],
+            "properties": { "enabled": { "type": "boolean" }, "severity": { "$ref": "#/$defs/severity" } }
+          }
+        }
+      }
+    },
+    "system": {
+      "oneOf": [
+        { "type": "null" },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["fides_key", "name"],
+          "properties": { "fides_key": { "type": "string" }, "name": { "type": ["string", "null"] } }
+        }
+      ]
+    },
+    "processors": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["name", "fides_key", "sinks", "hosts", "citation"],
+        "properties": {
+          "name": { "type": "string" },
+          "fides_key": { "type": ["string", "null"] },
+          "sinks": { "type": "array", "items": { "type": "string" } },
+          "hosts": { "type": "array", "items": { "type": "string" } },
+          "citation": { "type": "string" }
+        }
+      }
+    },
+    "sources": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "kind", "category", "needs_review", "name", "classified_by", "function", "location", "text", "declared_at"],
+        "properties": {
+          "id": { "type": "string", "pattern": "^src-[0-9a-f]{16}$" },
+          "kind": { "enum": ["field_read", "parameter_name", "typed_object", "request_input", "api"] },
+          "category": { "$ref": "#/$defs/category" },
+          "needs_review": { "type": "boolean" },
+          "name": { "type": "string" },
+          "classified_by": { "type": "string" },
+          "function": { "type": "string" },
+          "location": { "$ref": "#/$defs/loc" },
+          "text": { "type": "string" },
+          "declared_at": { "oneOf": [{ "$ref": "#/$defs/loc" }, { "type": "null" }] }
+        }
+      }
+    },
+    "sinks": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "catalogue_id", "class", "processor", "heuristic", "host", "function", "location", "text"],
+        "properties": {
+          "id": { "type": "string", "pattern": "^snk-[0-9a-f]{16}$" },
+          "catalogue_id": { "type": "string" },
+          "class": { "$ref": "#/$defs/sink_class" },
+          "processor": { "type": ["string", "null"] },
+          "heuristic": { "type": "boolean" },
+          "host": { "oneOf": [{ "$ref": "#/$defs/host" }, { "type": "null" }] },
+          "function": { "type": "string" },
+          "location": { "$ref": "#/$defs/loc" },
+          "text": { "type": "string" }
+        }
+      }
+    },
+    "flows": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "source", "sink", "category", "call_depth", "path"],
+        "properties": {
+          "id": { "type": "string", "pattern": "^flow-[0-9a-f]{16}$" },
+          "source": { "type": "string", "pattern": "^src-[0-9a-f]{16}$" },
+          "sink": { "type": "string", "pattern": "^snk-[0-9a-f]{16}$" },
+          "category": { "$ref": "#/$defs/category" },
+          "call_depth": { "$ref": "#/$defs/count" },
+          "path": {
+            "type": "array",
+            "minItems": 2,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["kind", "path", "line", "column", "text", "note"],
+              "properties": {
+                "kind": { "enum": ["source", "assign", "read", "write", "concat", "call", "return", "step", "sink"] },
+                "path": { "type": "string" },
+                "line": { "type": "integer", "minimum": 1 },
+                "column": { "type": "integer", "minimum": 1 },
+                "text": { "type": "string" },
+                "note": { "type": ["string", "null"] }
+              }
+            }
+          }
+        }
+      }
+    },
+    "coverage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["complete", "gaps"],
+      "properties": {
+        "complete": { "type": "boolean" },
+        "gaps": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["id", "kind", "detail", "locations", "sources"],
+            "properties": {
+              "id": { "type": "string", "pattern": "^gap-[0-9a-f]{16}$" },
+              "kind": {
+                "enum": [
+                  "unsupported_language", "parse_error", "unsupported_framework", "unsupported_construct",
+                  "unresolved_callee", "unresolved_method", "dynamic_call", "unresolved_import", "depth_bound"
+                ]
+              },
+              "detail": { "type": "string" },
+              "locations": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["path", "line", "column"],
+                  "properties": {
+                    "path": { "type": "string" },
+                    "line": { "type": ["integer", "null"], "minimum": 1 },
+                    "column": { "type": ["integer", "null"], "minimum": 1 }
+                  }
+                }
+              },
+              "sources": { "type": "array", "items": { "type": "string", "pattern": "^src-[0-9a-f]{16}$" } }
+            }
+          }
+        }
+      }
+    },
+    "egress": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["processor", "fides_key", "class", "host", "categories", "declared", "citation", "flows"],
+        "properties": {
+          "processor": { "type": ["string", "null"] },
+          "fides_key": { "type": ["string", "null"] },
+          "class": { "$ref": "#/$defs/sink_class" },
+          "host": { "oneOf": [{ "$ref": "#/$defs/host" }, { "type": "null" }] },
+          "categories": { "type": "array", "items": { "$ref": "#/$defs/category" } },
+          "declared": { "type": "boolean" },
+          "citation": { "type": ["string", "null"] },
+          "flows": { "type": "array", "items": { "type": "string" } }
+        }
+      }
+    },
+    "findings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "rule_id", "severity", "message", "flow", "gap", "categories", "processor", "needs_review", "heuristic", "location", "disposition"],
+        "properties": {
+          "id": { "type": "string", "pattern": "^pf-[0-9a-f]{16}$" },
+          "rule_id": { "$ref": "#/$defs/rule_id" },
+          "severity": { "$ref": "#/$defs/severity" },
+          "message": { "type": "string" },
+          "flow": { "type": ["string", "null"] },
+          "gap": { "type": ["string", "null"] },
+          "categories": { "type": "array", "items": { "$ref": "#/$defs/category" } },
+          "processor": { "type": ["string", "null"] },
+          "needs_review": { "type": "boolean" },
+          "heuristic": { "type": "boolean" },
+          "location": { "oneOf": [{ "$ref": "#/$defs/loc" }, { "type": "null" }] },
+          "disposition": { "oneOf": [{ "$ref": "#/$defs/disposition" }, { "type": "null" }] }
+        }
+      }
+    },
+    "summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["sources", "sinks", "flows", "gaps", "findings", "by_severity", "processors"],
+      "properties": {
+        "sources": { "$ref": "#/$defs/count" },
+        "sinks": { "$ref": "#/$defs/count" },
+        "flows": { "$ref": "#/$defs/count" },
+        "gaps": { "$ref": "#/$defs/count" },
+        "findings": { "type": "object", "propertyNames": { "$ref": "#/$defs/rule_id" }, "additionalProperties": { "$ref": "#/$defs/count" } },
+        "by_severity": { "type": "object", "propertyNames": { "$ref": "#/$defs/severity" }, "additionalProperties": { "$ref": "#/$defs/count" } },
+        "processors": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "cited_files": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["path", "sha256"],
+        "properties": { "path": { "type": "string" }, "sha256": { "$ref": "#/$defs/digest" } }
+      }
+    },
+    "diff": {
+      "oneOf": [
+        { "type": "null" },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["base", "head", "introduced", "changed", "removed"],
+          "properties": {
+            "base": { "type": "string" },
+            "head": { "type": "string" },
+            "introduced": { "$ref": "#/$defs/count" },
+            "changed": { "$ref": "#/$defs/count" },
+            "removed": { "$ref": "#/$defs/count" }
+          }
+        }
+      ]
+    },
+    "digest": { "$ref": "#/$defs/digest" }
+  },
+  "$defs": {
+    "count": { "type": "integer", "minimum": 0, "maximum": 9007199254740991 },
+    "digest": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" },
+    "severity": { "enum": ["info", "warning", "medium", "high"] },
+    "rule_id": { "enum": ["PF001", "PF002", "PF003", "PF004", "PF005", "PF006", "PFC01"] },
+    "category": { "type": "string", "pattern": "^(unknown|[a-z0-9_]+(\\.[a-z0-9_]+)*)$" },
+    "sink_class": { "enum": ["log", "error_tracking", "analytics", "messaging", "llm", "http", "browser_storage"] },
+    "loc": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "line", "column"],
+      "properties": {
+        "path": { "type": "string" },
+        "line": { "type": "integer", "minimum": 1 },
+        "column": { "type": "integer", "minimum": 1 }
+      }
+    },
+    "host": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "value"],
+      "properties": {
+        "kind": { "enum": ["literal", "relative", "dynamic"] },
+        "value": { "type": ["string", "null"] }
+      }
+    },
+    "disposition": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status"],
+      "properties": {
+        "status": { "enum": ["open", "accepted", "remediated", "false_positive"] },
+        "owner": { "type": ["string", "null"] },
+        "decided_at": { "type": ["string", "null"], "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$" },
+        "rationale": { "type": ["string", "null"] },
+        "expires_at": { "type": ["string", "null"], "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$" },
+        "remediated_at": { "type": ["string", "null"], "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$" }
+      }
+    }
+  }
+}

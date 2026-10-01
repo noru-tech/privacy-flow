@@ -1,0 +1,21 @@
+# Rust
+/target/
+*.pending-snap
+
+# Local scan outputs. A team may choose to commit .privacy-flow/flows.json to record
+# dispositions; it contains file paths and source excerpts, not personal data values.
+/.privacy-flow/
+*.sarif
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editors
+.idea/
+.vscode/
+*.swp
+
+# Local scratch
+*.local
+/man/

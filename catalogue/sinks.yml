@@ -1,0 +1,400 @@
+# Sinks: where personal data leaves a value and goes somewhere that matters.
+#
+# Each entry matches calls (or property writes) by API path. An API path names what a value is,
+# from its import: `openai:().chat.completions.create` is the `create` method reached from an
+# instance of the `openai` module's default export; Python paths are dotted
+# (`logging.getLogger().info`); JavaScript globals have no module (`console.log`).
+# In patterns `*` matches within one segment, `**` matches any run of segments and `{a,b}`
+# alternates. `processor` names the vendor that receives the data, where there is one.
+#
+# `args` selects the arguments that carry data out (default: all, including keyword arguments).
+# `host` says where an outbound HTTP call's URL is: a positional `arg`, a Python `keyword`, or
+# a `field` of an options object. With `base_url: true` a relative URL is resolved against a
+# client's configured base URL, so it is not treated as the application's own origin.
+#
+# Adding an SDK is a pull request to this file: see CONTRIBUTING.md.
+
+version: "0.1.0"
+
+sinks:
+  # ------------------------------------------------------------------ JavaScript / TypeScript: logs
+  - id: js.console
+    language: javascript
+    class: log
+    description: The console (stdout/stderr), which log shippers usually collect.
+    calls: ["console.{log,info,warn,error,debug,trace,dir,table,group,groupCollapsed,assert}"]
+
+  - id: js.pino
+    language: javascript
+    class: log
+    calls: ["pino:**.{trace,debug,info,warn,error,fatal}"]
+
+  - id: js.winston
+    language: javascript
+    class: log
+    calls: ["winston:**.{log,info,warn,error,debug,verbose,silly,http}"]
+
+  - id: js.bunyan
+    language: javascript
+    class: log
+    calls: ["bunyan:**.{trace,debug,info,warn,error,fatal}"]
+
+  - id: js.loglevel
+    language: javascript
+    class: log
+    calls: ["loglevel:**.{trace,debug,info,warn,error}"]
+
+  - id: js.nestjs.logger
+    language: javascript
+    class: log
+    calls: ["@nestjs/common:Logger**.{log,error,warn,debug,verbose,fatal}"]
+
+  - id: js.logger-by-name
+    language: javascript
+    class: log
+    description: >-
+      Heuristic. A method call on a receiver named like a logger whose origin the analysis
+      cannot see (an injected logger). Findings from it are marked `heuristic`.
+    receivers: [logger, log, LOGGER, _logger, appLogger]
+    methods: [log, info, warn, error, debug, trace, fatal, verbose]
+
+  # ------------------------------------------------------------------ error tracking
+  - id: js.sentry
+    language: javascript
+    class: error_tracking
+    processor: Sentry
+    calls:
+      - "@sentry/*:{setUser,setContext,setExtra,setExtras,setTag,setTags,addBreadcrumb,captureException,captureMessage,captureEvent}"
+      - "@sentry/*:**.{setUser,setContext,setExtra,setExtras,setTag,setTags,addBreadcrumb,captureException,captureMessage,captureEvent}"
+
+  # ------------------------------------------------------------------ product analytics
+  - id: js.segment
+    language: javascript
+    class: analytics
+    processor: Segment
+    calls:
+      - "{@segment/analytics-node,analytics-node,@segment/analytics-next}:**.{identify,track,page,screen,group,alias}"
+
+  - id: js.mixpanel
+    language: javascript
+    class: analytics
+    processor: Mixpanel
+    calls:
+      - "{mixpanel,mixpanel-browser}:**.{track,identify,alias,register,register_once,track_with_groups}"
+      - "{mixpanel,mixpanel-browser}:**.people.{set,set_once,append,union,increment}"
+
+  - id: js.posthog
+    language: javascript
+    class: analytics
+    processor: PostHog
+    calls:
+      - "{posthog-node,posthog-js}:**.{capture,identify,alias,groupIdentify,register,setPersonProperties,group}"
+
+  - id: js.amplitude
+    language: javascript
+    class: analytics
+    processor: Amplitude
+    calls:
+      - "{@amplitude/analytics-node,@amplitude/analytics-browser,amplitude-js}:**.{track,logEvent,identify,setUserId,setGroup}"
+
+  # ------------------------------------------------------------------ email and messaging
+  - id: js.sendgrid
+    language: javascript
+    class: messaging
+    processor: SendGrid
+    calls: ["@sendgrid/mail:**.{send,sendMultiple}"]
+
+  - id: js.postmark
+    language: javascript
+    class: messaging
+    processor: Postmark
+    calls: ["postmark:**.{sendEmail,sendEmailWithTemplate,sendEmailBatch,sendEmailBatchWithTemplates}"]
+
+  - id: js.twilio
+    language: javascript
+    class: messaging
+    processor: Twilio
+    calls: ["twilio:**.{messages,calls}.create", "twilio:**.verifications.create"]
+
+  # ------------------------------------------------------------------ LLM providers
+  - id: js.openai
+    language: javascript
+    class: llm
+    processor: OpenAI
+    calls:
+      - "openai:**.{chat.completions.create,chat.completions.parse,chat.completions.stream,completions.create,responses.create,responses.stream,embeddings.create,moderations.create}"
+      - "openai:**.beta.{chat.completions.parse,chat.completions.stream,threads.messages.create,threads.runs.create}"
+
+  - id: js.anthropic
+    language: javascript
+    class: llm
+    processor: Anthropic
+    calls: ["@anthropic-ai/sdk:**.messages.{create,stream,countTokens}", "@anthropic-ai/sdk:**.completions.create"]
+
+  - id: js.gemini
+    language: javascript
+    class: llm
+    processor: Google
+    calls:
+      - "@google/generative-ai:**.{generateContent,generateContentStream,sendMessage,sendMessageStream,embedContent,countTokens}"
+      - "@google/genai:**.models.{generateContent,generateContentStream,embedContent,countTokens}"
+      - "@google/genai:**.{sendMessage,sendMessageStream}"
+
+  - id: js.mistral
+    language: javascript
+    class: llm
+    processor: Mistral
+    calls: ["@mistralai/mistralai:**.{chat.complete,chat.stream,embeddings.create,fim.complete,agents.complete}"]
+
+  - id: js.langchain.openai
+    language: javascript
+    class: llm
+    processor: OpenAI
+    calls: ["@langchain/openai:**.{invoke,stream,batch,call,predict,generate,embedQuery,embedDocuments}"]
+
+  - id: js.langchain.anthropic
+    language: javascript
+    class: llm
+    processor: Anthropic
+    calls: ["@langchain/anthropic:**.{invoke,stream,batch,call,predict,generate}"]
+
+  - id: js.langchain.google
+    language: javascript
+    class: llm
+    processor: Google
+    calls: ["@langchain/google-genai:**.{invoke,stream,batch,call,predict,generate,embedQuery,embedDocuments}"]
+
+  - id: js.langchain.mistral
+    language: javascript
+    class: llm
+    processor: Mistral
+    calls: ["@langchain/mistralai:**.{invoke,stream,batch,call,predict,generate,embedQuery,embedDocuments}"]
+
+  - id: js.vercel-ai
+    language: javascript
+    class: llm
+    description: >-
+      Vercel AI SDK model calls. The provider is chosen by the `model` argument at run time, so
+      no processor is named; PF003 still applies.
+    calls: ["ai:{generateText,streamText,generateObject,streamObject,embed,embedMany}"]
+
+  # ------------------------------------------------------------------ outbound HTTP
+  - id: js.fetch
+    language: javascript
+    class: http
+    calls: ["fetch", "{node-fetch,cross-fetch,isomorphic-fetch}:", "undici:{fetch,request}"]
+    host: { arg: 0 }
+
+  - id: js.axios
+    language: javascript
+    class: http
+    calls: ["axios:", "axios:{get,post,put,patch,delete,request,head,options,postForm,putForm}"]
+    host: { arg: 0, field: url }
+
+  - id: js.axios.instance
+    language: javascript
+    class: http
+    description: An axios instance; its base URL is set where the instance is created.
+    calls: ["axios:create()", "axios:create().{get,post,put,patch,delete,request,head,options,postForm,putForm}"]
+    host: { arg: 0, field: url, base_url: true }
+
+  - id: js.got-ky
+    language: javascript
+    class: http
+    calls: ["{got,ky}:", "{got,ky}:{get,post,put,patch,delete,head}"]
+    host: { arg: 0 }
+
+  # ------------------------------------------------------------------ browser storage
+  - id: js.web-storage
+    language: javascript
+    class: browser_storage
+    calls: ["{localStorage,sessionStorage}.setItem"]
+    assigns: ["document.cookie"]
+
+  - id: js.js-cookie
+    language: javascript
+    class: browser_storage
+    calls: ["js-cookie:{set,default.set}", "js-cookie:set"]
+
+  # ------------------------------------------------------------------ Python: logs
+  - id: py.print
+    language: python
+    class: log
+    calls: ["builtins.print"]
+
+  - id: py.logging
+    language: python
+    class: log
+    calls: ["logging.{debug,info,warning,warn,error,exception,critical,fatal,log}", "logging.**.{debug,info,warning,warn,error,exception,critical,fatal,log}"]
+
+  - id: py.structlog
+    language: python
+    class: log
+    calls: ["structlog.**.{debug,info,warning,warn,error,exception,critical,fatal,msg,log,bind}"]
+
+  - id: py.loguru
+    language: python
+    class: log
+    calls: ["loguru.logger.**", "loguru.logger.{trace,debug,info,success,warning,error,critical,exception,log}"]
+
+  - id: py.logger-by-name
+    language: python
+    class: log
+    description: >-
+      Heuristic. A method call on a receiver named like a logger whose origin the analysis
+      cannot see. Findings from it are marked `heuristic`.
+    receivers: [logger, log, LOGGER, _logger, _log]
+    methods: [debug, info, warning, warn, error, exception, critical, fatal, log]
+
+  # ------------------------------------------------------------------ error tracking
+  - id: py.sentry
+    language: python
+    class: error_tracking
+    processor: Sentry
+    calls:
+      - "sentry_sdk.{set_user,set_context,set_extra,set_tag,set_tags,add_breadcrumb,capture_message,capture_exception,capture_event}"
+      - "sentry_sdk.**.{set_user,set_context,set_extra,set_tag,set_tags,add_breadcrumb,capture_message,capture_exception,capture_event}"
+
+  # ------------------------------------------------------------------ product analytics
+  - id: py.segment
+    language: python
+    class: analytics
+    processor: Segment
+    calls: ["segment.analytics.**{identify,track,page,screen,group,alias}", "analytics.{identify,track,page,screen,group,alias}"]
+
+  - id: py.mixpanel
+    language: python
+    class: analytics
+    processor: Mixpanel
+    calls: ["mixpanel.Mixpanel().{track,alias,people_set,people_set_once,people_append,people_union,people_increment,import_data,group_set}"]
+
+  - id: py.posthog
+    language: python
+    class: analytics
+    processor: PostHog
+    calls: ["posthog.{capture,identify,alias,set,set_once,group_identify}", "posthog.{Posthog,Client}().{capture,identify,alias,set,set_once,group_identify}"]
+
+  - id: py.amplitude
+    language: python
+    class: analytics
+    processor: Amplitude
+    calls: ["amplitude.Amplitude().{track,identify,set_group}"]
+
+  # ------------------------------------------------------------------ email and messaging
+  - id: py.sendgrid
+    language: python
+    class: messaging
+    processor: SendGrid
+    calls: ["sendgrid.SendGridAPIClient().send", "sendgrid.SendGridAPIClient().client.mail.send.post"]
+
+  - id: py.postmark
+    language: python
+    class: messaging
+    processor: Postmark
+    calls: ["postmarker.core.PostmarkClient().emails.{send,send_with_template,send_batch}"]
+
+  - id: py.twilio
+    language: python
+    class: messaging
+    processor: Twilio
+    calls: ["twilio.rest.Client().{messages,calls}.create", "twilio.rest.Client().**.verifications.create"]
+
+  - id: py.django.mail
+    language: python
+    class: messaging
+    description: Django's email API; the receiving provider is whatever the email backend is configured to use.
+    calls: ["django.core.mail.{send_mail,send_mass_mail,mail_admins,mail_managers}", "django.core.mail.{EmailMessage,EmailMultiAlternatives}().send"]
+
+  # ------------------------------------------------------------------ LLM providers
+  - id: py.openai
+    language: python
+    class: llm
+    processor: OpenAI
+    calls:
+      - "openai.**.{chat.completions.create,chat.completions.parse,completions.create,responses.create,embeddings.create,moderations.create}"
+      - "openai.**.beta.{chat.completions.parse,threads.messages.create,threads.runs.create}"
+      - "openai.{ChatCompletion,Completion,Embedding}.create"
+
+  - id: py.anthropic
+    language: python
+    class: llm
+    processor: Anthropic
+    calls: ["anthropic.**.messages.{create,stream,count_tokens}", "anthropic.**.completions.create"]
+
+  - id: py.gemini
+    language: python
+    class: llm
+    processor: Google
+    calls:
+      - "google.generativeai.GenerativeModel().{generate_content,count_tokens}"
+      - "google.generativeai.GenerativeModel().start_chat().send_message"
+      - "google.generativeai.embed_content"
+      - "google.genai.Client().**.{generate_content,generate_content_stream,embed_content,send_message,send_message_stream}"
+
+  - id: py.mistral
+    language: python
+    class: llm
+    processor: Mistral
+    calls: ["mistralai.**.{chat.complete,chat.stream,embeddings.create,fim.complete,agents.complete}", "mistralai.client.MistralClient().{chat,chat_stream}"]
+
+  - id: py.langchain.openai
+    language: python
+    class: llm
+    processor: OpenAI
+    calls: ["langchain_openai.{ChatOpenAI,OpenAI,AzureChatOpenAI,OpenAIEmbeddings}().{invoke,ainvoke,stream,astream,batch,abatch,predict,generate,embed_query,embed_documents}"]
+
+  - id: py.langchain.anthropic
+    language: python
+    class: llm
+    processor: Anthropic
+    calls: ["langchain_anthropic.ChatAnthropic().{invoke,ainvoke,stream,astream,batch,abatch,predict,generate}"]
+
+  - id: py.langchain.google
+    language: python
+    class: llm
+    processor: Google
+    calls: ["langchain_google_genai.{ChatGoogleGenerativeAI,GoogleGenerativeAIEmbeddings}().{invoke,ainvoke,stream,astream,batch,abatch,embed_query,embed_documents}"]
+
+  - id: py.langchain.mistral
+    language: python
+    class: llm
+    processor: Mistral
+    calls: ["langchain_mistralai.{ChatMistralAI,MistralAIEmbeddings}().{invoke,ainvoke,stream,astream,batch,abatch,embed_query,embed_documents}"]
+
+  # ------------------------------------------------------------------ outbound HTTP
+  - id: py.requests
+    language: python
+    class: http
+    calls: ["requests.{get,post,put,patch,delete,head,options}", "requests.Session().{get,post,put,patch,delete,head,options}"]
+    host: { arg: 0, keyword: url }
+
+  - id: py.requests.request
+    language: python
+    class: http
+    calls: ["requests.request", "requests.Session().request"]
+    host: { arg: 1, keyword: url }
+
+  - id: py.httpx
+    language: python
+    class: http
+    calls: ["httpx.{get,post,put,patch,delete,head,options,stream}"]
+    host: { arg: 0, keyword: url }
+
+  - id: py.httpx.client
+    language: python
+    class: http
+    description: An httpx client; a relative URL resolves against the client's base_url.
+    calls: ["httpx.{Client,AsyncClient}().{get,post,put,patch,delete,head,options,stream}"]
+    host: { arg: 0, keyword: url, base_url: true }
+
+  - id: py.aiohttp
+    language: python
+    class: http
+    calls: ["aiohttp.ClientSession().{get,post,put,patch,delete,head,options,request}"]
+    host: { arg: 0, keyword: url, base_url: true }
+
+  - id: py.urllib
+    language: python
+    class: http
+    calls: ["urllib.request.urlopen"]
+    host: { arg: 0, keyword: url }
