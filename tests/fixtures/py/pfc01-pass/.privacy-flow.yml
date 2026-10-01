@@ -1,0 +1,11 @@
+version: 1
+sinks:
+  - id: acme.mailer.py
+    language: python
+    class: messaging
+    processor: Acme Mail
+    calls: ["acme_mailer.deliver"]
+    citation: "Added in PR #12"
+processors:
+  - name: Acme Mail
+    citation: "Acme Mail DPA 2026-02"

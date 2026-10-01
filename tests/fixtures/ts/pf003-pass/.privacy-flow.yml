@@ -1,0 +1,4 @@
+version: 1
+processors:
+  - name: OpenAI
+    citation: "OpenAI DPA, zero data retention, ticket LEG-77"

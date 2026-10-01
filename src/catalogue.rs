@@ -60,14 +60,18 @@ impl SinkClass {
     }
 }
 
-#[derive(Clone, Debug, Default, Serialize, Deserialize, PartialEq)]
+/// Which arguments of a sink call carry data out: `all` (the default) or positional indices.
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
 #[serde(untagged)]
 pub enum ArgSel {
-    #[default]
-    #[serde(skip)]
-    Default,
     All(AllArgs),
     Indices(Vec<usize>),
+}
+
+impl Default for ArgSel {
+    fn default() -> Self {
+        ArgSel::All(AllArgs::All)
+    }
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
@@ -78,7 +82,7 @@ pub enum AllArgs {
 
 impl ArgSel {
     pub fn is_all(&self) -> bool {
-        matches!(self, ArgSel::Default | ArgSel::All(_))
+        matches!(self, ArgSel::All(_))
     }
 }
 

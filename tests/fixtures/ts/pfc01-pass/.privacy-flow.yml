@@ -1,0 +1,11 @@
+version: 1
+sinks:
+  - id: acme.mailer
+    language: javascript
+    class: messaging
+    processor: Acme Mail
+    calls: ["acme-mailer:deliver"]
+    citation: "Added in PR #12; Acme Mail API reference"
+processors:
+  - name: Acme Mail
+    citation: "Acme Mail DPA 2026-02"

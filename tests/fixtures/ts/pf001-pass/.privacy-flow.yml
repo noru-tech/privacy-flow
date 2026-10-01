@@ -1,0 +1,7 @@
+version: 1
+sanitisers:
+  - id: acme.redact
+    language: javascript
+    functions: ["src/redact.ts:redact"]
+    removes: ["*"]
+    citation: "Reviewed in SEC-142: masks every character but the domain"

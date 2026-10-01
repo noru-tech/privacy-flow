@@ -1,0 +1,4 @@
+version: 1
+processors:
+  - name: Segment
+    citation: "Segment DPA 2025-11"

@@ -1,0 +1,10 @@
+privacy-flow 0.1.0 · no commit · typescript 1 files · directory walk
+
+PF002  high     pf-7688d4771afad4fe  src/assistant.ts:9:10
+                user.contact.email from `customer.email (customer: Customer)` (src/assistant.ts:7) reaches OpenAI, a processor not declared in .privacy-flow.yml, at src/assistant.ts:9
+PF003  medium   pf-8f0894b2ada91134  src/assistant.ts:9:10
+                user.contact.email from `customer.email (customer: Customer)` (src/assistant.ts:7) reaches OpenAI through a model call at src/assistant.ts:9
+
+1 flow(s) from 1 source(s) to 1 sink(s); findings: PF002 1, PF003 1
+processors reached: OpenAI
+coverage: complete

@@ -1,0 +1,5 @@
+version: 1
+processors:
+  - name: Acme CRM
+    hosts: [crm.acme.example]
+    citation: "Acme CRM contract C-2026-19"

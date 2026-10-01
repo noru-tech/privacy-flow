@@ -227,6 +227,11 @@ pub fn list(root: &Path) -> Result<Listing> {
             dirty,
         });
     }
+    walk(root)
+}
+
+/// Enumerate by a sorted directory walk (skipping `.git`), whatever the root is inside.
+pub fn walk(root: &Path) -> Result<Listing> {
     let mut files = Vec::new();
     for entry in walkdir::WalkDir::new(root)
         .sort_by_file_name()

@@ -493,7 +493,15 @@ pub fn build(p: &Program, f: &Facts, reaches: &[Reach], ctx: &Context) -> Result
                 .is_some_and(|(func, formal)| enters(other, func, formal));
             by_stmt || by_param
         });
-        if !subsumed {
+        // Request input of unknown category narrowed by a classified field read on its way:
+        // `request.form["api_key"]` is credentials, not "unknown", once the field is named.
+        let narrowed = s.category == UNKNOWN
+            && raw_flows.iter().any(|other| {
+                other.hit == rf.hit
+                    && f.seeds[other.seed as usize].category != UNKNOWN
+                    && anchor(other.seed).is_some_and(|a| rf.path.contains(&a))
+            });
+        if !subsumed && !narrowed {
             kept_idx.push(i);
         }
     }
