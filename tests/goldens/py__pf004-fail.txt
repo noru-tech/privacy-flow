@@ -1,4 +1,4 @@
-privacy-flow 0.1.0 · no commit · python 2 files · directory walk
+privacy-flow 0.1.1 · no commit · python 2 files · directory walk
 
 PF004  high     pf-16cc6789222a2a69  app/events.py:9:5
                 special-category data: user.demographic.religious_belief from `patient.religion (patient: Patient)` (app/events.py:8) reaches an external analytics sink at app/events.py:9

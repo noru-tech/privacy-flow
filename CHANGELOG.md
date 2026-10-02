@@ -6,6 +6,24 @@ All notable changes to this project are documented here. The format is based on
 
 ## [Unreleased]
 
+## [0.1.1] - 2026-10-02
+
+No change to the analysis: for the same input, 0.1.1 reports the same flows, findings and gaps as
+0.1.0, and only the version recorded in the outputs differs.
+
+### Added
+- A speed and memory benchmark of piiflow and Privado on the twelve applications of the benchmark
+  corpus, run on the same GitHub-hosted runners, with its method and results in the repository and
+  a summary in the README.
+- The benchmark report (`benchmark/REPORT.md`), tied to the released binary.
+- A logo, a social preview image, a feature request form and a Discussions link in the issue
+  chooser.
+- Releases are archived on Zenodo from this release on.
+
+### Changed
+- The control-mapping notes no longer say the review is due before the first release; the mapping
+  is still pending review.
+
 ## [0.1.0] - 2026-10-02
 
 ### Added
@@ -32,5 +50,6 @@ All notable changes to this project are documented here. The format is based on
   criterion benchmarks, a CI performance budget, and a release pipeline with artifact
   attestations, checksums and an SBOM.
 
-[Unreleased]: https://github.com/noru-tech/privacy-flow/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/noru-tech/privacy-flow/compare/v0.1.1...HEAD
+[0.1.1]: https://github.com/noru-tech/privacy-flow/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/noru-tech/privacy-flow/releases/tag/v0.1.0
