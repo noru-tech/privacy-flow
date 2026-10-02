@@ -11,3 +11,5 @@ what follows. Records are never rewritten; a reversal is a new record that super
 | [0004](0004-coverage-gaps.md) | Unknown is a finding: coverage gaps, PFC01 and exit 4 | Accepted |
 | [0005](0005-instances-and-fields.md) | Per-field variables for `this`, and constructors that return their own instance | Accepted |
 | [0006](0006-sanitisers-and-hashing.md) | Hashing is not a default sanitiser | Accepted |
+| [0007](0007-allocation-sites.md) | Allocation sites for plain objects, within what points-to can see | Accepted |
+| [0008](0008-container-identity.md) | A container is a location, not the path of a constructor call | Accepted |

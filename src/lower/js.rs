@@ -219,6 +219,9 @@ impl<'s> Js<'s> {
                     } else {
                         self.assign_to(left, src);
                     }
+                    if is_of {
+                        self.elements_of(left, src);
+                    }
                 }
                 if let Some(body) = node.child_by_field_name("body") {
                     self.stmt(body);
@@ -1581,6 +1584,19 @@ impl<'s> Js<'s> {
         }
         if !handled && let Some(m) = source {
             self.b.ir.reexports.push(m);
+        }
+    }
+}
+
+impl Js<'_> {
+    /// For provenance: each name `left` binds is an element of `coll`.
+    fn elements_of(&mut self, left: Node, coll: Var) {
+        let mut names = Vec::new();
+        pattern_names(left, self.b.src, &mut names);
+        for (name, n) in names {
+            if let Some(dst) = self.b.lookup(&name) {
+                self.b.emit(n, StmtKind::Elements { dst, coll });
+            }
         }
     }
 }

@@ -62,7 +62,9 @@ statements, with bounded path length (16 segments) and bounded sets (16 API path
 - arguments give a local function's parameters their provenance (so a callback resolves inside
   the callee), and a function's return carries its object's fields;
 - containers: what goes in through `set`/`push` comes out of `get`/`pop`, keyed by the container's
-  variable, field or API path; computed keys meet in the container's elements.
+  variable, instance field or API path, but never by a path ending in a call (`Map()` is a new
+  value at each call); computed keys meet in the container's elements; a loop variable is an
+  element of what it iterates ([ADR 0008](adr/0008-container-identity.md)).
 
 Provenance never carries personal data; it only decides which function or API a call reaches.
 
@@ -81,6 +83,12 @@ Classes ([ADR 0005](adr/0005-instances-and-fields.md)): each `this.field` used i
 own shared variable, which gives two levels of field sensitivity on instances; a constructor has
 its own `this`, returned through the constructor's summary, so an instance carries only what it
 was built with.
+
+Plain objects ([ADR 0007](adr/0007-allocation-sites.md)): every literal is an allocation site,
+and a flow-insensitive points-to analysis inside the facts builder gives each written field of a
+site its own variable. A field read of a variable that holds only known sites copies from those
+variables, so nested fields stay apart; a read of a value from a parameter, a call or an import
+keeps its `Load` edge.
 
 ## 5. Engines
 

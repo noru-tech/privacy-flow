@@ -61,9 +61,15 @@ Request input is a source only in frameworks whose request objects are modelled
 - **Flow-insensitive within a function.** A variable overwritten before it reaches a sink still
   flows (`let v = user.email; v = 'x'; log(v)` is reported). Two conformance vectors record this as
   a known limitation.
-- **Field sensitivity is one level deep for plain objects** (`o = { a: { email } }; log(o.a.id)` is
-  reported) and two levels for instance fields (`this.config.url` keeps `config`'s fields apart)
-  ([ADR 0005](docs/adr/0005-instances-and-fields.md)). Array elements are not distinguished from
+- **Field sensitivity across calls is one level deep.** Within a function, and through module-level
+  objects and closures, every literal is an allocation site whose fields stay apart at any depth,
+  and writes through an alias are seen (`p = o; p.a = email; log(o.a)`)
+  ([ADR 0007](docs/adr/0007-allocation-sites.md)). An object that comes from a parameter, a call
+  result or an import keeps one level of fields: `r = wrap(); log(r.data.id)`, where `wrap`
+  returns `{ data: { email, id } }`, is reported. Instance fields keep two levels
+  (`this.config.url` keeps `config`'s fields apart) ([ADR 0005](docs/adr/0005-instances-and-fields.md)).
+  **Silent:** an object passed to a call that writes to it (`f(o)` where `f` sets `p.a = email`)
+  does not carry that write back to the caller's reads of `o`. Array elements are not distinguished from
   each other, and a computed key (`obj[key]`) may read any field.
 - **Instances:** each `new C(...)` carries what its constructor stored, through the constructor's
   summary. **Silent:** a method that mutates an instance after construction writes to the class's
@@ -81,6 +87,9 @@ Request input is a source only in frameworks whose request objects are modelled
   to its result, and personal data reaching it is an `unresolved_callee` gap. **Silent:** callbacks
   receive no data from the arguments of whatever later invokes them through an event system
   (`emitter.on('x', d => log(d))` after `emitter.emit('x', email)` is missed).
+- **Containers:** a container obtained from another container (`subscribers.get(k).add(cb)`) has
+  no location of its own, so what is added to it is not seen by a later read from the outer
+  container, and calls on those values may not resolve ([ADR 0008](docs/adr/0008-container-identity.md)).
 - **Provenance** (which function or API a call reaches) is flow- and context-insensitive and
   bounded: API paths stop growing at 16 segments, at most 16 API paths are kept per variable, at
   most 4,096 provenance values of any kind, and the fixpoint stops after 64 rounds (18 were needed

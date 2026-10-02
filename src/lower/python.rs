@@ -266,6 +266,7 @@ impl<'s> Py<'s> {
                 let right = node.child_by_field_name("right").map(|r| self.expr(r));
                 if let (Some(l), Some(r)) = (node.child_by_field_name("left"), right) {
                     self.assign_to(l, r);
+                    self.elements_of(l, r);
                 }
                 if let Some(b) = node.child_by_field_name("body") {
                     self.stmts(b);
@@ -711,6 +712,7 @@ impl<'s> Py<'s> {
                             let r = c.child_by_field_name("right").map(|r| self.expr(r));
                             if let (Some(l), Some(r)) = (c.child_by_field_name("left"), r) {
                                 self.comprehension_bind(l, r);
+                                self.elements_of(l, r);
                             }
                         }
                         "if_clause" => {
@@ -775,6 +777,17 @@ impl<'s> Py<'s> {
                     vars.push(self.expr(c));
                 }
                 self.b.union(node, &vars)
+            }
+        }
+    }
+
+    /// For provenance: each name `left` binds is an element of `coll`.
+    fn elements_of(&mut self, left: Node, coll: Var) {
+        let mut names = Vec::new();
+        target_names(left, self.b.src, &mut names);
+        for (name, n) in names {
+            if let Some(dst) = self.b.lookup(&name) {
+                self.b.emit(n, StmtKind::Elements { dst, coll });
             }
         }
     }

@@ -22,6 +22,8 @@ BREAKS = {
     "sanitisers": ("src/facts.rs", "if s.def.language == lang && s.def.methods.iter().any(|m| m == name) {", "if false {"),
     # Stores: a field write loses which field it was.
     "stores": ("src/engine/worklist.rs", "EdgeKind::Store(k) => Some(named(k)),", "EdgeKind::Store(_k) => Some(TOP),"),
+    # Allocation sites: every variable is unknown, so every field read collapses again.
+    "allocation-sites": ("src/facts/heap.rs", "if !modelled {", "if true {"),
 }
 
 

@@ -10,6 +10,20 @@ All notable changes to this project are documented here. The format is based on
 - Fuzzing: cargo-fuzz targets for lowering, the whole pipeline (with a determinism check),
   configuration and data maps, run by ClusterFuzzLite on pull requests and weekly.
 
+### Changed
+- Plain objects are allocation sites: within a function, and through module-level objects and
+  closures, nested fields stay apart (`o = { a: { email, id } }; log(o.a.id)` is no longer
+  reported), and a field written through one variable is seen through another that holds the
+  same object (ADR 0007).
+
+### Fixed
+- Every `new Map()` (and `Set`, `WeakMap`, `WeakSet`) was one container for provenance, so a
+  value cached in a Map, such as a Prisma client, also resolved as whatever any other Map held.
+  Database query filters then reached query results. On documenso, findings go from 757 to 549.
+  Containers in instance fields and loop variables over containers now resolve to what they hold
+  (ADR 0008).
+- The catalogue's built-in containers match their own methods only, not calls on their elements.
+
 ## [0.1.1] - 2026-10-02
 
 No change to the analysis: for the same input, 0.1.1 reports the same flows, findings and gaps as
