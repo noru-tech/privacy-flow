@@ -91,6 +91,10 @@ pub struct ScanArgs {
     /// Print phase timings to stderr.
     #[arg(long)]
     pub timings: bool,
+    /// Enumerate files by a directory walk even inside a Git work tree (untracked files are
+    /// then included; the output records the method).
+    #[arg(long)]
+    pub walk: bool,
 }
 
 #[derive(clap::Args)]
@@ -131,6 +135,12 @@ pub struct CheckArgs {
     /// Override the document's policy threshold.
     #[arg(long, value_name = "SEVERITY")]
     pub fail_on: Option<String>,
+    /// Also render the checked document in this format (to --output, or stdout).
+    #[arg(short, long, value_enum)]
+    pub format: Option<Format>,
+    /// Where to write the rendered document.
+    #[arg(short, long)]
+    pub output: Option<PathBuf>,
 }
 
 #[derive(clap::Args)]
@@ -406,7 +416,12 @@ fn scan(a: ScanArgs, quiet: bool) -> Outcome {
     let root = a.path.as_path();
     let tree = Tree::WorkTree(root);
     let loaded = analyze::load_config(&tree, a.config.as_deref()).map_err(invalid)?;
-    let listing = files::list(root).map_err(invalid)?;
+    let listing = if a.walk {
+        files::walk(root)
+    } else {
+        files::list(root)
+    }
+    .map_err(invalid)?;
     let run = analyze::analyze(&tree, &listing, &loaded, a.engine).map_err(invalid)?;
     let mut doc = run.document;
     if let Some(prev) = previous_dispositions(a.dispositions.as_deref(), a.output.as_deref(), root)
@@ -849,15 +864,29 @@ fn check(a: CheckArgs, quiet: bool) -> Outcome {
         )
     };
     let _ = writeln!(out, "{verdict}");
+    if let Some(format) = a
+        .format
+        .or_else(|| a.output.as_deref().and_then(Format::infer))
+    {
+        let bytes = output::render(&doc, format).map_err(usage)?;
+        write_output(a.output.as_deref(), &bytes).map_err(invalid)?;
+        if a.output.is_none() {
+            return Ok(verdict_code(&blocking, &failing));
+        }
+    }
     write_output(None, &out).map_err(invalid)?;
     let _ = quiet;
-    Ok(if !blocking.is_empty() {
+    Ok(verdict_code(&blocking, &failing))
+}
+
+fn verdict_code(blocking: &[&report::FindingRec], failing: &[&report::FindingRec]) -> Exit {
+    if !blocking.is_empty() {
         Exit::CoverageIncomplete
     } else if !failing.is_empty() {
         Exit::PolicyFailed
     } else {
         Exit::Ok
-    })
+    }
 }
 
 fn validate_cmd(a: ValidateArgs, quiet: bool) -> Outcome {

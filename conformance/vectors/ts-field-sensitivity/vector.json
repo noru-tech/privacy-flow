@@ -1,0 +1,5 @@
+{
+  "description": "Only the classified field of an object reaches the log.",
+  "language": "javascript",
+  "status": "required"
+}

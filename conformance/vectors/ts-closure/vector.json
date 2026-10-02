@@ -1,0 +1,5 @@
+{
+  "description": "A closure logs a captured variable.",
+  "language": "javascript",
+  "status": "required"
+}

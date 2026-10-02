@@ -1,0 +1,5 @@
+{
+  "description": "JSON.stringify carries every field.",
+  "language": "javascript",
+  "status": "required"
+}

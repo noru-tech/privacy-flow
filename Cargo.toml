@@ -45,3 +45,8 @@ walkdir = "2.5"
 assert_cmd = "2.2"
 predicates = "3.1"
 tempfile = "3"
+criterion = { version = "0.8", default-features = false }
+
+[[bench]]
+name = "analysis"
+harness = false

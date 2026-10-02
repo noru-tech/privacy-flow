@@ -1,0 +1,5 @@
+{
+  "description": "A helper logs its parameter; the caller passes the data.",
+  "language": "javascript",
+  "status": "required"
+}

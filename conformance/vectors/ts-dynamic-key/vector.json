@@ -1,0 +1,5 @@
+{
+  "description": "A computed key read may be any field.",
+  "language": "javascript",
+  "status": "required"
+}

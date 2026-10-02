@@ -6,7 +6,7 @@
 //! recomputes it and rejects a document whose findings do not follow. Dispositions are the one
 //! part a human edits; they are excluded from the digest.
 
-use std::collections::{BTreeMap, BTreeSet};
+use std::collections::{BTreeMap, BTreeSet, HashMap};
 
 use anyhow::{Result, bail};
 use serde::{Deserialize, Serialize};
@@ -353,25 +353,29 @@ impl<'a> Anchors<'a> {
 
 /// Assign IDs from anchors that survive unrelated edits (no line numbers); duplicates of the
 /// same anchor are numbered in source order.
-fn ids_from_anchors(
-    prefix: &str,
-    anchors: &[(serde_json::Value, (String, u32, u32))],
-) -> Vec<String> {
+fn ids_from_anchors(prefix: &str, anchors: &[(String, (String, u32, u32))]) -> Vec<String> {
+    use sha2::{Digest, Sha256};
     let mut order: Vec<usize> = (0..anchors.len()).collect();
     order.sort_by(|&a, &b| anchors[a].1.cmp(&anchors[b].1).then(a.cmp(&b)));
-    let mut seen: BTreeMap<String, u32> = BTreeMap::new();
+    let mut seen: HashMap<&str, u32> = HashMap::new();
     let mut out = vec![String::new(); anchors.len()];
     for i in order {
-        let key = canonical::jcs_bytes(&anchors[i].0).expect("serializable");
-        let n = seen.entry(key).or_insert(0);
-        let id = format!(
-            "{prefix}-{}",
-            short_hash(&serde_json::json!([anchors[i].0, *n]))
-        );
+        let n = seen.entry(anchors[i].0.as_str()).or_insert(0);
+        let mut h = Sha256::new();
+        h.update(anchors[i].0.as_bytes());
+        h.update([0x1f]);
+        h.update(n.to_string().as_bytes());
+        let d = h.finalize();
+        let hex: String = d.iter().take(8).map(|b| format!("{b:02x}")).collect();
+        out[i] = format!("{prefix}-{hex}");
         *n += 1;
-        out[i] = id;
     }
     out
+}
+
+/// An anchor: the parts that identify a source or sink without its line, joined by U+001F.
+fn anchor_key(parts: &[&str]) -> String {
+    parts.join("\u{1f}")
 }
 
 pub fn build(p: &Program, f: &Facts, reaches: &[Reach], ctx: &Context) -> Result<Document> {
@@ -379,22 +383,22 @@ pub fn build(p: &Program, f: &Facts, reaches: &[Reach], ctx: &Context) -> Result
     let cat = ctx.catalogue;
 
     // ---------------------------------------------------------------- sources (all seeds)
-    let seed_anchors: Vec<(serde_json::Value, (String, u32, u32))> = f
+    let seed_anchors: Vec<(String, (String, u32, u32))> = f
         .seeds
         .iter()
         .map(|s| {
-            let path = p.files[s.file as usize].path.clone();
-            let func = p.funcs[p.vars[s.var as usize].func as usize].name.clone();
+            let path = &p.files[s.file as usize].path;
+            let func = &p.funcs[p.vars[s.var as usize].func as usize].name;
             (
-                serde_json::json!([path, func, s.kind.as_str(), s.name, s.category, s.text]),
-                (path, s.pos.line, s.pos.column),
+                anchor_key(&[path, func, s.kind.as_str(), &s.name, &s.category, &s.text]),
+                (path.clone(), s.pos.line, s.pos.column),
             )
         })
         .collect();
     let seed_ids = ids_from_anchors("src", &seed_anchors);
 
     // ---------------------------------------------------------------- hits
-    let hit_anchors: Vec<(serde_json::Value, (String, u32, u32))> = f
+    let hit_anchors: Vec<(String, (String, u32, u32))> = f
         .hits
         .iter()
         .map(|h| {
@@ -403,9 +407,10 @@ pub fn build(p: &Program, f: &Facts, reaches: &[Reach], ctx: &Context) -> Result
                 HitKind::Sink { sink, .. } => cat.sinks[*sink as usize].def.id.clone(),
                 HitKind::Gap { kind, detail } => format!("{}:{detail}", kind.as_str()),
             };
-            let text = p.stmts[h.stmt as usize].text.clone();
+            let text = &p.stmts[h.stmt as usize].text;
+            let func = a.func_name_of_stmt(h.stmt);
             (
-                serde_json::json!([loc.path, a.func_name_of_stmt(h.stmt), what, text]),
+                anchor_key(&[&loc.path, &func, &what, text]),
                 (loc.path, loc.line, loc.column),
             )
         })
@@ -471,43 +476,49 @@ pub fn build(p: &Program, f: &Facts, reaches: &[Reach], ctx: &Context) -> Result
     let enters = |rf: &RawFlow, func: u32, formal: u32| {
         rf.path.iter().any(|st| matches!(st, Step::Enter { site, formal: j } if f.sites[*site as usize].func == func && *j == formal))
     };
-    let mut order: Vec<usize> = (0..raw_flows.len()).collect();
-    order.sort_by(|&x, &y| {
-        raw_flows[y]
-            .path
-            .len()
-            .cmp(&raw_flows[x].path.len())
-            .then(x.cmp(&y))
-    });
+    // Flows only subsume flows to the same sink: work per sink.
+    let mut by_hit: BTreeMap<u32, Vec<usize>> = BTreeMap::new();
+    for (i, rf) in raw_flows.iter().enumerate() {
+        by_hit.entry(rf.hit).or_default().push(i);
+    }
     let mut kept_idx: Vec<usize> = Vec::new();
-    for i in order {
-        let rf = &raw_flows[i];
-        let s = &f.seeds[rf.seed as usize];
-        let subsumed = kept_idx.iter().any(|&k| {
-            let other = &raw_flows[k];
-            if other.hit != rf.hit
-                || other.seed == rf.seed
-                || f.seeds[other.seed as usize].category != s.category
-            {
-                return false;
-            }
-            let by_stmt = anchor(rf.seed).is_some_and(|a| other.path.contains(&a));
-            let by_param = s
-                .param
-                .is_some_and(|(func, formal)| enters(other, func, formal));
-            by_stmt || by_param
+    for group in by_hit.values() {
+        let mut order = group.clone();
+        order.sort_by(|&x, &y| {
+            raw_flows[y]
+                .path
+                .len()
+                .cmp(&raw_flows[x].path.len())
+                .then(x.cmp(&y))
         });
-        // Request input of unknown category narrowed by a classified field read on its way:
-        // `request.form["api_key"]` is credentials, not "unknown", once the field is named.
-        let narrowed = s.category == UNKNOWN
-            && raw_flows.iter().any(|other| {
-                other.hit == rf.hit
-                    && f.seeds[other.seed as usize].category != UNKNOWN
-                    && anchor(other.seed).is_some_and(|a| rf.path.contains(&a))
+        let mut kept: Vec<usize> = Vec::new();
+        for &i in &order {
+            let rf = &raw_flows[i];
+            let s = &f.seeds[rf.seed as usize];
+            let subsumed = kept.iter().any(|&k| {
+                let other = &raw_flows[k];
+                if other.seed == rf.seed || f.seeds[other.seed as usize].category != s.category {
+                    return false;
+                }
+                let by_stmt = anchor(rf.seed).is_some_and(|a| other.path.contains(&a));
+                let by_param = s
+                    .param
+                    .is_some_and(|(func, formal)| enters(other, func, formal));
+                by_stmt || by_param
             });
-        if !subsumed && !narrowed {
-            kept_idx.push(i);
+            // Request input of unknown category narrowed by a classified field read on its way:
+            // `request.form["api_key"]` is credentials, not "unknown", once the field is named.
+            let narrowed = s.category == UNKNOWN
+                && group.iter().any(|&o| {
+                    let other = &raw_flows[o];
+                    f.seeds[other.seed as usize].category != UNKNOWN
+                        && anchor(other.seed).is_some_and(|a| rf.path.contains(&a))
+                });
+            if !subsumed && !narrowed {
+                kept.push(i);
+            }
         }
+        kept_idx.extend(kept);
     }
     kept_idx.sort();
     let raw_flows: Vec<RawFlow> = kept_idx
@@ -1285,7 +1296,18 @@ pub fn digest_of(doc: &Document) -> Result<String> {
 }
 
 pub fn seal(doc: &mut Document) -> Result<()> {
-    doc.digest = digest_of(doc)?;
+    // As digest_of, without cloning the document: dispositions are set aside and put back.
+    let saved: Vec<Option<Disposition>> = doc
+        .findings
+        .iter_mut()
+        .map(|f| f.disposition.take())
+        .collect();
+    doc.digest = String::new();
+    let digest = canonical::digest(&*doc);
+    for (f, d) in doc.findings.iter_mut().zip(saved) {
+        f.disposition = d;
+    }
+    doc.digest = digest?;
     Ok(())
 }
 

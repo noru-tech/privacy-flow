@@ -1,0 +1,5 @@
+{
+  "description": "A dict entry named like a classified field is a source.",
+  "language": "python",
+  "status": "required"
+}

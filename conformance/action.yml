@@ -1,0 +1,28 @@
+# Run the privacy-flow conformance corpus against a verifier in one step.
+name: privacy-flow conformance corpus
+description: Score a privacy flow analyser against the privacy-flow conformance corpus.
+author: Noru
+
+inputs:
+  verifier:
+    description: Command that analyses a vector directory (appended as the last argument) and prints flow facts as JSON lines.
+    required: true
+  report:
+    description: Path of the JSON report.
+    required: false
+    default: conformance-report.json
+
+outputs:
+  report:
+    description: Path of the JSON report.
+    value: ${{ inputs.report }}
+
+runs:
+  using: composite
+  steps:
+    - name: Run the corpus
+      shell: bash
+      env:
+        VERIFIER: ${{ inputs.verifier }}
+        REPORT: ${{ inputs.report }}
+      run: python3 "${GITHUB_ACTION_PATH}/run.py" --verifier "$VERIFIER" --report "$REPORT"

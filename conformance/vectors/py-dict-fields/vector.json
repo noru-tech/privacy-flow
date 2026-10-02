@@ -1,0 +1,5 @@
+{
+  "description": "Only the classified key of a dict reaches the log.",
+  "language": "python",
+  "status": "required"
+}

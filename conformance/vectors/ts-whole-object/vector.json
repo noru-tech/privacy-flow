@@ -1,0 +1,5 @@
+{
+  "description": "Logging a whole object that holds a classified field is a flow.",
+  "language": "javascript",
+  "status": "required"
+}

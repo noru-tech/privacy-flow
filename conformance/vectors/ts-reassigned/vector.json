@@ -1,0 +1,5 @@
+{
+  "description": "Overwritten before it is logged: no flow at run time. Flow-insensitive analysis reports one.",
+  "language": "javascript",
+  "status": "known-limitation"
+}

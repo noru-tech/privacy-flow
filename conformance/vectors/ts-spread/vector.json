@@ -1,0 +1,5 @@
+{
+  "description": "A spread copies fields; reading a different field is not a flow.",
+  "language": "javascript",
+  "status": "required"
+}

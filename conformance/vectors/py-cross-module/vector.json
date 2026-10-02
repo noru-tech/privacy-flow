@@ -1,0 +1,5 @@
+{
+  "description": "Data crosses an import into another module's sink.",
+  "language": "python",
+  "status": "required"
+}

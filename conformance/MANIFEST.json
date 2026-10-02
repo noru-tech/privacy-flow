@@ -1,0 +1,230 @@
+{
+  "corpus": "privacy-flow conformance",
+  "vectors": [
+    {
+      "description": "A comprehension carries the elements' fields.",
+      "expected_flows": 1,
+      "language": "python",
+      "name": "py-comprehension",
+      "status": "required"
+    },
+    {
+      "description": "Data crosses an import into another module's sink.",
+      "expected_flows": 1,
+      "language": "python",
+      "name": "py-cross-module",
+      "status": "required"
+    },
+    {
+      "description": "Only the classified key of a dict reaches the log.",
+      "expected_flows": 1,
+      "language": "python",
+      "name": "py-dict-fields",
+      "status": "required"
+    },
+    {
+      "description": "A classified attribute read reaches a log.",
+      "expected_flows": 1,
+      "language": "python",
+      "name": "py-field-read",
+      "status": "required"
+    },
+    {
+      "description": "Flask request input is personal data of unknown category.",
+      "expected_flows": 1,
+      "language": "python",
+      "name": "py-flask-request",
+      "status": "required"
+    },
+    {
+      "description": "An f-string carries data into print.",
+      "expected_flows": 1,
+      "language": "python",
+      "name": "py-fstring",
+      "status": "required"
+    },
+    {
+      "description": "A helper returns the data; the caller prints it.",
+      "expected_flows": 1,
+      "language": "python",
+      "name": "py-helper",
+      "status": "required"
+    },
+    {
+      "description": "Two instances: the one built without personal data does not carry it.",
+      "expected_flows": 0,
+      "language": "python",
+      "name": "py-instance-isolation",
+      "status": "required"
+    },
+    {
+      "description": "Keyword arguments bind by name.",
+      "expected_flows": 1,
+      "language": "python",
+      "name": "py-kwargs",
+      "status": "required"
+    },
+    {
+      "description": "len() of the data is not the data.",
+      "expected_flows": 0,
+      "language": "python",
+      "name": "py-len",
+      "status": "required"
+    },
+    {
+      "description": "Overwritten before it is printed: no flow at run time. Flow-insensitive analysis reports one.",
+      "expected_flows": 0,
+      "language": "python",
+      "name": "py-reassigned",
+      "status": "known-limitation"
+    },
+    {
+      "description": "An attribute set in __init__ is printed by a method.",
+      "expected_flows": 1,
+      "language": "python",
+      "name": "py-self",
+      "status": "required"
+    },
+    {
+      "description": "A dict entry named like a classified field is a source.",
+      "expected_flows": 1,
+      "language": "python",
+      "name": "py-subscript-source",
+      "status": "required"
+    },
+    {
+      "description": "Array callbacks receive the elements.",
+      "expected_flows": 1,
+      "language": "javascript",
+      "name": "ts-array-callback",
+      "status": "required"
+    },
+    {
+      "description": "A field stored in the constructor is logged by a method.",
+      "expected_flows": 1,
+      "language": "javascript",
+      "name": "ts-class-field",
+      "status": "required"
+    },
+    {
+      "description": "A closure logs a captured variable.",
+      "expected_flows": 1,
+      "language": "javascript",
+      "name": "ts-closure",
+      "status": "required"
+    },
+    {
+      "description": "An identity helper called twice: only the call that passed the data flows.",
+      "expected_flows": 0,
+      "language": "javascript",
+      "name": "ts-context-sensitive",
+      "status": "required"
+    },
+    {
+      "description": "Data crosses an import into another file's sink.",
+      "expected_flows": 1,
+      "language": "javascript",
+      "name": "ts-cross-file",
+      "status": "required"
+    },
+    {
+      "description": "A default export imported under another name.",
+      "expected_flows": 1,
+      "language": "javascript",
+      "name": "ts-default-export",
+      "status": "required"
+    },
+    {
+      "description": "A computed key read may be any field.",
+      "expected_flows": 1,
+      "language": "javascript",
+      "name": "ts-dynamic-key",
+      "status": "required"
+    },
+    {
+      "description": "An Express request body is personal data of unknown category.",
+      "expected_flows": 1,
+      "language": "javascript",
+      "name": "ts-express-body",
+      "status": "required"
+    },
+    {
+      "description": "A classified field read reaches a log.",
+      "expected_flows": 1,
+      "language": "javascript",
+      "name": "ts-field-read",
+      "status": "required"
+    },
+    {
+      "description": "Only the classified field of an object reaches the log.",
+      "expected_flows": 1,
+      "language": "javascript",
+      "name": "ts-field-sensitivity",
+      "status": "required"
+    },
+    {
+      "description": "Two instances: the one built without personal data does not carry it.",
+      "expected_flows": 0,
+      "language": "javascript",
+      "name": "ts-instance-isolation",
+      "status": "required"
+    },
+    {
+      "description": "JSON.stringify carries every field.",
+      "expected_flows": 1,
+      "language": "javascript",
+      "name": "ts-json-stringify",
+      "status": "required"
+    },
+    {
+      "description": "A helper logs its parameter; the caller passes the data.",
+      "expected_flows": 1,
+      "language": "javascript",
+      "name": "ts-param-sink",
+      "status": "required"
+    },
+    {
+      "description": "A boolean derived from the data is not the data.",
+      "expected_flows": 0,
+      "language": "javascript",
+      "name": "ts-predicate",
+      "status": "required"
+    },
+    {
+      "description": "Overwritten before it is logged: no flow at run time. Flow-insensitive analysis reports one.",
+      "expected_flows": 0,
+      "language": "javascript",
+      "name": "ts-reassigned",
+      "status": "known-limitation"
+    },
+    {
+      "description": "A helper returns the data; the caller logs it.",
+      "expected_flows": 1,
+      "language": "javascript",
+      "name": "ts-return-helper",
+      "status": "required"
+    },
+    {
+      "description": "A spread copies fields; reading a different field is not a flow.",
+      "expected_flows": 1,
+      "language": "javascript",
+      "name": "ts-spread",
+      "status": "required"
+    },
+    {
+      "description": "Template literals and concatenation carry data.",
+      "expected_flows": 2,
+      "language": "javascript",
+      "name": "ts-template",
+      "status": "required"
+    },
+    {
+      "description": "Logging a whole object that holds a classified field is a flow.",
+      "expected_flows": 1,
+      "language": "javascript",
+      "name": "ts-whole-object",
+      "status": "required"
+    }
+  ],
+  "version": "0.1"
+}

@@ -1,0 +1,5 @@
+{
+  "description": "An Express request body is personal data of unknown category.",
+  "language": "javascript",
+  "status": "required"
+}

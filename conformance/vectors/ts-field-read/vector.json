@@ -1,0 +1,5 @@
+{
+  "description": "A classified field read reaches a log.",
+  "language": "javascript",
+  "status": "required"
+}

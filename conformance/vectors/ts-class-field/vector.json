@@ -1,0 +1,5 @@
+{
+  "description": "A field stored in the constructor is logged by a method.",
+  "language": "javascript",
+  "status": "required"
+}

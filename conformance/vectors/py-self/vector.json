@@ -1,0 +1,5 @@
+{
+  "description": "An attribute set in __init__ is printed by a method.",
+  "language": "python",
+  "status": "required"
+}
