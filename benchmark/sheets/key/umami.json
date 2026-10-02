@@ -1,0 +1,449 @@
+{
+ "app": "umami",
+ "items": {
+  "F09f5f9b4f4": {
+   "findings": [
+    {
+     "id": "pf-0ac2bf1c228e9828",
+     "rule": "PF001",
+     "severity": "info"
+    }
+   ],
+   "flow": "flow-b74650a027564e46",
+   "strata": [
+    "piiflow:info"
+   ],
+   "tool": "piiflow"
+  },
+  "F15333ec96b": {
+   "native_id": "Data.Sensitive.AccountData.LanguagePreferences|Sinks.ThirdParties.API|298478-296503-298407-298403-298402-298823-298399-298396-296499-298363-298359-298358-296710-296708-296709-296866-296865-296870-296862",
+   "strata": [
+    "privado:third_parties"
+   ],
+   "tool": "privado"
+  },
+  "F165a7b8020": {
+   "native_id": "Data.Sensitive.AccountData.AccountID|Sinks.ThirdParties.API|645146-645143-644087-645139-644085-645129",
+   "strata": [
+    "privado:third_parties"
+   ],
+   "tool": "privado"
+  },
+  "F33624292b3": {
+   "native_id": "Data.Sensitive.AccountData.AccountID|Leakages.Log.Console|63448-63461-63459-63454",
+   "strata": [
+    "privado:leakages"
+   ],
+   "tool": "privado"
+  },
+  "F38d5c5e893": {
+   "native_id": "Data.Sensitive.AccountData.AccountID|Leakages.Log.Error|30617-30616-30614-30605",
+   "strata": [
+    "privado:leakages"
+   ],
+   "tool": "privado"
+  },
+  "F3f75ccbc00": {
+   "findings": [
+    {
+     "id": "pf-7a047fb589af2e5a",
+     "rule": "PF006",
+     "severity": "info"
+    }
+   ],
+   "flow": "flow-cd2ff0c155cb71b9",
+   "strata": [
+    "piiflow:info"
+   ],
+   "tool": "piiflow"
+  },
+  "F4359223ef6": {
+   "native_id": "Data.Sensitive.PersonalIdentification.FirstName|Leakages.Log.Console|50191-50201-50261-50263-50269-50268-50351-50349-50344",
+   "strata": [
+    "privado:leakages"
+   ],
+   "tool": "privado"
+  },
+  "F48b34c2ce4": {
+   "native_id": "Data.Sensitive.AccountData.LanguagePreferences|Leakages.Log.Console|62903-62902-63003-63012-61856-61864-61876-61920-61912-61924-61910-61905",
+   "strata": [
+    "privado:leakages"
+   ],
+   "tool": "privado"
+  },
+  "F4a4fd578f2": {
+   "findings": [
+    {
+     "id": "pf-e7ab162fcf99c0f9",
+     "rule": "PF006",
+     "severity": "info"
+    }
+   ],
+   "flow": "flow-f6bee3def10938d1",
+   "strata": [
+    "piiflow:info"
+   ],
+   "tool": "piiflow"
+  },
+  "F565a17b7d7": {
+   "native_id": "Data.Sensitive.PersonalIdentification.FirstName|Leakages.Log.Console|50191-50201-50261-50289-50291-50287-50282",
+   "strata": [
+    "privado:leakages"
+   ],
+   "tool": "privado"
+  },
+  "F5caf9d688f": {
+   "findings": [
+    {
+     "id": "pf-7b4f7929a61f2ad5",
+     "rule": "PF006",
+     "severity": "info"
+    }
+   ],
+   "flow": "flow-80d005c738f5aeb7",
+   "strata": [
+    "piiflow:info"
+   ],
+   "tool": "piiflow"
+  },
+  "F6ba3e462db": {
+   "native_id": "Data.Sensitive.AccountData.LanguagePreferences|Leakages.Log.Console|62903-62902-63003-63002-63000-62998-62993",
+   "strata": [
+    "privado:leakages"
+   ],
+   "tool": "privado"
+  },
+  "F73348e4e5f": {
+   "native_id": "Data.Sensitive.AccountData.AccountPassword|Leakages.Log.Console|69883-69351-69350-69349-69521-69596-69594-69589",
+   "strata": [
+    "privado:leakages"
+   ],
+   "tool": "privado"
+  },
+  "F777ce5e011": {
+   "findings": [
+    {
+     "id": "pf-417454ff89369bb0",
+     "rule": "PF006",
+     "severity": "info"
+    }
+   ],
+   "flow": "flow-759ffa6c9ad7a0ba",
+   "strata": [
+    "piiflow:info"
+   ],
+   "tool": "piiflow"
+  },
+  "F9210ee09d2": {
+   "findings": [
+    {
+     "id": "pf-974646dd6b41f2e6",
+     "rule": "PF001",
+     "severity": "info"
+    }
+   ],
+   "flow": "flow-23984b2786aed72d",
+   "strata": [
+    "piiflow:info"
+   ],
+   "tool": "piiflow"
+  },
+  "F96e16630e2": {
+   "findings": [
+    {
+     "id": "pf-b015f05f186e862f",
+     "rule": "PF006",
+     "severity": "info"
+    }
+   ],
+   "flow": "flow-dc2375960186f969",
+   "strata": [
+    "piiflow:info"
+   ],
+   "tool": "piiflow"
+  },
+  "Fbd8306469d": {
+   "findings": [
+    {
+     "id": "pf-9221de9c1bdc577d",
+     "rule": "PF001",
+     "severity": "info"
+    }
+   ],
+   "flow": "flow-c5147e68ec3fd536",
+   "strata": [
+    "piiflow:info"
+   ],
+   "tool": "piiflow"
+  },
+  "Fe3ba7f56c9": {
+   "native_id": "Data.Sensitive.AccountData.LanguagePreferences|Leakages.Log.Console|62903-62902-63003-63002-63010-61854-719763-63010-63025-63033-61941-719767-63033-63055-63056-63065-62029-62037-62049-62093-62090-62089-62085-62083-62078",
+   "strata": [
+    "privado:leakages"
+   ],
+   "tool": "privado"
+  },
+  "Fe6f22a6cab": {
+   "findings": [
+    {
+     "id": "pf-497cda2c146d08f0",
+     "rule": "PF006",
+     "severity": "info"
+    }
+   ],
+   "flow": "flow-e8334339d80a0f0d",
+   "strata": [
+    "piiflow:info"
+   ],
+   "tool": "piiflow"
+  },
+  "Ff83961b778": {
+   "findings": [
+    {
+     "id": "pf-91179a62286420d0",
+     "rule": "PF001",
+     "severity": "info"
+    }
+   ],
+   "flow": "flow-ea89942945921f2b",
+   "strata": [
+    "piiflow:info"
+   ],
+   "tool": "piiflow"
+  },
+  "G1777ee71f5": {
+   "gap": "gap-9a3ab00fe61686c3",
+   "strata": [
+    "piiflow:gaps"
+   ],
+   "tool": "piiflow"
+  },
+  "G1fbb5304eb": {
+   "gap": "gap-5a43cf00223eb6d8",
+   "strata": [
+    "piiflow:gaps"
+   ],
+   "tool": "piiflow"
+  },
+  "G31048a89c9": {
+   "gap": "gap-3ecfcac741bd2d2f",
+   "strata": [
+    "piiflow:gaps"
+   ],
+   "tool": "piiflow"
+  },
+  "G48dd96451e": {
+   "gap": "gap-88b5eb5153ebeeb0",
+   "strata": [
+    "piiflow:gaps"
+   ],
+   "tool": "piiflow"
+  },
+  "G591596b101": {
+   "gap": "gap-584f94f8b97902b9",
+   "strata": [
+    "piiflow:gaps"
+   ],
+   "tool": "piiflow"
+  },
+  "G61b1d47984": {
+   "gap": "gap-6bbbdf9c5fdfe72c",
+   "strata": [
+    "piiflow:gaps"
+   ],
+   "tool": "piiflow"
+  },
+  "Gae99f260f9": {
+   "gap": "gap-f1ec205f3f1680a7",
+   "strata": [
+    "piiflow:gaps"
+   ],
+   "tool": "piiflow"
+  },
+  "Gb08c3d9a02": {
+   "gap": "gap-6bf5199e3776eb19",
+   "strata": [
+    "piiflow:gaps"
+   ],
+   "tool": "piiflow"
+  },
+  "Gc6430f38f2": {
+   "gap": "gap-c9799b3ade98dabc",
+   "strata": [
+    "piiflow:gaps"
+   ],
+   "tool": "piiflow"
+  },
+  "Gfc398a3983": {
+   "gap": "gap-52bce502c4b8d588",
+   "strata": [
+    "piiflow:gaps"
+   ],
+   "tool": "piiflow"
+  },
+  "S03464b55a1": {
+   "strata": [
+    "sites:other"
+   ]
+  },
+  "S0b54397f51": {
+   "strata": [
+    "sites:log"
+   ]
+  },
+  "S15ff9748b4": {
+   "strata": [
+    "sites:other"
+   ]
+  },
+  "S1980e5188b": {
+   "strata": [
+    "sites:other"
+   ]
+  },
+  "S1ac321a498": {
+   "strata": [
+    "sites:other"
+   ]
+  },
+  "S288c9f07de": {
+   "strata": [
+    "sites:other"
+   ]
+  },
+  "S2c86634e2a": {
+   "strata": [
+    "sites:log"
+   ]
+  },
+  "S35510561ed": {
+   "strata": [
+    "sites:log"
+   ]
+  },
+  "S4a8671e6a5": {
+   "strata": [
+    "sites:log"
+   ]
+  },
+  "S5daf83401e": {
+   "strata": [
+    "sites:other"
+   ]
+  },
+  "S610efac5ef": {
+   "strata": [
+    "sites:other"
+   ]
+  },
+  "S61c83a92f2": {
+   "strata": [
+    "sites:log"
+   ]
+  },
+  "S622aeda698": {
+   "strata": [
+    "sites:other"
+   ]
+  },
+  "S6726b273c9": {
+   "strata": [
+    "sites:other"
+   ]
+  },
+  "S6c0e788e6f": {
+   "strata": [
+    "sites:log"
+   ]
+  },
+  "S8249812922": {
+   "strata": [
+    "sites:other"
+   ]
+  },
+  "S88f1f818a3": {
+   "strata": [
+    "sites:other"
+   ]
+  },
+  "S913c574dcd": {
+   "strata": [
+    "sites:log"
+   ]
+  },
+  "S925e27366f": {
+   "strata": [
+    "sites:other"
+   ]
+  },
+  "S9e0af506ed": {
+   "strata": [
+    "sites:other"
+   ]
+  },
+  "Sc38e55842f": {
+   "strata": [
+    "sites:other"
+   ]
+  },
+  "Sc4082cff57": {
+   "strata": [
+    "sites:other"
+   ]
+  },
+  "Sca0c7a4370": {
+   "strata": [
+    "sites:log"
+   ]
+  },
+  "Sd282c9071f": {
+   "strata": [
+    "sites:log"
+   ]
+  },
+  "Se349aec0f0": {
+   "strata": [
+    "sites:other"
+   ]
+  },
+  "Se99ec35e49": {
+   "strata": [
+    "sites:other"
+   ]
+  },
+  "Sf162870213": {
+   "strata": [
+    "sites:other"
+   ]
+  },
+  "Sf86ea857b2": {
+   "strata": [
+    "sites:log"
+   ]
+  },
+  "Sf8f25a22ec": {
+   "strata": [
+    "sites:log"
+   ]
+  },
+  "Sfc9b2811e6": {
+   "strata": [
+    "sites:log"
+   ]
+  }
+ },
+ "population": {
+  "piiflow:PF001": 0,
+  "piiflow:PF002": 0,
+  "piiflow:PF003": 0,
+  "piiflow:PF004": 0,
+  "piiflow:PF005": 0,
+  "piiflow:PF006": 0,
+  "piiflow:gaps": 307,
+  "piiflow:info": 37,
+  "privado:leakages": 18,
+  "privado:third_parties": 2,
+  "sites:log": 76,
+  "sites:other": 41
+ }
+}

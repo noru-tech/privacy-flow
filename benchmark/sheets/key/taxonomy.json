@@ -1,0 +1,144 @@
+{
+ "app": "taxonomy",
+ "items": {
+  "Fa79a1e665a": {
+   "findings": [
+    {
+     "id": "pf-309b238c5caaaccd",
+     "rule": "PF002",
+     "severity": "high"
+    }
+   ],
+   "flow": "flow-b81e3593d43d2269",
+   "strata": [
+    "piiflow:PF002"
+   ],
+   "tool": "piiflow"
+  },
+  "Fad064dfccc": {
+   "findings": [
+    {
+     "id": "pf-3a69bbd315c5e099",
+     "rule": "PF002",
+     "severity": "info"
+    }
+   ],
+   "flow": "flow-fe3d3c02d95735fe",
+   "strata": [
+    "piiflow:info"
+   ],
+   "tool": "piiflow"
+  },
+  "Fed114e472c": {
+   "findings": [
+    {
+     "id": "pf-6495c69447174808",
+     "rule": "PF002",
+     "severity": "info"
+    }
+   ],
+   "flow": "flow-bbef1c4473a0dd53",
+   "strata": [
+    "piiflow:info"
+   ],
+   "tool": "piiflow"
+  },
+  "G0ac1abc072": {
+   "gap": "gap-72875b41cf51d345",
+   "strata": [
+    "piiflow:gaps"
+   ],
+   "tool": "piiflow"
+  },
+  "G621ec46dda": {
+   "gap": "gap-54a274d05f46a786",
+   "strata": [
+    "piiflow:gaps"
+   ],
+   "tool": "piiflow"
+  },
+  "G845f70234d": {
+   "gap": "gap-e132a36f9c812898",
+   "strata": [
+    "piiflow:gaps"
+   ],
+   "tool": "piiflow"
+  },
+  "Gb04d04dc37": {
+   "gap": "gap-0692ab546934c5f7",
+   "strata": [
+    "piiflow:gaps"
+   ],
+   "tool": "piiflow"
+  },
+  "Gfa2b94959e": {
+   "gap": "gap-32286a13c330706a",
+   "strata": [
+    "piiflow:gaps"
+   ],
+   "tool": "piiflow"
+  },
+  "S0109b8cdd0": {
+   "strata": [
+    "sites:other"
+   ]
+  },
+  "S0bf6a42d53": {
+   "strata": [
+    "sites:other"
+   ]
+  },
+  "S0f7de0ffd6": {
+   "strata": [
+    "sites:other"
+   ]
+  },
+  "S25cec2828a": {
+   "strata": [
+    "sites:other"
+   ]
+  },
+  "S3c9d5782ac": {
+   "strata": [
+    "sites:other"
+   ]
+  },
+  "S40759d1463": {
+   "strata": [
+    "sites:other"
+   ]
+  },
+  "S57a4228f39": {
+   "strata": [
+    "sites:other"
+   ]
+  },
+  "Scdb9867199": {
+   "strata": [
+    "sites:other"
+   ]
+  },
+  "Sd8cc372f16": {
+   "strata": [
+    "sites:other"
+   ]
+  },
+  "Se3f0a25417": {
+   "strata": [
+    "sites:other"
+   ]
+  }
+ },
+ "population": {
+  "piiflow:PF001": 0,
+  "piiflow:PF002": 1,
+  "piiflow:PF003": 0,
+  "piiflow:PF004": 0,
+  "piiflow:PF005": 0,
+  "piiflow:PF006": 0,
+  "piiflow:gaps": 5,
+  "piiflow:info": 2,
+  "sites:log": 0,
+  "sites:other": 10
+ }
+}

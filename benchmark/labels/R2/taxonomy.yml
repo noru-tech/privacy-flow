@@ -1,0 +1,100 @@
+# Labels for taxonomy. Fill every field; see benchmark/PROTOCOL.md §3. Do not open
+# benchmark/sheets/key/ until both reviewers are done.
+items:
+  Fad064dfccc:
+    verdict:        # tp | fp_path | fp_not_personal | unsure
+    category_ok:    # yes | no
+    citation:       # file:line (for fp_path: where the path breaks)
+    note:
+  Fa79a1e665a:
+    verdict:        # tp | fp_path | fp_not_personal | unsure
+    category_ok:    # yes | no
+    citation:       # file:line (for fp_path: where the path breaks)
+    note:
+  Fed114e472c:
+    verdict:        # tp | fp_path | fp_not_personal | unsure
+    category_ok:    # yes | no
+    citation:       # file:line (for fp_path: where the path breaks)
+    note:
+  Gfa2b94959e:
+    hides_flow:     # yes | no | unsure
+    citation:       # file:line of the sink reached, if yes
+    note:
+  G621ec46dda:
+    hides_flow:     # yes | no | unsure
+    citation:       # file:line of the sink reached, if yes
+    note:
+  G845f70234d:
+    hides_flow:     # yes | no | unsure
+    citation:       # file:line of the sink reached, if yes
+    note:
+  Gb04d04dc37:
+    hides_flow:     # yes | no | unsure
+    citation:       # file:line of the sink reached, if yes
+    note:
+  G0ac1abc072:
+    hides_flow:     # yes | no | unsure
+    citation:       # file:line of the sink reached, if yes
+    note:
+  Se3f0a25417:
+    is_sink:        # yes | no
+    personal:       # yes | no | unsure (only if is_sink is yes)
+    categories: []  # Fideslang keys, if personal is yes
+    source:         # file:line of one source, if personal is yes
+    note:
+  S57a4228f39:
+    is_sink:        # yes | no
+    personal:       # yes | no | unsure (only if is_sink is yes)
+    categories: []  # Fideslang keys, if personal is yes
+    source:         # file:line of one source, if personal is yes
+    note:
+  S0bf6a42d53:
+    is_sink:        # yes | no
+    personal:       # yes | no | unsure (only if is_sink is yes)
+    categories: []  # Fideslang keys, if personal is yes
+    source:         # file:line of one source, if personal is yes
+    note:
+  S25cec2828a:
+    is_sink:        # yes | no
+    personal:       # yes | no | unsure (only if is_sink is yes)
+    categories: []  # Fideslang keys, if personal is yes
+    source:         # file:line of one source, if personal is yes
+    note:
+  S0109b8cdd0:
+    is_sink:        # yes | no
+    personal:       # yes | no | unsure (only if is_sink is yes)
+    categories: []  # Fideslang keys, if personal is yes
+    source:         # file:line of one source, if personal is yes
+    note:
+  S40759d1463:
+    is_sink:        # yes | no
+    personal:       # yes | no | unsure (only if is_sink is yes)
+    categories: []  # Fideslang keys, if personal is yes
+    source:         # file:line of one source, if personal is yes
+    note:
+  Scdb9867199:
+    is_sink:        # yes | no
+    personal:       # yes | no | unsure (only if is_sink is yes)
+    categories: []  # Fideslang keys, if personal is yes
+    source:         # file:line of one source, if personal is yes
+    note:
+  Sd8cc372f16:
+    is_sink:        # yes | no
+    personal:       # yes | no | unsure (only if is_sink is yes)
+    categories: []  # Fideslang keys, if personal is yes
+    source:         # file:line of one source, if personal is yes
+    note:
+  S0f7de0ffd6:
+    is_sink:        # yes | no
+    personal:       # yes | no | unsure (only if is_sink is yes)
+    categories: []  # Fideslang keys, if personal is yes
+    source:         # file:line of one source, if personal is yes
+    note:
+  S3c9d5782ac:
+    is_sink:        # yes | no
+    personal:       # yes | no | unsure (only if is_sink is yes)
+    categories: []  # Fideslang keys, if personal is yes
+    source:         # file:line of one source, if personal is yes
+    note:
+# Sinks you found while labelling that are not items above (reported separately):
+added_sites: []    # - {path: ..., line: ..., categories: [...], source: file:line}

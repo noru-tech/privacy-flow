@@ -1,0 +1,771 @@
+{
+ "app": "private-gpt",
+ "items": {
+  "F0584413b69": {
+   "native_id": "Data.Sensitive.AccountData.LanguagePreferences|ThirdParties.SDK.LlamaIndex|170654-170627-170628-170631-170632-170637-230040-230045-230052-230073-230092-230093-230094-230097-230100",
+   "strata": [
+    "privado:third_parties"
+   ],
+   "tool": "privado"
+  },
+  "F1247ad5bea": {
+   "findings": [
+    {
+     "id": "pf-d19f15878662a5db",
+     "rule": "PF001",
+     "severity": "info"
+    }
+   ],
+   "flow": "flow-ed10d040dd9cf0ea",
+   "strata": [
+    "piiflow:info"
+   ],
+   "tool": "piiflow"
+  },
+  "F1b60c003ab": {
+   "native_id": "Data.Sensitive.PersonalIdentification.Age|Leakages.Log.Debug|431725-431639-427710-427720-427721-427722-427727",
+   "strata": [
+    "privado:leakages"
+   ],
+   "tool": "privado"
+  },
+  "F1f321fd885": {
+   "native_id": "Data.Sensitive.AccountData.AccountID|Leakages.Log.Error|423418-423481-143825-143836-143854-143884-143888-143896-143905-143928-144025-144026-144031-144032-144033-144035-144036-144041-144042-144043-144044-144051-144052-144053-144058-144055-143961-139416-139427-139428-139429-139430-139472-139476-139477-139478-139480-139483-139485-139486-139417-143971-143972-143973-143975-143979-143978-143980-143983-143956-144101-143663-143671-595065-144101-144111-143709-143775-143766-143781-143787-143797-143798-143803",
+   "strata": [
+    "privado:leakages"
+   ],
+   "tool": "privado"
+  },
+  "F2058a264ef": {
+   "findings": [
+    {
+     "id": "pf-0e3c2aa019d6ca5d",
+     "rule": "PF001",
+     "severity": "medium"
+    }
+   ],
+   "flow": "flow-c0b1b46549082c93",
+   "strata": [
+    "piiflow:PF001"
+   ],
+   "tool": "piiflow"
+  },
+  "F210e18d987": {
+   "findings": [
+    {
+     "id": "pf-fb087c9c02860f1a",
+     "rule": "PF005",
+     "severity": "high"
+    }
+   ],
+   "flow": "flow-07d7ba21f096c332",
+   "strata": [
+    "piiflow:PF005"
+   ],
+   "tool": "piiflow"
+  },
+  "F22a2169b20": {
+   "findings": [
+    {
+     "id": "pf-622e50f3f9a34a11",
+     "rule": "PF001",
+     "severity": "info"
+    }
+   ],
+   "flow": "flow-2a63ca9dbc1ea35b",
+   "strata": [
+    "piiflow:info"
+   ],
+   "tool": "piiflow"
+  },
+  "F2477c6c2ad": {
+   "native_id": "Data.Sensitive.AccountData.LanguagePreferences|ThirdParties.SDK.LlamaIndex|250712-250744-250756-250765-250766-250667-250660-250771",
+   "strata": [
+    "privado:third_parties"
+   ],
+   "tool": "privado"
+  },
+  "F253088681c": {
+   "findings": [
+    {
+     "id": "pf-5509021658193c50",
+     "rule": "PF001",
+     "severity": "medium"
+    }
+   ],
+   "flow": "flow-9b209fdab01ee983",
+   "strata": [
+    "piiflow:PF001"
+   ],
+   "tool": "piiflow"
+  },
+  "F2e21b60629": {
+   "findings": [
+    {
+     "id": "pf-d825573c9d4c1130",
+     "rule": "PF001",
+     "severity": "info"
+    }
+   ],
+   "flow": "flow-941f7565e2063866",
+   "strata": [
+    "piiflow:info"
+   ],
+   "tool": "piiflow"
+  },
+  "F3a83dcb512": {
+   "findings": [
+    {
+     "id": "pf-976aba7a53c8bb77",
+     "rule": "PF001",
+     "severity": "info"
+    }
+   ],
+   "flow": "flow-047fb65b165d7fda",
+   "strata": [
+    "piiflow:info"
+   ],
+   "tool": "piiflow"
+  },
+  "F3ba220972c": {
+   "findings": [
+    {
+     "id": "pf-af37f68e84005517",
+     "rule": "PF001",
+     "severity": "info"
+    }
+   ],
+   "flow": "flow-4205d577712ea937",
+   "strata": [
+    "piiflow:info"
+   ],
+   "tool": "piiflow"
+  },
+  "F44792c1d77": {
+   "findings": [
+    {
+     "id": "pf-c6d0eb6a504c7958",
+     "rule": "PF001",
+     "severity": "medium"
+    }
+   ],
+   "flow": "flow-776dc7ef9635cab6",
+   "strata": [
+    "piiflow:PF001"
+   ],
+   "tool": "piiflow"
+  },
+  "F51951c8b1e": {
+   "findings": [
+    {
+     "id": "pf-28f962b0c003817f",
+     "rule": "PF005",
+     "severity": "high"
+    }
+   ],
+   "flow": "flow-df637b716c16b674",
+   "strata": [
+    "piiflow:PF005"
+   ],
+   "tool": "piiflow"
+  },
+  "F547e4d80bb": {
+   "native_id": "Data.Sensitive.PersonalIdentification.Age|Leakages.Log.Error|142939-142944-142943-142951-595048-142651-142665-142666-142671-142661-142704-143665-595067-142704-142710-143035-143055-145307-595154-143055-143186-323571-602543-143186-143291-143665-595067-143291-143298-143299-143301-143711-143775-143766-143781-143787-143797-143798-143803",
+   "strata": [
+    "privado:leakages"
+   ],
+   "tool": "privado"
+  },
+  "F5d8d3c47b7": {
+   "native_id": "Data.Sensitive.PersonalIdentification.Age|ThirdParties.SDK.LlamaIndex|431851-431776-431777-431779-431771-431780-431801-431802-431804-431806",
+   "strata": [
+    "privado:third_parties"
+   ],
+   "tool": "privado"
+  },
+  "F695a21fd5e": {
+   "findings": [
+    {
+     "id": "pf-03aae9a81c13d131",
+     "rule": "PF005",
+     "severity": "high"
+    }
+   ],
+   "flow": "flow-0e9688b8c13691a8",
+   "strata": [
+    "piiflow:PF005"
+   ],
+   "tool": "piiflow"
+  },
+  "F6b03177588": {
+   "findings": [
+    {
+     "id": "pf-c07580cbc105c6fa",
+     "rule": "PF001",
+     "severity": "info"
+    }
+   ],
+   "flow": "flow-9c491a6f5fe2d50b",
+   "strata": [
+    "piiflow:info"
+   ],
+   "tool": "piiflow"
+  },
+  "F6f77b24132": {
+   "native_id": "Data.Sensitive.PersonalIdentification.Age|Leakages.Log.Debug|431725-431727-431728-431733-431738",
+   "strata": [
+    "privado:leakages"
+   ],
+   "tool": "privado"
+  },
+  "F77044c6047": {
+   "findings": [
+    {
+     "id": "pf-176d261c75100a1c",
+     "rule": "PF005",
+     "severity": "high"
+    }
+   ],
+   "flow": "flow-e2725c479d7f01c5",
+   "strata": [
+    "piiflow:PF005"
+   ],
+   "tool": "piiflow"
+  },
+  "F7c88898496": {
+   "native_id": "Data.Sensitive.AccountData.LanguagePreferences|ThirdParties.SDK.LlamaIndex|247395-247399-247400-247338-246590-246591-246594-246606-246618-246619-246537-246530-246624",
+   "strata": [
+    "privado:third_parties"
+   ],
+   "tool": "privado"
+  },
+  "F7e9a3980c9": {
+   "findings": [
+    {
+     "id": "pf-fd22f0cb94b164c2",
+     "rule": "PF002",
+     "severity": "high"
+    }
+   ],
+   "flow": "flow-6f286b0349059d10",
+   "strata": [
+    "piiflow:PF002"
+   ],
+   "tool": "piiflow"
+  },
+  "F7f021e0544": {
+   "native_id": "Data.Sensitive.AccountData.LanguagePreferences|Leakages.Log.Debug|133799-412814-412873-412876-412960-413080-413152-413177-413178-413204-413203-413210-413218-413222-413252-413250-413256-413257-413245-413266-413242-413270-413281-413298-413282-413302-413308",
+   "strata": [
+    "privado:leakages"
+   ],
+   "tool": "privado"
+  },
+  "F80c25cfee1": {
+   "native_id": "Data.Sensitive.OnlineIdentifiers.Cookies|Sinks.ThirdParties.API.raw.githubusercontent.com|396849-396850-396851-396856-396857-396858-396864-396873-396874-396876-379953-379967-67633-67648-67653-67654-67686-67687-67634-379977-379978-379979-379981-379996-379997-379998-380002-409231-409238-409239-409240-409242-409253-409257-409258-409263-223775-223795-224160-224169-224587-224592-598398-224169-224220-224217-224228-224239-224240-224245-224246-224247-224248-224255-224256-224257-224177-224190",
+   "strata": [
+    "privado:third_parties"
+   ],
+   "tool": "privado"
+  },
+  "F84b007d229": {
+   "findings": [
+    {
+     "id": "pf-38726b7de14d31e8",
+     "rule": "PF001",
+     "severity": "info"
+    }
+   ],
+   "flow": "flow-a6d7dbe358514cb5",
+   "strata": [
+    "piiflow:info"
+   ],
+   "tool": "piiflow"
+  },
+  "F89ac263864": {
+   "findings": [
+    {
+     "id": "pf-36c453959af4e826",
+     "rule": "PF005",
+     "severity": "high"
+    }
+   ],
+   "flow": "flow-0a17b0a7f73da81f",
+   "strata": [
+    "piiflow:PF005"
+   ],
+   "tool": "piiflow"
+  },
+  "F8b3c8da170": {
+   "findings": [
+    {
+     "id": "pf-2806e791cd6a719d",
+     "rule": "PF001",
+     "severity": "medium"
+    }
+   ],
+   "flow": "flow-09bf9a6f1bbcf973",
+   "strata": [
+    "piiflow:PF001"
+   ],
+   "tool": "piiflow"
+  },
+  "F9b7cfda493": {
+   "findings": [
+    {
+     "id": "pf-17065209e269b75f",
+     "rule": "PF005",
+     "severity": "high"
+    }
+   ],
+   "flow": "flow-1ce5735b121509f9",
+   "strata": [
+    "piiflow:PF005"
+   ],
+   "tool": "piiflow"
+  },
+  "F9da41b67e7": {
+   "native_id": "Data.Sensitive.AccountData.LanguagePreferences|Leakages.Log.Info|133799-201155-201157-201160-201247-201316-201339-201260-597324-201339-201323-201364-201529-201530-201535-201536-201537-201539-201540-201545-201546-201547-201548-201555-201556-201557-201562-201559-201380-201388",
+   "strata": [
+    "privado:leakages"
+   ],
+   "tool": "privado"
+  },
+  "Fa42dab0e9e": {
+   "findings": [
+    {
+     "id": "pf-41cfb5687aac402d",
+     "rule": "PF001",
+     "severity": "medium"
+    }
+   ],
+   "flow": "flow-5169c737926ebb9d",
+   "strata": [
+    "piiflow:PF001"
+   ],
+   "tool": "piiflow"
+  },
+  "Fa75ebb74ad": {
+   "findings": [
+    {
+     "id": "pf-5d0cab0674207bb1",
+     "rule": "PF001",
+     "severity": "info"
+    }
+   ],
+   "flow": "flow-6c9975688bbd118c",
+   "strata": [
+    "piiflow:info"
+   ],
+   "tool": "piiflow"
+  },
+  "Fb0bbefcd2f": {
+   "findings": [
+    {
+     "id": "pf-30c663869473604b",
+     "rule": "PF001",
+     "severity": "info"
+    }
+   ],
+   "flow": "flow-03f42d24c055dab1",
+   "strata": [
+    "piiflow:info"
+   ],
+   "tool": "piiflow"
+  },
+  "Fb1c7c58bee": {
+   "findings": [
+    {
+     "id": "pf-5344d8da47424052",
+     "rule": "PF002",
+     "severity": "high"
+    }
+   ],
+   "flow": "flow-364244b0cec9d4f1",
+   "strata": [
+    "piiflow:PF002"
+   ],
+   "tool": "piiflow"
+  },
+  "Fbc50896e72": {
+   "findings": [
+    {
+     "id": "pf-119096ccf7aabf4b",
+     "rule": "PF005",
+     "severity": "high"
+    }
+   ],
+   "flow": "flow-65012b2ba2df5eb1",
+   "strata": [
+    "piiflow:PF005"
+   ],
+   "tool": "piiflow"
+  },
+  "Fbec88d02cf": {
+   "native_id": "Data.Sensitive.AccountData.LanguagePreferences|Leakages.Log.Debug|133799-412814-412873-412876-412960-413080-413152-413177-413178-413204-413203-413210-413218-413222-413252-413250-413256-413257-413245-413266-413242-413270-413275",
+   "strata": [
+    "privado:leakages"
+   ],
+   "tool": "privado"
+  },
+  "Fbffbc4f8c4": {
+   "findings": [
+    {
+     "id": "pf-88016251998cff6a",
+     "rule": "PF001",
+     "severity": "medium"
+    }
+   ],
+   "flow": "flow-e0c5ddc1bae62bc2",
+   "strata": [
+    "piiflow:PF001"
+   ],
+   "tool": "piiflow"
+  },
+  "Fc3ba976e9a": {
+   "native_id": "Data.Sensitive.AccountData.LanguagePreferences|ThirdParties.SDK.LlamaIndex|423183-439616-439631-439644",
+   "strata": [
+    "privado:third_parties"
+   ],
+   "tool": "privado"
+  },
+  "Fc48e871a5c": {
+   "findings": [
+    {
+     "id": "pf-8c838651a1c0b3b9",
+     "rule": "PF001",
+     "severity": "info"
+    }
+   ],
+   "flow": "flow-3a070fc9a948ad6a",
+   "strata": [
+    "piiflow:info"
+   ],
+   "tool": "piiflow"
+  },
+  "Fd2fb90e45a": {
+   "findings": [
+    {
+     "id": "pf-3f7e9db680f12043",
+     "rule": "PF001",
+     "severity": "medium"
+    }
+   ],
+   "flow": "flow-2765c5abe9196723",
+   "strata": [
+    "piiflow:PF001"
+   ],
+   "tool": "piiflow"
+  },
+  "Fd6edaf52ac": {
+   "findings": [
+    {
+     "id": "pf-5632a24bf62f7988",
+     "rule": "PF002",
+     "severity": "high"
+    }
+   ],
+   "flow": "flow-06c02f899b1ceab0",
+   "strata": [
+    "piiflow:PF002"
+   ],
+   "tool": "piiflow"
+  },
+  "Fec7f0ef921": {
+   "native_id": "Data.Sensitive.AccountData.LanguagePreferences|ThirdParties.SDK.LlamaIndex|364978-364979-364981-364982-364985-364998-364997-365000-365001-364994-365014-365034-365060-365061-364975-365113-365114-365150-365211-365221-365225-365226-365227-365250-365251-365256-365257-365258-365259-365266-365267-365268-365229-365235-365236-365238-365442-365450-365458-365459-365460-365467-365479-365478-365475-365481-365482-365487-365488-365489-365490-365496-365506-365510-365511-365516-365517-365518-365519-365526-365527-365528-365541-365545-365546-365547-365553-365555-365560-365561-365566-365567-365568-365569-365574-365286-365306-365314-365315-365322-365323-365324-365325-365328-365329-365287-365579-365580-365583-365587-365588-365589-365594-365595-365596-365600-365601-365444-365244-365245-365078-364443-364444-364449-364513-364362-364368-364377-364366-604528-364517-364442-365073-365102-364785-364853-364867-364727-364750-364751-364754-364755-364757-364758-364767-364774-364775-364728-364868-364863-364870-364875-364878-364881-364902-364905-364908-364911-364940-364945-364952-364955-364958-364961-364962-364787-365103-365104-365147-365146-365149",
+   "strata": [
+    "privado:third_parties"
+   ],
+   "tool": "privado"
+  },
+  "Ff2a33d1bb3": {
+   "findings": [
+    {
+     "id": "pf-d2c38398a1735811",
+     "rule": "PF005",
+     "severity": "high"
+    }
+   ],
+   "flow": "flow-39de7fdcdfbfbcdf",
+   "strata": [
+    "piiflow:PF005"
+   ],
+   "tool": "piiflow"
+  },
+  "Ff3243d6f09": {
+   "native_id": "Data.Sensitive.AccountData.LanguagePreferences|ThirdParties.SDK.LlamaIndex|364978-364979-364981-364982-364985-364998-364997-365000",
+   "strata": [
+    "privado:third_parties"
+   ],
+   "tool": "privado"
+  },
+  "Ff484415bd7": {
+   "findings": [
+    {
+     "id": "pf-81c0068e80585a73",
+     "rule": "PF002",
+     "severity": "high"
+    }
+   ],
+   "flow": "flow-6d882b006f53a16c",
+   "strata": [
+    "piiflow:PF002"
+   ],
+   "tool": "piiflow"
+  },
+  "Ff9a6bf3251": {
+   "native_id": "Data.Sensitive.AccountData.AccountID|Leakages.Log.Debug|371771-412814-412873-412876-412960-413080-413152-413177-413178-413204-413203-413210-413218-413222-413252-413250-413256-413257-413245-413266-413242-413270-413275",
+   "strata": [
+    "privado:leakages"
+   ],
+   "tool": "privado"
+  },
+  "Ffdcd5787d1": {
+   "findings": [
+    {
+     "id": "pf-189f37afaa7c7fbb",
+     "rule": "PF001",
+     "severity": "medium"
+    }
+   ],
+   "flow": "flow-ef4d45f806223f24",
+   "strata": [
+    "piiflow:PF001"
+   ],
+   "tool": "piiflow"
+  },
+  "G05599098d0": {
+   "gap": "gap-2fa1aada254dec02",
+   "strata": [
+    "piiflow:gaps"
+   ],
+   "tool": "piiflow"
+  },
+  "G0bdf5e9c64": {
+   "gap": "gap-e58966851c3ac32d",
+   "strata": [
+    "piiflow:gaps"
+   ],
+   "tool": "piiflow"
+  },
+  "G4f20774395": {
+   "gap": "gap-ca3525d6228b1462",
+   "strata": [
+    "piiflow:gaps"
+   ],
+   "tool": "piiflow"
+  },
+  "G894557af74": {
+   "gap": "gap-e534457ddc02fec4",
+   "strata": [
+    "piiflow:gaps"
+   ],
+   "tool": "piiflow"
+  },
+  "Gbb8e39b05d": {
+   "gap": "gap-a17c85a6d073608e",
+   "strata": [
+    "piiflow:gaps"
+   ],
+   "tool": "piiflow"
+  },
+  "Gc08fccd0e2": {
+   "gap": "gap-3ac2856e85368bca",
+   "strata": [
+    "piiflow:gaps"
+   ],
+   "tool": "piiflow"
+  },
+  "Gcaf0373dbf": {
+   "gap": "gap-e5a8c4b4f0fef2e2",
+   "strata": [
+    "piiflow:gaps"
+   ],
+   "tool": "piiflow"
+  },
+  "Ge051290ad5": {
+   "gap": "gap-1729cff8d7b3b1fd",
+   "strata": [
+    "piiflow:gaps"
+   ],
+   "tool": "piiflow"
+  },
+  "Geddaf690c2": {
+   "gap": "gap-b76f8474ef6f3985",
+   "strata": [
+    "piiflow:gaps"
+   ],
+   "tool": "piiflow"
+  },
+  "Gf65b600c76": {
+   "gap": "gap-bddf86f99a9a5a6d",
+   "strata": [
+    "piiflow:gaps"
+   ],
+   "tool": "piiflow"
+  },
+  "S0084e61829": {
+   "strata": [
+    "sites:log"
+   ]
+  },
+  "S0bdeedde93": {
+   "strata": [
+    "sites:other"
+   ]
+  },
+  "S0f52c733ae": {
+   "strata": [
+    "sites:log"
+   ]
+  },
+  "S200d467d7e": {
+   "strata": [
+    "sites:other"
+   ]
+  },
+  "S2ed0348ad4": {
+   "strata": [
+    "sites:other"
+   ]
+  },
+  "S329383a443": {
+   "strata": [
+    "sites:other"
+   ]
+  },
+  "S39e0d019e5": {
+   "strata": [
+    "sites:other"
+   ]
+  },
+  "S443e1219e5": {
+   "strata": [
+    "sites:log"
+   ]
+  },
+  "S4b1f4fb1dd": {
+   "strata": [
+    "sites:other"
+   ]
+  },
+  "S4b3e064909": {
+   "strata": [
+    "sites:other"
+   ]
+  },
+  "S561e6a8e97": {
+   "strata": [
+    "sites:other"
+   ]
+  },
+  "S6066adfd6a": {
+   "strata": [
+    "sites:other"
+   ]
+  },
+  "S7803c62083": {
+   "strata": [
+    "sites:other"
+   ]
+  },
+  "S781350dec1": {
+   "strata": [
+    "sites:log"
+   ]
+  },
+  "S7e1acadbd9": {
+   "strata": [
+    "sites:other"
+   ]
+  },
+  "S8103f2221d": {
+   "strata": [
+    "sites:other"
+   ]
+  },
+  "S87af18f901": {
+   "strata": [
+    "sites:other"
+   ]
+  },
+  "Sa2e45ac64d": {
+   "strata": [
+    "sites:log"
+   ]
+  },
+  "Sa3f56380ec": {
+   "strata": [
+    "sites:other"
+   ]
+  },
+  "Sab776f83b5": {
+   "strata": [
+    "sites:other"
+   ]
+  },
+  "Sb9c074fde8": {
+   "strata": [
+    "sites:log"
+   ]
+  },
+  "Sbdb7c8215a": {
+   "strata": [
+    "sites:other"
+   ]
+  },
+  "Sc84d63e505": {
+   "strata": [
+    "sites:log"
+   ]
+  },
+  "Sd8ec392565": {
+   "strata": [
+    "sites:other"
+   ]
+  },
+  "Sec6564d005": {
+   "strata": [
+    "sites:log"
+   ]
+  },
+  "Sf1bb02248c": {
+   "strata": [
+    "sites:other"
+   ]
+  },
+  "Sf1eaa58354": {
+   "strata": [
+    "sites:log"
+   ]
+  },
+  "Sf486eb017a": {
+   "strata": [
+    "sites:log"
+   ]
+  },
+  "Sfd07fb24f3": {
+   "strata": [
+    "sites:log"
+   ]
+  },
+  "Sfda73abad8": {
+   "strata": [
+    "sites:log"
+   ]
+  }
+ },
+ "population": {
+  "piiflow:PF001": 200,
+  "piiflow:PF002": 4,
+  "piiflow:PF003": 0,
+  "piiflow:PF004": 0,
+  "piiflow:PF005": 40,
+  "piiflow:PF006": 0,
+  "piiflow:gaps": 273,
+  "piiflow:info": 505,
+  "privado:leakages": 81,
+  "privado:third_parties": 15,
+  "sites:log": 759,
+  "sites:other": 44
+ }
+}

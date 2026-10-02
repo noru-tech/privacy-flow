@@ -1,0 +1,378 @@
+{
+ "app": "hoppscotch",
+ "items": {
+  "F0d499450eb": {
+   "native_id": "Data.Sensitive.ContactData.EmailAddress|Sinks.ThirdParties.API|128119-128118-128116-74768-74780-74771",
+   "strata": [
+    "privado:third_parties"
+   ],
+   "tool": "privado"
+  },
+  "F20648bd815": {
+   "native_id": "Data.Sensitive.AccountData.AccountID|Sinks.ThirdParties.API (Write)|129644-74790-74803-74793",
+   "strata": [
+    "privado:third_parties"
+   ],
+   "tool": "privado"
+  },
+  "F46269e31a8": {
+   "native_id": "Data.Sensitive.ContactData.EmailAddress|Sinks.ThirdParties.API|50388-50339",
+   "strata": [
+    "privado:third_parties"
+   ],
+   "tool": "privado"
+  },
+  "F6fccbc33a3": {
+   "findings": [
+    {
+     "id": "pf-682eb433cba54dfb",
+     "rule": "PF001",
+     "severity": "info"
+    }
+   ],
+   "flow": "flow-c50d20f2aca9bb01",
+   "strata": [
+    "piiflow:info"
+   ],
+   "tool": "piiflow"
+  },
+  "F70f333fe5e": {
+   "native_id": "Data.Sensitive.ContactData.EmailAddress|Sinks.ThirdParties.API (Write)|7142-7139-7122-7121-7167-74790-74803-74793",
+   "strata": [
+    "privado:third_parties"
+   ],
+   "tool": "privado"
+  },
+  "F8ca0de2f6c": {
+   "findings": [
+    {
+     "id": "pf-11d16d3931aeca30",
+     "rule": "PF001",
+     "severity": "info"
+    }
+   ],
+   "flow": "flow-a4b809acf2e2f8f0",
+   "strata": [
+    "piiflow:info"
+   ],
+   "tool": "piiflow"
+  },
+  "F8ddadeb8af": {
+   "findings": [
+    {
+     "id": "pf-8bac8f8ee2926a58",
+     "rule": "PF001",
+     "severity": "info"
+    }
+   ],
+   "flow": "flow-3c77ee633781777b",
+   "strata": [
+    "piiflow:info"
+   ],
+   "tool": "piiflow"
+  },
+  "Fbc7090612c": {
+   "native_id": "Data.Sensitive.ContactData.EmailAddress|Sinks.ThirdParties.API|50388-50349-50368-152222-50177-50281-50277",
+   "strata": [
+    "privado:third_parties"
+   ],
+   "tool": "privado"
+  },
+  "Fc1b74f7a7c": {
+   "findings": [
+    {
+     "id": "pf-d125293a58ed33c1",
+     "rule": "PF001",
+     "severity": "info"
+    }
+   ],
+   "flow": "flow-ce39d5449981188f",
+   "strata": [
+    "piiflow:info"
+   ],
+   "tool": "piiflow"
+  },
+  "Fc37707437b": {
+   "findings": [
+    {
+     "id": "pf-258b81afafdb83b5",
+     "rule": "PF001",
+     "severity": "info"
+    }
+   ],
+   "flow": "flow-62e396b869bb1f8a",
+   "strata": [
+    "piiflow:info"
+   ],
+   "tool": "piiflow"
+  },
+  "Fe6deaf6099": {
+   "findings": [
+    {
+     "id": "pf-f6d8cbb7e572d7fc",
+     "rule": "PF001",
+     "severity": "info"
+    }
+   ],
+   "flow": "flow-79d662f452549520",
+   "strata": [
+    "piiflow:info"
+   ],
+   "tool": "piiflow"
+  },
+  "Fe80cc5f0cc": {
+   "findings": [
+    {
+     "id": "pf-ab50d7271347858d",
+     "rule": "PF001",
+     "severity": "info"
+    }
+   ],
+   "flow": "flow-9d81128a6423046b",
+   "strata": [
+    "piiflow:info"
+   ],
+   "tool": "piiflow"
+  },
+  "Fe869f326f2": {
+   "native_id": "Data.Sensitive.ContactData.EmailAddress|ThirdParties.SDK.Nodemailer|7043-45526-45560-45557-45522-45547",
+   "strata": [
+    "privado:third_parties"
+   ],
+   "tool": "privado"
+  },
+  "G0b4b6c4f4b": {
+   "gap": "gap-49e8396173ee4b9f",
+   "strata": [
+    "piiflow:gaps"
+   ],
+   "tool": "piiflow"
+  },
+  "G3149d68a92": {
+   "gap": "gap-a817233b0dbad68e",
+   "strata": [
+    "piiflow:gaps"
+   ],
+   "tool": "piiflow"
+  },
+  "G42629e4c15": {
+   "gap": "gap-049d2af1f02328b0",
+   "strata": [
+    "piiflow:gaps"
+   ],
+   "tool": "piiflow"
+  },
+  "G5fef956159": {
+   "gap": "gap-4c54bff36df5f81e",
+   "strata": [
+    "piiflow:gaps"
+   ],
+   "tool": "piiflow"
+  },
+  "G8f2328f2e7": {
+   "gap": "gap-625f222cb2878bdc",
+   "strata": [
+    "piiflow:gaps"
+   ],
+   "tool": "piiflow"
+  },
+  "G9de8868a20": {
+   "gap": "gap-43c0a89469a56ed5",
+   "strata": [
+    "piiflow:gaps"
+   ],
+   "tool": "piiflow"
+  },
+  "Gb15f302f90": {
+   "gap": "gap-b836c6c8f1f9de05",
+   "strata": [
+    "piiflow:gaps"
+   ],
+   "tool": "piiflow"
+  },
+  "Gd83a2b20a6": {
+   "gap": "gap-54ed5f4393f84e91",
+   "strata": [
+    "piiflow:gaps"
+   ],
+   "tool": "piiflow"
+  },
+  "Gde6b09dcfc": {
+   "gap": "gap-2808572f16b71ce9",
+   "strata": [
+    "piiflow:gaps"
+   ],
+   "tool": "piiflow"
+  },
+  "Gf1fb165a20": {
+   "gap": "gap-a827f4e1581e9431",
+   "strata": [
+    "piiflow:gaps"
+   ],
+   "tool": "piiflow"
+  },
+  "S067ea980e1": {
+   "strata": [
+    "sites:log"
+   ]
+  },
+  "S08194f63b9": {
+   "strata": [
+    "sites:log"
+   ]
+  },
+  "S0c4944db40": {
+   "strata": [
+    "sites:other"
+   ]
+  },
+  "S145f84629d": {
+   "strata": [
+    "sites:other"
+   ]
+  },
+  "S1a487bbc91": {
+   "strata": [
+    "sites:other"
+   ]
+  },
+  "S264706e286": {
+   "strata": [
+    "sites:log"
+   ]
+  },
+  "S29e5756155": {
+   "strata": [
+    "sites:other"
+   ]
+  },
+  "S322dec9839": {
+   "strata": [
+    "sites:other"
+   ]
+  },
+  "S34725d765d": {
+   "strata": [
+    "sites:log"
+   ]
+  },
+  "S3fd58d4890": {
+   "strata": [
+    "sites:other"
+   ]
+  },
+  "S5172bf5dcf": {
+   "strata": [
+    "sites:log"
+   ]
+  },
+  "S558aac4871": {
+   "strata": [
+    "sites:log"
+   ]
+  },
+  "S629bf4a395": {
+   "strata": [
+    "sites:log"
+   ]
+  },
+  "S66207426c3": {
+   "strata": [
+    "sites:other"
+   ]
+  },
+  "S6e26d6ba13": {
+   "strata": [
+    "sites:log"
+   ]
+  },
+  "S7fec279bc8": {
+   "strata": [
+    "sites:other"
+   ]
+  },
+  "S894e55a2f6": {
+   "strata": [
+    "sites:other"
+   ]
+  },
+  "S91203934cf": {
+   "strata": [
+    "sites:log"
+   ]
+  },
+  "S9880d6773e": {
+   "strata": [
+    "sites:log"
+   ]
+  },
+  "Sae2958da86": {
+   "strata": [
+    "sites:other"
+   ]
+  },
+  "Sc13e41db91": {
+   "strata": [
+    "sites:other"
+   ]
+  },
+  "Sc24e6cde8f": {
+   "strata": [
+    "sites:other"
+   ]
+  },
+  "Sd40730df7e": {
+   "strata": [
+    "sites:other"
+   ]
+  },
+  "Sdb4361ae1d": {
+   "strata": [
+    "sites:other"
+   ]
+  },
+  "Se4665689dc": {
+   "strata": [
+    "sites:other"
+   ]
+  },
+  "Se8d5606258": {
+   "strata": [
+    "sites:log"
+   ]
+  },
+  "Se965f7e256": {
+   "strata": [
+    "sites:other"
+   ]
+  },
+  "Sf4b52b22e7": {
+   "strata": [
+    "sites:log"
+   ]
+  },
+  "Sf58d00a5e7": {
+   "strata": [
+    "sites:other"
+   ]
+  },
+  "Sf954fad804": {
+   "strata": [
+    "sites:other"
+   ]
+  }
+ },
+ "population": {
+  "piiflow:PF001": 0,
+  "piiflow:PF002": 0,
+  "piiflow:PF003": 0,
+  "piiflow:PF004": 0,
+  "piiflow:PF005": 0,
+  "piiflow:PF006": 0,
+  "piiflow:gaps": 89,
+  "piiflow:info": 7,
+  "privado:third_parties": 6,
+  "sites:log": 83,
+  "sites:other": 70
+ }
+}

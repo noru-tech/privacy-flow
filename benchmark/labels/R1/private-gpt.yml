@@ -1,0 +1,455 @@
+# Labels for private-gpt. Fill every field; see benchmark/PROTOCOL.md §3. Do not open
+# benchmark/sheets/key/ until both reviewers are done.
+items:
+  Fbc50896e72:
+    verdict:        # tp | fp_path | fp_not_personal | unsure
+    category_ok:    # yes | no
+    citation:       # file:line (for fp_path: where the path breaks)
+    note:
+  Fb1c7c58bee:
+    verdict:        # tp | fp_path | fp_not_personal | unsure
+    category_ok:    # yes | no
+    citation:       # file:line (for fp_path: where the path breaks)
+    note:
+  F1f321fd885:
+    verdict:        # tp | fp_path | fp_not_personal | unsure
+    category_ok:    # yes | no
+    citation:       # file:line (for fp_path: where the path breaks)
+    note:
+  Ff484415bd7:
+    verdict:        # tp | fp_path | fp_not_personal | unsure
+    category_ok:    # yes | no
+    citation:       # file:line (for fp_path: where the path breaks)
+    note:
+  Fa75ebb74ad:
+    verdict:        # tp | fp_path | fp_not_personal | unsure
+    category_ok:    # yes | no
+    citation:       # file:line (for fp_path: where the path breaks)
+    note:
+  F3a83dcb512:
+    verdict:        # tp | fp_path | fp_not_personal | unsure
+    category_ok:    # yes | no
+    citation:       # file:line (for fp_path: where the path breaks)
+    note:
+  F77044c6047:
+    verdict:        # tp | fp_path | fp_not_personal | unsure
+    category_ok:    # yes | no
+    citation:       # file:line (for fp_path: where the path breaks)
+    note:
+  F7f021e0544:
+    verdict:        # tp | fp_path | fp_not_personal | unsure
+    category_ok:    # yes | no
+    citation:       # file:line (for fp_path: where the path breaks)
+    note:
+  F51951c8b1e:
+    verdict:        # tp | fp_path | fp_not_personal | unsure
+    category_ok:    # yes | no
+    citation:       # file:line (for fp_path: where the path breaks)
+    note:
+  F5d8d3c47b7:
+    verdict:        # tp | fp_path | fp_not_personal | unsure
+    category_ok:    # yes | no
+    citation:       # file:line (for fp_path: where the path breaks)
+    note:
+  F695a21fd5e:
+    verdict:        # tp | fp_path | fp_not_personal | unsure
+    category_ok:    # yes | no
+    citation:       # file:line (for fp_path: where the path breaks)
+    note:
+  Ff9a6bf3251:
+    verdict:        # tp | fp_path | fp_not_personal | unsure
+    category_ok:    # yes | no
+    citation:       # file:line (for fp_path: where the path breaks)
+    note:
+  F0584413b69:
+    verdict:        # tp | fp_path | fp_not_personal | unsure
+    category_ok:    # yes | no
+    citation:       # file:line (for fp_path: where the path breaks)
+    note:
+  Fa42dab0e9e:
+    verdict:        # tp | fp_path | fp_not_personal | unsure
+    category_ok:    # yes | no
+    citation:       # file:line (for fp_path: where the path breaks)
+    note:
+  F3ba220972c:
+    verdict:        # tp | fp_path | fp_not_personal | unsure
+    category_ok:    # yes | no
+    citation:       # file:line (for fp_path: where the path breaks)
+    note:
+  F8b3c8da170:
+    verdict:        # tp | fp_path | fp_not_personal | unsure
+    category_ok:    # yes | no
+    citation:       # file:line (for fp_path: where the path breaks)
+    note:
+  F84b007d229:
+    verdict:        # tp | fp_path | fp_not_personal | unsure
+    category_ok:    # yes | no
+    citation:       # file:line (for fp_path: where the path breaks)
+    note:
+  Fec7f0ef921:
+    verdict:        # tp | fp_path | fp_not_personal | unsure
+    category_ok:    # yes | no
+    citation:       # file:line (for fp_path: where the path breaks)
+    note:
+  F7c88898496:
+    verdict:        # tp | fp_path | fp_not_personal | unsure
+    category_ok:    # yes | no
+    citation:       # file:line (for fp_path: where the path breaks)
+    note:
+  Fd6edaf52ac:
+    verdict:        # tp | fp_path | fp_not_personal | unsure
+    category_ok:    # yes | no
+    citation:       # file:line (for fp_path: where the path breaks)
+    note:
+  F6f77b24132:
+    verdict:        # tp | fp_path | fp_not_personal | unsure
+    category_ok:    # yes | no
+    citation:       # file:line (for fp_path: where the path breaks)
+    note:
+  F2e21b60629:
+    verdict:        # tp | fp_path | fp_not_personal | unsure
+    category_ok:    # yes | no
+    citation:       # file:line (for fp_path: where the path breaks)
+    note:
+  Ff2a33d1bb3:
+    verdict:        # tp | fp_path | fp_not_personal | unsure
+    category_ok:    # yes | no
+    citation:       # file:line (for fp_path: where the path breaks)
+    note:
+  F2058a264ef:
+    verdict:        # tp | fp_path | fp_not_personal | unsure
+    category_ok:    # yes | no
+    citation:       # file:line (for fp_path: where the path breaks)
+    note:
+  Fbec88d02cf:
+    verdict:        # tp | fp_path | fp_not_personal | unsure
+    category_ok:    # yes | no
+    citation:       # file:line (for fp_path: where the path breaks)
+    note:
+  Ff3243d6f09:
+    verdict:        # tp | fp_path | fp_not_personal | unsure
+    category_ok:    # yes | no
+    citation:       # file:line (for fp_path: where the path breaks)
+    note:
+  Fb0bbefcd2f:
+    verdict:        # tp | fp_path | fp_not_personal | unsure
+    category_ok:    # yes | no
+    citation:       # file:line (for fp_path: where the path breaks)
+    note:
+  Fc3ba976e9a:
+    verdict:        # tp | fp_path | fp_not_personal | unsure
+    category_ok:    # yes | no
+    citation:       # file:line (for fp_path: where the path breaks)
+    note:
+  Fbffbc4f8c4:
+    verdict:        # tp | fp_path | fp_not_personal | unsure
+    category_ok:    # yes | no
+    citation:       # file:line (for fp_path: where the path breaks)
+    note:
+  F1b60c003ab:
+    verdict:        # tp | fp_path | fp_not_personal | unsure
+    category_ok:    # yes | no
+    citation:       # file:line (for fp_path: where the path breaks)
+    note:
+  F6b03177588:
+    verdict:        # tp | fp_path | fp_not_personal | unsure
+    category_ok:    # yes | no
+    citation:       # file:line (for fp_path: where the path breaks)
+    note:
+  Fd2fb90e45a:
+    verdict:        # tp | fp_path | fp_not_personal | unsure
+    category_ok:    # yes | no
+    citation:       # file:line (for fp_path: where the path breaks)
+    note:
+  F89ac263864:
+    verdict:        # tp | fp_path | fp_not_personal | unsure
+    category_ok:    # yes | no
+    citation:       # file:line (for fp_path: where the path breaks)
+    note:
+  F44792c1d77:
+    verdict:        # tp | fp_path | fp_not_personal | unsure
+    category_ok:    # yes | no
+    citation:       # file:line (for fp_path: where the path breaks)
+    note:
+  F2477c6c2ad:
+    verdict:        # tp | fp_path | fp_not_personal | unsure
+    category_ok:    # yes | no
+    citation:       # file:line (for fp_path: where the path breaks)
+    note:
+  Ffdcd5787d1:
+    verdict:        # tp | fp_path | fp_not_personal | unsure
+    category_ok:    # yes | no
+    citation:       # file:line (for fp_path: where the path breaks)
+    note:
+  F9da41b67e7:
+    verdict:        # tp | fp_path | fp_not_personal | unsure
+    category_ok:    # yes | no
+    citation:       # file:line (for fp_path: where the path breaks)
+    note:
+  F210e18d987:
+    verdict:        # tp | fp_path | fp_not_personal | unsure
+    category_ok:    # yes | no
+    citation:       # file:line (for fp_path: where the path breaks)
+    note:
+  F253088681c:
+    verdict:        # tp | fp_path | fp_not_personal | unsure
+    category_ok:    # yes | no
+    citation:       # file:line (for fp_path: where the path breaks)
+    note:
+  F9b7cfda493:
+    verdict:        # tp | fp_path | fp_not_personal | unsure
+    category_ok:    # yes | no
+    citation:       # file:line (for fp_path: where the path breaks)
+    note:
+  F1247ad5bea:
+    verdict:        # tp | fp_path | fp_not_personal | unsure
+    category_ok:    # yes | no
+    citation:       # file:line (for fp_path: where the path breaks)
+    note:
+  F80c25cfee1:
+    verdict:        # tp | fp_path | fp_not_personal | unsure
+    category_ok:    # yes | no
+    citation:       # file:line (for fp_path: where the path breaks)
+    note:
+  F22a2169b20:
+    verdict:        # tp | fp_path | fp_not_personal | unsure
+    category_ok:    # yes | no
+    citation:       # file:line (for fp_path: where the path breaks)
+    note:
+  F7e9a3980c9:
+    verdict:        # tp | fp_path | fp_not_personal | unsure
+    category_ok:    # yes | no
+    citation:       # file:line (for fp_path: where the path breaks)
+    note:
+  F547e4d80bb:
+    verdict:        # tp | fp_path | fp_not_personal | unsure
+    category_ok:    # yes | no
+    citation:       # file:line (for fp_path: where the path breaks)
+    note:
+  Fc48e871a5c:
+    verdict:        # tp | fp_path | fp_not_personal | unsure
+    category_ok:    # yes | no
+    citation:       # file:line (for fp_path: where the path breaks)
+    note:
+  Geddaf690c2:
+    hides_flow:     # yes | no | unsure
+    citation:       # file:line of the sink reached, if yes
+    note:
+  Gcaf0373dbf:
+    hides_flow:     # yes | no | unsure
+    citation:       # file:line of the sink reached, if yes
+    note:
+  G894557af74:
+    hides_flow:     # yes | no | unsure
+    citation:       # file:line of the sink reached, if yes
+    note:
+  Ge051290ad5:
+    hides_flow:     # yes | no | unsure
+    citation:       # file:line of the sink reached, if yes
+    note:
+  G4f20774395:
+    hides_flow:     # yes | no | unsure
+    citation:       # file:line of the sink reached, if yes
+    note:
+  Gf65b600c76:
+    hides_flow:     # yes | no | unsure
+    citation:       # file:line of the sink reached, if yes
+    note:
+  G05599098d0:
+    hides_flow:     # yes | no | unsure
+    citation:       # file:line of the sink reached, if yes
+    note:
+  Gbb8e39b05d:
+    hides_flow:     # yes | no | unsure
+    citation:       # file:line of the sink reached, if yes
+    note:
+  G0bdf5e9c64:
+    hides_flow:     # yes | no | unsure
+    citation:       # file:line of the sink reached, if yes
+    note:
+  Gc08fccd0e2:
+    hides_flow:     # yes | no | unsure
+    citation:       # file:line of the sink reached, if yes
+    note:
+  Sab776f83b5:
+    is_sink:        # yes | no
+    personal:       # yes | no | unsure (only if is_sink is yes)
+    categories: []  # Fideslang keys, if personal is yes
+    source:         # file:line of one source, if personal is yes
+    note:
+  Sf1eaa58354:
+    is_sink:        # yes | no
+    personal:       # yes | no | unsure (only if is_sink is yes)
+    categories: []  # Fideslang keys, if personal is yes
+    source:         # file:line of one source, if personal is yes
+    note:
+  S200d467d7e:
+    is_sink:        # yes | no
+    personal:       # yes | no | unsure (only if is_sink is yes)
+    categories: []  # Fideslang keys, if personal is yes
+    source:         # file:line of one source, if personal is yes
+    note:
+  S6066adfd6a:
+    is_sink:        # yes | no
+    personal:       # yes | no | unsure (only if is_sink is yes)
+    categories: []  # Fideslang keys, if personal is yes
+    source:         # file:line of one source, if personal is yes
+    note:
+  Sf1bb02248c:
+    is_sink:        # yes | no
+    personal:       # yes | no | unsure (only if is_sink is yes)
+    categories: []  # Fideslang keys, if personal is yes
+    source:         # file:line of one source, if personal is yes
+    note:
+  S7803c62083:
+    is_sink:        # yes | no
+    personal:       # yes | no | unsure (only if is_sink is yes)
+    categories: []  # Fideslang keys, if personal is yes
+    source:         # file:line of one source, if personal is yes
+    note:
+  Sd8ec392565:
+    is_sink:        # yes | no
+    personal:       # yes | no | unsure (only if is_sink is yes)
+    categories: []  # Fideslang keys, if personal is yes
+    source:         # file:line of one source, if personal is yes
+    note:
+  Sfda73abad8:
+    is_sink:        # yes | no
+    personal:       # yes | no | unsure (only if is_sink is yes)
+    categories: []  # Fideslang keys, if personal is yes
+    source:         # file:line of one source, if personal is yes
+    note:
+  S329383a443:
+    is_sink:        # yes | no
+    personal:       # yes | no | unsure (only if is_sink is yes)
+    categories: []  # Fideslang keys, if personal is yes
+    source:         # file:line of one source, if personal is yes
+    note:
+  Sec6564d005:
+    is_sink:        # yes | no
+    personal:       # yes | no | unsure (only if is_sink is yes)
+    categories: []  # Fideslang keys, if personal is yes
+    source:         # file:line of one source, if personal is yes
+    note:
+  S7e1acadbd9:
+    is_sink:        # yes | no
+    personal:       # yes | no | unsure (only if is_sink is yes)
+    categories: []  # Fideslang keys, if personal is yes
+    source:         # file:line of one source, if personal is yes
+    note:
+  S4b1f4fb1dd:
+    is_sink:        # yes | no
+    personal:       # yes | no | unsure (only if is_sink is yes)
+    categories: []  # Fideslang keys, if personal is yes
+    source:         # file:line of one source, if personal is yes
+    note:
+  S87af18f901:
+    is_sink:        # yes | no
+    personal:       # yes | no | unsure (only if is_sink is yes)
+    categories: []  # Fideslang keys, if personal is yes
+    source:         # file:line of one source, if personal is yes
+    note:
+  S781350dec1:
+    is_sink:        # yes | no
+    personal:       # yes | no | unsure (only if is_sink is yes)
+    categories: []  # Fideslang keys, if personal is yes
+    source:         # file:line of one source, if personal is yes
+    note:
+  Sb9c074fde8:
+    is_sink:        # yes | no
+    personal:       # yes | no | unsure (only if is_sink is yes)
+    categories: []  # Fideslang keys, if personal is yes
+    source:         # file:line of one source, if personal is yes
+    note:
+  S443e1219e5:
+    is_sink:        # yes | no
+    personal:       # yes | no | unsure (only if is_sink is yes)
+    categories: []  # Fideslang keys, if personal is yes
+    source:         # file:line of one source, if personal is yes
+    note:
+  S0f52c733ae:
+    is_sink:        # yes | no
+    personal:       # yes | no | unsure (only if is_sink is yes)
+    categories: []  # Fideslang keys, if personal is yes
+    source:         # file:line of one source, if personal is yes
+    note:
+  Sc84d63e505:
+    is_sink:        # yes | no
+    personal:       # yes | no | unsure (only if is_sink is yes)
+    categories: []  # Fideslang keys, if personal is yes
+    source:         # file:line of one source, if personal is yes
+    note:
+  Sa3f56380ec:
+    is_sink:        # yes | no
+    personal:       # yes | no | unsure (only if is_sink is yes)
+    categories: []  # Fideslang keys, if personal is yes
+    source:         # file:line of one source, if personal is yes
+    note:
+  S39e0d019e5:
+    is_sink:        # yes | no
+    personal:       # yes | no | unsure (only if is_sink is yes)
+    categories: []  # Fideslang keys, if personal is yes
+    source:         # file:line of one source, if personal is yes
+    note:
+  S4b3e064909:
+    is_sink:        # yes | no
+    personal:       # yes | no | unsure (only if is_sink is yes)
+    categories: []  # Fideslang keys, if personal is yes
+    source:         # file:line of one source, if personal is yes
+    note:
+  S2ed0348ad4:
+    is_sink:        # yes | no
+    personal:       # yes | no | unsure (only if is_sink is yes)
+    categories: []  # Fideslang keys, if personal is yes
+    source:         # file:line of one source, if personal is yes
+    note:
+  S0bdeedde93:
+    is_sink:        # yes | no
+    personal:       # yes | no | unsure (only if is_sink is yes)
+    categories: []  # Fideslang keys, if personal is yes
+    source:         # file:line of one source, if personal is yes
+    note:
+  Sfd07fb24f3:
+    is_sink:        # yes | no
+    personal:       # yes | no | unsure (only if is_sink is yes)
+    categories: []  # Fideslang keys, if personal is yes
+    source:         # file:line of one source, if personal is yes
+    note:
+  S8103f2221d:
+    is_sink:        # yes | no
+    personal:       # yes | no | unsure (only if is_sink is yes)
+    categories: []  # Fideslang keys, if personal is yes
+    source:         # file:line of one source, if personal is yes
+    note:
+  S561e6a8e97:
+    is_sink:        # yes | no
+    personal:       # yes | no | unsure (only if is_sink is yes)
+    categories: []  # Fideslang keys, if personal is yes
+    source:         # file:line of one source, if personal is yes
+    note:
+  Sf486eb017a:
+    is_sink:        # yes | no
+    personal:       # yes | no | unsure (only if is_sink is yes)
+    categories: []  # Fideslang keys, if personal is yes
+    source:         # file:line of one source, if personal is yes
+    note:
+  Sbdb7c8215a:
+    is_sink:        # yes | no
+    personal:       # yes | no | unsure (only if is_sink is yes)
+    categories: []  # Fideslang keys, if personal is yes
+    source:         # file:line of one source, if personal is yes
+    note:
+  S0084e61829:
+    is_sink:        # yes | no
+    personal:       # yes | no | unsure (only if is_sink is yes)
+    categories: []  # Fideslang keys, if personal is yes
+    source:         # file:line of one source, if personal is yes
+    note:
+  Sa2e45ac64d:
+    is_sink:        # yes | no
+    personal:       # yes | no | unsure (only if is_sink is yes)
+    categories: []  # Fideslang keys, if personal is yes
+    source:         # file:line of one source, if personal is yes
+    note:
+# Sinks you found while labelling that are not items above (reported separately):
+added_sites: []    # - {path: ..., line: ..., categories: [...], source: file:line}

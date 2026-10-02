@@ -229,6 +229,8 @@ def main():
             more, pop = privado_items(app, rows)
             chosen.update(more)
             population.update(pop)
+        elif (HERE / "results" / "privado" / f"{app}.run.json").exists():
+            pass  # a recorded Privado failure: no Privado items for this application
         elif not args.allow_without_privado:
             sys.exit(f"{app}: {privado} is missing; run the Privado workflow first (PROTOCOL.md §7 step 2)")
         sites = [json.loads(l) for l in (cache / "candidates" / f"{app}.jsonl").read_text().splitlines()]

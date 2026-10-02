@@ -117,7 +117,8 @@ def score(args, corpus):
         pf_gap_lines = {(l["path"], l.get("line")) for g in doc["coverage"]["gaps"] for l in g["locations"]}
         pv_path = HERE / "results/privado" / f"{app}.jsonl"
         pv_sink_lines = set()
-        if pv_path.exists():
+        pv_ran = pv_path.exists()
+        if pv_ran:
             have_privado = True
             for line in pv_path.read_text().splitlines():
                 r = json.loads(line)
@@ -158,7 +159,8 @@ def score(args, corpus):
                     continue
                 at = (it["path"], it["line"])
                 found = at in pf_sink_lines
-                recall_obs.append((entry["language"], found, found or at in pf_gap_lines, at in pv_sink_lines))
+                # Privado's recall counts only applications it completed (None elsewhere).
+                recall_obs.append((entry["language"], found, found or at in pf_gap_lines, (at in pv_sink_lines) if pv_ran else None))
 
     def pooled(obs):
         return wilson(sum(1 for _, c in obs if c), len(obs))
@@ -185,7 +187,7 @@ def score(args, corpus):
             scope: {
                 "piiflow_found": wilson(sum(f for _, f, _, _ in obs), len(obs)),
                 "piiflow_flagged": wilson(sum(g for _, _, g, _ in obs), len(obs)),
-                "privado_found": wilson(sum(p for *_, p in obs), len(obs)) if have_privado else None,
+                "privado_found": wilson(sum(1 for *_, p in obs if p), sum(1 for *_, p in obs if p is not None)) if have_privado else None,
             }
             for scope, obs in {
                 "all": recall_obs,

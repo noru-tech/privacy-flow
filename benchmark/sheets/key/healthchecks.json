@@ -1,0 +1,407 @@
+{
+ "app": "healthchecks",
+ "items": {
+  "F24b245fd78": {
+   "native_id": "Data.Sensitive.ContactData.EmailAddress|Leakages.Log.Info|23171-23037",
+   "strata": [
+    "privado:leakages"
+   ],
+   "tool": "privado"
+  },
+  "F3a3e7403a5": {
+   "native_id": "Data.Sensitive.ContactData.EmailAddress|Sinks.ThirdParties.API.api.eu.opsgenie.com|4786-132650-132657-132129-132285-132300-132301-132306",
+   "strata": [
+    "privado:third_parties"
+   ],
+   "tool": "privado"
+  },
+  "F484bfb24dc": {
+   "native_id": "Data.Sensitive.AccountData.AccountPassword|Sinks.ThirdParties.API.slack.com|132312-132320",
+   "strata": [
+    "privado:third_parties"
+   ],
+   "tool": "privado"
+  },
+  "F6079aba359": {
+   "native_id": "Data.Sensitive.AccountData.AccountPassword|Leakages.Log.Info|23895-23894",
+   "strata": [
+    "privado:leakages"
+   ],
+   "tool": "privado"
+  },
+  "F7b3c8281f2": {
+   "native_id": "Data.Sensitive.AccountData.AccountPassword|Leakages.Log.Info|25175-25174",
+   "strata": [
+    "privado:leakages"
+   ],
+   "tool": "privado"
+  },
+  "F7bfc09c413": {
+   "findings": [
+    {
+     "id": "pf-0165dfb406cc2743",
+     "rule": "PF001",
+     "severity": "medium"
+    }
+   ],
+   "flow": "flow-2fa6880466298dc0",
+   "strata": [
+    "piiflow:PF001"
+   ],
+   "tool": "piiflow"
+  },
+  "F7d882baf02": {
+   "native_id": "Data.Sensitive.AccountData.AccountPassword|Leakages.Log.Info|23394-23328",
+   "strata": [
+    "privado:leakages"
+   ],
+   "tool": "privado"
+  },
+  "F927047a33d": {
+   "native_id": "Data.Sensitive.OnlineIdentifiers.IPAddress|ThirdParties.SDK.Min|71595-146004-71687-71695-71908-59745-59987-59990-60048-60087-136183-136192-135958-135961-135963-135964-135967-135996-135997-135998-136005-136006-136007-135981-135983-135980-135984-135986-135990-136012-136019-136020-136021-136022-136030-136031-135959-136194-136195-136196-136197-136206-136221",
+   "strata": [
+    "privado:third_parties"
+   ],
+   "tool": "privado"
+  },
+  "Fa4c292e7d6": {
+   "native_id": "Data.Sensitive.ContactData.EmailAddress|ThirdParties.SDK.Min|59773-59774-59775-59776-59839-59836-59840-59843-59895-59910-59911-59914-59954-59956-59958-59959-60048-60087-136183-136192-135958-135961-135963-135964-135967-135996-135997-135998-136005-136006-136007-135981-135983-135980-135984-135986-135990-136012-136019-136020-136021-136022-136030-136031-135959-136194-136195-136196-136197-136206-136221",
+   "strata": [
+    "privado:third_parties"
+   ],
+   "tool": "privado"
+  },
+  "Fc20bc833e1": {
+   "findings": [
+    {
+     "id": "pf-b819b954a5937060",
+     "rule": "PF001",
+     "severity": "info"
+    }
+   ],
+   "flow": "flow-735d8cacaf57dc28",
+   "strata": [
+    "piiflow:info"
+   ],
+   "tool": "piiflow"
+  },
+  "Fc6c7c77afe": {
+   "native_id": "Data.Sensitive.AccountData.AccountPassword|Leakages.Log.Info|25386-25327",
+   "strata": [
+    "privado:leakages"
+   ],
+   "tool": "privado"
+  },
+  "Fc71a8a55ce": {
+   "native_id": "Data.Sensitive.ContactData.EmailAddress|Leakages.Log.Info|25949-25899",
+   "strata": [
+    "privado:leakages"
+   ],
+   "tool": "privado"
+  },
+  "Fc9c7ac9554": {
+   "native_id": "Data.Sensitive.ContactData.EmailAddress|Leakages.Log.Info|24027-23996",
+   "strata": [
+    "privado:leakages"
+   ],
+   "tool": "privado"
+  },
+  "Fcc7c25159d": {
+   "native_id": "Data.Sensitive.AccountData.AccountPassword|Sinks.ThirdParties.API.api.github.com|4801-132650-132657-132129-132285-132300-132301-132306",
+   "strata": [
+    "privado:third_parties"
+   ],
+   "tool": "privado"
+  },
+  "Fd46fb27f3e": {
+   "native_id": "Data.Sensitive.AccountData.AccountPassword|Sinks.ThirdParties.API.slack.com|4801-132650-132657-132129-132285-132300-132301-132306",
+   "strata": [
+    "privado:third_parties"
+   ],
+   "tool": "privado"
+  },
+  "Fd7b7223bad": {
+   "native_id": "Data.Sensitive.AccountData.AccountPassword|Sinks.ThirdParties.API.github.com|132312-132320",
+   "strata": [
+    "privado:third_parties"
+   ],
+   "tool": "privado"
+  },
+  "Fe0bd1adc88": {
+   "native_id": "Data.Sensitive.ContactData.EmailAddress|Sinks.ThirdParties.API.api.trello.com|4786-132650-132657-132129-132285-132300-132301-132306",
+   "strata": [
+    "privado:third_parties"
+   ],
+   "tool": "privado"
+  },
+  "Feccd116b13": {
+   "findings": [
+    {
+     "id": "pf-0c4b9dd2a6ddd45e",
+     "rule": "PF001",
+     "severity": "info"
+    }
+   ],
+   "flow": "flow-2353ddb4c10ffe9f",
+   "strata": [
+    "piiflow:info"
+   ],
+   "tool": "piiflow"
+  },
+  "Fed76dc8936": {
+   "findings": [
+    {
+     "id": "pf-325113fc49d518ec",
+     "rule": "PF001",
+     "severity": "info"
+    }
+   ],
+   "flow": "flow-825b9bde8d68a732",
+   "strata": [
+    "piiflow:info"
+   ],
+   "tool": "piiflow"
+  },
+  "Ff83558e831": {
+   "native_id": "Data.Sensitive.ContactData.EmailAddress|Leakages.Log.Info|23895-23894",
+   "strata": [
+    "privado:leakages"
+   ],
+   "tool": "privado"
+  },
+  "G43d0154397": {
+   "gap": "gap-ff048aea9a7ff261",
+   "strata": [
+    "piiflow:gaps"
+   ],
+   "tool": "piiflow"
+  },
+  "G5dfc6813dd": {
+   "gap": "gap-7ad2c90259e6c4f1",
+   "strata": [
+    "piiflow:gaps"
+   ],
+   "tool": "piiflow"
+  },
+  "G8e891abbb6": {
+   "gap": "gap-ce7a4f98773d18fc",
+   "strata": [
+    "piiflow:gaps"
+   ],
+   "tool": "piiflow"
+  },
+  "Ga062e2acfa": {
+   "gap": "gap-ffd9ad7103049c9c",
+   "strata": [
+    "piiflow:gaps"
+   ],
+   "tool": "piiflow"
+  },
+  "Ga55ed16e10": {
+   "gap": "gap-7cece2668e75c49c",
+   "strata": [
+    "piiflow:gaps"
+   ],
+   "tool": "piiflow"
+  },
+  "Gb2051b0a72": {
+   "gap": "gap-ce4f8d9a463d3136",
+   "strata": [
+    "piiflow:gaps"
+   ],
+   "tool": "piiflow"
+  },
+  "Gb8d169b4a1": {
+   "gap": "gap-d9bfcff0e700588c",
+   "strata": [
+    "piiflow:gaps"
+   ],
+   "tool": "piiflow"
+  },
+  "Gcbd836ccb3": {
+   "gap": "gap-3c7be4b8ddc98e00",
+   "strata": [
+    "piiflow:gaps"
+   ],
+   "tool": "piiflow"
+  },
+  "Gd5eaaab0b6": {
+   "gap": "gap-8d0112c999a8346a",
+   "strata": [
+    "piiflow:gaps"
+   ],
+   "tool": "piiflow"
+  },
+  "Gd8fc502392": {
+   "gap": "gap-bcc2de6b15562170",
+   "strata": [
+    "piiflow:gaps"
+   ],
+   "tool": "piiflow"
+  },
+  "S171386f1cc": {
+   "strata": [
+    "sites:other"
+   ]
+  },
+  "S256f971729": {
+   "strata": [
+    "sites:other"
+   ]
+  },
+  "S2d0aed1ed5": {
+   "strata": [
+    "sites:log"
+   ]
+  },
+  "S316ff137da": {
+   "strata": [
+    "sites:other"
+   ]
+  },
+  "S32f459c679": {
+   "strata": [
+    "sites:other"
+   ]
+  },
+  "S3e2fe6b183": {
+   "strata": [
+    "sites:other"
+   ]
+  },
+  "S41084e83f6": {
+   "strata": [
+    "sites:log"
+   ]
+  },
+  "S49651e1ed7": {
+   "strata": [
+    "sites:log"
+   ]
+  },
+  "S4ed1368476": {
+   "strata": [
+    "sites:log"
+   ]
+  },
+  "S4f759778a1": {
+   "strata": [
+    "sites:other"
+   ]
+  },
+  "S58e022bc4d": {
+   "strata": [
+    "sites:log"
+   ]
+  },
+  "S61d5caab30": {
+   "strata": [
+    "sites:log"
+   ]
+  },
+  "S66e51b7b02": {
+   "strata": [
+    "sites:log"
+   ]
+  },
+  "S66ee716cef": {
+   "strata": [
+    "sites:log"
+   ]
+  },
+  "S72acc5f864": {
+   "strata": [
+    "sites:other"
+   ]
+  },
+  "S7a7fe6e3da": {
+   "strata": [
+    "sites:other"
+   ]
+  },
+  "S80c5fcd60f": {
+   "strata": [
+    "sites:log"
+   ]
+  },
+  "S85a047478f": {
+   "strata": [
+    "sites:other"
+   ]
+  },
+  "S865485e44e": {
+   "strata": [
+    "sites:other"
+   ]
+  },
+  "S91465ac24c": {
+   "strata": [
+    "sites:other"
+   ]
+  },
+  "S9d3be3779e": {
+   "strata": [
+    "sites:other"
+   ]
+  },
+  "Sba1b02e1ec": {
+   "strata": [
+    "sites:log"
+   ]
+  },
+  "Sbbb27f2965": {
+   "strata": [
+    "sites:log"
+   ]
+  },
+  "Sc95cf4edff": {
+   "strata": [
+    "sites:other"
+   ]
+  },
+  "Se01be9390d": {
+   "strata": [
+    "sites:other"
+   ]
+  },
+  "Se7446b6eaf": {
+   "strata": [
+    "sites:other"
+   ]
+  },
+  "Sf4dad6e949": {
+   "strata": [
+    "sites:log"
+   ]
+  },
+  "Sf65e4976fd": {
+   "strata": [
+    "sites:other"
+   ]
+  },
+  "Sf813980de2": {
+   "strata": [
+    "sites:other"
+   ]
+  },
+  "Sfc6daced2c": {
+   "strata": [
+    "sites:other"
+   ]
+  }
+ },
+ "population": {
+  "piiflow:PF001": 1,
+  "piiflow:PF002": 0,
+  "piiflow:PF003": 0,
+  "piiflow:PF004": 0,
+  "piiflow:PF005": 0,
+  "piiflow:PF006": 0,
+  "piiflow:gaps": 58,
+  "piiflow:info": 3,
+  "privado:leakages": 25,
+  "privado:third_parties": 39,
+  "sites:log": 43,
+  "sites:other": 23
+ }
+}

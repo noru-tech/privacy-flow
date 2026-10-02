@@ -1,0 +1,18 @@
+{"categories": ["user"], "hops": [{"column": 41, "line": 31, "path": "lib/auth.ts"}, {"column": 11, "line": 50, "path": "lib/auth.ts"}, {"column": 30, "line": 48, "path": "lib/auth.ts"}], "id": "Fad064dfccc", "kind": "flow", "sink_class": "third_party"}
+{"categories": ["user.contact.email"], "hops": [{"column": 23, "line": 41, "path": "app/api/users/stripe/route.ts"}, {"column": 33, "line": 35, "path": "app/api/users/stripe/route.ts"}], "id": "Fa79a1e665a", "kind": "flow", "sink_class": "third_party"}
+{"categories": ["user"], "hops": [{"column": 27, "line": 54, "path": "lib/auth.ts"}, {"column": 11, "line": 52, "path": "lib/auth.ts"}, {"column": 30, "line": 48, "path": "lib/auth.ts"}], "id": "Fed114e472c", "kind": "flow", "sink_class": "third_party"}
+{"detail": "react-textarea-autosize:", "gap_kind": "unresolved_callee", "id": "Gfa2b94959e", "kind": "gap", "locations": [{"column": 11, "line": 149, "path": "components/editor.tsx"}], "reached_by_sources": 2}
+{"detail": "<Icon className={cn", "gap_kind": "dynamic_call", "id": "G621ec46dda", "kind": "gap", "locations": [{"column": 7, "line": 46, "path": "components/empty-placeholder.tsx"}], "reached_by_sources": 1}
+{"detail": "listener", "gap_kind": "dynamic_call", "id": "G845f70234d", "kind": "gap", "locations": [{"column": 5, "line": 134, "path": "components/ui/use-toast.ts"}], "reached_by_sources": 3}
+{"detail": "@editorjs/editorjs:default", "gap_kind": "unresolved_callee", "id": "Gb04d04dc37", "kind": "gap", "locations": [{"column": 22, "line": 48, "path": "components/editor.tsx"}], "reached_by_sources": 1}
+{"detail": "@vercel/og:ImageResponse", "gap_kind": "unresolved_callee", "id": "G0ac1abc072", "kind": "gap", "locations": [{"column": 12, "line": 32, "path": "app/api/og/route.tsx"}], "reached_by_sources": 1}
+{"callee": "fetch", "class": "http", "column": 26, "id": "Se3f0a25417", "kind": "site", "line": 29, "path": "components/post-operations.tsx"}
+{"callee": "stripe.checkout.sessions.create", "class": "third_party", "column": 33, "id": "S57a4228f39", "kind": "site", "line": 35, "path": "app/api/users/stripe/route.ts"}
+{"callee": "fetch", "class": "http", "column": 28, "id": "S0bf6a42d53", "kind": "site", "line": 37, "path": "components/billing-form.tsx"}
+{"callee": "fetch", "class": "http", "column": 28, "id": "S25cec2828a", "kind": "site", "line": 91, "path": "components/editor.tsx"}
+{"callee": "fetch", "class": "http", "column": 22, "id": "S0109b8cdd0", "kind": "site", "line": 7, "path": "app/api/og/route.tsx"}
+{"callee": "fetch", "class": "http", "column": 28, "id": "S40759d1463", "kind": "site", "line": 24, "path": "components/post-create-button.tsx"}
+{"callee": "fetch", "class": "http", "column": 28, "id": "Scdb9867199", "kind": "site", "line": 10, "path": "app/(marketing)/page.tsx"}
+{"callee": "fetch", "class": "http", "column": 19, "id": "Sd8cc372f16", "kind": "site", "line": 11, "path": "app/api/og/route.tsx"}
+{"callee": "fetch", "class": "http", "column": 28, "id": "S0f7de0ffd6", "kind": "site", "line": 49, "path": "components/user-name-form.tsx"}
+{"callee": "stripe.billingPortal.sessions.create", "class": "third_party", "column": 35, "id": "S3c9d5782ac", "kind": "site", "line": 25, "path": "app/api/users/stripe/route.ts"}

@@ -197,10 +197,13 @@ takes 12 s with byte-identical output (recorded as a protocol deviation). The CI
 budget's synthetic service did not catch it, because the quadratic needs summaries that reach
 thousands of sinks; a regression test shaped like that would be worth adding.
 
-**Waiting on decisions (Bip).**
+**Privado run (2026-10-02).** Completed on 10 of 12 applications. The image reports
+privado-core 1.1.175, not the last release. `polar` and `redash` were killed for memory twice,
+the second time with 14 GiB plus 21 GiB of swap, and are recorded as Privado failures.
 
-1. Running the Privado workflow: GitHub Actions minutes on a private repository, and a 1.75 GB
-   image pull per job, 12 jobs.
-2. Who R1 and R2 are. At about 50–90 items per application, each reviewer labels roughly
-   700–900 items; budget 15–30 hours each.
-3. The Zenodo deposit (needs Noru's account) once labels and scores are final.
+**Sheets drawn.** 752 items per reviewer: 313 flows (211 piiflow, 102 Privado, blinded and
+shuffled), 114 gaps and 325 candidate sites. Reviewers: Bip (R1) and a colleague (R2); guide in
+benchmark/REVIEWERS.md.
+
+**Next.** Both reviewers label independently; then `score.py --agreement`, adjudication into
+`labels/final/`, `score.py`, the write-up, and the Zenodo deposit (needs Noru's account).

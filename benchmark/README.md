@@ -6,6 +6,7 @@ against, labelled by two reviewers, with Privado's open-source scanner run on th
 - [PROTOCOL.md](PROTOCOL.md): units, labels, sampling, blinding, scoring, the Privado judgement
   calls, and deviations. Fixed before labelling.
 - [SELECTION.md](SELECTION.md): the criteria and every candidate considered.
+- [REVIEWERS.md](REVIEWERS.md): how R1 and R2 label.
 - [corpus.json](corpus.json): the applications, pinned by commit, with scope and exclusions.
 - [results/summary.json](results/summary.json): what `piiflow` reported on each application, the
   commit under test, document digests, wall time and peak memory.
@@ -16,8 +17,8 @@ against, labelled by two reviewers, with Privado's open-source scanner run on th
 | --- | --- |
 | Corpus fixed, protocol written | done (2026-10-02) |
 | `piiflow` run recorded | done: commit `9a78b08`, byte-identical on repeat |
-| Privado run | workflow ready (`benchmark-privado.yml`), not yet run |
-| Sheets drawn | after the Privado run |
+| Privado run | done for 10 of 12; `polar` and `redash` exceed a standard runner's memory even with swap (recorded as failures) |
+| Sheets drawn | done: 752 items per reviewer (313 blinded flows, 114 gaps, 325 sites) |
 | Labelling by R1 and R2 | not started |
 | Scores, write-up, Zenodo DOI | after labelling |
 

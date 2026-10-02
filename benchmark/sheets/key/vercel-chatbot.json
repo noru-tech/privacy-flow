@@ -1,0 +1,610 @@
+{
+ "app": "vercel-chatbot",
+ "items": {
+  "F00765a09a4": {
+   "findings": [
+    {
+     "id": "pf-9135c65ed9ffa6c0",
+     "rule": "PF003",
+     "severity": "info"
+    }
+   ],
+   "flow": "flow-4c1b83759371f34f",
+   "strata": [
+    "piiflow:info"
+   ],
+   "tool": "piiflow"
+  },
+  "F0788ee468e": {
+   "findings": [
+    {
+     "id": "pf-2f250e6dac487595",
+     "rule": "PF006",
+     "severity": "info"
+    }
+   ],
+   "flow": "flow-10010fbccb5b3b3b",
+   "strata": [
+    "piiflow:info"
+   ],
+   "tool": "piiflow"
+  },
+  "F15855b29ad": {
+   "native_id": "Data.Sensitive.AccountData.LanguagePreferences|Leakages.Log.Error|16472-16471-16473-16475-16474-16478-16811-16810-16816-16807-16806-16819-16723-16731-16725",
+   "strata": [
+    "privado:leakages"
+   ],
+   "tool": "privado"
+  },
+  "F1b1c52374d": {
+   "findings": [
+    {
+     "id": "pf-ce0d5b5af2feee55",
+     "rule": "PF003",
+     "severity": "medium"
+    }
+   ],
+   "flow": "flow-22cb1b5d0a97635d",
+   "strata": [
+    "piiflow:PF003"
+   ],
+   "tool": "piiflow"
+  },
+  "F39855b94c4": {
+   "findings": [
+    {
+     "id": "pf-760a6cd1fae89b44",
+     "rule": "PF003",
+     "severity": "medium"
+    }
+   ],
+   "flow": "flow-35a6980f49bad4f6",
+   "strata": [
+    "piiflow:PF003"
+   ],
+   "tool": "piiflow"
+  },
+  "F3a61cbe3ff": {
+   "findings": [
+    {
+     "id": "pf-7204ce6c951df5e2",
+     "rule": "PF003",
+     "severity": "info"
+    }
+   ],
+   "flow": "flow-ad2a4d7716268ed2",
+   "strata": [
+    "piiflow:info"
+   ],
+   "tool": "piiflow"
+  },
+  "F4a9efc9328": {
+   "findings": [
+    {
+     "id": "pf-d72c145320dec49e",
+     "rule": "PF003",
+     "severity": "info"
+    }
+   ],
+   "flow": "flow-ea1ee52cc32ed40a",
+   "strata": [
+    "piiflow:info"
+   ],
+   "tool": "piiflow"
+  },
+  "F4f063c55ff": {
+   "native_id": "Data.Sensitive.LocationData.PreciseLocation|Sinks.ThirdParties.API.geocoding-api.open-meteo.com|94038-94037-94090-94086-94085",
+   "strata": [
+    "privado:third_parties"
+   ],
+   "tool": "privado"
+  },
+  "F52debfc765": {
+   "findings": [
+    {
+     "id": "pf-98d57df4f415fbba",
+     "rule": "PF003",
+     "severity": "medium"
+    }
+   ],
+   "flow": "flow-f4e47541b8da8170",
+   "strata": [
+    "piiflow:PF003"
+   ],
+   "tool": "piiflow"
+  },
+  "F53c41f1855": {
+   "findings": [
+    {
+     "id": "pf-bf67f1359ec2f951",
+     "rule": "PF003",
+     "severity": "info"
+    }
+   ],
+   "flow": "flow-ccf567aa30b83233",
+   "strata": [
+    "piiflow:info"
+   ],
+   "tool": "piiflow"
+  },
+  "F5ea581f181": {
+   "findings": [
+    {
+     "id": "pf-b311a495a2181522",
+     "rule": "PF002",
+     "severity": "high"
+    }
+   ],
+   "flow": "flow-70ac4a7e53f26a5f",
+   "strata": [
+    "piiflow:PF002"
+   ],
+   "tool": "piiflow"
+  },
+  "F5ec7d659f0": {
+   "findings": [
+    {
+     "id": "pf-5f9eb01c0fc15943",
+     "rule": "PF003",
+     "severity": "medium"
+    }
+   ],
+   "flow": "flow-6b8cf44d2cd5e792",
+   "strata": [
+    "piiflow:PF003"
+   ],
+   "tool": "piiflow"
+  },
+  "F5fed2924bb": {
+   "findings": [
+    {
+     "id": "pf-80bca5b32b3c76aa",
+     "rule": "PF003",
+     "severity": "info"
+    }
+   ],
+   "flow": "flow-d6241f47c3b8cd8b",
+   "strata": [
+    "piiflow:info"
+   ],
+   "tool": "piiflow"
+  },
+  "F636b5f9e4c": {
+   "findings": [
+    {
+     "id": "pf-760c8b4ec7fc8244",
+     "rule": "PF003",
+     "severity": "medium"
+    }
+   ],
+   "flow": "flow-0bd2c417b710d40b",
+   "strata": [
+    "piiflow:PF003"
+   ],
+   "tool": "piiflow"
+  },
+  "F6869f2dbd4": {
+   "findings": [
+    {
+     "id": "pf-ea13bbf4bfed117a",
+     "rule": "PF002",
+     "severity": "high"
+    }
+   ],
+   "flow": "flow-2d973f77cec24d5f",
+   "strata": [
+    "piiflow:PF002"
+   ],
+   "tool": "piiflow"
+  },
+  "F68972357b7": {
+   "native_id": "Data.Sensitive.AccountData.AccountID|Sinks.ThirdParties.API|4927-3407-4915-4945-2520-2544-2551-2549-2546-2510-2532-112078-4945-5001-5016-5017-5223-5222-5227-5219",
+   "strata": [
+    "privado:third_parties"
+   ],
+   "tool": "privado"
+  },
+  "F68b7802299": {
+   "findings": [
+    {
+     "id": "pf-4277f440fb578d21",
+     "rule": "PF006",
+     "severity": "info"
+    }
+   ],
+   "flow": "flow-af81b7336d5d89e0",
+   "strata": [
+    "piiflow:info"
+   ],
+   "tool": "piiflow"
+  },
+  "F767a102305": {
+   "findings": [
+    {
+     "id": "pf-9e096f15a492f22d",
+     "rule": "PF001",
+     "severity": "medium"
+    }
+   ],
+   "flow": "flow-50dbceb39b6077f7",
+   "strata": [
+    "piiflow:PF001"
+   ],
+   "tool": "piiflow"
+  },
+  "F7c3493297d": {
+   "findings": [
+    {
+     "id": "pf-13f57e7263f765a2",
+     "rule": "PF006",
+     "severity": "info"
+    }
+   ],
+   "flow": "flow-8742e5ea8d3bd3b4",
+   "strata": [
+    "piiflow:info"
+   ],
+   "tool": "piiflow"
+  },
+  "F8094cf0a4a": {
+   "findings": [
+    {
+     "id": "pf-b9943225f135a082",
+     "rule": "PF002",
+     "severity": "high"
+    }
+   ],
+   "flow": "flow-296f1d4766e75bf5",
+   "strata": [
+    "piiflow:PF002"
+   ],
+   "tool": "piiflow"
+  },
+  "F8f021047e2": {
+   "findings": [
+    {
+     "id": "pf-4bf90fff6e99fbc8",
+     "rule": "PF003",
+     "severity": "medium"
+    }
+   ],
+   "flow": "flow-e13f0f8cc69cc353",
+   "strata": [
+    "piiflow:PF003"
+   ],
+   "tool": "piiflow"
+  },
+  "F8f6b468121": {
+   "findings": [
+    {
+     "id": "pf-e6b059b63643e8b3",
+     "rule": "PF003",
+     "severity": "info"
+    }
+   ],
+   "flow": "flow-48ea6ca9693cbf0a",
+   "strata": [
+    "piiflow:info"
+   ],
+   "tool": "piiflow"
+  },
+  "F92d5b85a2a": {
+   "findings": [
+    {
+     "id": "pf-c484d90c90404844",
+     "rule": "PF003",
+     "severity": "medium"
+    }
+   ],
+   "flow": "flow-3dbcfb621d5f44c0",
+   "strata": [
+    "piiflow:PF003"
+   ],
+   "tool": "piiflow"
+  },
+  "F9b65c7e090": {
+   "findings": [
+    {
+     "id": "pf-21ff03fb4d06d58b",
+     "rule": "PF002",
+     "severity": "high"
+    }
+   ],
+   "flow": "flow-bbd6b3b8f7747b7e",
+   "strata": [
+    "piiflow:PF002"
+   ],
+   "tool": "piiflow"
+  },
+  "Fd17001ddc1": {
+   "native_id": "Data.Sensitive.AccountData.AccountID|Leakages.Log.Error|4927-3407-4915-4945-2520-2544-2551-2549-2546-2510-2532-112078-4945-5001-5016-5017-5223-5222-5227-5219-5218-5280-5277-4619-5269",
+   "strata": [
+    "privado:leakages"
+   ],
+   "tool": "privado"
+  },
+  "Fe2c509e798": {
+   "native_id": "Data.Sensitive.LocationData.PreciseLocation|Sinks.ThirdParties.API.api.open-meteo.com|94038-94037-94090-94086-94085",
+   "strata": [
+    "privado:third_parties"
+   ],
+   "tool": "privado"
+  },
+  "Fec448cf880": {
+   "findings": [
+    {
+     "id": "pf-04982249c191ecc3",
+     "rule": "PF002",
+     "severity": "high"
+    }
+   ],
+   "flow": "flow-8289442391919fda",
+   "strata": [
+    "piiflow:PF002"
+   ],
+   "tool": "piiflow"
+  },
+  "Fefd17f31ee": {
+   "findings": [
+    {
+     "id": "pf-873334097a4e6fce",
+     "rule": "PF003",
+     "severity": "medium"
+    }
+   ],
+   "flow": "flow-06199eedbc511538",
+   "strata": [
+    "piiflow:PF003"
+   ],
+   "tool": "piiflow"
+  },
+  "Ff900708f83": {
+   "findings": [
+    {
+     "id": "pf-5e10f1699fd0d9ab",
+     "rule": "PF001",
+     "severity": "medium"
+    }
+   ],
+   "flow": "flow-0254da5e6e03ec54",
+   "strata": [
+    "piiflow:PF001"
+   ],
+   "tool": "piiflow"
+  },
+  "G5874ee5d06": {
+   "gap": "gap-d37d73dc75265bfb",
+   "strata": [
+    "piiflow:gaps"
+   ],
+   "tool": "piiflow"
+  },
+  "G75d6e81419": {
+   "gap": "gap-2705840ee468e82c",
+   "strata": [
+    "piiflow:gaps"
+   ],
+   "tool": "piiflow"
+  },
+  "G7c88d70628": {
+   "gap": "gap-feb60167bee33a0a",
+   "strata": [
+    "piiflow:gaps"
+   ],
+   "tool": "piiflow"
+  },
+  "G85b4e86ba7": {
+   "gap": "gap-9e064fdf8f822632",
+   "strata": [
+    "piiflow:gaps"
+   ],
+   "tool": "piiflow"
+  },
+  "Ga842ef5499": {
+   "gap": "gap-d15f07e23ad9b02c",
+   "strata": [
+    "piiflow:gaps"
+   ],
+   "tool": "piiflow"
+  },
+  "Gaf9f2ffb93": {
+   "gap": "gap-01c4a294d352fcff",
+   "strata": [
+    "piiflow:gaps"
+   ],
+   "tool": "piiflow"
+  },
+  "Gb19bbf6ff0": {
+   "gap": "gap-ff9480ecce54108b",
+   "strata": [
+    "piiflow:gaps"
+   ],
+   "tool": "piiflow"
+  },
+  "Gb4655cb961": {
+   "gap": "gap-28863b24835a08fe",
+   "strata": [
+    "piiflow:gaps"
+   ],
+   "tool": "piiflow"
+  },
+  "Gf5c9ef0aae": {
+   "gap": "gap-13411d30480c2684",
+   "strata": [
+    "piiflow:gaps"
+   ],
+   "tool": "piiflow"
+  },
+  "Gfb373c6eff": {
+   "gap": "gap-afd4d2d9ee6502eb",
+   "strata": [
+    "piiflow:gaps"
+   ],
+   "tool": "piiflow"
+  },
+  "S02becd21ff": {
+   "strata": [
+    "sites:log"
+   ]
+  },
+  "S03775b871e": {
+   "strata": [
+    "sites:log"
+   ]
+  },
+  "S122c716e98": {
+   "strata": [
+    "sites:log"
+   ]
+  },
+  "S1355612411": {
+   "strata": [
+    "sites:other"
+   ]
+  },
+  "S2484834470": {
+   "strata": [
+    "sites:other"
+   ]
+  },
+  "S395bc84909": {
+   "strata": [
+    "sites:other"
+   ]
+  },
+  "S41f177cad9": {
+   "strata": [
+    "sites:log"
+   ]
+  },
+  "S45eb24bf7c": {
+   "strata": [
+    "sites:log"
+   ]
+  },
+  "S4826326742": {
+   "strata": [
+    "sites:log"
+   ]
+  },
+  "S5553e20dbb": {
+   "strata": [
+    "sites:other"
+   ]
+  },
+  "S5a73e272e5": {
+   "strata": [
+    "sites:log"
+   ]
+  },
+  "S5e826ec487": {
+   "strata": [
+    "sites:other"
+   ]
+  },
+  "S6d8455c028": {
+   "strata": [
+    "sites:other"
+   ]
+  },
+  "S6f98d5b9c2": {
+   "strata": [
+    "sites:other"
+   ]
+  },
+  "S80f53245fd": {
+   "strata": [
+    "sites:other"
+   ]
+  },
+  "S830416df2d": {
+   "strata": [
+    "sites:other"
+   ]
+  },
+  "Sa18b0e8908": {
+   "strata": [
+    "sites:log"
+   ]
+  },
+  "Saa10cdcf7b": {
+   "strata": [
+    "sites:log"
+   ]
+  },
+  "Sb57cff36e4": {
+   "strata": [
+    "sites:other"
+   ]
+  },
+  "Sc1fb910ae7": {
+   "strata": [
+    "sites:other"
+   ]
+  },
+  "Scbb2b5da75": {
+   "strata": [
+    "sites:other"
+   ]
+  },
+  "Sd24af33e6e": {
+   "strata": [
+    "sites:other"
+   ]
+  },
+  "Sd4ac2c6686": {
+   "strata": [
+    "sites:other"
+   ]
+  },
+  "Sd9aaa027da": {
+   "strata": [
+    "sites:other"
+   ]
+  },
+  "Se1924b6812": {
+   "strata": [
+    "sites:other"
+   ]
+  },
+  "Se65a514844": {
+   "strata": [
+    "sites:other"
+   ]
+  },
+  "Seae5f5b5e4": {
+   "strata": [
+    "sites:log"
+   ]
+  },
+  "Sf2e58b2e63": {
+   "strata": [
+    "sites:log"
+   ]
+  },
+  "Sf4f9ce0bf7": {
+   "strata": [
+    "sites:other"
+   ]
+  },
+  "Sf63835ba0e": {
+   "strata": [
+    "sites:log"
+   ]
+  }
+ },
+ "population": {
+  "piiflow:PF001": 2,
+  "piiflow:PF002": 5,
+  "piiflow:PF003": 30,
+  "piiflow:PF004": 0,
+  "piiflow:PF005": 0,
+  "piiflow:PF006": 0,
+  "piiflow:gaps": 51,
+  "piiflow:info": 9,
+  "privado:leakages": 2,
+  "privado:third_parties": 3,
+  "sites:log": 19,
+  "sites:other": 30
+ }
+}

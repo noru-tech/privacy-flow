@@ -1,0 +1,212 @@
+{
+ "app": "fastapi-template",
+ "items": {
+  "F02ca0d10e0": {
+   "native_id": "Data.Sensitive.ContactData.EmailAddress|Leakages.Log.Info|8450-8459-8460-8453-8452-8469-8470-8471-8472-8545-8546-8547-8550-8551-8552-8557",
+   "strata": [
+    "privado:leakages"
+   ],
+   "tool": "privado"
+  },
+  "F3ff7c42c7b": {
+   "native_id": "Data.Sensitive.AccountData.AccountPassword|Leakages.Log.Info|8533-8536-8541-8540-8545-8546-8547-8550-8551-8552-8557",
+   "strata": [
+    "privado:leakages"
+   ],
+   "tool": "privado"
+  },
+  "F8e3f505683": {
+   "findings": [
+    {
+     "id": "pf-5571f99c2324421e",
+     "rule": "PF001",
+     "severity": "medium"
+    }
+   ],
+   "flow": "flow-24e7249d5cdef375",
+   "strata": [
+    "piiflow:PF001"
+   ],
+   "tool": "piiflow"
+  },
+  "Fc7f8e43d59": {
+   "findings": [
+    {
+     "id": "pf-790c2eb420277aa1",
+     "rule": "PF001",
+     "severity": "medium"
+    }
+   ],
+   "flow": "flow-b58df8267d9c4081",
+   "strata": [
+    "piiflow:PF001"
+   ],
+   "tool": "piiflow"
+  },
+  "Fcfe5ff2827": {
+   "findings": [
+    {
+     "id": "pf-abd98b16ef5eb78d",
+     "rule": "PF001",
+     "severity": "medium"
+    }
+   ],
+   "flow": "flow-ec3f52a80337e97d",
+   "strata": [
+    "piiflow:PF001"
+   ],
+   "tool": "piiflow"
+  },
+  "G1a7bdf52b9": {
+   "gap": "gap-04ba8762f6128d2c",
+   "strata": [
+    "piiflow:gaps"
+   ],
+   "tool": "piiflow"
+  },
+  "G1e83dbfb46": {
+   "gap": "gap-270809d6bb6fcf2f",
+   "strata": [
+    "piiflow:gaps"
+   ],
+   "tool": "piiflow"
+  },
+  "G6822496555": {
+   "gap": "gap-36f117143aa8ef9f",
+   "strata": [
+    "piiflow:gaps"
+   ],
+   "tool": "piiflow"
+  },
+  "G6fd9570fde": {
+   "gap": "gap-d6a504e15c9df6d5",
+   "strata": [
+    "piiflow:gaps"
+   ],
+   "tool": "piiflow"
+  },
+  "G95cd40ff78": {
+   "gap": "gap-1027b4f06cf96943",
+   "strata": [
+    "piiflow:gaps"
+   ],
+   "tool": "piiflow"
+  },
+  "Gb75c5cb6e9": {
+   "gap": "gap-b5556a3eb258761a",
+   "strata": [
+    "piiflow:gaps"
+   ],
+   "tool": "piiflow"
+  },
+  "Gbfb7edca9c": {
+   "gap": "gap-967599f96fc09f76",
+   "strata": [
+    "piiflow:gaps"
+   ],
+   "tool": "piiflow"
+  },
+  "Gc30ba26960": {
+   "gap": "gap-fd80af8d81b6eed1",
+   "strata": [
+    "piiflow:gaps"
+   ],
+   "tool": "piiflow"
+  },
+  "Gee8feddfd4": {
+   "gap": "gap-f0ed5af25c90885c",
+   "strata": [
+    "piiflow:gaps"
+   ],
+   "tool": "piiflow"
+  },
+  "S26f3ec1f78": {
+   "strata": [
+    "sites:other"
+   ]
+  },
+  "S28b8b24daf": {
+   "strata": [
+    "sites:log"
+   ]
+  },
+  "S3bbfe40233": {
+   "strata": [
+    "sites:other"
+   ]
+  },
+  "S4e82fbcbfb": {
+   "strata": [
+    "sites:log"
+   ]
+  },
+  "S4f0dd6de37": {
+   "strata": [
+    "sites:other"
+   ]
+  },
+  "S79cc25e49d": {
+   "strata": [
+    "sites:other"
+   ]
+  },
+  "S79ed5f67f8": {
+   "strata": [
+    "sites:log"
+   ]
+  },
+  "S7c397a7399": {
+   "strata": [
+    "sites:other"
+   ]
+  },
+  "S836bc5c9af": {
+   "strata": [
+    "sites:other"
+   ]
+  },
+  "Sb3e3c493f1": {
+   "strata": [
+    "sites:other"
+   ]
+  },
+  "Sc33a758ca8": {
+   "strata": [
+    "sites:other"
+   ]
+  },
+  "Scd1769a2e8": {
+   "strata": [
+    "sites:other"
+   ]
+  },
+  "Sd07a1e18b8": {
+   "strata": [
+    "sites:other"
+   ]
+  },
+  "Se2c8e210ba": {
+   "strata": [
+    "sites:log"
+   ]
+  },
+  "Sfa2fffeb9b": {
+   "strata": [
+    "sites:other"
+   ]
+  }
+ },
+ "population": {
+  "piiflow:PF001": 3,
+  "piiflow:PF002": 0,
+  "piiflow:PF003": 0,
+  "piiflow:PF004": 0,
+  "piiflow:PF005": 0,
+  "piiflow:PF006": 0,
+  "piiflow:gaps": 9,
+  "piiflow:info": 0,
+  "privado:leakages": 2,
+  "sites:log": 4,
+  "sites:other": 11
+ }
+}

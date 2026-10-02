@@ -154,4 +154,8 @@ on the same commits and scopes. Every judgement call is written down here before
   reported as Privado failures and excluded from Privado's numbers only. The jobs' red status in
   that run came from the harness failing to delete the root-owned work directory after each scan,
   not from Privado; `scan.py` no longer does that, and the scans' outputs are used as produced.
+  **Outcome:** the retry (Actions run 36978183971; 14 GiB memory plus 21 GiB swap, the most the
+  runner's disk allowed, 36 GiB heap) was killed the same way on both. `polar` and `redash` are
+  Privado failures: no Privado items are drawn for them, and Privado's precision and recall are
+  computed over the other ten applications, which the write-up states.
 

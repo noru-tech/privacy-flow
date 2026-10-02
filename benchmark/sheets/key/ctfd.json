@@ -1,0 +1,617 @@
+{
+ "app": "ctfd",
+ "items": {
+  "F0032111aae": {
+   "native_id": "Data.Sensitive.UserContentData.Ratings|Leakages.Log|62393-62388-62390",
+   "strata": [
+    "privado:leakages"
+   ],
+   "tool": "privado"
+  },
+  "F01f818e44b": {
+   "findings": [
+    {
+     "id": "pf-fd9ac628d94ab885",
+     "rule": "PF001",
+     "severity": "medium"
+    }
+   ],
+   "flow": "flow-cb2f436aa49da9cd",
+   "strata": [
+    "piiflow:PF001"
+   ],
+   "tool": "piiflow"
+  },
+  "F06faa956f6": {
+   "findings": [
+    {
+     "id": "pf-abe114474b662eda",
+     "rule": "PF002",
+     "severity": "info"
+    }
+   ],
+   "flow": "flow-ceccc2c23747c0ce",
+   "strata": [
+    "piiflow:info"
+   ],
+   "tool": "piiflow"
+  },
+  "F0b4a536038": {
+   "findings": [
+    {
+     "id": "pf-f011bcc5c1489b15",
+     "rule": "PF001",
+     "severity": "info"
+    }
+   ],
+   "flow": "flow-4509d30b2eddb206",
+   "strata": [
+    "piiflow:info"
+   ],
+   "tool": "piiflow"
+  },
+  "F0bda6b13f1": {
+   "findings": [
+    {
+     "id": "pf-ebb3e7f771368cea",
+     "rule": "PF001",
+     "severity": "medium"
+    }
+   ],
+   "flow": "flow-95e111b6214d0c00",
+   "strata": [
+    "piiflow:PF001"
+   ],
+   "tool": "piiflow"
+  },
+  "F0c72c0af57": {
+   "findings": [
+    {
+     "id": "pf-1c61458de13a044f",
+     "rule": "PF001",
+     "severity": "medium"
+    }
+   ],
+   "flow": "flow-f1bb9885e215d13e",
+   "strata": [
+    "piiflow:PF001"
+   ],
+   "tool": "piiflow"
+  },
+  "F1d65cfbc89": {
+   "native_id": "Data.Sensitive.UserContentData.Ratings|Sinks.ThirdParties.API.versioning.ctfd.io|155050-155052-155053-155058-155059-155060-155049-155099-155100-155103-155109-155110-155115-155116-155117-155118-155181-155182-155187-155188",
+   "strata": [
+    "privado:third_parties"
+   ],
+   "tool": "privado"
+  },
+  "F28096e54b5": {
+   "findings": [
+    {
+     "id": "pf-fdcf4a02fa56bb21",
+     "rule": "PF001",
+     "severity": "info"
+    }
+   ],
+   "flow": "flow-14010468eb34312f",
+   "strata": [
+    "piiflow:info"
+   ],
+   "tool": "piiflow"
+  },
+  "F39be92769f": {
+   "findings": [
+    {
+     "id": "pf-1f2b7232fed905fe",
+     "rule": "PF006",
+     "severity": "info"
+    }
+   ],
+   "flow": "flow-cdafed2222805b23",
+   "strata": [
+    "piiflow:info"
+   ],
+   "tool": "piiflow"
+  },
+  "F485c2b45b8": {
+   "findings": [
+    {
+     "id": "pf-72faf89288354530",
+     "rule": "PF001",
+     "severity": "info"
+    }
+   ],
+   "flow": "flow-0b07a6fdfd1d1a41",
+   "strata": [
+    "piiflow:info"
+   ],
+   "tool": "piiflow"
+  },
+  "F53e74a8b69": {
+   "findings": [
+    {
+     "id": "pf-324499c36bc14cd9",
+     "rule": "PF001",
+     "severity": "info"
+    }
+   ],
+   "flow": "flow-c5a30fda10643914",
+   "strata": [
+    "piiflow:info"
+   ],
+   "tool": "piiflow"
+  },
+  "F577ddc3ef6": {
+   "native_id": "Data.Sensitive.ContactData.EmailAddress|Leakages.Log|62788-62649-62651",
+   "strata": [
+    "privado:leakages"
+   ],
+   "tool": "privado"
+  },
+  "F5b0334ebb4": {
+   "findings": [
+    {
+     "id": "pf-5b074d80e2ab2a18",
+     "rule": "PF006",
+     "severity": "warning"
+    }
+   ],
+   "flow": "flow-744d9ef49ac30b29",
+   "strata": [
+    "piiflow:PF006"
+   ],
+   "tool": "piiflow"
+  },
+  "F63fab98302": {
+   "native_id": "Data.Sensitive.UserContentData.Ratings|Sinks.ThirdParties.API.api.majorleaguecyber.org|121868-121870-121871-121877-121878-121873-121887-121890-121886-121895-121906-121914-121915-121817-121996-121997-121999-122022-122023-121942-64660-64662-64663-64686-64693",
+   "strata": [
+    "privado:third_parties"
+   ],
+   "tool": "privado"
+  },
+  "F6c8632dd8d": {
+   "native_id": "Data.Sensitive.UserContentData.Ratings|Leakages.Log.Console|121868-121870-121871-121877-121878-121873-121887-121890-121886-121895-121906-121914-121915-121817-121996-121997-121999-122022-122023-121942-67893-67895",
+   "strata": [
+    "privado:leakages"
+   ],
+   "tool": "privado"
+  },
+  "F7346fc45ad": {
+   "findings": [
+    {
+     "id": "pf-60d990712d61d2fe",
+     "rule": "PF001",
+     "severity": "medium"
+    }
+   ],
+   "flow": "flow-50d3a7786fce1f85",
+   "strata": [
+    "piiflow:PF001"
+   ],
+   "tool": "piiflow"
+  },
+  "F770a46096a": {
+   "findings": [
+    {
+     "id": "pf-9a79b82acbd85b24",
+     "rule": "PF001",
+     "severity": "medium"
+    }
+   ],
+   "flow": "flow-c2136e65b05e927f",
+   "strata": [
+    "piiflow:PF001"
+   ],
+   "tool": "piiflow"
+  },
+  "F78fcf563b7": {
+   "native_id": "Data.Sensitive.AccountData.AccountID|Sinks.ThirdParties.API.versioning.ctfd.io|155050-155052-155053-155058-155059-155060-155049-155099-155100-155103-155109",
+   "strata": [
+    "privado:third_parties"
+   ],
+   "tool": "privado"
+  },
+  "F7baa37368c": {
+   "native_id": "Data.Sensitive.AccountData.AccountID|Leakages.Log|18214-18470-18480-18471-18727-18730",
+   "strata": [
+    "privado:leakages"
+   ],
+   "tool": "privado"
+  },
+  "F7ca754c02f": {
+   "native_id": "Data.Sensitive.UserContentData.Ratings|Leakages.Log|62788-62649-62651",
+   "strata": [
+    "privado:leakages"
+   ],
+   "tool": "privado"
+  },
+  "F88276d5e71": {
+   "findings": [
+    {
+     "id": "pf-7480625a59b91891",
+     "rule": "PF006",
+     "severity": "info"
+    }
+   ],
+   "flow": "flow-921132f7073a8e3d",
+   "strata": [
+    "piiflow:info"
+   ],
+   "tool": "piiflow"
+  },
+  "F886fee9d53": {
+   "findings": [
+    {
+     "id": "pf-c698dd60b5f33ea1",
+     "rule": "PF001",
+     "severity": "info"
+    }
+   ],
+   "flow": "flow-5bef064c14e6149a",
+   "strata": [
+    "piiflow:info"
+   ],
+   "tool": "piiflow"
+  },
+  "F8d35e51469": {
+   "findings": [
+    {
+     "id": "pf-a5ab477696c906cd",
+     "rule": "PF001",
+     "severity": "medium"
+    }
+   ],
+   "flow": "flow-ccdcb46aa17e65c8",
+   "strata": [
+    "piiflow:PF001"
+   ],
+   "tool": "piiflow"
+  },
+  "F95c14a86d9": {
+   "findings": [
+    {
+     "id": "pf-6db9c97f04097d18",
+     "rule": "PF001",
+     "severity": "medium"
+    }
+   ],
+   "flow": "flow-bcf467bd83f1d85d",
+   "strata": [
+    "piiflow:PF001"
+   ],
+   "tool": "piiflow"
+  },
+  "F9a3a75514c": {
+   "native_id": "Data.Sensitive.ContactData.EmailAddress|Leakages.Log|64319-64321-64323",
+   "strata": [
+    "privado:leakages"
+   ],
+   "tool": "privado"
+  },
+  "F9c323cc019": {
+   "findings": [
+    {
+     "id": "pf-72c0c83c9a993727",
+     "rule": "PF001",
+     "severity": "info"
+    }
+   ],
+   "flow": "flow-f24baa74dba854b4",
+   "strata": [
+    "piiflow:info"
+   ],
+   "tool": "piiflow"
+  },
+  "Fa292c9d451": {
+   "native_id": "Data.Sensitive.AccountData.LanguagePreferences|Leakages.Log|158513-158515-158516-158521-158522-158523-158524-158529-158530-158531-158532-158546-158578-158579-158507-17744-17745-17808-146173-183357-17808-17848-18020-18103-18167-18233-18243-18234-18412-18415",
+   "strata": [
+    "privado:leakages"
+   ],
+   "tool": "privado"
+  },
+  "Fb10ce1a94d": {
+   "native_id": "Data.Sensitive.AccountData.AccountPassword|Sinks.ThirdParties.API.versioning.ctfd.io|155050-155052-155053-155058-155059-155060-155049-155099-155100-155103-155109-155110-155115-155116-155117-155118-155181-155182-155187-155188",
+   "strata": [
+    "privado:third_parties"
+   ],
+   "tool": "privado"
+  },
+  "Fb2b8574bc2": {
+   "native_id": "Data.Sensitive.UserContentData.Ratings|Leakages.Log|64319-64248-64250",
+   "strata": [
+    "privado:leakages"
+   ],
+   "tool": "privado"
+  },
+  "Fba5e838dff": {
+   "native_id": "Data.Sensitive.AccountData.LanguagePreferences|Sinks.ThirdParties.API.versioning.ctfd.io|155050-155052-155053-155058-155059-155060-155049-155099-155100-155103-155109-155110-155115-155116-155117-155118-155181-155182-155187-155188",
+   "strata": [
+    "privado:third_parties"
+   ],
+   "tool": "privado"
+  },
+  "Fbba516b125": {
+   "native_id": "Data.Sensitive.UserContentData.Ratings|Sinks.ThirdParties.API.mailgun_base_url|121868-121870-121871-121877-121878-121873-121887-121890-121886-121895-121906-121914-121915-121817-121996-121997-121999-122022-122023-121942-135225-135229-135230-135233-135234-135236-135237-135286-135285-135305-135279-135311",
+   "strata": [
+    "privado:third_parties"
+   ],
+   "tool": "privado"
+  },
+  "Fce902e2dda": {
+   "findings": [
+    {
+     "id": "pf-5826250ad306cf42",
+     "rule": "PF001",
+     "severity": "info"
+    }
+   ],
+   "flow": "flow-25e3f0d5fce35b92",
+   "strata": [
+    "piiflow:info"
+   ],
+   "tool": "piiflow"
+  },
+  "Fd380aa2b5d": {
+   "findings": [
+    {
+     "id": "pf-d5763ee86a0b552f",
+     "rule": "PF001",
+     "severity": "medium"
+    }
+   ],
+   "flow": "flow-615571db261afbfd",
+   "strata": [
+    "piiflow:PF001"
+   ],
+   "tool": "piiflow"
+  },
+  "Ff47b580425": {
+   "native_id": "Data.Sensitive.ContactData.EmailAddress|Sinks.ThirdParties.API.versioning.ctfd.io|155065-155067-155068-155073-155074-155075-155064-155099-155100-155103-155109",
+   "strata": [
+    "privado:third_parties"
+   ],
+   "tool": "privado"
+  },
+  "Ff52bb2ffdf": {
+   "native_id": "Data.Sensitive.UserContentData.Ratings|Sinks.ThirdParties.API.versioning.ctfd.io|155028-155030-155031-155036-155037-155038-155027-155099-155100-155103-155109",
+   "strata": [
+    "privado:third_parties"
+   ],
+   "tool": "privado"
+  },
+  "G0687171104": {
+   "gap": "gap-d7e7d78d79839dae",
+   "strata": [
+    "piiflow:gaps"
+   ],
+   "tool": "piiflow"
+  },
+  "G2759212b6a": {
+   "gap": "gap-d1d6e8a17005481c",
+   "strata": [
+    "piiflow:gaps"
+   ],
+   "tool": "piiflow"
+  },
+  "G9aecfc4d2b": {
+   "gap": "gap-aee412b74a8584b8",
+   "strata": [
+    "piiflow:gaps"
+   ],
+   "tool": "piiflow"
+  },
+  "G9fc19ffc4f": {
+   "gap": "gap-67ef99f2e57996cc",
+   "strata": [
+    "piiflow:gaps"
+   ],
+   "tool": "piiflow"
+  },
+  "Ga04e2681e8": {
+   "gap": "gap-3ba6581ed4a0f4bc",
+   "strata": [
+    "piiflow:gaps"
+   ],
+   "tool": "piiflow"
+  },
+  "Ga0671d3712": {
+   "gap": "gap-e313d4f43e49f24f",
+   "strata": [
+    "piiflow:gaps"
+   ],
+   "tool": "piiflow"
+  },
+  "Gb8345982a1": {
+   "gap": "gap-0a51ad9be400d164",
+   "strata": [
+    "piiflow:gaps"
+   ],
+   "tool": "piiflow"
+  },
+  "Gbc8cb3fa19": {
+   "gap": "gap-927340d3797026e9",
+   "strata": [
+    "piiflow:gaps"
+   ],
+   "tool": "piiflow"
+  },
+  "Gded8ee57b6": {
+   "gap": "gap-b5475837f7a231e4",
+   "strata": [
+    "piiflow:gaps"
+   ],
+   "tool": "piiflow"
+  },
+  "Gf2386e0f55": {
+   "gap": "gap-848074ebf3d6e550",
+   "strata": [
+    "piiflow:gaps"
+   ],
+   "tool": "piiflow"
+  },
+  "S08e30d71b7": {
+   "strata": [
+    "sites:other"
+   ]
+  },
+  "S156ae605eb": {
+   "strata": [
+    "sites:other"
+   ]
+  },
+  "S1582fcb80e": {
+   "strata": [
+    "sites:other"
+   ]
+  },
+  "S19bdafa5e7": {
+   "strata": [
+    "sites:other"
+   ]
+  },
+  "S1cda8db2e0": {
+   "strata": [
+    "sites:other"
+   ]
+  },
+  "S29f457776e": {
+   "strata": [
+    "sites:other"
+   ]
+  },
+  "S376666ca12": {
+   "strata": [
+    "sites:log"
+   ]
+  },
+  "S3b4b67fd71": {
+   "strata": [
+    "sites:other"
+   ]
+  },
+  "S3f3407c179": {
+   "strata": [
+    "sites:log"
+   ]
+  },
+  "S45f176ceb0": {
+   "strata": [
+    "sites:log"
+   ]
+  },
+  "S5b27053627": {
+   "strata": [
+    "sites:other"
+   ]
+  },
+  "S5b7b11e5f4": {
+   "strata": [
+    "sites:log"
+   ]
+  },
+  "S5fc0046c24": {
+   "strata": [
+    "sites:other"
+   ]
+  },
+  "S6ada957bd2": {
+   "strata": [
+    "sites:log"
+   ]
+  },
+  "S6dfe3a77e0": {
+   "strata": [
+    "sites:other"
+   ]
+  },
+  "S7f841c30e7": {
+   "strata": [
+    "sites:log"
+   ]
+  },
+  "S80e7f9392d": {
+   "strata": [
+    "sites:log"
+   ]
+  },
+  "S8a61755d46": {
+   "strata": [
+    "sites:other"
+   ]
+  },
+  "S9141c489a0": {
+   "strata": [
+    "sites:other"
+   ]
+  },
+  "S9805b3ab5d": {
+   "strata": [
+    "sites:other"
+   ]
+  },
+  "Sb29b7dcad8": {
+   "strata": [
+    "sites:other"
+   ]
+  },
+  "Sb58bfd2214": {
+   "strata": [
+    "sites:other"
+   ]
+  },
+  "Sbfb40f4ca7": {
+   "strata": [
+    "sites:other"
+   ]
+  },
+  "Sc39cf93546": {
+   "strata": [
+    "sites:log"
+   ]
+  },
+  "Sc899190a30": {
+   "strata": [
+    "sites:other"
+   ]
+  },
+  "Se6bdb421a8": {
+   "strata": [
+    "sites:log"
+   ]
+  },
+  "Sf60ac558d4": {
+   "strata": [
+    "sites:other"
+   ]
+  },
+  "Sf798219b7b": {
+   "strata": [
+    "sites:log"
+   ]
+  },
+  "Sfaf944f7b7": {
+   "strata": [
+    "sites:log"
+   ]
+  },
+  "Sfc77176e98": {
+   "strata": [
+    "sites:log"
+   ]
+  }
+ },
+ "population": {
+  "piiflow:PF001": 10,
+  "piiflow:PF002": 0,
+  "piiflow:PF003": 0,
+  "piiflow:PF004": 0,
+  "piiflow:PF005": 0,
+  "piiflow:PF006": 1,
+  "piiflow:gaps": 75,
+  "piiflow:info": 26,
+  "privado:leakages": 75,
+  "privado:third_parties": 15,
+  "sites:log": 72,
+  "sites:other": 53
+ }
+}
