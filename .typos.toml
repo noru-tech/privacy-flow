@@ -11,4 +11,4 @@ EHR = "EHR"
 unparseable = "unparseable"
 
 [files]
-extend-exclude = ["target/**", "tests/fixtures/**", "tests/goldens/**", "conformance/vectors/**", "conformance/CORPUS-DIGESTS.txt", "conformance/MANIFEST.json", "vendor/**", "Cargo.lock"]
+extend-exclude = ["target/**", "tests/fixtures/**", "tests/goldens/**", "conformance/vectors/**", "conformance/CORPUS-DIGESTS.txt", "conformance/MANIFEST.json", "vendor/**", "Cargo.lock", "benchmark/labels/**", "benchmark/sheets/**", "benchmark/results/**", "benchmark/privado/crosswalk.json"]
