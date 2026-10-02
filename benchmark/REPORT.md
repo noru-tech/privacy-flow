@@ -37,7 +37,7 @@ In its favour:
 
 Its limits:
 
-- **Privado finished eleven of twelve.** It ran out of memory on Polar every time, at the protocol's 14 GiB and again with swap added. Both tools are compared on the eleven it finished.
+- **Privado finished eleven of twelve.** It did not finish Polar in any attempt: killed for exceeding its memory, or still running after an hour (every attempt is recorded in [results/privado](results/privado/)). Both tools are compared on the eleven it finished.
 - **Privado calls its JavaScript and TypeScript support beta.** Half the applications are TypeScript. That is part of what is being measured; the full results are also broken down by language.
 - **Not compared:** how each tool names the kind of data (the two vocabularies only partly line up). Speed is compared separately, on one machine, in the [README](../README.md#how-fast-is-it).
 

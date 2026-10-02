@@ -53,7 +53,8 @@ def load(src):
 
 def fmt_s(s):
     if s >= 120:
-        return f"{s / 60:.1f} min"
+        m = s / 60
+        return f"{m:.0f} min" if abs(m - round(m)) < 0.05 else f"{m:.1f} min"
     return f"{s:.2f} s" if s < 10 else f"{s:.1f} s" if s < 100 else f"{s:,.0f} s"
 
 
@@ -104,7 +105,8 @@ def chart(rows, machine, version, machines):
         else:
             why = "out of memory" if r["privado_out_of_memory"] else "stopped, not finished" if r["privado_timed_out"] else "did not finish"
             out.append(f'<rect x="{L}" y="{y + 19}" width="{max(vw, 2):.1f}" height="12" rx="2" fill="none" stroke="{bad}" stroke-dasharray="4 3"/>')
-            out.append(f'<text x="{L + max(vw, 2) + 6:.1f}" y="{y + 29}" font-size="11.5" fill="{bad}">{why} after {fmt_s(r["privado_seconds"])}</text>')
+            # Inside the dashed bar: a run stopped at the time limit reaches the axis's far end.
+            out.append(f'<text x="{L + 8:.1f}" y="{y + 29}" font-size="11.5" fill="{bad}">{why} after {fmt_s(r["privado_seconds"])}</text>')
     out.append(f'<text x="24" y="{H - 10}" font-size="11.5" fill="{sub}">Same GitHub-hosted runner for both tools ({machine.get("cpus")} vCPU, {machine.get("memory_gib")} GiB). piiflow: median of 3 runs. Privado: one run, 14 GiB limit.</text>')
     out.append("</svg>")
     return "\n".join(out) + "\n"

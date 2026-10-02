@@ -236,8 +236,9 @@ def main():
           "- **Privado at its best.** Its newest rules, run offline from a pinned image, without the telemetry its command-line tool sends.",
           "", "Its limits:", ""]
     if failed:
-        L.append(f"- **Privado finished {count(len(shared))} of {count(len(apps))}.** It ran out of memory on {listing(failed)} every time, "
-                 f"at the protocol's 14 GiB and again with swap added. Both tools are compared on the {count(len(shared))} it finished.")
+        L.append(f"- **Privado finished {count(len(shared))} of {count(len(apps))}.** It did not finish {listing(failed)} in any attempt: "
+                 f"killed for exceeding its memory, or still running after an hour (every attempt is recorded in "
+                 f"[results/privado](results/privado/)). Both tools are compared on the {count(len(shared))} it finished.")
     L += ["- **Privado calls its JavaScript and TypeScript support beta.** Half the applications are TypeScript. That is part of what "
           "is being measured; the full results are also broken down by language.",
           "- **Not compared:** how each tool names the kind of data (the two vocabularies only partly line up). Speed is compared "

@@ -183,26 +183,26 @@ model: the flow through the helper is computed per argument and per field.
 
 ## How fast is it?
 
-**On the same machine, piiflow scanned each application in 0.12 s to 6.59 s, using at most 196 MiB of memory. Privado took 10.3 s to 8.7 min and up to 8.9 GiB.** Half the applications ran more than 92 times faster with piiflow.
+**On the same machine, piiflow scanned each application in 0.11 s to 40.8 s, using at most 624 MiB of memory. Privado took 10.4 s to 14 min and up to 10.6 GiB, and had not finished Polar after 60 min.** Half the applications ran more than 94 times faster with piiflow.
 
 ![Time to scan each application, piiflow and Privado](benchmark/speed/chart.svg)
 
 | Application | Lines of code | piiflow | Privado | piiflow memory | Privado memory |
 | --- | ---: | ---: | ---: | ---: | ---: |
-| [FastAPI template](https://github.com/fastapi/full-stack-fastapi-template) | 1,520 | 0.12 s | 10.3 s | 14 MiB | 1,015 MiB |
-| [Taxonomy](https://github.com/shadcn-ui/taxonomy) | 7,788 | 0.18 s | 20.6 s | 21 MiB | 807 MiB |
-| [Open SaaS](https://github.com/wasp-lang/open-saas) | 10,774 | 0.13 s | 12.8 s | 23 MiB | 1.2 GiB |
-| [Healthchecks](https://github.com/healthchecks/healthchecks) | 17,110 | 0.57 s | 51.2 s | 31 MiB | 2.8 GiB |
-| [Vercel chatbot](https://github.com/vercel/chatbot) | 20,446 | 0.23 s | 21.1 s | 32 MiB | 1.7 GiB |
-| [CTFd](https://github.com/CTFd/CTFd) | 23,488 | 0.77 s | 56.4 s | 36 MiB | 3.3 GiB |
-| [Hoppscotch](https://github.com/hoppscotch/hoppscotch) | 27,376 | 0.43 s | 25.5 s | 48 MiB | 2.8 GiB |
-| [Redash](https://github.com/getredash/redash) | 27,804 | 0.98 s | 7.3 min | 49 MiB | 8.9 GiB |
-| [PrivateGPT](https://github.com/zylon-ai/private-gpt) | 96,645 | 6.59 s | 2.8 min | 133 MiB | 4.5 GiB |
-| [Umami](https://github.com/umami-software/umami) | 107,365 | 2.73 s | 5.2 min | 152 MiB | 4.4 GiB |
-| [Ghost](https://github.com/TryGhost/Ghost) | 160,029 | 2.98 s | 8.7 min | 196 MiB | 6.6 GiB |
-| Polar | | still running | still running | | |
+| [FastAPI template](https://github.com/fastapi/full-stack-fastapi-template) | 1,520 | 0.11 s | 10.4 s | 14 MiB | 1.3 GiB |
+| [Taxonomy](https://github.com/shadcn-ui/taxonomy) | 7,788 | 0.20 s | 20.5 s | 22 MiB | 759 MiB |
+| [Open SaaS](https://github.com/wasp-lang/open-saas) | 10,774 | 0.20 s | 23.1 s | 23 MiB | 1.3 GiB |
+| [Healthchecks](https://github.com/healthchecks/healthchecks) | 17,110 | 0.57 s | 51.2 s | 30 MiB | 2.8 GiB |
+| [Vercel chatbot](https://github.com/vercel/chatbot) | 20,446 | 0.27 s | 23.0 s | 32 MiB | 2.3 GiB |
+| [CTFd](https://github.com/CTFd/CTFd) | 23,488 | 0.63 s | 41.0 s | 35 MiB | 3.7 GiB |
+| [Hoppscotch](https://github.com/hoppscotch/hoppscotch) | 27,376 | 0.71 s | 48.6 s | 47 MiB | 2.4 GiB |
+| [Redash](https://github.com/getredash/redash) | 27,804 | 0.91 s | 7.7 min | 49 MiB | 10.6 GiB |
+| [PrivateGPT](https://github.com/zylon-ai/private-gpt) | 96,645 | 4.43 s | 89.1 s | 133 MiB | 4.6 GiB |
+| [Umami](https://github.com/umami-software/umami) | 107,365 | 2.54 s | 4 min | 152 MiB | 4.5 GiB |
+| [Ghost](https://github.com/TryGhost/Ghost) | 160,029 | 3.95 s | 14 min | 192 MiB | 6.3 GiB |
+| [Polar](https://github.com/polarsource/polar) | 222,747 | 40.8 s | not finished after 60 min | 624 MiB | 12.8 GiB |
 
-**How this was measured** (2026-10-02). The 12 open-source applications of the [benchmark corpus](benchmark/SELECTION.md); each one on its own GitHub-hosted runner (4 vCPU, 15.6 GiB; 5 different CPU models across jobs, listed in [results.json](benchmark/speed/results.json)), with both tools run one after the other on it. piiflow 0.1.0 is the released Linux binary, verified by its attestation; the median of 3 runs is shown, and its output matched the recorded macOS run byte for byte on every application. Privado is privado-core 1.1.175 from its pinned image with its newest rules, offline, one run, 14 GiB limit. This measures speed and memory only; whether each tool's findings are *right* is measured by the [labelled benchmark](benchmark/REPORT.md), which is in progress. [Method and how to rerun it](benchmark/speed/README.md).
+**How this was measured** (2026-10-02). The 12 open-source applications of the [benchmark corpus](benchmark/SELECTION.md); each one on its own GitHub-hosted runner (4 vCPU, 15.6 GiB; 4 different CPU models across jobs, listed in [results.json](benchmark/speed/results.json)), with both tools run one after the other on it. piiflow 0.1.0 is the released Linux binary, verified by its attestation; the median of 3 runs is shown, and its output matched the recorded macOS run byte for byte on every application. Privado is privado-core 1.1.175 from its pinned image with its newest rules, offline, one run, 14 GiB limit. This measures speed and memory only; whether each tool's findings are *right* is measured by the [labelled benchmark](benchmark/REPORT.md), which is in progress. [Method and how to rerun it](benchmark/speed/README.md).
 
 <!-- speed:end -->
 
