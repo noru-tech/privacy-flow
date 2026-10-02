@@ -1,20 +1,11 @@
 # Fuzzing with ClusterFuzzLite: the cargo-fuzz targets in fuzz/, built by .clusterfuzzlite/.
-# A pull request that touches the analyser is fuzzed for five minutes; every week, and on demand,
-# each target runs for longer. A crash fails the job and uploads the reproducing input.
+# Every pull request is fuzzed for five minutes (the check is required on main, so it runs even
+# when only docs change); every week, and on demand, each target runs for longer. A crash fails
+# the job and uploads the reproducing input.
 name: fuzz
 
 on:
   pull_request:
-    paths:
-      - "src/**"
-      - "catalogue/**"
-      - "schemas/**"
-      - "vendor/**"
-      - "fuzz/**"
-      - ".clusterfuzzlite/**"
-      - "Cargo.toml"
-      - "Cargo.lock"
-      - ".github/workflows/fuzz.yml"
   schedule:
     - cron: "41 4 * * 3"
   workflow_dispatch:

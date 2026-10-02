@@ -100,7 +100,7 @@ python3 fuzz/seeds.py                              # seed corpus from the fixtur
 cd fuzz && cargo +nightly fuzz run scan corpus/scan -- -max_total_time=300
 ```
 
-The `fuzz` workflow runs every target on each pull request that touches the analyser and weekly
+The `fuzz` workflow runs every target on each pull request and weekly
 for longer. A crash input belongs in a regression test or fixture alongside the fix.
 
 `PIIFLOW_DEBUG_IR=1 piiflow scan …` prints every statement of the program with its provenance and
