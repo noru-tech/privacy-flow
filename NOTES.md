@@ -172,3 +172,35 @@ decision, not a build step. Before the first tag:
   vocabulary Fideslang does not have.
 - Allocation-site abstraction for plain objects would remove the main remaining source of false
   flows seen on documenso (ADR 0005).
+
+## 2026-10-02 — M6 status: benchmark set up, run recorded, labelling not started
+
+**Done.**
+
+- Corpus of 12 held-out applications (6 TS, 6 Python; MIT, Apache-2.0 or BSD only), pinned by
+  commit, with selection criteria fixed before any run and every rejected candidate listed
+  (benchmark/SELECTION.md).
+- Protocol fixed before labelling (benchmark/PROTOCOL.md): two independent reviewers; seeded,
+  stratified samples (8 findings per rule per application, 10 maybe-personal findings, 10 gaps,
+  30 candidate sink sites); recall measured on sink sites enumerated by syntax without piiflow's
+  catalogue; piiflow and Privado flows blinded and shuffled together; Wilson intervals,
+  stratum-weighted estimates, Cohen's κ before adjudication.
+- piiflow run recorded at commit `84cc334`: byte-identical on repeat, all 12 exit 4.
+- Privado: the engine is LGPL-3.0 and unmaintained since 2024. Its CLI sends telemetry even with
+  metrics disabled, so the protocol runs the image directly, by digest, with `--network none`
+  (`.github/workflows/benchmark-privado.yml`). There is a crosswalk from its 113 data elements to
+  Fideslang, and a mapper checked against privado-core's exporter model.
+- Scripts for sampling, scoring and statistics, with tests in CI.
+
+**Found on the way.** The engine was quadratic in depth-bound cuts: Polar took 130 s; it now
+takes 12 s with byte-identical output (recorded as a protocol deviation). The CI performance
+budget's synthetic service did not catch it, because the quadratic needs summaries that reach
+thousands of sinks; a regression test shaped like that would be worth adding.
+
+**Waiting on decisions (Bip).**
+
+1. Running the Privado workflow: GitHub Actions minutes on a private repository, and a 1.75 GB
+   image pull per job, 12 jobs.
+2. Who R1 and R2 are. At about 50–90 items per application, each reviewer labels roughly
+   700–900 items; budget 15–30 hours each.
+3. The Zenodo deposit (needs Noru's account) once labels and scores are final.

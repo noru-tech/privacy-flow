@@ -38,6 +38,12 @@ manifest, not from `piiflow`.
 | polarsource/polar | Apache-2.0 | `server` | 196k Py | FastAPI | Stripe, PostHog, OpenAI, Sentry, Logfire, httpx, boto3 |
 | zylon-ai/private-gpt | Apache-2.0 | `.` | 96k Py | FastAPI | OpenAI, Anthropic, LlamaIndex, LangChain, httpx, boto3 |
 
+Lines were counted at selection time with a plain line counter over the source directories
+inside each scope (tests and generated code excluded). `piiflow`'s own count over the final
+scope is in `results/summary.json`; for polar it is 222,747, because the `server` scope also
+holds scripts outside the `polar` package, which puts it above criterion 5's bound. It was kept:
+removing an application after seeing results would be selection on results.
+
 ## Considered and not chosen
 
 | Repository | Reason |

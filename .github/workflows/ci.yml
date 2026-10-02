@@ -123,6 +123,16 @@ jobs:
       - run: .venv/bin/pip install --require-hashes -r .github/scripts/jcs-requirements.txt
       - run: .venv/bin/python .github/scripts/jcs_crosscheck.py tests/goldens
 
+  benchmark-scripts:
+    # The M6 benchmark's sampling and statistics (benchmark/test_benchmark.py); no corpus needed.
+    name: benchmark scripts
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - run: python3 -m unittest benchmark/test_benchmark.py
+
   conformance:
     name: conformance corpus
     runs-on: ubuntu-latest

@@ -1,0 +1,384 @@
+{
+  "source": "Privado-Inc/privado rules/sources at tag v1.3.91 (6787aa47c8db31e21b0d297e5fb494941c4dca94)",
+  "target": "Fideslang data categories as vendored in vendor/taxonomy/data_categories.json",
+  "unmapped_policy": "a Privado data element not listed here maps to user (generic personal data) and is counted",
+  "map": {
+    "Data.Sensitive.AccountData.AccountID": {
+      "fideslang": "user.unique_id"
+    },
+    "Data.Sensitive.AccountData.AccountName": {
+      "fideslang": "user.account.username"
+    },
+    "Data.Sensitive.AccountData.AccountPassword": {
+      "fideslang": "user.authorization.password"
+    },
+    "Data.Sensitive.AccountData.LanguagePreferences": {
+      "fideslang": "user.demographic.language"
+    },
+    "Data.Sensitive.AccountData.Mnemonic": {
+      "fideslang": "user.authorization.credentials",
+      "note": "a wallet recovery phrase is a credential"
+    },
+    "Data.Sensitive.AccountData.SocialMediaLoginIdentifier": {
+      "fideslang": "user.account.username"
+    },
+    "Data.Sensitive.AudioVisualAndSensoryData.AudioRecordings": {
+      "fideslang": "user.content.private",
+      "note": "no audio category"
+    },
+    "Data.Sensitive.AudioVisualAndSensoryData.IoTorSensorData": {
+      "fideslang": "user.sensor"
+    },
+    "Data.Sensitive.AudioVisualAndSensoryData.Video": {
+      "fideslang": "user.content.private",
+      "note": "no video category"
+    },
+    "Data.Sensitive.BackgroundCheckDetails.CompensationHistory": {
+      "fideslang": "user.financial",
+      "note": "approximate"
+    },
+    "Data.Sensitive.BackgroundCheckDetails.CreditHistory": {
+      "fideslang": "user.financial"
+    },
+    "Data.Sensitive.BackgroundCheckDetails.CriminalRecordsHistory": {
+      "fideslang": "user.criminal_history"
+    },
+    "Data.Sensitive.BackgroundCheckDetails.EmploymentHistory": {
+      "fideslang": "user.workplace",
+      "note": "approximate"
+    },
+    "Data.Sensitive.BackgroundCheckDetails.ReferenceChecks": {
+      "fideslang": "user.workplace",
+      "note": "approximate"
+    },
+    "Data.Sensitive.BiometricData.DNAMatching": {
+      "fideslang": "user.health_and_medical.genetic"
+    },
+    "Data.Sensitive.BiometricData.FacialRecognition": {
+      "fideslang": "user.biometric"
+    },
+    "Data.Sensitive.BiometricData.Gait": {
+      "fideslang": "user.biometric"
+    },
+    "Data.Sensitive.BiometricData.HandwritingRecognition": {
+      "fideslang": "user.biometric"
+    },
+    "Data.Sensitive.BiometricData.IrisRecognition": {
+      "fideslang": "user.biometric.retinal"
+    },
+    "Data.Sensitive.BiometricData.VoiceRecognition": {
+      "fideslang": "user.biometric.voice"
+    },
+    "Data.Sensitive.ContactData.Address": {
+      "fideslang": "user.contact.address"
+    },
+    "Data.Sensitive.ContactData.EmailAddress": {
+      "fideslang": "user.contact.email"
+    },
+    "Data.Sensitive.ContactData.EmergencyContactDetails": {
+      "fideslang": "user.contact",
+      "note": "approximate: another person's contact data"
+    },
+    "Data.Sensitive.ContactData.PhoneNumber": {
+      "fideslang": "user.contact.phone_number"
+    },
+    "Data.Sensitive.EducationalBackground.AcademicTranscripts": {
+      "fideslang": "user.demographic.profile",
+      "note": "approximate"
+    },
+    "Data.Sensitive.EducationalBackground.EducationalHistory": {
+      "fideslang": "user.demographic.profile",
+      "note": "approximate"
+    },
+    "Data.Sensitive.EducationalBackground.Skills": {
+      "fideslang": "user.demographic.profile",
+      "note": "approximate"
+    },
+    "Data.Sensitive.FinancialData.BankAccountDetails": {
+      "fideslang": "user.financial.bank_account"
+    },
+    "Data.Sensitive.FinancialData.Benefits": {
+      "fideslang": "user.financial"
+    },
+    "Data.Sensitive.FinancialData.CardIssuer": {
+      "fideslang": "user.financial.credit_card",
+      "note": "approximate"
+    },
+    "Data.Sensitive.FinancialData.CardNumber": {
+      "fideslang": "user.financial.credit_card"
+    },
+    "Data.Sensitive.FinancialData.CompanyAllowances": {
+      "fideslang": "user.financial"
+    },
+    "Data.Sensitive.FinancialData.CreditScore": {
+      "fideslang": "user.financial"
+    },
+    "Data.Sensitive.FinancialData.Expenses": {
+      "fideslang": "user.financial"
+    },
+    "Data.Sensitive.FinancialData.InsuranceNumber": {
+      "fideslang": "user.health_and_medical.insurance_beneficiary_id",
+      "note": "approximate: may be non-health insurance"
+    },
+    "Data.Sensitive.FinancialData.PaymentMode": {
+      "fideslang": "user.payment"
+    },
+    "Data.Sensitive.FinancialData.PaymentNonce": {
+      "fideslang": "user.payment"
+    },
+    "Data.Sensitive.FinancialData.PayrollInformation": {
+      "fideslang": "user.financial"
+    },
+    "Data.Sensitive.FinancialData.RetirementAccountInformation": {
+      "fideslang": "user.financial"
+    },
+    "Data.Sensitive.FinancialData.Salary": {
+      "fideslang": "user.financial"
+    },
+    "Data.Sensitive.FinancialData.StockorEquityGrants": {
+      "fideslang": "user.financial"
+    },
+    "Data.Sensitive.FinancialData.TaxInformation": {
+      "fideslang": "user.financial"
+    },
+    "Data.Sensitive.FinancialData.VPAAddress": {
+      "fideslang": "user.financial.bank_account",
+      "note": "a UPI virtual payment address identifies a bank account"
+    },
+    "Data.Sensitive.HealthData.DisabilityorSpecificCondition": {
+      "fideslang": "user.health_and_medical"
+    },
+    "Data.Sensitive.HealthData.IllnessorMedicalCondition": {
+      "fideslang": "user.health_and_medical"
+    },
+    "Data.Sensitive.HealthData.MaternityLeaveDetails": {
+      "fideslang": "user.health_and_medical"
+    },
+    "Data.Sensitive.HealthData.MedicalCertificates": {
+      "fideslang": "user.health_and_medical"
+    },
+    "Data.Sensitive.HealthData.PaternityLeaveDetails": {
+      "fideslang": "user.workplace",
+      "note": "approximate: leave details are employment data"
+    },
+    "Data.Sensitive.LocationData.PreciseLocation": {
+      "fideslang": "user.location.precise"
+    },
+    "Data.Sensitive.NationalIdentificationNumbers.DrivingLicense": {
+      "fideslang": "user.government_id.drivers_license_number"
+    },
+    "Data.Sensitive.NationalIdentificationNumbers.EmployerIdentificationNumber": {
+      "fideslang": "user.government_id",
+      "note": "approximate: identifies an employer, often not a person"
+    },
+    "Data.Sensitive.NationalIdentificationNumbers.Passport": {
+      "fideslang": "user.government_id.passport_number"
+    },
+    "Data.Sensitive.NationalIdentificationNumbers.PersonalPublicServiceNumber": {
+      "fideslang": "user.government_id.national_identification_number"
+    },
+    "Data.Sensitive.NationalIdentificationNumbers.SocialSecurityNumber": {
+      "fideslang": "user.government_id.national_identification_number"
+    },
+    "Data.Sensitive.NationalIdentificationNumbers.TaxpayerIdentificationNumber": {
+      "fideslang": "user.government_id.national_identification_number"
+    },
+    "Data.Sensitive.OnlineIdentifiers.AdvertisingIdentifiers": {
+      "fideslang": "user.device.device_id"
+    },
+    "Data.Sensitive.OnlineIdentifiers.Cookies": {
+      "fideslang": "user.device.cookie"
+    },
+    "Data.Sensitive.OnlineIdentifiers.DeviceIdentifier": {
+      "fideslang": "user.device.device_id"
+    },
+    "Data.Sensitive.OnlineIdentifiers.IPAddress": {
+      "fideslang": "user.device.ip_address"
+    },
+    "Data.Sensitive.OnlineIdentifiers.MACAddress": {
+      "fideslang": "user.device.device_id"
+    },
+    "Data.Sensitive.OnlineIdentifiers.Pixel": {
+      "fideslang": "user.device.cookie_id",
+      "note": "approximate"
+    },
+    "Data.Sensitive.PersonalCharacteristics.MaritalStatus": {
+      "fideslang": "user.demographic.marital_status"
+    },
+    "Data.Sensitive.PersonalCharacteristics.Nationality": {
+      "fideslang": "user.demographic",
+      "note": "approximate"
+    },
+    "Data.Sensitive.PersonalCharacteristics.RacialorEthnicOrigin": {
+      "fideslang": "user.demographic.race_ethnicity"
+    },
+    "Data.Sensitive.PersonalCharacteristics.Religion/ReligiousBeliefs": {
+      "fideslang": "user.demographic.religious_belief"
+    },
+    "Data.Sensitive.PersonalCharacteristics.SexualOrientation": {
+      "fideslang": "user.demographic.sexual_orientation"
+    },
+    "Data.Sensitive.PersonalCharacteristics.Signature": {
+      "fideslang": "user.biometric",
+      "note": "approximate"
+    },
+    "Data.Sensitive.PersonalCharacteristics.Weight": {
+      "fideslang": "user.health_and_medical",
+      "note": "approximate"
+    },
+    "Data.Sensitive.PersonalIdentification.Age": {
+      "fideslang": "user.demographic.age_range"
+    },
+    "Data.Sensitive.PersonalIdentification.DateofBirth": {
+      "fideslang": "user.demographic.date_of_birth"
+    },
+    "Data.Sensitive.PersonalIdentification.EmployeeCode": {
+      "fideslang": "user.unique_id"
+    },
+    "Data.Sensitive.PersonalIdentification.FirstName": {
+      "fideslang": "user.name.first"
+    },
+    "Data.Sensitive.PersonalIdentification.Gender": {
+      "fideslang": "user.demographic.gender"
+    },
+    "Data.Sensitive.PersonalIdentification.LastName": {
+      "fideslang": "user.name.last"
+    },
+    "Data.Sensitive.PersonalIdentification.Photograph": {
+      "fideslang": "user.content.self_image"
+    },
+    "Data.Sensitive.ProfessionalAndEmploymentBackground.PastDatesofEmployment": {
+      "fideslang": "user.workplace",
+      "note": "approximate"
+    },
+    "Data.Sensitive.ProfessionalAndEmploymentBackground.PastEmployers": {
+      "fideslang": "user.workplace",
+      "note": "approximate"
+    },
+    "Data.Sensitive.ProfessionalAndEmploymentBackground.PastRolesorPositions": {
+      "fideslang": "user.job_title"
+    },
+    "Data.Sensitive.ProfessionalAndEmploymentBackground.PastSalaryDetails": {
+      "fideslang": "user.financial"
+    },
+    "Data.Sensitive.ProfessionalAndEmploymentBackground.ProofofLastSalary": {
+      "fideslang": "user.financial"
+    },
+    "Data.Sensitive.ProfessionalAndEmploymentBackground.Reasonforleavingorchangeofjob": {
+      "fideslang": "user.workplace",
+      "note": "approximate"
+    },
+    "Data.Sensitive.ProfessionalAndEmploymentBackground.TotalExperience": {
+      "fideslang": "user.workplace",
+      "note": "approximate"
+    },
+    "Data.Sensitive.PurchaseData.OfferDetails": {
+      "fideslang": "user.behavior.purchase_history",
+      "note": "approximate"
+    },
+    "Data.Sensitive.PurchaseData.OrderDetails": {
+      "fideslang": "user.behavior.purchase_history"
+    },
+    "Data.Sensitive.PurchaseData.ProductReturnHistory": {
+      "fideslang": "user.behavior.purchase_history"
+    },
+    "Data.Sensitive.PurchaseData.PurchaseHistory": {
+      "fideslang": "user.behavior.purchase_history"
+    },
+    "Data.Sensitive.SocialMediaData.SocialMediaAccount": {
+      "fideslang": "user.social"
+    },
+    "Data.Sensitive.SocialMediaData.SocialMediaActivity": {
+      "fideslang": "user.social"
+    },
+    "Data.Sensitive.SocialMediaData.SocialMediaContact": {
+      "fideslang": "user.social"
+    },
+    "Data.Sensitive.SpouseFamilyAndDependentDetails.DependentContactDetails": {
+      "fideslang": "user.contact",
+      "note": "another person's contact data"
+    },
+    "Data.Sensitive.SpouseFamilyAndDependentDetails.DependentName": {
+      "fideslang": "user.name",
+      "note": "another person's name"
+    },
+    "Data.Sensitive.SpouseFamilyAndDependentDetails.ParentsContactDetails": {
+      "fideslang": "user.contact",
+      "note": "another person's contact data"
+    },
+    "Data.Sensitive.SpouseFamilyAndDependentDetails.ParentsName": {
+      "fideslang": "user.name",
+      "note": "another person's name"
+    },
+    "Data.Sensitive.SpouseFamilyAndDependentDetails.SpouseContactDetails": {
+      "fideslang": "user.contact",
+      "note": "another person's contact data"
+    },
+    "Data.Sensitive.SpouseFamilyAndDependentDetails.SpouseName": {
+      "fideslang": "user.name",
+      "note": "another person's name"
+    },
+    "Data.Sensitive.TechnicalData.BrowsingHistory": {
+      "fideslang": "user.behavior.browsing_history"
+    },
+    "Data.Sensitive.TechnicalData.BrowsingTime": {
+      "fideslang": "user.behavior.browsing_history",
+      "note": "approximate"
+    },
+    "Data.Sensitive.TechnicalData.CrashData": {
+      "fideslang": "user.telemetry"
+    },
+    "Data.Sensitive.TechnicalData.TechnicalDiagnosticData": {
+      "fideslang": "user.telemetry"
+    },
+    "Data.Sensitive.UsageData.ClickStream": {
+      "fideslang": "user.behavior"
+    },
+    "Data.Sensitive.UsageData.ProductInteractions": {
+      "fideslang": "user.behavior"
+    },
+    "Data.Sensitive.UsageData.SearchHistory": {
+      "fideslang": "user.behavior.search_history"
+    },
+    "Data.Sensitive.UserContentData.CustomerSupport": {
+      "fideslang": "user.content.private"
+    },
+    "Data.Sensitive.UserContentData.EmailsorTextMessages": {
+      "fideslang": "user.content.private"
+    },
+    "Data.Sensitive.UserContentData.NPSorCSATScores": {
+      "fideslang": "user.content.private",
+      "note": "approximate"
+    },
+    "Data.Sensitive.UserContentData.Ratings": {
+      "fideslang": "user.content.public",
+      "note": "approximate: may be private"
+    },
+    "Data.Sensitive.UserContentData.Reviews": {
+      "fideslang": "user.content.public",
+      "note": "approximate: may be private"
+    },
+    "Data.Sensitive.VehicleData.LicensePlate": {
+      "fideslang": "user.government_id.vehicle_registration"
+    },
+    "Data.Sensitive.VehicleData.VehicleRegistrationNumber": {
+      "fideslang": "user.government_id.vehicle_registration"
+    },
+    "Data.Sensitive.WorkplaceMonitoringData.ApplicationUsage": {
+      "fideslang": "user.behavior",
+      "note": "approximate"
+    },
+    "Data.Sensitive.WorkplaceMonitoringData.BuildingInformationSystemAccess": {
+      "fideslang": "user.workplace",
+      "note": "approximate"
+    },
+    "Data.Sensitive.WorkplaceMonitoringData.VideoRecordings": {
+      "fideslang": "user.content.private",
+      "note": "approximate"
+    },
+    "Data.Sensitive.WorkplaceMonitoringData.WebsiteFiltering": {
+      "fideslang": "user.behavior.browsing_history",
+      "note": "approximate"
+    }
+  }
+}

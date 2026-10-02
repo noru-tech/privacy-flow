@@ -1,0 +1,51 @@
+# Run Privado's open-source engine on the M6 benchmark corpus (benchmark/PROTOCOL.md §8).
+# Manual only. The image is pinned by digest and runs with networking disabled; the official
+# CLI is not used because it sends telemetry regardless of its metrics setting. Results are
+# uploaded as artifacts and committed by hand to benchmark/results/privado/.
+name: benchmark-privado
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  scan:
+    name: privado (${{ matrix.app }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    strategy:
+      fail-fast: false
+      matrix:
+        app: [vercel-chatbot, umami, taxonomy, open-saas, ghost, hoppscotch, healthchecks, redash, ctfd, fastapi-template, polar, private-gpt]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: The matrix lists exactly the corpus
+        run: |
+          python3 - <<'PY'
+          import json, re
+          corpus = sorted(e["name"] for e in json.load(open("benchmark/corpus.json"))["repositories"])
+          wf = open(".github/workflows/benchmark-privado.yml").read()
+          listed = sorted(re.search(r"app: \[([^\]]+)\]", wf).group(1).replace(" ", "").split(","))
+          assert corpus == listed, (corpus, listed)
+          PY
+      - name: Fetch the application at its pinned commit
+        run: python3 benchmark/fetch.py ${{ matrix.app }}
+      - name: Fetch Privado's rules at v1.3.91
+        run: |
+          git init -q rules
+          git -C rules fetch -q --depth 1 https://github.com/Privado-Inc/privado.git 6787aa47c8db31e21b0d297e5fb494941c4dca94
+          git -C rules checkout -q FETCH_HEAD
+      - name: Pull the pinned image
+        run: docker pull public.ecr.aws/privado/privado@sha256:349fdd5a01c01acb4b17c9db0df782c8ad2fb4d87b5940247720fc3cac8e7f15
+      - name: Scan offline
+        run: python3 benchmark/privado/scan.py ${{ matrix.app }} --rules rules --out out/${{ matrix.app }}
+      - if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: privado-${{ matrix.app }}
+          path: out/${{ matrix.app }}
+          if-no-files-found: ignore

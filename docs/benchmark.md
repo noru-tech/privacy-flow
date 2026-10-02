@@ -42,52 +42,39 @@ python3 conformance/run.py --verifier "piiflow -q scan --walk -f facts"
 
 The corpus is an answer key for specific behaviours, not a sample of real code.
 
-### Real-world corpus (labelled precision and recall): not yet
+### Real-world corpus (labelled precision and recall): in progress
 
-The spec asks for permissively licensed open-source applications, referenced by commit SHA and
-never vendored, with known flows labelled by hand by two reviewers, and precision and recall per
-rule; and, where fair and reproducible, Privado's open-source scanner run on the same corpus with
-both numbers published with the method. That is milestone M6 and has not been done. The two
-repositories below are candidates for it; the numbers are what `piiflow` reports, unlabelled.
+Milestone M6 measures precision and recall on twelve applications `piiflow` was not developed
+against, six TypeScript and six Python, labelled by two reviewers and compared with Privado's
+open-source scanner. Everything is in [`benchmark/`](../benchmark/README.md):
+the [protocol](../benchmark/PROTOCOL.md), fixed before labelling;
+the [selection](../benchmark/SELECTION.md), fixed before any run;
+and the [corpus](../benchmark/corpus.json), pinned by commit.
+**No labelled numbers exist yet.** What follows is what `piiflow` reports, unlabelled
+(commit `84cc334`; [`benchmark/results/summary.json`](../benchmark/results/summary.json)):
 
-| Repository | Commit | Licence | Language | Files | Lines |
-| --- | --- | --- | --- | --- | --- |
-| [documenso/documenso](https://github.com/documenso/documenso) | `8a41a3bf618d9e46e2e1c0f437aa0488d91b85de` | AGPL-3.0 | TypeScript | 2,001 | 220,640 |
-| [Netflix/dispatch](https://github.com/Netflix/dispatch) | `dd2837e82a0bf5565b1b4b4b91ea30b7262d4061` | Apache-2.0 | Python (+ Vue/JS) | 795 | 96,603 |
+| Application | Files | Lines | Flows | Findings | of which `info` | Gaps | Processors reached | Time | Memory |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| vercel/chatbot | 146 | 20,446 | 49 | 46 | 9 | 51 | api.open-meteo.com, geocoding-api.open-meteo.com | 0.13 s | 43 MiB |
+| umami | 1,087 | 107,365 | 67 | 37 | 37 | 307 | — | 0.94 s | 194 MiB |
+| taxonomy | 129 | 7,788 | 8 | 3 | 2 | 5 | Postmark, Stripe | 0.11 s | 27 MiB |
+| open-saas | 145 | 10,774 | 5 | 5 | 5 | 14 | — | 0.10 s | 29 MiB |
+| Ghost (`ghost/core`) | 1,319 | 160,029 | 100 | 104 | 65 | 619 | Amazon S3, Mailgun, Sentry, Stripe | 1.55 s | 257 MiB |
+| Hoppscotch (backend) | 193 | 27,376 | 7 | 7 | 7 | 89 | — | 0.24 s | 70 MiB |
+| Healthchecks | 234 | 17,110 | 5 | 4 | 3 | 58 | — | 0.28 s | 42 MiB |
+| Redash | 171 | 27,804 | 242 | 246 | 142 | 139 | version.redash.io, www.googleapis.com | 0.38 s | 72 MiB |
+| CTFd | 193 | 23,488 | 39 | 37 | 26 | 75 | versioning.ctfd.io | 0.35 s | 51 MiB |
+| full-stack-fastapi-template | 25 | 1,520 | 3 | 3 | 0 | 9 | — | 0.06 s | 16 MiB |
+| Polar (`server`) | 1,234 | 222,747 | 9,940 | 9,974 | 4,463 | 915 | Sentry | 12.4 s | 1,014 MiB |
+| PrivateGPT | 688 | 96,645 | 761 | 749 | 505 | 273 | Amazon S3, api.search.brave.com | 2.57 s | 210 MiB |
 
-documenso's licence is AGPL-3.0, which allows analysis and publishing results; M6 will prefer
-permissively licensed repositories (MIT, Apache-2.0, BSD) for the labelled corpus, as the spec
-says.
+Every scan exits 4: none can claim complete coverage. Unlabelled counts say nothing about
+accuracy; several of them (no LLM provider reached in an AI chatbot, Sentry as Polar's only
+processor) are exactly what labelling will confirm or refute. By the protocol, none of them may
+inform a change to `piiflow` until the labels are final.
 
-| | documenso | Dispatch |
-| --- | --- | --- |
-| Flows | 1,448 | 2,549 |
-| Findings at `high` / `medium` / `warning` | 35 / 31 / 84 | 38 / 560 / 231 |
-| Findings at `info` (review queue: maybe-personal names) | 607 | 1,832 |
-| Coverage gaps | 76 | 112 |
-| Processors reached | Amazon S3, Amazon SES, Azure Storage, Inngest, PostHog, Stripe | Slack, api.opsgenie.com, graph.microsoft.com |
-
-Informal review while developing (one reviewer, not a labelled measurement): Dispatch's
-medium-severity PF001 findings are mostly participant email addresses in debug and info log
-lines, which are true positives as the rule defines them. Several documenso PF002 findings sent
-document file names (maybe-personal, `info`) to object storage. Remaining false positives seen were
-mostly imprecision through generic propagation (an unknown library assumed to pass its arguments
-to its result) and the one-level field sensitivity of plain objects.
-
-#### Protocol for M6
-
-1. Pick 8 to 12 permissively licensed applications, half TypeScript and half Python, that use at
-   least one sink class each; record each by repository and commit SHA in
-   `benchmark/corpus.json` (code is never vendored).
-2. Two reviewers independently label every flow `piiflow` reports and every flow they find by
-   reading the code's sink calls (true positive, false positive, missed), with a citation per
-   label; disagreements are resolved by discussion and the agreement rate is published.
-3. Publish per-rule precision and recall with confidence intervals, the labels, and the scripts.
-4. Run Privado's open-source scanner (pinned version and configuration) on the same commits, map
-   its data-flow output to (source, sink, category) as fairly as its output allows, and publish its
-   numbers next to ours, with the mapping and every judgement call written down.
-5. Archive the corpus definition, labels and results on Zenodo for a DOI, as `acc`'s conformance
-   corpus is.
+The repositories used during development (documenso, Netflix Dispatch; their numbers are in the
+performance table below and in NOTES.md) are not part of this corpus.
 
 ## Performance
 
@@ -96,6 +83,7 @@ to its result) and the one-level field sensitivity of plain objects.
 | Synthetic TypeScript service ([`benches/synthetic.py`](../benches/synthetic.py)) | 98,073 | 1.0–1.5 s | 360–500 MB |
 | Synthetic TypeScript service | 392,292 | 5.9 s | 1.5 GB |
 | documenso (TypeScript monorepo) | 220,640 | 1.6–2.2 s | 360 MB |
+| Polar server (Python, benchmark corpus) | 222,747 | 12.4 s | 1.0 GB |
 | Dispatch (Python) | 96,603 | 1.3–1.8 s | 250 MB |
 | Fixture tree (criterion) | — | 14.4 ms | — |
 
