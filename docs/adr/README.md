@@ -14,3 +14,4 @@ what follows. Records are never rewritten; a reversal is a new record that super
 | [0007](0007-allocation-sites.md) | Allocation sites for plain objects, within what points-to can see | Accepted |
 | [0008](0008-container-identity.md) | A container is a location, not the path of a constructor call | Accepted |
 | [0009](0009-call-context-sites.md) | Allocation sites across calls, cloned per call site and returned through slots | Accepted |
+| [0010](0010-formal-sites.md) | Formal sites: objects passed into a call keep their fields apart | Accepted |

@@ -11,6 +11,9 @@ All notable changes to this project are documented here. The format is based on
   configuration and data maps, run by ClusterFuzzLite on pull requests and weekly.
 
 ### Changed
+- Objects passed into calls keep their fields apart inside the callee, per call site:
+  `show({ owner: { id, email } })` read as `input.owner.id` no longer reports the email address
+  (ADR 0010).
 - Objects returned from calls keep their fields apart in the caller, per call site: a helper's
   `return { ...record, user: { id, email } }` read as `r.user.id` no longer reports the email
   address. Spreads into a literal are its rest, not its identity. On documenso, medium PF001

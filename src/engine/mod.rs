@@ -23,6 +23,9 @@
 //! has an **exit** at each call site, to a variable of the caller: the return value to the
 //! call's result, a site's field variable to the call site's clone of it.
 //!
+//! A function's formal parameters include the field variables of the formal sites its
+//! parameters hold (ADR 0010), bound at each call site like any argument.
+//!
 //! A function's **summary** records, for each formal parameter and token, which return slots
 //! (with their tokens), hits and shared variables (module-level bindings and class instances)
 //! the formal reaches, applying callees' summaries at nested call sites, where a slot reached

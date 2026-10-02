@@ -222,6 +222,9 @@ struct Builder<'a, 'p> {
     types_by_name: BTreeMap<String, Vec<usize>>,
     /// Named field reads, resolved against allocation sites once every edge exists.
     loads: Vec<heap::PendingLoad>,
+    /// (function, formal) pairs some call binds other than one argument to one parameter
+    /// (rest parameters, `...xs`, `**kw`): they do not get formal sites.
+    inexact: BTreeSet<(FuncId, u32)>,
 }
 
 pub fn build(p: &mut Program, inp: &Inputs) -> Facts {
@@ -260,6 +263,7 @@ pub fn build(p: &mut Program, inp: &Inputs) -> Facts {
         seed_keys: BTreeSet::new(),
         types_by_name,
         loads: Vec::new(),
+        inexact: BTreeSet::new(),
     };
     let handlers = b.find_handlers();
     if handlers.iter().any(|h| h.provenance.is_some()) {
@@ -288,7 +292,8 @@ pub fn build(p: &mut Program, inp: &Inputs) -> Facts {
     b.param_name_seeds();
     b.static_gaps();
     let loads = std::mem::take(&mut b.loads);
-    let slot_exits = heap::resolve(b.p, &mut b.f, &b.defs, loads);
+    let inexact = std::mem::take(&mut b.inexact);
+    let slot_exits = heap::resolve(b.p, &mut b.f, &b.defs, loads, &inexact);
     let nvars = b.p.vars.len();
     b.f.slot_of = vec![None; nvars];
     b.f.exits = vec![Vec::new(); nvars];
@@ -743,6 +748,7 @@ impl<'a, 'p> Builder<'a, 'p> {
         let mut pos = 0usize;
         let mut bound_formals: BTreeSet<usize> = BTreeSet::new();
         let mut binds: Vec<(VarId, u32)> = Vec::new();
+        let mut inexact: Vec<u32> = Vec::new();
         for a in args {
             match &a.kind {
                 GArgKind::Positional => {
@@ -760,6 +766,7 @@ impl<'a, 'p> Builder<'a, 'p> {
                                 && let Some(fi) = formal_index(q.var, self)
                             {
                                 binds.push((a.var, fi));
+                                inexact.push(fi);
                             }
                         }
                     }
@@ -773,6 +780,9 @@ impl<'a, 'p> Builder<'a, 'p> {
                         && let Some(fi) = formal_index(q.var, self)
                     {
                         binds.push((a.var, fi));
+                        if q.kwrest {
+                            inexact.push(fi);
+                        }
                     }
                 }
                 GArgKind::Spread => {
@@ -782,6 +792,7 @@ impl<'a, 'p> Builder<'a, 'p> {
                             && let Some(fi) = formal_index(q.var, self)
                         {
                             binds.push((a.var, fi));
+                            inexact.push(fi);
                         }
                     }
                 }
@@ -791,6 +802,7 @@ impl<'a, 'p> Builder<'a, 'p> {
                             && let Some(fi) = formal_index(q.var, self)
                         {
                             binds.push((a.var, fi));
+                            inexact.push(fi);
                         }
                     }
                 }
@@ -798,6 +810,9 @@ impl<'a, 'p> Builder<'a, 'p> {
         }
         binds.sort();
         binds.dedup();
+        for fi in inexact {
+            self.inexact.insert((f, fi));
+        }
         for (var, formal) in binds {
             self.f.bindings[var as usize].push(Binding { site, formal });
         }

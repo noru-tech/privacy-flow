@@ -26,6 +26,8 @@ BREAKS = {
     "allocation-sites": ("src/facts/heap.rs", "if !modelled {", "if true {"),
     # Call-context sites: no call result is a clone of what its callee returns.
     "call-context": ("src/facts/heap.rs", "if local_only(p, site.stmt) {", "if false {"),
+    # Formal sites: no parameter holds its arguments' sites.
+    "param-sites": ("src/facts/heap.rs", "if !exact(formal, binds) {", "if true {"),
 }
 
 

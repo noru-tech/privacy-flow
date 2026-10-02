@@ -48,6 +48,51 @@ const DIRTY: Sym = Sym::MAX;
 /// number of copies one read can produce.
 const MAX_SITES: usize = 32;
 
+/// How sites seen on one side of a call are seen on the other.
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+enum Mapping {
+    /// Out of call site `c`'s callee into its caller: a site the callee owns is the call
+    /// site's clone of it.
+    Ret(u32),
+    /// Into parameter `j` of function `f` at call site `c`, at a path of fields below it: any
+    /// site is the formal site for (`f`, `j`, path).
+    Arg {
+        c: u32,
+        f: u32,
+        j: u32,
+        path: Vec<Sym>,
+    },
+}
+
+impl Mapping {
+    /// The mapping for field `k` of what this maps.
+    fn child(&self, k: Sym) -> Mapping {
+        match self {
+            Mapping::Ret(c) => Mapping::Ret(*c),
+            Mapping::Arg { c, f, j, path } => {
+                let mut path = path.clone();
+                path.push(k);
+                Mapping::Arg {
+                    c: *c,
+                    f: *f,
+                    j: *j,
+                    path,
+                }
+            }
+        }
+    }
+}
+
+/// A site that is not a literal.
+#[derive(Clone, Debug)]
+enum Extra {
+    /// Call site `c`'s clone of a site its callee returns.
+    Clone { c: u32, base: u32 },
+    /// What a parameter of `f` holds, at a path of fields below it, across its call sites
+    /// (keyed by function, parameter and path in `formal_id`).
+    Formal { f: u32 },
+}
+
 /// Most variables hold one site or none, so sets are sorted vectors and the constraint lists
 /// other than copies are sparse.
 struct Solver {
@@ -67,35 +112,43 @@ struct Solver {
     queued: Vec<bool>,
     /// A node that holds only `UNKNOWN`: the source of computed-key writes.
     unknown_node: u32,
-    /// Sites are statement indices of literals; clones are numbered from here.
-    clone0: u32,
-    /// Clone `clone0 + i` is (call site, original literal).
-    clones: Vec<(u32, u32)>,
+    /// Sites are statement indices of literals; extra sites are numbered from here.
+    extra0: u32,
+    extras: Vec<Extra>,
     clone_id: HashMap<(u32, u32), u32>,
+    formal_id: HashMap<(u32, u32, Vec<Sym>), u32>,
     /// Clones made per call site, against `MAX_SITES`.
     clones_at: HashMap<u32, usize>,
-    /// The function owning each site: the literal's, or for a clone the call site's caller.
+    /// The function owning each site: the literal's, a clone's caller, a formal site's
+    /// function.
     site_owner: Vec<u32>,
     /// Facts call sites: (callee, the function containing the call).
     call_sites: Vec<(u32, u32)>,
-    /// Source node → (target node, call site): the target holds the source's sites as seen
-    /// from the caller at that call site.
+    mappings: Vec<Mapping>,
+    mapping_id: HashMap<Mapping, u32>,
+    /// Source node → (target node, mapping): the target holds the source's sites as seen on
+    /// the other side of a call.
     mapped: HashMap<u32, Vec<(u32, u32)>>,
-    /// (callee-side site, clone, call site): the clone stands for that site at that call site.
+    /// (site, the site standing for it across a call, mapping).
     mirrors: BTreeSet<(u32, u32, u32)>,
     mirrors_of: HashMap<u32, Vec<(u32, u32)>>,
     fields_of_site: HashMap<u32, Vec<Sym>>,
     /// Site → its rest node: what spreads into a literal (`{ ...x }`, each spread copied into
-    /// it), or a clone's rest, filled through the call. A field read of the site also reads
-    /// that field of the rest.
+    /// it), or a clone's or formal site's rest, filled through the call. A field read of the
+    /// site also reads that field of the rest.
     rests: HashMap<u32, Vec<u32>>,
-    /// (callee-side rest, clone, call site) for the exits.
-    rest_exits: BTreeSet<(u32, u32, u32)>,
+    /// (rest, the rest standing for it across a call, mapping): exits or bindings.
+    rest_mirrors: BTreeSet<(u32, u32, u32)>,
+    /// Field reads made of each site, so a rest the site gets later is read too.
+    site_loads: HashMap<u32, Vec<(u32, Sym)>>,
     loads_done: HashSet<(u32, u32, Sym)>,
 }
 
+/// How deep below a parameter formal sites go; deeper is unknown.
+const MAX_FORMAL_DEPTH: usize = 3;
+
 impl Solver {
-    fn new(nvars: usize, clone0: u32, site_owner: Vec<u32>, call_sites: Vec<(u32, u32)>) -> Self {
+    fn new(nvars: usize, extra0: u32, site_owner: Vec<u32>, call_sites: Vec<(u32, u32)>) -> Self {
         let mut s = Solver {
             pts: vec![Vec::new(); nvars],
             copy_out: vec![Vec::new(); nvars],
@@ -106,18 +159,22 @@ impl Solver {
             queue: VecDeque::new(),
             queued: vec![false; nvars],
             unknown_node: 0,
-            clone0,
-            clones: Vec::new(),
+            extra0,
+            extras: Vec::new(),
             clone_id: HashMap::new(),
+            formal_id: HashMap::new(),
             clones_at: HashMap::new(),
             site_owner,
             call_sites,
+            mappings: Vec::new(),
+            mapping_id: HashMap::new(),
             mapped: HashMap::new(),
             mirrors: BTreeSet::new(),
             mirrors_of: HashMap::new(),
             fields_of_site: HashMap::new(),
             rests: HashMap::new(),
-            rest_exits: BTreeSet::new(),
+            rest_mirrors: BTreeSet::new(),
+            site_loads: HashMap::new(),
             loads_done: HashSet::new(),
         };
         s.unknown_node = s.push_node();
@@ -133,6 +190,16 @@ impl Solver {
         n
     }
 
+    fn mapping(&mut self, m: Mapping) -> u32 {
+        if let Some(&id) = self.mapping_id.get(&m) {
+            return id;
+        }
+        let id = self.mappings.len() as u32;
+        self.mappings.push(m.clone());
+        self.mapping_id.insert(m, id);
+        id
+    }
+
     fn field(&mut self, site: u32, k: Sym) -> u32 {
         if let Some(&n) = self.fields.get(&(site, k)) {
             return n;
@@ -140,10 +207,12 @@ impl Solver {
         let n = self.push_node();
         self.fields.insert((site, k), n);
         self.fields_of_site.entry(site).or_default().push(k);
-        // Every clone standing for this site gets the field too.
-        for (clone, c) in self.mirrors_of.get(&site).cloned().unwrap_or_default() {
-            let to = self.field(clone, k);
-            self.add_mapped(n, to, c);
+        // Every site standing for this one across a call gets the field too.
+        for (other, m) in self.mirrors_of.get(&site).cloned().unwrap_or_default() {
+            let to = self.field(other, k);
+            let child = self.mappings[m as usize].child(k);
+            let cm = self.mapping(child);
+            self.add_mapped(n, to, cm);
         }
         n
     }
@@ -152,70 +221,121 @@ impl Solver {
         self.site_owner[site as usize]
     }
 
+    fn extra(&self, site: u32) -> Option<&Extra> {
+        site.checked_sub(self.extra0)
+            .map(|i| &self.extras[i as usize])
+    }
+
     fn base(&self, site: u32) -> u32 {
-        if site >= self.clone0 {
-            self.clones[(site - self.clone0) as usize].1
-        } else {
-            site
+        match self.extra(site) {
+            Some(Extra::Clone { base, .. }) => *base,
+            _ => site,
         }
     }
 
-    /// What `x`, seen inside the callee of call site `c`, is in the caller: a site the callee
-    /// owns is the call site's clone of its literal; anything else is itself.
-    fn map(&mut self, c: u32, x: u32) -> u32 {
+    fn push_extra(&mut self, e: Extra, owner: u32) -> u32 {
+        let id = self.extra0 + self.extras.len() as u32;
+        self.extras.push(e);
+        self.site_owner.push(owner);
+        id
+    }
+
+    /// What `x` on one side of a call is on the other, under mapping `m`.
+    fn map(&mut self, m: u32, x: u32) -> u32 {
         if x == UNKNOWN {
             return UNKNOWN;
         }
-        let (callee, caller) = self.call_sites[c as usize];
-        if self.owner(x) != callee {
-            return x;
-        }
-        let key = (c, self.base(x));
-        let clone = match self.clone_id.get(&key) {
-            Some(&id) => id,
-            None => {
-                let n = self.clones_at.entry(c).or_default();
-                if *n >= MAX_SITES {
+        let target = match self.mappings[m as usize].clone() {
+            Mapping::Ret(c) => {
+                let (callee, caller) = self.call_sites[c as usize];
+                if self.owner(x) != callee {
+                    return x;
+                }
+                let key = (c, self.base(x));
+                match self.clone_id.get(&key) {
+                    Some(&id) => id,
+                    None => {
+                        let n = self.clones_at.entry(c).or_default();
+                        if *n >= MAX_SITES {
+                            return UNKNOWN;
+                        }
+                        *n += 1;
+                        let id = self.push_extra(Extra::Clone { c, base: key.1 }, caller);
+                        self.clone_id.insert(key, id);
+                        id
+                    }
+                }
+            }
+            Mapping::Arg { f, j, path, .. } => {
+                if path.len() > MAX_FORMAL_DEPTH {
                     return UNKNOWN;
                 }
-                *n += 1;
-                let id = self.clone0 + self.clones.len() as u32;
-                self.clones.push(key);
-                self.clone_id.insert(key, id);
-                self.site_owner.push(caller);
-                let base = key.1;
-                if self.rests.contains_key(&base) {
-                    let r = self.push_node();
-                    self.rests.insert(id, vec![r]);
+                let key = (f, j, path.clone());
+                match self.formal_id.get(&key) {
+                    Some(&id) => id,
+                    None => {
+                        let id = self.push_extra(Extra::Formal { f }, f);
+                        self.formal_id.insert(key, id);
+                        id
+                    }
                 }
-                id
             }
         };
-        if self.mirrors.insert((x, clone, c)) {
-            self.mirrors_of.entry(x).or_default().push((clone, c));
-            if let Some(&rc) = self.rests.get(&clone).and_then(|r| r.first()) {
-                for rest in self.rests.get(&x).cloned().unwrap_or_default() {
-                    self.rest_exits.insert((rest, clone, c));
-                    self.add_mapped(rest, rc, c);
-                }
+        if self.mirrors.insert((x, target, m)) {
+            self.mirrors_of.entry(x).or_default().push((target, m));
+            if let Some(&rest) = self.rests.get(&x).and_then(|r| r.first()) {
+                self.mirror_rest(rest, target, m);
             }
             for k in self.fields_of_site.get(&x).cloned().unwrap_or_default() {
                 let from = self.field(x, k);
-                let to = self.field(clone, k);
-                self.add_mapped(from, to, c);
+                let to = self.field(target, k);
+                let child = self.mappings[m as usize].child(k);
+                let cm = self.mapping(child);
+                self.add_mapped(from, to, cm);
             }
         }
-        clone
+        target
     }
 
-    fn add_mapped(&mut self, from: u32, to: u32, c: u32) {
-        let list = self.mapped.entry(from).or_default();
-        if list.contains(&(to, c)) {
+    /// The rest of a site stands, across a call, for the rest of the site it maps to. A
+    /// clone's rest holds the callee rest's sites as seen from the caller; a formal site's rest
+    /// is unknown, so reads through it keep their `Load` edge.
+    fn mirror_rest(&mut self, rest: u32, target: u32, m: u32) {
+        let tr = self.rest_of(target);
+        if !self.rest_mirrors.insert((rest, tr, m)) {
             return;
         }
-        list.push((to, c));
+        match self.mappings[m as usize] {
+            Mapping::Ret(_) => self.add_mapped(rest, tr, m),
+            Mapping::Arg { .. } => self.add(tr, UNKNOWN),
+        }
+    }
+
+    /// A site's rest node, made on first use; reads already made of the site read it too.
+    fn rest_of(&mut self, site: u32) -> u32 {
+        if let Some(&r) = self.rests.get(&site).and_then(|r| r.first()) {
+            return r;
+        }
+        let r = self.push_node();
+        self.rests.insert(site, vec![r]);
+        for (dst, k) in self.site_loads.get(&site).cloned().unwrap_or_default() {
+            self.add_load(r, dst, k);
+        }
+        // Sites standing for this one get a rest standing for it.
+        for (other, m) in self.mirrors_of.get(&site).cloned().unwrap_or_default() {
+            self.mirror_rest(r, other, m);
+        }
+        r
+    }
+
+    fn add_mapped(&mut self, from: u32, to: u32, m: u32) {
+        let list = self.mapped.entry(from).or_default();
+        if list.contains(&(to, m)) {
+            return;
+        }
+        list.push((to, m));
         for x in self.pts[from as usize].clone() {
-            let y = self.map(c, x);
+            let y = self.map(m, x);
             self.add(to, y);
         }
     }
@@ -275,9 +395,9 @@ impl Solver {
                     self.add(to, x);
                 }
             }
-            for (to, c) in self.mapped.get(&n).cloned().unwrap_or_default() {
+            for (to, m) in self.mapped.get(&n).cloned().unwrap_or_default() {
                 for &x in &xs {
-                    let y = self.map(c, x);
+                    let y = self.map(m, x);
                     self.add(to, y);
                 }
             }
@@ -296,13 +416,17 @@ impl Solver {
         }
     }
 
-    /// `dst = n.k`: the field of each site, and the same read of each site's rests.
+    /// `dst = n.k`: the field of each site, and the same read of each site's rest.
     fn apply_load(&mut self, n: u32, dst: u32, k: Sym) {
         // A field of an unknown value is unknown.
         if self.unknown(n) {
             self.add(dst, UNKNOWN);
         }
         for s in self.sites(n) {
+            let reads = self.site_loads.entry(s).or_default();
+            if !reads.contains(&(dst, k)) {
+                reads.push((dst, k));
+            }
             let f = self.field(s, k);
             self.add_copy(f, dst);
             let d = self.field(s, DIRTY);
@@ -365,6 +489,7 @@ pub(super) fn resolve(
     f: &mut Facts,
     defs: &[Vec<u32>],
     loads: Vec<PendingLoad>,
+    inexact: &BTreeSet<(u32, u32)>,
 ) -> Vec<SlotExit> {
     let nvars = p.vars.len();
     let clone0 = p.stmts.len() as u32;
@@ -376,6 +501,25 @@ pub(super) fn resolve(
         .collect();
     let mut s = Solver::new(nvars, clone0, site_owner, call_sites);
 
+    // Parameters every binding of which passes one argument to it, by position or keyword:
+    // they hold what their arguments hold, as formal sites.
+    let mut param_binds: BTreeMap<VarId, Vec<(VarId, u32, u32, u32)>> = BTreeMap::new();
+    for (a, bs) in f.bindings.iter().enumerate() {
+        for b in bs {
+            let callee = f.sites[b.site as usize].func;
+            let formal = f.formals[callee as usize][b.formal as usize];
+            param_binds
+                .entry(formal)
+                .or_default()
+                .push((a as VarId, b.site, callee, b.formal));
+        }
+    }
+    let exact = |v: VarId, binds: &[(VarId, u32, u32, u32)]| {
+        p.vars[v as usize].kind == VarKind::Param
+            && defs[v as usize].is_empty()
+            && binds.iter().all(|&(_, _, g, j)| !inexact.contains(&(g, j)))
+    };
+
     // Unknown by construction: anything but a local, a temporary or a return slot, and
     // anything with a definition other than a literal, a copy, a named field read or a call
     // that reaches only local functions.
@@ -383,6 +527,9 @@ pub(super) fn resolve(
         let kind = p.vars[v].kind;
         let modelled = match kind {
             VarKind::Ret => ds.is_empty(),
+            VarKind::Param => param_binds
+                .get(&(v as VarId))
+                .is_some_and(|b| exact(v as VarId, b)),
             VarKind::Local | VarKind::Temp => {
                 !ds.is_empty()
                     && ds.iter().all(|&d| match p.stmts[d as usize].kind {
@@ -414,12 +561,12 @@ pub(super) fn resolve(
     for (i, st) in p.stmts.iter().enumerate() {
         if let GKind::Lit { dst, .. } = st.kind {
             let ds = &defs[dst as usize];
-            let lits = ds
+            let literals = ds
                 .iter()
                 .filter(|&&d| matches!(p.stmts[d as usize].kind, GKind::Lit { .. }))
                 .count();
             if p.vars[dst as usize].kind == VarKind::Temp
-                && lits == 1
+                && literals == 1
                 && ds.iter().all(|&d| {
                     matches!(
                         p.stmts[d as usize].kind,
@@ -476,14 +623,7 @@ pub(super) fn resolve(
     // copies into: the spreads stay cited, and the rest can be a return slot.
     spreads.sort_unstable();
     for &(site, from, _) in &spreads {
-        let r = match s.rests.get(&site) {
-            Some(r) => r[0],
-            None => {
-                let r = s.push_node();
-                s.rests.insert(site, vec![r]);
-                r
-            }
-        };
+        let r = s.rest_of(site);
         s.copy_out[from as usize].push(r);
     }
     for l in &loads {
@@ -498,7 +638,23 @@ pub(super) fn resolve(
         let site = f.sites[c];
         if local_only(p, site.stmt) {
             let ret = p.funcs[site.func as usize].ret;
-            s.add_mapped(ret, site.dst, c as u32);
+            let m = s.mapping(Mapping::Ret(c as u32));
+            s.add_mapped(ret, site.dst, m);
+        }
+    }
+    // A parameter holds, at each call site, its argument's sites as formal sites.
+    for (&formal, binds) in &param_binds {
+        if !exact(formal, binds) {
+            continue;
+        }
+        for &(a, c, g, j) in binds {
+            let m = s.mapping(Mapping::Arg {
+                c,
+                f: g,
+                j,
+                path: Vec::new(),
+            });
+            s.add_mapped(a, formal, m);
         }
     }
     for n in 0..nvars as u32 {
@@ -555,24 +711,34 @@ pub(super) fn resolve(
             break;
         }
     }
-    // Where a site is: its literal, or for a clone the call.
-    let site_stmt = |site: u32| -> u32 {
-        if site >= clone0 {
-            f.sites[s.clones[(site - clone0) as usize].0 as usize].stmt
-        } else {
-            site
+    // Where a site is: its literal, a clone's call, a formal site's function; formal sites'
+    // variables are parameters.
+    let site_at = |site: u32| -> (crate::program::FileId, crate::ir::Pos, VarKind) {
+        match s.extra(site) {
+            Some(Extra::Clone { c, .. }) => {
+                let st = &p.stmts[f.sites[*c as usize].stmt as usize];
+                (st.file, st.pos, VarKind::Temp)
+            }
+            Some(Extra::Formal { f: g, .. }) => {
+                let func = &p.funcs[*g as usize];
+                (func.file, func.pos, VarKind::Param)
+            }
+            None => {
+                let st = &p.stmts[site as usize];
+                (st.file, st.pos, VarKind::Temp)
+            }
         }
     };
     let mut var_of: BTreeMap<(u32, Sym), VarId> = BTreeMap::new();
     for &(site, k) in &written {
-        let st = &p.stmts[site_stmt(site) as usize];
+        let (file, pos, kind) = site_at(site);
         let v = p.vars.len() as VarId;
         p.vars.push(GVar {
             name: format!("{{}}.{}", p.syms.str(k)),
-            kind: VarKind::Temp,
+            kind,
             func: s.owner(site),
-            file: st.file,
-            pos: st.pos,
+            file,
+            pos,
         });
         p.prov.push(Vec::new());
         var_of.insert((site, k), v);
@@ -583,14 +749,14 @@ pub(super) fn resolve(
     let mut all_rests: Vec<(u32, u32)> = s.rests.iter().map(|(site, r)| (*site, r[0])).collect();
     all_rests.sort_unstable();
     for (clone, node) in all_rests {
-        let st = &p.stmts[site_stmt(clone) as usize];
+        let (file, pos, kind) = site_at(clone);
         let v = p.vars.len() as VarId;
         p.vars.push(GVar {
             name: "{...}".to_string(),
-            kind: VarKind::Temp,
+            kind,
             func: s.owner(clone),
-            file: st.file,
-            pos: st.pos,
+            file,
+            pos,
         });
         p.prov.push(Vec::new());
         rest_var.insert(node, v);
@@ -688,30 +854,51 @@ pub(super) fn resolve(
     for ((from, stmt, to), kind) in new_edges {
         f.out[from as usize].push(Edge { to, kind, stmt });
     }
-    // Each field variable of a site a callee returns exits, at each call site, to the field
-    // variable of that call site's clone; each of its rests, to the clone's rest.
+    // Out of a call, each field variable of a site the callee returns exits, at that call
+    // site, to the field variable of the call site's clone, and its rest to the clone's rest.
+    // Into a call, each field variable of an argument's site is bound, at that call site, to
+    // the field variable of the parameter's formal site, which is a further formal parameter.
     let mut exits = Vec::new();
-    for &(x, clone, c) in &s.mirrors {
-        for (&(site, k), &slot) in var_of.range((x, 0)..=(x, Sym::MAX)) {
+    let mut binds: BTreeSet<(VarId, u32, VarId)> = BTreeSet::new();
+    let mut pairs: Vec<(VarId, VarId, u32)> = Vec::new();
+    for &(x, target, m) in &s.mirrors {
+        for (&(site, k), &from) in var_of.range((x, 0)..=(x, Sym::MAX)) {
             debug_assert_eq!(site, x);
-            if let Some(&to) = var_of.get(&(clone, k)) {
-                exits.push(SlotExit {
-                    slot,
-                    func: s.call_sites[c as usize].0,
-                    site: c,
-                    to,
-                });
+            if let Some(&to) = var_of.get(&(target, k)) {
+                pairs.push((from, to, m));
             }
         }
     }
-    for &(rest, clone, c) in &s.rest_exits {
-        let to = var_of_node(s.rests[&clone][0]);
-        exits.push(SlotExit {
-            slot: var_of_node(rest),
-            func: s.call_sites[c as usize].0,
-            site: c,
-            to,
-        });
+    for &(rest, tr, m) in &s.rest_mirrors {
+        pairs.push((var_of_node(rest), var_of_node(tr), m));
+    }
+    for (from, to, m) in pairs {
+        match &s.mappings[m as usize] {
+            Mapping::Ret(c) => exits.push(SlotExit {
+                slot: from,
+                func: s.call_sites[*c as usize].0,
+                site: *c,
+                to,
+            }),
+            Mapping::Arg { c, .. } => {
+                binds.insert((from, *c, to));
+            }
+        }
+    }
+    let mut new_formals: BTreeSet<(u32, VarId)> = BTreeSet::new();
+    for &(_, _, to) in &binds {
+        new_formals.insert((p.vars[to as usize].func, to));
+    }
+    for (g, v) in new_formals {
+        f.formals[g as usize].push(v);
+    }
+    for (from, c, to) in binds {
+        let g = s.call_sites[c as usize].0;
+        let formal = f.formals[g as usize]
+            .iter()
+            .position(|&x| x == to)
+            .expect("formal") as u32;
+        f.bindings[from as usize].push(super::Binding { site: c, formal });
     }
     exits
 }
