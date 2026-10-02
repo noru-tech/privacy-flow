@@ -61,13 +61,15 @@ Request input is a source only in frameworks whose request objects are modelled
 - **Flow-insensitive within a function.** A variable overwritten before it reaches a sink still
   flows (`let v = user.email; v = 'x'; log(v)` is reported). Two conformance vectors record this as
   a known limitation.
-- **Field sensitivity into calls is one level deep.** Within a function, through module-level
-  objects and closures, and back out of calls, every literal is an allocation site whose fields
-  stay apart at any depth, and writes through an alias are seen (`p = o; p.a = email; log(o.a)`):
-  `r = wrap(); log(r.data.id)`, where `wrap` returns `{ data: { email, id } }`, is not reported
-  ([ADR 0007](docs/adr/0007-allocation-sites.md), [ADR 0009](docs/adr/0009-call-context-sites.md)).
-  An object passed *into* a call, or one that comes from an import or a call that may also reach a
-  library, keeps one level of fields: `f({ user })` read as `input.user.id` inside `f` is reported. Instance fields keep two levels
+- **Field sensitivity.** Within a function, through module-level objects and closures, out of
+  calls and into them, every literal is an allocation site whose fields stay apart, and writes
+  through an alias are seen (`p = o; p.a = email; log(o.a)`): `r = wrap(); log(r.data.id)` and
+  `show({ owner: { id, email } })` read as `input.owner.id` are not reported
+  ([ADR 0007](docs/adr/0007-allocation-sites.md), [ADR 0009](docs/adr/0009-call-context-sites.md),
+  [ADR 0010](docs/adr/0010-formal-sites.md)). An object keeps one level of fields when it comes
+  from an import, from a call that may also reach a library, through a rest parameter or a spread
+  argument (`f(...xs)`), into a parameter whose name is classified as personal data, or more than
+  three fields below a parameter. Instance fields keep two levels
   (`this.config.url` keeps `config`'s fields apart) ([ADR 0005](docs/adr/0005-instances-and-fields.md)).
   **Silent:** an object passed to a call that writes to it (`f(o)` where `f` sets `p.a = email`)
   does not carry that write back to the caller's reads of `o`. Array elements are not distinguished from

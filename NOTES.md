@@ -331,3 +331,17 @@ caller. A function's own slots now never stop its summary, and closures do not s
 (`f({ user })` read as `input.user.id`); the long false chains sampled on monorepo A go through
 it.
 
+## 2026-10-03 — Formal sites (ADR 0010)
+
+**Done.** Parameters that every call passes exactly one argument to hold formal sites (up to three
+fields deep) whose field variables are further formal parameters, bound from the arguments' site
+fields at each call site; the points-to pass maps sites into calls as it maps them out of calls.
+The engines are unchanged. Three required vectors, fixture `ts/param-objects`, CI break
+`param-sites`.
+
+**Measured.** documenso 523 → 519 findings; monorepo A 40 flows removed, 6 added; monorepo B 509
+removed (a recipient's name and device ID reported as reaching logs of `recipient.email`), 3 added.
+Time +20–40%: each formal-site field is summarised as a parameter.
+
+**Next.** Summarise formal-site parameters only for the tokens their function reads.
+

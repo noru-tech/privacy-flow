@@ -92,6 +92,9 @@ keeps its `Load` edge. Across calls ([ADR 0009](adr/0009-call-context-sites.md))
 reaches only local functions holds a per-call-site clone of each site its callee returns; the
 callee's site fields are extra return slots, applied through summaries like the return value, so
 the clone's fields are context-sensitive. What spreads into a literal is the literal's rest.
+Into calls ([ADR 0010](adr/0010-formal-sites.md)), a parameter every call passes one argument to
+holds a formal site whose field variables are further formal parameters, bound from the
+arguments' site fields at each call site.
 
 ## 5. Engines
 

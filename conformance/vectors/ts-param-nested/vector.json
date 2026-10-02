@@ -1,0 +1,5 @@
+{
+  "description": "Fields of a nested object passed to a function stay apart inside it.",
+  "language": "javascript",
+  "status": "required"
+}

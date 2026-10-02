@@ -1,0 +1,5 @@
+{
+  "description": "Keys of a nested dict passed to a function stay apart inside it.",
+  "language": "python",
+  "status": "required"
+}

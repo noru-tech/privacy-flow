@@ -79,6 +79,13 @@
       "status": "required"
     },
     {
+      "description": "Keys of a nested dict passed to a function stay apart inside it.",
+      "expected_flows": 1,
+      "language": "python",
+      "name": "py-param-dict",
+      "status": "required"
+    },
+    {
       "description": "Overwritten before it is printed: no flow at run time. Flow-insensitive analysis reports one.",
       "expected_flows": 0,
       "language": "python",
@@ -202,6 +209,20 @@
       "expected_flows": 1,
       "language": "javascript",
       "name": "ts-nested-fields",
+      "status": "required"
+    },
+    {
+      "description": "A function called with an object holding an email address and with one holding an ID keeps the calls apart.",
+      "expected_flows": 1,
+      "language": "javascript",
+      "name": "ts-param-context",
+      "status": "required"
+    },
+    {
+      "description": "Fields of a nested object passed to a function stay apart inside it.",
+      "expected_flows": 1,
+      "language": "javascript",
+      "name": "ts-param-nested",
       "status": "required"
     },
     {
