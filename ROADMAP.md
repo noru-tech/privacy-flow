@@ -29,8 +29,8 @@ DOI for the corpus. See the protocol in [docs/benchmark.md](docs/benchmark.md#pr
   GraphQL resolvers, Remix and SvelteKit loaders and actions, Next.js server actions, Starlette and
   aiohttp handlers; Vue and Svelte single-file component scripts.
 - **Precision:** flow-sensitivity within a function (ordered statements in the IR),
-  allocation sites across calls (they stop at parameters and returns today,
-  [ADR 0007](docs/adr/0007-allocation-sites.md)), inherited
+  allocation sites into calls (objects returned from calls keep their fields apart since
+  [ADR 0009](docs/adr/0009-call-context-sites.md); objects passed as arguments do not), inherited
   methods, exceptions to `catch`, event emitters.
 - **Pseudonymisation as a category transform** rather than a removal, so a hashed identifier is
   reported as pseudonymised data, with a vocabulary agreed with privacy-datamap

@@ -18,13 +18,19 @@
 //! - `Store(k) a→b`: `(a,t)` → `(b,k)`.
 //! - `Sanitize(s) a→b`: like `Collapse`, unless `s` removes the seed's category.
 //!
-//! Calls to local functions are not edges. A function's **summary** records, for each formal
-//! parameter and token, which return tokens, hits and shared variables (module-level bindings
-//! and class instances) the formal reaches, applying callees' summaries at nested call sites.
-//! A summary stops at shared variables. From a seed, the search follows edges, applies
-//! summaries at call sites, continues from shared variables, and follows returns from a
-//! function to every call site of it (a function's return slot only ever holds data that
-//! originated inside it, so this is never an unrealizable path).
+//! Calls to local functions are not edges. A function's **return slots** are its return value
+//! and the field variables (and rests) of the allocation sites it returns (ADR 0009); each slot
+//! has an **exit** at each call site, to a variable of the caller: the return value to the
+//! call's result, a site's field variable to the call site's clone of it.
+//!
+//! A function's **summary** records, for each formal parameter and token, which return slots
+//! (with their tokens), hits and shared variables (module-level bindings and class instances)
+//! the formal reaches, applying callees' summaries at nested call sites, where a slot reached
+//! continues at that slot's exit for that call site. A summary stops at shared variables,
+//! except the owner's own return slots. From a seed, the search follows edges, applies
+//! summaries at call sites, continues from shared variables, and follows each return slot to
+//! its exit at every call site (a slot reached outside a summary only holds data that
+//! originated inside the function or in shared state, so this is never an unrealizable path).
 //!
 //! **Depth:** every entry into a callee and every return out of one counts as one call
 //! boundary. A witness may cross at most `max_depth` of them; where the bound stops a witness,

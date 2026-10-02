@@ -308,3 +308,26 @@ containers, now in KNOWN-LIMITATIONS.md).
 
 **Next.** Of documenso's 23 medium PF001 findings, roughly 11 go through an object returned from
 one function and read in another, which needs allocation sites per call context (ADR 0007).
+
+## 2026-10-03 — Allocation sites across calls (ADR 0009)
+
+**Done.** Calls that reach only local functions hold per-call-site clones of the sites their
+callee returns; the callee's site fields (and a literal's rest, what spreads into it) are extra
+return slots, applied through summaries, so both engines generalise "return value exits to the
+call result" to a slot/exit table. Spreads are rests; `.catch`/`.finally` pass a promise's sites
+through. Four required vectors, fixture `ts/returned-objects`, CI break `call-context`.
+
+**Measured.** documenso: findings 549 → 523, medium PF001 23 → 14, high PF002 29 → 27, same time
+and memory. Monorepo A: 1,429 flows removed, 1 added, 9.6 s → 12.0 s, 3.3 → 3.7 GB. Monorepo B: 35
+removed, 1 added (a real flow).
+
+**On the way.** Each step was checked against the private monorepos, and each found something:
+literals with an unknown spread were entirely unknown (the documenso shape), so spreads became
+rests; a `.catch(() => null)` on the call made the result unknown; and 127 unrealisable flows came
+from a closure reading a clone's field, which made it shared, so a summary handed it to every
+caller. A function's own slots now never stop its summary, and closures do not share.
+
+**Next.** The parameter side: objects passed into a call still collapse one level
+(`f({ user })` read as `input.user.id`); the long false chains sampled on monorepo A go through
+it.
+

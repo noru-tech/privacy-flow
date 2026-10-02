@@ -86,6 +86,13 @@
       "status": "known-limitation"
     },
     {
+      "description": "Keys of a nested dict returned from a helper stay apart in the caller.",
+      "expected_flows": 1,
+      "language": "python",
+      "name": "py-returned-dict",
+      "status": "required"
+    },
+    {
       "description": "An attribute set in __init__ is printed by a method.",
       "expected_flows": 1,
       "language": "python",
@@ -226,10 +233,31 @@
       "status": "required"
     },
     {
+      "description": "A helper called with an email address and with an ID returns each to its own call site.",
+      "expected_flows": 1,
+      "language": "javascript",
+      "name": "ts-returned-context",
+      "status": "required"
+    },
+    {
+      "description": "Fields of a nested object returned from a helper stay apart in the caller.",
+      "expected_flows": 1,
+      "language": "javascript",
+      "name": "ts-returned-nested",
+      "status": "required"
+    },
+    {
       "description": "Fields of an object returned from a helper stay apart in the caller.",
       "expected_flows": 1,
       "language": "javascript",
       "name": "ts-returned-object",
+      "status": "required"
+    },
+    {
+      "description": "An object returned with a spread keeps its own fields apart from the spread's.",
+      "expected_flows": 1,
+      "language": "javascript",
+      "name": "ts-returned-spread",
       "status": "required"
     },
     {

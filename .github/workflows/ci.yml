@@ -168,7 +168,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        break: [field-sensitivity, summaries, instances, sanitisers, stores, allocation-sites]
+        break: [field-sensitivity, summaries, instances, sanitisers, stores, allocation-sites, call-context]
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:

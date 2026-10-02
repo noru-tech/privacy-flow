@@ -15,7 +15,9 @@ use crate::program::{FuncId, Program, VarId};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 enum STarget {
-    Ret(Token),
+    /// A return slot of the summary's owner (its return value, or a field variable of a site
+    /// it returns), with the token that reaches it.
+    Ret(VarId, Token),
     Hit(u32),
     DepthBound(u32),
     Global(VarId, Token),
@@ -88,7 +90,6 @@ struct Ctx<'a> {
     f: &'a Facts,
     opts: Options,
     sigs: Vec<Vec<bool>>,
-    ret_of: Vec<Option<FuncId>>,
 }
 
 pub fn run(f: &Facts, p: &Program, opts: Options) -> Vec<Reach> {
@@ -96,16 +97,7 @@ pub fn run(f: &Facts, p: &Program, opts: Options) -> Vec<Reach> {
         return Vec::new();
     }
     let (sigs, class_of) = category_classes(&f.seeds, &f.sanitiser_removes);
-    let mut ret_of = vec![None; p.vars.len()];
-    for (i, func) in p.funcs.iter().enumerate() {
-        ret_of[func.ret as usize] = Some(i as FuncId);
-    }
-    let ctx = Ctx {
-        f,
-        opts,
-        sigs,
-        ret_of,
-    };
+    let ctx = Ctx { f, opts, sigs };
     let summaries = ctx.summaries(p);
     let per_seed: Vec<Vec<Reach>> = f
         .seeds
@@ -281,12 +273,15 @@ impl<'a> Ctx<'a> {
                 }
             };
             if let Mode::Summary(owner) = mode {
-                if f.shared[v as usize] && (v, t) != start {
+                // A function's own return slots are never shared within its summary: what
+                // reaches them returns to this call site, not to every caller.
+                let own_slot = f.slot_of[v as usize] == Some(owner);
+                if f.shared[v as usize] && !own_slot && (v, t) != start {
                     record(&mut found, STarget::Global(v, t), depth, d, key, Tail::None);
                     continue;
                 }
-                if self.ret_of[v as usize] == Some(owner) {
-                    record(&mut found, STarget::Ret(t), depth, d, key, Tail::None);
+                if own_slot {
+                    record(&mut found, STarget::Ret(v, t), depth, d, key, Tail::None);
                 }
             }
             for &h in &f.hit_args[v as usize] {
@@ -324,33 +319,41 @@ impl<'a> Ctx<'a> {
                         }])
                     };
                     match entry.target {
-                        STarget::Ret(t3) => {
-                            let nd = depth + entry.depth + 2;
-                            if nd > max {
-                                cuts.push((
-                                    Cut::State(site.dst, sub(t3)),
-                                    b.site,
-                                    depth,
-                                    d,
-                                    key,
-                                    enter_only(),
-                                ));
-                                continue;
+                        STarget::Ret(slot, t3) => {
+                            // Where this slot lands at this call site (a spread source can
+                            // land in more than one clone); a slot with no exit here (no clone
+                            // at this call) is carried by the return value.
+                            for &(s, to) in &f.exits[slot as usize] {
+                                if s != b.site {
+                                    continue;
+                                }
+                                let nd = depth + entry.depth + 2;
+                                if nd > max {
+                                    cuts.push((
+                                        Cut::State(to, sub(t3)),
+                                        b.site,
+                                        depth,
+                                        d,
+                                        key,
+                                        enter_only(),
+                                    ));
+                                    continue;
+                                }
+                                relax(
+                                    &mut heap,
+                                    &mut best,
+                                    &mut via,
+                                    (to, sub(t3), nd),
+                                    d + 2 + plen,
+                                    Via::Splice {
+                                        prev: key,
+                                        site: b.site,
+                                        formal: b.formal,
+                                        path: entry.path.clone(),
+                                        exit: true,
+                                    },
+                                );
                             }
-                            relax(
-                                &mut heap,
-                                &mut best,
-                                &mut via,
-                                (site.dst, sub(t3), nd),
-                                d + 2 + plen,
-                                Via::Splice {
-                                    prev: key,
-                                    site: b.site,
-                                    formal: b.formal,
-                                    path: entry.path.clone(),
-                                    exit: true,
-                                },
-                            );
                         }
                         STarget::Hit(hh) => {
                             let nd = depth + entry.depth + 1;
@@ -401,12 +404,9 @@ impl<'a> Ctx<'a> {
                     }
                 }
             }
-            if mode == Mode::Seed
-                && let Some(g) = self.ret_of[v as usize]
-            {
-                for &s in &f.callers[g as usize] {
+            if mode == Mode::Seed && f.slot_of[v as usize].is_some() {
+                for &(s, dst) in &f.exits[v as usize] {
                     let nd = depth + 1;
-                    let dst = f.sites[s as usize].dst;
                     if nd > max {
                         cuts.push((
                             Cut::State(dst, t),

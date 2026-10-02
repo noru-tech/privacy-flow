@@ -24,6 +24,8 @@ BREAKS = {
     "stores": ("src/engine/worklist.rs", "EdgeKind::Store(k) => Some(named(k)),", "EdgeKind::Store(_k) => Some(TOP),"),
     # Allocation sites: every variable is unknown, so every field read collapses again.
     "allocation-sites": ("src/facts/heap.rs", "if !modelled {", "if true {"),
+    # Call-context sites: no call result is a clone of what its callee returns.
+    "call-context": ("src/facts/heap.rs", "if local_only(p, site.stmt) {", "if false {"),
 }
 
 
