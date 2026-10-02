@@ -48,15 +48,24 @@ jobs:
           assert corpus == listed, (corpus, listed)
           PY
       - name: Add swap
+        id: swap
         if: inputs.swap_gib != '0'
         env:
-          SWAP: ${{ inputs.swap_gib }}
+          WANT: ${{ inputs.swap_gib }}
         run: |
-          sudo fallocate -l "${SWAP}G" /mnt/privado-swap
-          sudo chmod 600 /mnt/privado-swap
-          sudo mkswap /mnt/privado-swap
-          sudo swapon /mnt/privado-swap
+          # Free the preinstalled toolchains Privado does not need, then size the swap to the free
+          # space, keeping 15 GiB for the image, the application copy and the runner itself.
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /usr/local/.ghcup /opt/hostedtoolcache/CodeQL
+          df -BG /
+          AVAIL=$(df --output=avail -BG / | tail -1 | tr -dc 0-9)
+          SIZE=$(( WANT < AVAIL - 15 ? WANT : AVAIL - 15 ))
+          if [ "$SIZE" -lt 4 ]; then echo "only ${AVAIL} GiB free"; exit 1; fi
+          sudo fallocate -l "${SIZE}G" /privado-swap
+          sudo chmod 600 /privado-swap
+          sudo mkswap /privado-swap
+          sudo swapon /privado-swap
           free -g
+          echo "gib=$SIZE" >> "$GITHUB_OUTPUT"
       - name: Fetch the application at its pinned commit
         run: python3 benchmark/fetch.py ${{ matrix.app }}
       - name: Fetch Privado's rules at v1.3.91
@@ -69,7 +78,7 @@ jobs:
       - name: Scan offline
         env:
           APP: ${{ matrix.app }}
-          SWAP: ${{ inputs.swap_gib }}
+          SWAP: ${{ steps.swap.outputs.gib || '0' }}
           HEAP: ${{ inputs.heap_gib }}
         run: python3 benchmark/privado/scan.py "$APP" --rules rules --out "out/$APP" --swap-gib "$SWAP" --heap-gib "$HEAP"
       - if: always()
