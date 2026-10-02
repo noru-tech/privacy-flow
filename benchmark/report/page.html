@@ -1,0 +1,449 @@
+<title>piiflow M6 Benchmark</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600&family=Plus+Jakarta+Sans:wght@500;600&display=swap">
+<style>
+/* Layout: one left-aligned reading column. The answer first (a two-tool scoreboard), then how
+   to read it and why it is fair, then what is already known, then the detail. Light only, per
+   the Noru brand. */
+:root {
+  color-scheme: light;
+  --canvas: #f7f9f9; --surface: #ffffff; --surface-2: #f4f6f6; --surface-3: #eaeeee;
+  --ink: #121a1b; --fg: #3f4a4b; --muted: #54605f; --subtle: #76817f;
+  --hair: rgba(17, 27, 28, 0.10); --hair-strong: rgba(17, 27, 28, 0.18);
+  --accent: #3a5355;
+  --tool-a: #3a5355;   /* piiflow */
+  --tool-b: #9cb8b5;   /* Privado: same hue, much lighter */
+  --mid: #6f9391;
+  --ok: #1e9e5f; --warn: #b4830a; --bad: #b3261e; --idle: #9aa3a2;
+  --display: "Plus Jakarta Sans", system-ui, sans-serif;
+  --text: "Montserrat", system-ui, sans-serif;
+  --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+}
+* { box-sizing: border-box; }
+body { background: var(--canvas); color: var(--fg); font-family: var(--text); font-size: 15px; line-height: 1.6; padding-inline: 20px; padding-block: 40px 72px; }
+.wrap { max-width: 1000px; margin: 0 auto; display: grid; grid-template-columns: minmax(0, 1fr); gap: 60px; }
+h1, h2, h3 { font-family: var(--display); font-weight: 600; color: var(--ink); text-wrap: balance; margin: 0; }
+h1 { font-size: clamp(2rem, 4.6vw, 3rem); line-height: 1.05; letter-spacing: -0.04em; max-width: 18ch; }
+h2 { font-size: clamp(1.35rem, 2.4vw, 1.7rem); line-height: 1.15; letter-spacing: -0.03em; }
+h3 { font-size: 1.02rem; letter-spacing: -0.015em; }
+p { margin: 0; max-width: 66ch; }
+.eyebrow { font-size: 12px; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase; color: var(--accent); }
+.label { font-size: 11px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: var(--subtle); }
+.lede { font-size: clamp(1rem, 1.7vw, 1.12rem); }
+.small { font-size: 13px; line-height: 1.55; color: var(--muted); }
+code { font-family: var(--mono); font-size: 0.86em; background: var(--surface-3); padding: 1px 5px; border-radius: 4px; color: var(--ink); }
+section, header { display: grid; grid-template-columns: minmax(0, 1fr); gap: 18px; min-width: 0; }
+
+/* Status */
+.status { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; padding: 12px 16px; background: var(--surface); border: 1px solid var(--hair); border-radius: 12px; }
+.status b { color: var(--ink); font-weight: 600; }
+.bar { flex: 1 1 200px; height: 8px; background: var(--surface-3); border-radius: 9999px; overflow: hidden; min-width: 120px; }
+.bar i { display: block; height: 100%; background: var(--accent); }
+.dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; flex: none; }
+
+/* Scoreboard */
+.board { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(280px, 100%), 1fr)); gap: 16px; }
+.tool { background: var(--surface); border: 1px solid var(--hair); border-radius: 12px; padding: 20px; display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; align-content: start; min-width: 0; }
+.tool .name { display: flex; align-items: center; gap: 10px; }
+.tool .name i { width: 14px; height: 14px; border-radius: 3px; }
+.tool .name h3 { font-size: 1.2rem; }
+.tool .name span { margin-left: auto; font-size: 12.5px; color: var(--subtle); }
+.metric { display: grid; gap: 4px; border-left: 1px solid var(--hair-strong); padding-left: 14px; }
+.metric .q { font-size: 13.5px; color: var(--muted); }
+.metric .v { font-family: var(--display); font-weight: 600; font-size: 2.3rem; letter-spacing: -0.04em; color: var(--ink); line-height: 1.05; font-variant-numeric: tabular-nums; }
+.metric .v.pending { font-size: 1.05rem; letter-spacing: -0.01em; color: var(--subtle); font-family: var(--text); font-weight: 500; padding-block: 8px; }
+.metric .r { font-size: 12.5px; color: var(--subtle); }
+.range { position: relative; height: 8px; background: var(--surface-3); border-radius: 9999px; margin-top: 4px; }
+.range b { position: absolute; top: 0; bottom: 0; border-radius: 9999px; opacity: 0.45; }
+.range s { position: absolute; top: -3px; width: 3px; height: 14px; border-radius: 2px; }
+.metric.minor .v { font-size: 1.45rem; }
+.metric .v.pending, .metric.minor .v.pending { font-size: 1.05rem; }
+.paired { background: var(--surface); border: 1px solid var(--hair); border-radius: 12px; padding: 18px 20px; display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; min-width: 0; }
+.stack { display: flex; height: 30px; border-radius: 6px; overflow: hidden; background: var(--surface-3); }
+.stack span { display: grid; place-items: center; font-size: 12px; color: #fff; font-variant-numeric: tabular-nums; min-width: 0; }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: 13px; color: var(--muted); }
+.legend i { display: inline-block; width: 12px; height: 12px; border-radius: 3px; margin-right: 6px; vertical-align: -1px; }
+.legend i.ring { background: var(--surface) !important; border: 2px solid var(--tool-a); border-radius: 50%; }
+.legend i.round { border-radius: 50%; }
+
+/* Explainers */
+.defs { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(260px, 100%), 1fr)); gap: 18px 28px; }
+.def { display: grid; gap: 4px; min-width: 0; }
+.def b { color: var(--ink); font-weight: 600; }
+.fair { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.fair li { display: grid; grid-template-columns: 14px 1fr; gap: 10px; align-items: baseline; }
+.fair li > div { min-width: 0; }
+.fair li b { color: var(--ink); font-weight: 600; }
+
+.findings { display: grid; gap: 12px; list-style: none; margin: 0; padding: 0; }
+.findings li { border-left: 1px solid var(--hair-strong); padding-left: 16px; }
+.findings b { color: var(--ink); font-weight: 600; }
+
+.chart { background: var(--surface); border: 1px solid var(--hair); border-radius: 12px; padding: 18px 18px 14px; display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; min-width: 0; }
+.scroll { overflow-x: auto; }
+.chart svg { display: block; width: 100%; height: auto; min-width: 560px; }
+.chart svg text { font-family: var(--text); fill: var(--fg); }
+.two { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(320px, 100%), 1fr)); gap: 20px; }
+.two > * { min-width: 0; }
+details.more { border-top: 1px solid var(--hair-strong); padding-top: 18px; }
+details.more > summary { cursor: pointer; font-family: var(--display); font-weight: 600; color: var(--ink); font-size: 1.15rem; letter-spacing: -0.02em; }
+details.more[open] > summary { margin-bottom: 18px; }
+details.more > div { display: grid; grid-template-columns: minmax(0, 1fr); gap: 36px; }
+
+table { border-collapse: collapse; width: 100%; font-size: 13.5px; font-variant-numeric: tabular-nums; }
+th { text-align: left; font-size: 11px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--subtle); padding: 8px 10px; border-bottom: 1px solid var(--hair-strong); white-space: nowrap; }
+td { padding: 8px 10px; border-bottom: 1px solid var(--hair); color: var(--fg); white-space: nowrap; }
+td.num, th.num { text-align: right; }
+td.app { color: var(--ink); font-weight: 500; }
+td.wrapc { white-space: normal; min-width: 120px; }
+td .sub { color: var(--subtle); font-size: 12px; font-weight: 400; }
+.tablebox { overflow-x: auto; background: var(--surface); border: 1px solid var(--hair); border-radius: 12px; }
+footer { border-top: 1px solid var(--hair-strong); padding-top: 20px; }
+@media (max-width: 520px) { body { padding-inline: 16px; } .metric .v { font-size: 2rem; } }
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">privacy-flow · Benchmark</div>
+    <h1>piiflow and Privado, on code neither was built for.</h1>
+    <p class="lede">Two static analysers that look for personal data leaving an application: into logs, third-party services, LLMs and other servers. Both ran on the same twelve open-source applications. Two people now check, by hand and without knowing which tool said what, whether each reported flow is real and which real ones each tool missed.</p>
+    <div class="status" id="status"></div>
+  </header>
+
+  <section aria-labelledby="h-answer">
+    <h2 id="h-answer">The comparison</h2>
+    <p class="small" id="answer-note"></p>
+    <div class="board" id="board"></div>
+    <div class="paired" id="paired"></div>
+  </section>
+
+  <section aria-labelledby="h-read">
+    <h2 id="h-read">How to read the numbers</h2>
+    <div class="defs">
+      <div class="def"><b>Right when it reports a flow</b><span class="small">Of the flows a tool reports, the share that a reviewer confirms: the data can really get from where it is read to where it is sent, and it really is personal data. High means few false alarms.</span></div>
+      <div class="def"><b>Finds the real flows</b><span class="small">Of the places that really send personal data out, the share where the tool reports a flow. The places are a random sample of every call that looks like logging, an API or an SDK, checked by hand. High means little is missed.</span></div>
+      <div class="def"><b>Flags what it cannot see</b><span class="small">piiflow also reports places where its analysis stopped (an unknown library, a dynamic call). A real flow behind such a place is not found, but it is not hidden either: someone is told to look. Privado reports nothing comparable.</span></div>
+      <div class="def"><b>The range under each number</b><span class="small">Every number comes from a sample, so it has a 95 % confidence range: the true value is very likely inside it. When the ranges of the two tools overlap, the difference may be chance.</span></div>
+    </div>
+  </section>
+
+  <section aria-labelledby="h-fair">
+    <h2 id="h-fair">Is the comparison fair?</h2>
+    <ul class="fair" id="fair"></ul>
+  </section>
+
+  <section aria-labelledby="h-known">
+    <h2 id="h-known">What the tools reported</h2>
+    <p class="small">Counts from the runs, before any checking. They show where each tool looks and how often they agree, not whether they are right.</p>
+    <ul class="findings" id="findings"></ul>
+    <div class="chart">
+      <h3>Flows reported per application</h3>
+      <div class="legend"><span><i style="background:var(--tool-a)"></i>piiflow</span><span><i style="background:var(--tool-b)"></i>Privado</span></div>
+      <div class="scroll"><svg id="c-flows" role="img" aria-label="Flows per application, piiflow and Privado"></svg></div>
+      <p class="small">Logarithmic scale: each step is ten times the one before. Applications are ordered by size.</p>
+    </div>
+    <div class="chart">
+      <h3>Do they point at the same places?</h3>
+      <div class="legend"><span><i style="background:var(--tool-a)"></i>Both tools</span><span><i style="background:var(--mid)"></i>Only piiflow</span><span><i style="background:var(--tool-b)"></i>Only Privado</span></div>
+      <div class="scroll"><svg id="c-overlap" role="img" aria-label="Shared and tool-specific sink lines per application"></svg></div>
+      <p class="small">Lines of code that send data out and where a tool reports personal data arriving, on the ten applications both tools completed.</p>
+    </div>
+  </section>
+
+  <details class="more">
+    <summary>More detail: sink types, blind spots, the applications and the labelling</summary>
+    <div>
+      <div class="two">
+        <div class="chart">
+          <h3>Where flows end</h3>
+          <div class="legend" id="l-classes"></div>
+          <div class="scroll"><svg id="c-classes" role="img" aria-label="Sink classes per tool" style="min-width:300px"></svg></div>
+          <p class="small">Same ten applications.</p>
+        </div>
+        <div class="chart">
+          <h3>Where piiflow could not see further</h3>
+          <div class="scroll"><svg id="c-gaps" role="img" aria-label="Coverage gaps by kind" style="min-width:300px"></svg></div>
+          <p class="small">All twelve applications.</p>
+        </div>
+      </div>
+      <section>
+        <h3>The applications</h3>
+        <p class="small">piiflow ran on an Apple M3 Pro laptop. Privado ran on GitHub's standard Linux machines, offline; its times are not comparable and are shown as a cost only.</p>
+        <div class="tablebox"><table id="t-apps"></table></div>
+      </section>
+      <section>
+        <h3>What the reviewers label</h3>
+        <p class="small">Samples are drawn by a fixed rule, so anyone can draw the same ones and check the labels.</p>
+        <div class="tablebox"><table id="t-sample"></table></div>
+      </section>
+    </div>
+  </details>
+
+  <footer>
+    <p class="small">piiflow commit <code id="commit"></code>, output byte-identical on every rerun. Privado: privado-core 1.1.175 from a pinned image, newest rules (v1.3.91), networking off. The protocol, the choice of applications, every deviation from the plan, the scripts and the labels are in the repository's <code>benchmark/</code> folder; this page is rebuilt from them with <code>benchmark/report/build.py</code>.</p>
+  </footer>
+</div>
+
+<script id="data" type="application/json">__DATA__</script>
+<script>
+(function () {
+  "use strict";
+  const D = JSON.parse(document.getElementById("data").textContent);
+  const A = D.applications, SC = D.scores, HH = SC && SC.head_to_head;
+  const NS = "http://www.w3.org/2000/svg";
+  const fmt = n => n.toLocaleString("en-US");
+  const pct = p => Math.round(100 * p) + " %";
+  const NAMES = { "vercel-chatbot": "Vercel chatbot", "umami": "Umami", "taxonomy": "Taxonomy", "open-saas": "Open SaaS",
+    "ghost": "Ghost", "hoppscotch": "Hoppscotch", "healthchecks": "Healthchecks", "redash": "Redash", "ctfd": "CTFd",
+    "fastapi-template": "FastAPI template", "polar": "Polar", "private-gpt": "PrivateGPT" };
+  const css = v => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+  const svgEl = (tag, attrs, parent, text) => {
+    const e = document.createElementNS(NS, tag);
+    for (const k in attrs) e.setAttribute(k, attrs[k]);
+    if (text !== undefined) e.textContent = text;
+    if (parent) parent.appendChild(e);
+    return e;
+  };
+  const h = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text !== undefined) e.textContent = text; return e; };
+  const ok = a => a.privado.status === "ok";
+  const sum = (xs, f) => xs.reduce((s, x) => s + f(x), 0);
+  const byLines = [...A].sort((a, b) => a.lines - b.lines);
+  const shared = A.filter(ok);
+
+  // ---------- status ----------
+  const items = sum(A, a => a.sample.items);
+  const labelled = sum(A, a => a.sample.labelled_r1 + a.sample.labelled_r2);
+  (function () {
+    const s = document.getElementById("status");
+    const dot = h("span", "dot"); dot.style.background = HH ? css("--ok") : labelled ? css("--warn") : css("--idle");
+    const text = h("span");
+    if (HH) text.append(h("b", null, "Results are in. "), "Both reviewers labelled every item and settled their disagreements.");
+    else text.append(h("b", null, "Waiting for the labels. "), fmt(labelled) + " of " + fmt(2 * items) + " labels done (" + fmt(items) + " items, each labelled by both reviewers).");
+    const bar = h("div", "bar"); const fill = h("i"); fill.style.width = (HH ? 100 : 100 * labelled / (2 * items)).toFixed(1) + "%"; bar.append(fill);
+    s.append(dot, text, bar);
+  })();
+
+  // ---------- scoreboard ----------
+  (function () {
+    const note = document.getElementById("answer-note");
+    note.textContent = HH
+      ? "On the " + HH.applications.length + " applications both tools completed. Privado could not finish Polar and Redash, so they are left out of the comparison for both tools."
+      : "On the ten applications both tools completed. These numbers appear once both reviewers have labelled every item; until then nothing here says which tool is better.";
+    const board = document.getElementById("board");
+    const metric = (q, w, color, minor) => {
+      const m = h("div", "metric" + (minor ? " minor" : ""));
+      m.append(h("span", "q", q));
+      if (!w) { m.append(h("span", "v pending", "Waiting for labels")); return m; }
+      m.append(h("span", "v", pct(w.p)));
+      const r = h("div", "range"); const band = h("b"); const mark = h("s");
+      band.style.left = (100 * w.lo) + "%"; band.style.width = Math.max(1, 100 * (w.hi - w.lo)) + "%"; band.style.background = color;
+      mark.style.left = "calc(" + (100 * w.p) + "% - 1px)"; mark.style.background = color;
+      r.append(band, mark); m.append(r);
+      m.append(h("span", "r", "Likely between " + pct(w.lo) + " and " + pct(w.hi) + " · " + fmt(w.n) + " checked"));
+      return m;
+    };
+    const card = (name, color, sub, metrics) => {
+      const c = h("div", "tool"); const n = h("div", "name"); const sw = h("i"); sw.style.background = color;
+      n.append(sw, h("h3", null, name), h("span", null, sub)); c.append(n, ...metrics); board.append(c);
+    };
+    const pr = HH && HH.precision, rc = HH && HH.recall;
+    card("piiflow", css("--tool-a"), "the tool under test", [
+      metric("Right when it reports a flow", pr && pr.piiflow, css("--tool-a")),
+      metric("Finds the real flows", rc && rc.piiflow_found, css("--tool-a")),
+      metric("Finds them or flags the place it could not see", rc && rc.piiflow_flagged, css("--tool-a"), true),
+      metric("Right when counting only its findings, not its “maybe personal” reports", pr && pr.piiflow_raised, css("--tool-a"), true),
+    ]);
+    card("Privado", css("--mid"), "open-source scanner", [
+      metric("Right when it reports a flow", pr && pr.privado, css("--mid")),
+      metric("Finds the real flows", rc && rc.privado_found, css("--mid")),
+    ]);
+
+    const p = document.getElementById("paired");
+    p.append(h("h3", null, "Who found which real flows"));
+    if (!rc) {
+      p.append(h("p", "small", "Once the labels are in, this bar splits the sampled places that really send personal data out into four groups: found by both tools, by only piiflow, by only Privado, and by neither."));
+      const st = h("div", "stack"); p.append(st);
+      return;
+    }
+    const pc = rc.paired, total = pc.both + pc.piiflow_only + pc.privado_only + pc.neither;
+    p.append(h("p", "small", "Of " + fmt(total) + " sampled places that really send personal data out:"));
+    const st = h("div", "stack");
+    [["both", "--tool-a", "Both"], ["piiflow_only", "--mid", "Only piiflow"], ["privado_only", "--tool-b", "Only Privado"], ["neither", "--idle", "Neither"]].forEach(([k, c, t]) => {
+      if (!pc[k]) return;
+      const s = h("span", null, pc[k] / total > 0.05 ? fmt(pc[k]) : ""); s.style.flex = pc[k]; s.style.background = css(c);
+      if (k === "privado_only") s.style.color = css("--ink");
+      s.title = t + ": " + pc[k]; st.append(s);
+    });
+    const lg = h("div", "legend");
+    [["--tool-a", "Both tools", pc.both], ["--mid", "Only piiflow", pc.piiflow_only], ["--tool-b", "Only Privado", pc.privado_only], ["--idle", "Neither", pc.neither]].forEach(([c, t, n]) => {
+      const s = h("span"); const i = h("i"); i.style.background = css(c); s.append(i, t + " (" + fmt(n) + ")"); lg.append(s);
+    });
+    p.append(st, lg);
+  })();
+
+  // ---------- fairness ----------
+  (function () {
+    const list = document.getElementById("fair");
+    const add = (state, title, text) => {
+      const li = h("li"); const d = h("span", "dot"); d.style.background = css(state === "ok" ? "--ok" : "--warn");
+      const body = h("div"); body.append(h("b", null, title + " "), text); li.append(d, body); list.append(li);
+    };
+    add("ok", "Same code for both.", "The same twelve applications at the same commits and the same folders. Each tool leaves out tests and generated code by its own default rules, which are close but not identical.");
+    add("ok", "Chosen before either tool ran.", "Open-source applications under permissive licences, picked by written rules; every candidate that was rejected is listed with the reason. piiflow was not developed or tuned on any of them.");
+    add("ok", "Checked blind.", "Each reviewer labels alone. Flows from both tools are shown in the same format and shuffled together, so a reviewer cannot tell which tool reported which.");
+    add("ok", "Privado at its best.", "Its newest rules, run offline from a pinned image, without the telemetry its command-line tool sends.");
+    add("warn", "Privado finished ten of twelve.", "It ran out of memory on Polar and Redash twice, the second time with 35 GB of memory and swap. Both tools are compared on the ten it finished; piiflow's results on all twelve are reported separately.");
+    add("warn", "Privado calls its JavaScript and TypeScript support beta.", "Six of the applications are TypeScript. That is part of what is being measured; the full results are also broken down by language.");
+    add("warn", "Not compared:", "how each tool names the kind of data (the two vocabularies only partly line up), and run time (the tools ran on different machines).");
+  })();
+
+  // ---------- what the tools reported ----------
+  const pfFlows = sum(A, a => a.piiflow.flows), pvFlows = sum(shared, a => a.privado.flows);
+  const both = sum(shared, a => a.sink_lines_overlap.both);
+  const union = sum(shared, a => a.sink_lines_overlap.both + a.sink_lines_overlap.piiflow_only + a.sink_lines_overlap.privado_only);
+  const maybe = sum(A, a => a.piiflow.flows_maybe_personal);
+  const polar = A.find(a => a.name === "polar");
+  (function () {
+    const ul = document.getElementById("findings");
+    const add = (title, text) => { const li = h("li"); li.append(h("b", null, title + " "), text); ul.append(li); };
+    add("They rarely point at the same place.", "Of " + fmt(union) + " places where at least one tool reports personal data arriving, they agree on " + fmt(both) + " (" + pct(both / union) + "). At most of the rest, one of them is wrong; the labels decide which.");
+    add("piiflow reports far more.", fmt(pfFlows) + " flows against Privado's " + fmt(pvFlows) + ". " + pct(polar.piiflow.flows / pfFlows) + " of piiflow's come from one large application, Polar, mostly log lines.");
+    { const li = h("li"); li.append(h("b", null, "Many of piiflow's reports are tentative. "), pct(maybe / pfFlows) + " start from a field whose name is only possibly personal, such as ", h("code", null, "name"), ". piiflow marks those for review rather than as findings, which is why the scoreboard shows it both ways."); ul.append(li); }
+    add("piiflow says where it is blind.", fmt(sum(A, a => a.piiflow.gaps)) + " places across the twelve applications where its analysis stopped. Every scan ends with “coverage incomplete” rather than a clean result.");
+  })();
+
+  // ---------- charts ----------
+  (function () {
+    const svg = document.getElementById("c-flows");
+    const W = 900, L = 150, R = 70, rowH = 34, top = 10, axisH = 26;
+    const H = top + byLines.length * rowH + axisH;
+    svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
+    const max = 10000, x = v => L + (W - L - R) * Math.log10(Math.max(v, 1)) / Math.log10(max);
+    for (const t of [1, 10, 100, 1000, 10000]) {
+      svgEl("line", { x1: x(t), x2: x(t), y1: top - 4, y2: H - axisH + 4, stroke: css("--hair"), "stroke-width": 1 }, svg);
+      svgEl("text", { x: x(t), y: H - 8, "text-anchor": "middle", "font-size": 12, fill: css("--subtle") }, svg, fmt(t));
+    }
+    byLines.forEach((a, i) => {
+      const y = top + i * rowH;
+      svgEl("text", { x: L - 12, y: y + 13, "text-anchor": "end", "font-size": 13, fill: css("--ink") }, svg, NAMES[a.name]);
+      svgEl("text", { x: L - 12, y: y + 27, "text-anchor": "end", "font-size": 11, fill: css("--subtle") }, svg,
+        (a.language === "python" ? "Python" : "TypeScript") + " · " + fmt(Math.round(a.lines / 1000) || 1) + "k lines");
+      const bar = (v, dy, color) => {
+        const w = Math.max(x(v) - L, v > 0 ? 2 : 0);
+        svgEl("rect", { x: L, y: y + dy, width: w, height: 11, rx: 2, fill: color }, svg);
+        svgEl("text", { x: L + w + 6, y: y + dy + 10, "font-size": 11.5, fill: css("--fg") }, svg, fmt(v));
+      };
+      bar(a.piiflow.flows, 3, css("--tool-a"));
+      if (ok(a)) bar(a.privado.flows, 17, css("--tool-b"));
+      else svgEl("text", { x: L + 2, y: y + 27, "font-size": 11.5, fill: css("--bad") }, svg, "Privado did not finish (out of memory)");
+    });
+  })();
+
+  (function () {
+    const svg = document.getElementById("c-overlap");
+    const rows = [...shared].sort((a, b) => a.lines - b.lines);
+    const W = 900, L = 150, R = 20, rowH = 30, top = 6;
+    const all = { name: "__all", sink_lines_overlap: { both, piiflow_only: sum(shared, a => a.sink_lines_overlap.piiflow_only), privado_only: sum(shared, a => a.sink_lines_overlap.privado_only) } };
+    const list = [...rows, all];
+    const H = top + list.length * rowH + 14;
+    svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
+    list.forEach((a, i) => {
+      const y = top + i * rowH + (a.name === "__all" ? 10 : 0);
+      const o = a.sink_lines_overlap, total = o.both + o.piiflow_only + o.privado_only;
+      if (a.name === "__all") svgEl("line", { x1: 0, x2: W, y1: y - 6, y2: y - 6, stroke: css("--hair-strong") }, svg);
+      svgEl("text", { x: L - 12, y: y + 15, "text-anchor": "end", "font-size": 13, fill: css("--ink"), "font-weight": a.name === "__all" ? 600 : 400 }, svg, a.name === "__all" ? "All ten" : NAMES[a.name]);
+      let cx = L; const span = W - L - R;
+      [["both", "--tool-a", "#ffffff"], ["piiflow_only", "--mid", "#ffffff"], ["privado_only", "--tool-b", css("--ink")]].forEach(([k, c, tc]) => {
+        const v = o[k]; if (!v) return;
+        const w = span * v / total;
+        svgEl("rect", { x: cx, y: y + 2, width: Math.max(w - 1, 1), height: 20, fill: css(c) }, svg);
+        if (w > 22) svgEl("text", { x: cx + w / 2, y: y + 16, "text-anchor": "middle", "font-size": 11.5, fill: tc }, svg, fmt(v));
+        cx += w;
+      });
+    });
+  })();
+
+  (function () {
+    const svg = document.getElementById("c-classes");
+    const classes = [["log", "Logs", "#2c4446"], ["http", "Other servers (HTTP)", "#557a78"], ["third_party", "Third-party SDKs", "#86a8a5"], ["llm", "LLM providers", "#b4c9c7"], ["browser_storage", "Browser storage", "#dbe5e4"]];
+    const tally = tool => { const t = {}; shared.forEach(a => { for (const [k, v] of Object.entries(a[tool].by_class || {})) t[k] = (t[k] || 0) + v; }); return t; };
+    const data = [["piiflow", tally("piiflow")], ["Privado", tally("privado")]];
+    const lg = document.getElementById("l-classes");
+    classes.forEach(([, name, c]) => { const s = h("span"); const i = h("i"); i.style.background = c; i.style.border = "1px solid " + css("--hair"); s.append(i, name); lg.append(s); });
+    const W = 440, L = 70, R = 10, H = 120;
+    svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
+    data.forEach(([tool, t], i) => {
+      const y = 14 + i * 52, total = Object.values(t).reduce((s, v) => s + v, 0);
+      svgEl("text", { x: L - 10, y: y + 16, "text-anchor": "end", "font-size": 13, fill: css("--ink") }, svg, tool);
+      svgEl("text", { x: L - 10, y: y + 31, "text-anchor": "end", "font-size": 11, fill: css("--subtle") }, svg, fmt(total));
+      let cx = L; const span = W - L - R;
+      classes.forEach(([k, , c], j) => {
+        const v = t[k] || 0; if (!v) return;
+        const w = span * v / total;
+        svgEl("rect", { x: cx, y, width: Math.max(w - 1, 1), height: 26, fill: c }, svg);
+        if (w > 30) svgEl("text", { x: cx + w / 2, y: y + 17, "text-anchor": "middle", "font-size": 11, fill: j < 2 ? "#ffffff" : css("--ink") }, svg, Math.round(100 * v / total) + "%");
+        cx += w;
+      });
+    });
+  })();
+
+  (function () {
+    const svg = document.getElementById("c-gaps");
+    const names = { unresolved_callee: "Call into an unknown library", unresolved_method: "Method on an object of unknown type", dynamic_call: "Call through a function value", depth_bound: "Call chain deeper than the limit", unsupported_framework: "Unsupported framework", unsupported_construct: "Unsupported construct" };
+    const t = {}; A.forEach(a => { for (const [k, v] of Object.entries(a.piiflow.gaps_by_kind)) t[k] = (t[k] || 0) + v; });
+    const rows = Object.entries(t).sort((a, b) => b[1] - a[1]);
+    const W = 440, L = 4, rowH = 34, H = rows.length * rowH + 4, max = rows[0][1];
+    svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
+    rows.forEach(([k, v], i) => {
+      const y = i * rowH;
+      svgEl("text", { x: L, y: y + 12, "font-size": 12, fill: css("--ink") }, svg, names[k] || k);
+      const w = (W - L - 60) * v / max;
+      svgEl("rect", { x: L, y: y + 17, width: Math.max(w, 2), height: 9, rx: 2, fill: css("--tool-a") }, svg);
+      svgEl("text", { x: L + Math.max(w, 2) + 6, y: y + 26, "font-size": 11.5, fill: css("--fg") }, svg, fmt(v));
+    });
+  })();
+
+  // ---------- tables ----------
+  (function () {
+    const t = document.getElementById("t-apps");
+    t.innerHTML = '<thead><tr><th>Application</th><th>Framework</th><th class="num">Lines</th><th class="num">piiflow flows</th><th class="num">Blind spots</th><th class="num">piiflow time</th><th class="num">Privado flows</th><th class="num">Privado time</th></tr></thead>';
+    const tb = document.createElement("tbody");
+    byLines.forEach(a => {
+      const tr = document.createElement("tr");
+      const pv = ok(a) ? [fmt(a.privado.flows), Math.round(a.privado.wall_seconds) + " s"] : ["did not finish", a.privado.wall_seconds.map(s => Math.round(s) + " s").join(", ")];
+      const fw = a.framework.replace(" (unsupported)", "").replace(" (not modelled)", "") + (/(unsupported|not modelled)/.test(a.framework) ? " (not modelled by piiflow)" : "");
+      [[NAMES[a.name], "app", a.repository], [fw, "wrapc"], [fmt(a.lines), "num"], [fmt(a.piiflow.flows), "num"], [fmt(a.piiflow.gaps), "num"],
+       [a.piiflow.wall_seconds.toFixed(2) + " s", "num"], [pv[0], "num"], [pv[1], "num"]].forEach(([v, cls, sub]) => {
+        const td = document.createElement("td"); td.className = cls; td.textContent = v;
+        if (sub) { const s = h("div", "sub", sub); td.appendChild(s); }
+        if (v === "did not finish") td.style.color = css("--bad");
+        tr.appendChild(td);
+      });
+      tb.appendChild(tr);
+    });
+    t.appendChild(tb);
+  })();
+
+  (function () {
+    const t = document.getElementById("t-sample");
+    t.innerHTML = '<thead><tr><th>Application</th><th class="num">piiflow flows</th><th class="num">Privado flows</th><th class="num">Blind spots</th><th class="num">Call sites</th><th class="num">Items</th><th class="num">Reviewer 1</th><th class="num">Reviewer 2</th></tr></thead>';
+    const tb = document.createElement("tbody");
+    const keys = ["flows_piiflow", "flows_privado", "gaps", "sites", "items", "labelled_r1", "labelled_r2"];
+    const rows = [...byLines, { name: "__all", sample: keys.reduce((o, k) => (o[k] = sum(A, a => a.sample[k]), o), {}) }];
+    rows.forEach(a => {
+      const s = a.sample, tr = document.createElement("tr");
+      [a.name === "__all" ? "Total" : NAMES[a.name], fmt(s.flows_piiflow), fmt(s.flows_privado), fmt(s.gaps), fmt(s.sites), fmt(s.items),
+       fmt(s.labelled_r1) + " of " + fmt(s.items), fmt(s.labelled_r2) + " of " + fmt(s.items)].forEach((v, j) => {
+        const td = document.createElement("td"); td.className = j === 0 ? "app" : "num"; td.textContent = v;
+        if (a.name === "__all") td.style.fontWeight = 600;
+        tr.appendChild(td);
+      });
+      tb.appendChild(tr);
+    });
+    t.appendChild(tb);
+  })();
+
+  document.getElementById("commit").textContent = D.generated_from.piiflow_commit.slice(0, 7);
+})();
+</script>
