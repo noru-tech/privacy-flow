@@ -238,3 +238,17 @@ full earlier text is kept outside the repository), and `v0.1.0` was tagged at `1
   --locked` builds it and scans the demo with the same output digest as the local build.
   Trusted publishing itself is first exercised by the next release.
 
+## 2026-10-02 — v0.1.1 released, archived on Zenodo
+
+`v0.1.1` was tagged at `f9a30ac`. The analysis is unchanged from 0.1.0; the release carries the
+speed benchmark, the benchmark report and the repository polish, and is the first release since the
+repository was connected to Zenodo.
+
+- GitHub release with the four archives, checksums, the CycloneDX SBOM and the source archive.
+  `gh attestation verify` on the aarch64 macOS archive passes with the release workflow at the tag
+  as signer, `shasum -c` passes, and the binary reports `piiflow 0.1.1`.
+- Homebrew: `piiflow.rb` in `noru-tech/homebrew-tap` updated to 0.1.1 by the release.
+- crates.io: 0.1.1 published by the release's publish job through trusted publishing, its first
+  use.
+- Zenodo: concept DOI 10.5281/zenodo.23104908 (resolves to the latest release), version DOI
+  10.5281/zenodo.23104909 for 0.1.1. The concept DOI is in the README and CITATION.cff.

@@ -303,9 +303,11 @@ goldens are updated.
 
 ## How to cite
 
-`CITATION.cff` has the citation metadata. Releases will be archived on Zenodo with a concept DOI,
-which resolves to the latest release; it is added here, and to `CITATION.cff`, with the first
-archived release.
+Every release from 0.1.1 on is archived on Zenodo. Cite the concept DOI
+[10.5281/zenodo.23104908](https://doi.org/10.5281/zenodo.23104908), which resolves to the latest
+release, or the version DOI of the release you used, listed on that record, when the exact bytes
+matter (an audit report, a benchmark, or a conformance claim). `CITATION.cff` has the citation
+metadata.
 
 ## Trust
 
