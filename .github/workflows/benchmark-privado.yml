@@ -6,6 +6,16 @@ name: benchmark-privado
 
 on:
   workflow_dispatch:
+    inputs:
+      apps:
+        description: JSON array of corpus applications to scan (default all)
+        default: '["vercel-chatbot","umami","taxonomy","open-saas","ghost","hoppscotch","healthchecks","redash","ctfd","fastapi-template","polar","private-gpt"]'
+      swap_gib:
+        description: Swap to add on the runner and allow the container (0 for none)
+        default: "0"
+      heap_gib:
+        description: JVM heap in GiB (0 for memory minus 2)
+        default: "0"
 
 permissions:
   contents: read
@@ -14,24 +24,39 @@ jobs:
   scan:
     name: privado (${{ matrix.app }})
     runs-on: ubuntu-latest
-    timeout-minutes: 120
+    timeout-minutes: 300
     strategy:
       fail-fast: false
       matrix:
-        app: [vercel-chatbot, umami, taxonomy, open-saas, ghost, hoppscotch, healthchecks, redash, ctfd, fastapi-template, polar, private-gpt]
+        app: ${{ fromJSON(inputs.apps) }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - name: The matrix lists exactly the corpus
+      - name: The application is in the corpus
+        env:
+          APP: ${{ matrix.app }}
+        run: |
+          python3 -c "import json, os; assert os.environ['APP'] in [e['name'] for e in json.load(open('benchmark/corpus.json'))['repositories']]"
+      - name: The default list is exactly the corpus
         run: |
           python3 - <<'PY'
           import json, re
           corpus = sorted(e["name"] for e in json.load(open("benchmark/corpus.json"))["repositories"])
           wf = open(".github/workflows/benchmark-privado.yml").read()
-          listed = sorted(re.search(r"app: \[([^\]]+)\]", wf).group(1).replace(" ", "").split(","))
+          listed = sorted(json.loads(re.search(r"default: '(\[[^']+\])'", wf).group(1)))
           assert corpus == listed, (corpus, listed)
           PY
+      - name: Add swap
+        if: inputs.swap_gib != '0'
+        env:
+          SWAP: ${{ inputs.swap_gib }}
+        run: |
+          sudo fallocate -l "${SWAP}G" /mnt/privado-swap
+          sudo chmod 600 /mnt/privado-swap
+          sudo mkswap /mnt/privado-swap
+          sudo swapon /mnt/privado-swap
+          free -g
       - name: Fetch the application at its pinned commit
         run: python3 benchmark/fetch.py ${{ matrix.app }}
       - name: Fetch Privado's rules at v1.3.91
@@ -42,7 +67,11 @@ jobs:
       - name: Pull the pinned image
         run: docker pull public.ecr.aws/privado/privado@sha256:349fdd5a01c01acb4b17c9db0df782c8ad2fb4d87b5940247720fc3cac8e7f15
       - name: Scan offline
-        run: python3 benchmark/privado/scan.py ${{ matrix.app }} --rules rules --out out/${{ matrix.app }}
+        env:
+          APP: ${{ matrix.app }}
+          SWAP: ${{ inputs.swap_gib }}
+          HEAP: ${{ inputs.heap_gib }}
+        run: python3 benchmark/privado/scan.py "$APP" --rules rules --out "out/$APP" --swap-gib "$SWAP" --heap-gib "$HEAP"
       - if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:

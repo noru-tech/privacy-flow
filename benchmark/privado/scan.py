@@ -29,6 +29,8 @@ def main():
     ap.add_argument("--out", required=True)
     ap.add_argument("--cache", default=str(ROOT / ".benchmark-cache"))
     ap.add_argument("--memory-gib", type=int, default=14)
+    ap.add_argument("--swap-gib", type=int, default=0, help="extra swap the container may use (the runner must have it)")
+    ap.add_argument("--heap-gib", type=int, default=0, help="JVM heap; default: memory minus 2 GiB")
     args = ap.parse_args()
 
     corpus = json.loads((ROOT / "benchmark/corpus.json").read_text())
@@ -36,9 +38,11 @@ def main():
     src = pathlib.Path(args.cache) / entry["name"] / entry["scope"]
     out = pathlib.Path(args.out).resolve()
     out.mkdir(parents=True, exist_ok=True)
-    work = out / "work"
+    # Outside `out` (which is uploaded); the container writes .privado/ as root, so the copy may
+    # not be fully removable afterwards without privileges.
+    work = out.parent / f".work-{entry['name']}"
     if work.exists():
-        shutil.rmtree(work)
+        shutil.rmtree(work, ignore_errors=True)
     shutil.copytree(src, work, ignore=shutil.ignore_patterns(".git"), symlinks=True)
     removed = 0
     for glob in entry["exclude"]:
@@ -46,10 +50,10 @@ def main():
             if p.is_file() or p.is_symlink():
                 p.unlink()
                 removed += 1
-    heap = max(2, args.memory_gib - 2)
+    heap = args.heap_gib or max(2, args.memory_gib - 2)
     cmd = [
         "docker", "run", "--rm", "--network", "none", "--platform", "linux/amd64",
-        "--memory", f"{args.memory_gib}g",
+        "--memory", f"{args.memory_gib}g", "--memory-swap", f"{args.memory_gib + args.swap_gib}g",
         "-e", "PRIVADO_METRICS_ENABLED=false", "-e", f"JAVA_TOOL_OPTIONS=-Xmx{heap}g",
         "-v", f"{work}:/app/code", "-v", f"{pathlib.Path(args.rules).resolve()}:/app/rules:ro",
         IMAGE,
@@ -64,13 +68,15 @@ def main():
     result = work / ".privado" / "privado.json"
     record = {"name": entry["name"], "image": IMAGE, "command": cmd[cmd.index(IMAGE):],
               "exit_code": proc.returncode, "wall_seconds": round(wall, 1), "excluded_files": removed,
-              "privado_json": result.exists()}
+              "privado_json": result.exists(), "memory_gib": args.memory_gib, "swap_gib": args.swap_gib, "heap_gib": heap}
     if result.exists():
         shutil.copy(result, out / "privado.json")
+        meta = json.loads(result.read_text())
+        record["privado_versions"] = {k: meta.get(k) for k in ("privadoCoreVersion", "privadoMainVersion", "privadoLanguageEngineVersion", "privadoCLIVersion")}
         with open(out / "flows.jsonl", "w") as f:
             subprocess.run([sys.executable, str(HERE / "map.py"), str(result), entry["name"]], stdout=f, check=True)
     (out / "run.json").write_text(json.dumps(record, indent=2, sort_keys=True) + "\n")
-    shutil.rmtree(work)
+    shutil.rmtree(work, ignore_errors=True)
     print(json.dumps(record, sort_keys=True))
     if not result.exists():
         sys.exit(f"{entry['name']}: Privado produced no privado.json (exit {proc.returncode}); see engine.log")

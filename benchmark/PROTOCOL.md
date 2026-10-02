@@ -145,3 +145,11 @@ on the same commits and scopes. Every judgement call is written down here before
 - **2026-10-02, runner paths.** `run.py` first passed absolute paths, which the document records
   for its configuration file, so digests depended on the machine. It now passes paths relative
   to the repository root. Analysis results are unaffected.
+- **2026-10-02, Privado memory.** The first Privado run (Actions run 36976371350) completed on
+  10 of 12 applications. On `polar` and `redash` the engine was killed for exceeding the 14 GiB
+  container limit (exit 137) on a 16 GB runner. Both are retried with 32 GiB of swap on the
+  runner and a 36 GiB JVM heap, the most a standard runner allows; if that also fails, they are
+  reported as Privado failures and excluded from Privado's numbers only. The jobs' red status in
+  that run came from the harness failing to delete the root-owned work directory after each scan,
+  not from Privado; `scan.py` no longer does that, and the scans' outputs are used as produced.
+
