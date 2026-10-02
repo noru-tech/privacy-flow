@@ -136,4 +136,12 @@ on the same commits and scopes. Every judgement call is written down here before
 
 ## Deviations
 
-None yet.
+- **2026-10-02, engine performance fix before labelling.** The first run took 130 s on `polar`,
+  129 s of it in one quadratic loop in the engine (`perf(engine): set lookup for depth-bound
+  cuts…`). The fix changes no output: all twelve documents were byte-identical before and after
+  (compared by SHA-256). It is allowed under §2 because it is not informed by what the tool
+  reports, only by how long it took; the run recorded in `results/summary.json` uses the fixed
+  commit.
+- **2026-10-02, runner paths.** `run.py` first passed absolute paths, which the document records
+  for its configuration file, so digests depended on the machine. It now passes paths relative
+  to the repository root. Analysis results are unaffected.
