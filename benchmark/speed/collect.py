@@ -32,7 +32,7 @@ def load(src):
             continue
         r = json.loads(f.read_text())
         runs = r["piiflow"]["runs"]
-        pv = r["privado"]
+        pv = r.get("privado") or {"wall_seconds": 0, "peak_memory_mib": 0, "memory_limit_gib": 14, "image": ""}
         machines.append(r["machine"])
         rows.append({
             "app": entry["name"], "repository": entry["repository"], "language": entry["language"],
@@ -43,7 +43,8 @@ def load(src):
             "piiflow_identical_to_recorded_run": r["piiflow"]["identical_to_recorded_run"],
             "piiflow_version": r["piiflow"]["version"],
             "privado_seconds": pv["wall_seconds"], "privado_peak_mib": pv["peak_memory_mib"],
-            "privado_finished": pv["finished"], "privado_out_of_memory": pv["out_of_memory"],
+            "privado_finished": pv.get("finished", False), "privado_out_of_memory": pv.get("out_of_memory", False),
+            "privado_timed_out": pv.get("timed_out", False), "privado_limit_seconds": pv.get("time_limit_seconds"),
             "privado_memory_limit_gib": pv["memory_limit_gib"], "privado_image": pv["image"],
         })
     rows.sort(key=lambda r: r["lines"])
@@ -101,7 +102,7 @@ def chart(rows, machine, version, machines):
             ratio = r["privado_seconds"] / r["piiflow_seconds"]
             out.append(f'<text x="{W - 24}" y="{y + 22}" font-size="13" font-weight="600" fill="{ink}" text-anchor="end">{ratio:,.0f}× faster</text>')
         else:
-            why = "out of memory" if r["privado_out_of_memory"] else "did not finish"
+            why = "out of memory" if r["privado_out_of_memory"] else "stopped, not finished" if r["privado_timed_out"] else "did not finish"
             out.append(f'<rect x="{L}" y="{y + 19}" width="{max(vw, 2):.1f}" height="12" rx="2" fill="none" stroke="{bad}" stroke-dasharray="4 3"/>')
             out.append(f'<text x="{L + max(vw, 2) + 6:.1f}" y="{y + 29}" font-size="11.5" fill="{bad}">{why} after {fmt_s(r["privado_seconds"])}</text>')
     out.append(f'<text x="24" y="{H - 10}" font-size="11.5" fill="{sub}">Same GitHub-hosted runner for both tools ({machine.get("cpus")} vCPU, {machine.get("memory_gib")} GiB). piiflow: median of 3 runs. Privado: one run, 14 GiB limit.</text>')
@@ -113,7 +114,8 @@ def section(rows, machine, version, date, machines):
     corpus = [e["name"] for e in json.loads((ROOT / "benchmark/corpus.json").read_text())["repositories"]]
     pending = [NAMES[n] for n in corpus if n not in {r["app"] for r in rows}]
     done = [r for r in rows if r["privado_finished"]]
-    failed = [NAMES[r["app"]] for r in rows if not r["privado_finished"]]
+    failed = [NAMES[r["app"]] for r in rows if r["privado_out_of_memory"]]
+    stopped = [NAMES[r["app"]] for r in rows if r["privado_timed_out"]]
     ratios = [r["privado_seconds"] / r["piiflow_seconds"] for r in done]
     identical = sum(r["piiflow_identical_to_recorded_run"] for r in rows)
     cpu_models = len({m.get("cpu") for m in machines})
@@ -122,14 +124,16 @@ def section(rows, machine, version, date, machines):
     lead = (f"**On the same machine, piiflow scanned each application in {fmt_s(min(pf_t))} to {fmt_s(max(pf_t))}, "
             f"using at most {fmt_mib(max(r['piiflow_peak_mib'] for r in rows))} of memory. Privado took "
             f"{fmt_s(min(pv_t))} to {fmt_s(max(pv_t))} and up to {fmt_mib(max(r['privado_peak_mib'] for r in done))}"
-            + (f", and ran out of memory on {' and '.join(failed)}" if failed else "") + ".** "
+            + (f", ran out of memory on {' and '.join(failed)}" if failed else "")
+            + (f", and had not finished {' and '.join(stopped)} after {fmt_s(max(r['privado_seconds'] for r in rows if r['privado_timed_out']))}" if stopped else "") + ".** "
             f"Half the applications ran more than {statistics.median(ratios):,.0f} times faster with piiflow.")
     lines = [START, "", "## How fast is it?", "", lead, "",
              "![Time to scan each application, piiflow and Privado](benchmark/speed/chart.svg)", "",
              "| Application | Lines of code | piiflow | Privado | piiflow memory | Privado memory |",
              "| --- | ---: | ---: | ---: | ---: | ---: |"]
     for r in rows:
-        pv = fmt_s(r["privado_seconds"]) if r["privado_finished"] else ("out of memory" if r["privado_out_of_memory"] else "did not finish")
+        pv = (fmt_s(r["privado_seconds"]) if r["privado_finished"] else "out of memory" if r["privado_out_of_memory"]
+              else f"not finished after {fmt_s(r['privado_seconds'])}" if r["privado_timed_out"] else "did not finish")
         lines.append(f"| [{NAMES[r['app']]}](https://github.com/{r['repository']}) | {r['lines']:,} | {fmt_s(r['piiflow_seconds'])} | {pv} | "
                      f"{fmt_mib(r['piiflow_peak_mib'])} | {fmt_mib(r['privado_peak_mib'])} |")
     for name in pending:
