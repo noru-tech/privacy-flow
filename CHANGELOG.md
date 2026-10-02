@@ -6,6 +6,8 @@ All notable changes to this project are documented here. The format is based on
 
 ## [Unreleased]
 
+## [0.1.0] - 2026-10-02
+
 ### Added
 - `piiflow`, a deterministic, offline static analyser of personal-data flows in TypeScript,
   JavaScript and Python, built on tree-sitter, with a shared IR, provenance-based call resolution
@@ -29,3 +31,6 @@ All notable changes to this project are documented here. The format is based on
 - A conformance corpus of 32 vectors with an external-runner contract, a composite GitHub Action,
   criterion benchmarks, a CI performance budget, and a release pipeline with artifact
   attestations, checksums and an SBOM.
+
+[Unreleased]: https://github.com/noru-tech/privacy-flow/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/noru-tech/privacy-flow/releases/tag/v0.1.0

@@ -12,17 +12,18 @@ readme = "README.md"
 keywords = ["privacy", "gdpr", "static-analysis", "taint", "sarif"]
 categories = ["command-line-utilities", "development-tools"]
 authors = ["Noru <bip@noru.tech>"]
+# Anchored with a leading `/`: an unanchored "README.md" matches a README at any depth.
 include = [
-  "src/**",
-  "catalogue/**",
-  "schemas/**",
-  "vendor/**",
-  "benches/analysis.rs",
-  "Cargo.toml",
-  "LICENSE",
-  "NOTICE",
-  "README.md",
-  "CHANGELOG.md",
+  "/src/**",
+  "/catalogue/**",
+  "/schemas/**",
+  "/vendor/**",
+  "/benches/analysis.rs",
+  "/Cargo.toml",
+  "/LICENSE",
+  "/NOTICE",
+  "/README.md",
+  "/CHANGELOG.md",
 ]
 
 [lib]
