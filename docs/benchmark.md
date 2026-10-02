@@ -51,7 +51,7 @@ the [protocol](../benchmark/PROTOCOL.md), fixed before labelling;
 the [selection](../benchmark/SELECTION.md), fixed before any run;
 and the [corpus](../benchmark/corpus.json), pinned by commit.
 **No labelled numbers exist yet.** What follows is what `piiflow` reports, unlabelled
-(commit `84cc334`; [`benchmark/results/summary.json`](../benchmark/results/summary.json)):
+(commit `9a78b08`; [`benchmark/results/summary.json`](../benchmark/results/summary.json)):
 
 | Application | Files | Lines | Flows | Findings | of which `info` | Gaps | Processors reached | Time | Memory |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |

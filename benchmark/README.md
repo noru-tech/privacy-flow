@@ -15,7 +15,7 @@ against, labelled by two reviewers, with Privado's open-source scanner run on th
 | Step | State |
 | --- | --- |
 | Corpus fixed, protocol written | done (2026-10-02) |
-| `piiflow` run recorded | done: commit `84cc334`, byte-identical on repeat |
+| `piiflow` run recorded | done: commit `9a78b08`, byte-identical on repeat |
 | Privado run | workflow ready (`benchmark-privado.yml`), not yet run |
 | Sheets drawn | after the Privado run |
 | Labelling by R1 and R2 | not started |

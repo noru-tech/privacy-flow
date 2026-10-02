@@ -8,7 +8,7 @@
         "warning": 51
       },
       "commit": "c2f8235e1f3ea903ad8b7f61447c4f74164b5c58",
-      "document_sha256": "f558df12f7b1f14a0161ec534d978877d3aca89a04b254577bf6863f8d6caf33",
+      "document_sha256": "7daff8cfa8d127d2d85bc7d7f643efc237fae5df9d5aa19867865979be610350",
       "exit_code": 4,
       "files": 146,
       "findings": {
@@ -50,7 +50,7 @@
         "warning": 307
       },
       "commit": "ec0ff50388c264ed8ce46f00967e92f7e71476ae",
-      "document_sha256": "ca1ce3bcbd4805f1b5543696feab860870ddd1eb945a27c5bf1beb68400af094",
+      "document_sha256": "47d973f3f2b47434b80499ad160f6df3b617e49cf81dd629014fa0201cc179d7",
       "exit_code": 4,
       "files": 1087,
       "findings": {
@@ -73,13 +73,13 @@
         }
       ],
       "name": "umami",
-      "peak_rss_mib": 194,
+      "peak_rss_mib": 198,
       "processors": [],
       "repository": "umami-software/umami",
       "scope": ".",
       "sinks": 87,
       "sources": 2554,
-      "wall_seconds": 0.94
+      "wall_seconds": 0.95
     },
     {
       "by_severity": {
@@ -88,7 +88,7 @@
         "warning": 5
       },
       "commit": "298a8857c7128a0d121e7f699dfd729f23b3966d",
-      "document_sha256": "bfe4fea7b4cf7222159b471c5e084f2163f57ed27f0d8d594a9ddeb60d9297b4",
+      "document_sha256": "08ea96fa1c27157c703687ca5e8f72f8f9ffeb31738ae549504bc21d7cbfd683",
       "exit_code": 4,
       "files": 129,
       "findings": {
@@ -119,7 +119,7 @@
       "scope": ".",
       "sinks": 10,
       "sources": 277,
-      "wall_seconds": 0.11
+      "wall_seconds": 0.09
     },
     {
       "by_severity": {
@@ -127,7 +127,7 @@
         "warning": 14
       },
       "commit": "88b221e274d87c148bcb4cdd3db12cbb1b6b997e",
-      "document_sha256": "4ab6a47a9bb56b89cc8b083d9f0ae9695a2df1326b4e728a1a5f5e65e9da9640",
+      "document_sha256": "f06d97c2d1ef3fa129b23e204cc4e243a55b45aa5a50cdc5a6130c88193e21eb",
       "exit_code": 4,
       "files": 145,
       "findings": {
@@ -151,7 +151,7 @@
       "scope": "template/app",
       "sinks": 42,
       "sources": 121,
-      "wall_seconds": 0.1
+      "wall_seconds": 0.09
     },
     {
       "by_severity": {
@@ -161,7 +161,7 @@
         "warning": 622
       },
       "commit": "f869a2d1aa8f7d89b0e8b9240d933332f8ae516d",
-      "document_sha256": "bb8e457a067ad19369f4b557310df8320dc44939370dabb90e8c47b312ff60b9",
+      "document_sha256": "f03d41c846e4637f60a26e619a023842ad8841a5140b36c7b538917284176290",
       "exit_code": 4,
       "files": 1319,
       "findings": {
@@ -186,7 +186,7 @@
         }
       ],
       "name": "ghost",
-      "peak_rss_mib": 257,
+      "peak_rss_mib": 252,
       "processors": [
         "Amazon S3",
         "Mailgun",
@@ -197,7 +197,7 @@
       "scope": "ghost/core",
       "sinks": 206,
       "sources": 2702,
-      "wall_seconds": 1.55
+      "wall_seconds": 1.46
     },
     {
       "by_severity": {
@@ -205,7 +205,7 @@
         "warning": 89
       },
       "commit": "63273f8e599e73f0fb38c0739314e8d46b6bc83d",
-      "document_sha256": "6bb9465b29f32b49eea468b48fa5863daec70c84088484af3c7c2c6cfbf79144",
+      "document_sha256": "75495ab1d8c8dee31cd66cbbd9ce776273e66a7af8f40cd98904933dc85bf8c3",
       "exit_code": 4,
       "files": 193,
       "findings": {
@@ -227,13 +227,13 @@
         }
       ],
       "name": "hoppscotch",
-      "peak_rss_mib": 70,
+      "peak_rss_mib": 69,
       "processors": [],
       "repository": "hoppscotch/hoppscotch",
       "scope": "packages/hoppscotch-backend",
       "sinks": 85,
       "sources": 594,
-      "wall_seconds": 0.24
+      "wall_seconds": 0.23
     },
     {
       "by_severity": {
@@ -242,7 +242,7 @@
         "warning": 58
       },
       "commit": "69aac3a437890c66eab363a9e871927e9550e3b2",
-      "document_sha256": "052335275a4af79ce6740a8a9327af2fd0aaca794bc6757e1d16ebe9cc9cb951",
+      "document_sha256": "b03a4d84ae0aeb15a84aedf2d91eeeab624c1eb47b6e9d4a8f276fc29d417f0a",
       "exit_code": 4,
       "files": 234,
       "findings": {
@@ -270,7 +270,7 @@
       "scope": ".",
       "sinks": 35,
       "sources": 2100,
-      "wall_seconds": 0.28
+      "wall_seconds": 0.27
     },
     {
       "by_severity": {
@@ -280,7 +280,7 @@
         "warning": 180
       },
       "commit": "28c836154b5b643e87bbc354957f2ce25dc4ebca",
-      "document_sha256": "6d5d221810712e85630b8af4cb09a9080ef4323708ac0e895f0157cf00070002",
+      "document_sha256": "d16ea90ac7829a969c443ba773d6087be5903e896b1be43b8b71c1d88e3542f1",
       "exit_code": 4,
       "files": 171,
       "findings": {
@@ -305,7 +305,7 @@
         }
       ],
       "name": "redash",
-      "peak_rss_mib": 72,
+      "peak_rss_mib": 71,
       "processors": [
         "version.redash.io",
         "www.googleapis.com"
@@ -314,7 +314,7 @@
       "scope": ".",
       "sinks": 338,
       "sources": 774,
-      "wall_seconds": 0.38
+      "wall_seconds": 0.37
     },
     {
       "by_severity": {
@@ -323,7 +323,7 @@
         "warning": 76
       },
       "commit": "ea0ae40cb0abab16e21562c509cce64632394815",
-      "document_sha256": "d5e212c99be2542a5b4b155384ced45941fe205bbf05a16712d478c540baa208",
+      "document_sha256": "b951ab28b54ac1b674edfd951fefb6f9cb068376fe6c4aec04cb656a73932e9b",
       "exit_code": 4,
       "files": 193,
       "findings": {
@@ -347,7 +347,7 @@
         }
       ],
       "name": "ctfd",
-      "peak_rss_mib": 51,
+      "peak_rss_mib": 49,
       "processors": [
         "versioning.ctfd.io"
       ],
@@ -355,7 +355,7 @@
       "scope": ".",
       "sinks": 77,
       "sources": 534,
-      "wall_seconds": 0.35
+      "wall_seconds": 0.33
     },
     {
       "by_severity": {
@@ -363,7 +363,7 @@
         "warning": 9
       },
       "commit": "cb740b656d7a0a6c5e12c7bf8e50343ec94ee9c7",
-      "document_sha256": "263a31dc7dd03997988082853c7f555310e59799b9437ce27b7223e5355bbe64",
+      "document_sha256": "59aa3fe8addacd7387519d05265cf137aac40fe17386282956f3cf75a2dac665",
       "exit_code": 4,
       "files": 25,
       "findings": {
@@ -396,7 +396,7 @@
         "warning": 1144
       },
       "commit": "15d3568132b4995e508648c538c59a98ce1d33ed",
-      "document_sha256": "2409ca7085fc37ec724b56bf63f2c0f95fa6945d0140a25f4db829632df94ded",
+      "document_sha256": "04ac0f93018cc84e80e0d691e6de98bec196ddc63aa7ab1aa93ef92cf19cd934",
       "exit_code": 4,
       "files": 1234,
       "findings": {
@@ -426,7 +426,7 @@
         }
       ],
       "name": "polar",
-      "peak_rss_mib": 1014,
+      "peak_rss_mib": 902,
       "processors": [
         "Sentry"
       ],
@@ -434,7 +434,7 @@
       "scope": "server",
       "sinks": 1091,
       "sources": 10506,
-      "wall_seconds": 12.44
+      "wall_seconds": 12.75
     },
     {
       "by_severity": {
@@ -444,7 +444,7 @@
         "warning": 273
       },
       "commit": "01ac43d72bc4c0b7565994197fe23476539059a7",
-      "document_sha256": "88f5ce75baf422316bf3c8072af587f62c6e8ff24a5977bf31ab29c7db395049",
+      "document_sha256": "6d3e07eb9d82e091005cab994f3371e895c865b1aca9ec81b7a850feac255168",
       "exit_code": 4,
       "files": 688,
       "findings": {
@@ -473,7 +473,7 @@
       "scope": ".",
       "sinks": 753,
       "sources": 2662,
-      "wall_seconds": 2.57
+      "wall_seconds": 2.49
     }
   ],
   "machine": {
@@ -482,8 +482,8 @@
   },
   "piiflow": {
     "binary_sha256": "f8620d51426b8acab479430bffeb522de51b35b9dbfcf9dc296b5f6be26783e7",
-    "commit": "96095fde933d3a0a01a00b5bfb0fbd9fdf6c69a7",
-    "source_dirty": true,
+    "commit": "9a78b082bcdf01d23f4c890d5ea2bdb7b88d66b8",
+    "source_dirty": false,
     "version": "piiflow 0.1.0"
   }
 }

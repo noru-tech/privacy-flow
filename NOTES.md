@@ -185,7 +185,7 @@ decision, not a build step. Before the first tag:
   30 candidate sink sites); recall measured on sink sites enumerated by syntax without piiflow's
   catalogue; piiflow and Privado flows blinded and shuffled together; Wilson intervals,
   stratum-weighted estimates, Cohen's κ before adjudication.
-- piiflow run recorded at commit `84cc334`: byte-identical on repeat, all 12 exit 4.
+- piiflow run recorded at commit `9a78b08`: byte-identical on repeat, all 12 exit 4.
 - Privado: the engine is LGPL-3.0 and unmaintained since 2024. Its CLI sends telemetry even with
   metrics disabled, so the protocol runs the image directly, by digest, with `--network none`
   (`.github/workflows/benchmark-privado.yml`). There is a crosswalk from its 113 data elements to
