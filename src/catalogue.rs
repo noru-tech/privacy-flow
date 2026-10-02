@@ -273,6 +273,10 @@ pub struct PropagatorDef {
     pub calls: Vec<String>,
     #[serde(default)]
     pub methods: Vec<String>,
+    /// Any method call on a receiver with one of these names whose origin the analysis cannot
+    /// see (an unannotated `db_session` parameter).
+    #[serde(default)]
+    pub receivers: Vec<String>,
     pub flow: Flow,
     #[serde(default)]
     pub citation: Option<String>,

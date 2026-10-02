@@ -68,6 +68,7 @@ propagators:
     calls:
       - "{@prisma/client,drizzle-orm,mongoose,typeorm,sequelize,knex,kysely,pg,postgres,mysql2,better-sqlite3,sqlite3,mongodb,redis,ioredis,@upstash/redis,@neondatabase/serverless,@vercel/postgres,@planetscale/database,@libsql/client}:**"
       - "{drizzle-orm,@prisma/client,mongodb}/*:**"
+    receivers: [prisma, tx, trx, knex, db, dbClient]
     flow: none
 
   - id: js.internal-modules
@@ -130,6 +131,7 @@ propagators:
       result is the stored record, not its filter values.
     calls:
       - "{sqlalchemy,sqlmodel,peewee,tortoise,pymongo,motor,redis,psycopg,psycopg2,asyncpg,aiosqlite,sqlite3,django.db,mongoengine,databases,prisma}.**"
+    receivers: [db, db_session, session, dbsession, sess, conn, connection, cursor, cur, tx, transaction, uow]
     flow: none
 
   - id: py.internal-modules
@@ -140,5 +142,6 @@ propagators:
     calls:
       - "{json,pickle,marshal,base64,binascii,copy,dataclasses,typing,typing_extensions,datetime,time,calendar,uuid,re,string,textwrap,unicodedata,math,cmath,decimal,fractions,random,secrets,statistics,enum,functools,itertools,operator,collections,heapq,bisect,array,contextlib,abc,inspect,types,weakref,warnings,traceback,io,os,sys,pathlib,shutil,glob,tempfile,csv,configparser,argparse,getpass,locale,gettext,hashlib,hmac,zlib,gzip,zipfile,tarfile,struct,codecs,asyncio,threading,multiprocessing,concurrent,queue,signal,subprocess,socket,select,selectors,ssl,email,mimetypes,html,xml,urllib.parse,ipaddress,platform,importlib,pkgutil,pprint,dis,ast,tokenize,unittest,doctest}.**"
       - "{json,copy,uuid,re,os,time,random,secrets,hashlib,hmac,base64,math,datetime,dataclasses,functools,itertools,typing}"
+      - "{blockkit,slack_sdk.models,jinja2,markupsafe,tabulate,dateparser,humanize,arrow,pendulum,tenacity,backoff,cachetools,limits,schedule,apscheduler}.**"
       - "{pydantic,pydantic_settings,alembic,django,flask,fastapi,starlette,werkzeug,jinja2,marshmallow,attrs,attr,celery,rq,dramatiq,jwt,jose,passlib,bcrypt,argon2,cryptography,nacl,itsdangerous,dotenv,click,typer,rich,tqdm,numpy,pandas,yaml,toml,tomllib,orjson,ujson,msgpack,dateutil,pytz,zoneinfo,babel,email_validator,phonenumbers,validators,slugify,unidecode,bleach,markdown,uvicorn,gunicorn}.**"
     flow: args_to_result

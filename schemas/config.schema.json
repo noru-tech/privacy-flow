@@ -217,6 +217,7 @@
         "description": { "type": "string" },
         "calls": { "$ref": "#/$defs/patterns" },
         "methods": { "$ref": "#/$defs/patterns" },
+        "receivers": { "$ref": "#/$defs/patterns" },
         "flow": { "enum": ["args_to_result", "args_to_receiver", "receiver_to_callback", "none"] },
         "citation": { "$ref": "#/$defs/citation" }
       },

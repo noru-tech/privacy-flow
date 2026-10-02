@@ -28,6 +28,7 @@ frameworks:
   - { name: Nuxt / h3, language: javascript, modules: [nuxt, h3], supported: false }
   - { name: Restify, language: javascript, modules: [restify], supported: false }
   - { name: AdonisJS, language: javascript, modules: ["@adonisjs/core"], supported: false }
+  - { name: Slack Bolt, language: javascript, modules: ["@slack/bolt"], supported: false }
   - { name: tRPC, language: javascript, modules: ["@trpc/server", "@hono/trpc-server"], supported: false }
   - { name: ts-rest server, language: javascript, modules: ["@ts-rest/serverless", "@ts-rest/express", "@ts-rest/nest", "@ts-rest/fastify"], supported: false }
   - { name: GraphQL servers, language: javascript, modules: ["@apollo/server", apollo-server, apollo-server-express, graphql-yoga, mercurius, type-graphql], supported: false }
@@ -48,3 +49,4 @@ frameworks:
   - { name: Litestar, language: python, modules: [litestar], supported: false }
   - { name: Starlette (direct), language: python, modules: [starlette.applications, starlette.routing], supported: false }
   - { name: GraphQL servers, language: python, modules: [graphene, strawberry, ariadne], supported: false }
+  - { name: Slack Bolt, language: python, modules: [slack_bolt], supported: false, note: "Slack event and command handlers receive user input that is not modelled." }

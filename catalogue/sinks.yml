@@ -249,7 +249,7 @@ sinks:
     language: javascript
     class: messaging
     processor: Slack
-    calls: ["@slack/web-api:**.chat.{postMessage,postEphemeral,update}", "@slack/webhook:IncomingWebhook().send"]
+    calls: ["@slack/web-api:**.chat.{postMessage,postEphemeral,update}", "@slack/webhook:IncomingWebhook{,()}.send"]
 
   - id: js.inngest
     language: javascript
@@ -280,7 +280,7 @@ sinks:
     language: javascript
     class: http
     description: An axios instance; its base URL is set where the instance is created.
-    calls: ["axios:create()", "axios:create().{get,post,put,patch,delete,request,head,options,postForm,putForm}"]
+    calls: ["axios:create()", "axios:{create(),AxiosInstance}.{get,post,put,patch,delete,request,head,options,postForm,putForm}"]
     host: { arg: 0, field: url, base_url: true }
 
   - id: js.got-ky
@@ -351,44 +351,44 @@ sinks:
     language: python
     class: analytics
     processor: Mixpanel
-    calls: ["mixpanel.Mixpanel().{track,alias,people_set,people_set_once,people_append,people_union,people_increment,import_data,group_set}"]
+    calls: ["mixpanel.Mixpanel{,()}.{track,alias,people_set,people_set_once,people_append,people_union,people_increment,import_data,group_set}"]
 
   - id: py.posthog
     language: python
     class: analytics
     processor: PostHog
-    calls: ["posthog.{capture,identify,alias,set,set_once,group_identify}", "posthog.{Posthog,Client}().{capture,identify,alias,set,set_once,group_identify}"]
+    calls: ["posthog.{capture,identify,alias,set,set_once,group_identify}", "posthog.{Posthog,Client}{,()}.{capture,identify,alias,set,set_once,group_identify}"]
 
   - id: py.amplitude
     language: python
     class: analytics
     processor: Amplitude
-    calls: ["amplitude.Amplitude().{track,identify,set_group}"]
+    calls: ["amplitude.Amplitude{,()}.{track,identify,set_group}"]
 
   # ------------------------------------------------------------------ email and messaging
   - id: py.sendgrid
     language: python
     class: messaging
     processor: SendGrid
-    calls: ["sendgrid.SendGridAPIClient().send", "sendgrid.SendGridAPIClient().client.mail.send.post"]
+    calls: ["sendgrid.SendGridAPIClient{,()}.send", "sendgrid.SendGridAPIClient{,()}.client.mail.send.post"]
 
   - id: py.postmark
     language: python
     class: messaging
     processor: Postmark
-    calls: ["postmarker.core.PostmarkClient().emails.{send,send_with_template,send_batch}"]
+    calls: ["postmarker.core.PostmarkClient{,()}.emails.{send,send_with_template,send_batch}"]
 
   - id: py.twilio
     language: python
     class: messaging
     processor: Twilio
-    calls: ["twilio.rest.Client().{messages,calls}.create", "twilio.rest.Client().**.verifications.create"]
+    calls: ["twilio.rest.Client{,()}.{messages,calls}.create", "twilio.rest.Client{,()}.**.verifications.create"]
 
   - id: py.django.mail
     language: python
     class: messaging
     description: Django's email API; the receiving provider is whatever the email backend is configured to use.
-    calls: ["django.core.mail.{send_mail,send_mass_mail,mail_admins,mail_managers}", "django.core.mail.{EmailMessage,EmailMultiAlternatives}().send"]
+    calls: ["django.core.mail.{send_mail,send_mass_mail,mail_admins,mail_managers}", "django.core.mail.{EmailMessage,EmailMultiAlternatives}{,()}.send"]
 
   # ------------------------------------------------------------------ LLM providers
   - id: py.openai
@@ -411,65 +411,65 @@ sinks:
     class: llm
     processor: Google
     calls:
-      - "google.generativeai.GenerativeModel().{generate_content,count_tokens}"
-      - "google.generativeai.GenerativeModel().start_chat().send_message"
+      - "google.generativeai.GenerativeModel{,()}.{generate_content,count_tokens}"
+      - "google.generativeai.GenerativeModel{,()}.start_chat{,()}.send_message"
       - "google.generativeai.embed_content"
-      - "google.genai.Client().**.{generate_content,generate_content_stream,embed_content,send_message,send_message_stream}"
+      - "google.genai.Client{,()}.**.{generate_content,generate_content_stream,embed_content,send_message,send_message_stream}"
 
   - id: py.mistral
     language: python
     class: llm
     processor: Mistral
-    calls: ["mistralai.**.{chat.complete,chat.stream,embeddings.create,fim.complete,agents.complete}", "mistralai.client.MistralClient().{chat,chat_stream}"]
+    calls: ["mistralai.**.{chat.complete,chat.stream,embeddings.create,fim.complete,agents.complete}", "mistralai.client.MistralClient{,()}.{chat,chat_stream}"]
 
   - id: py.langchain.openai
     language: python
     class: llm
     processor: OpenAI
-    calls: ["langchain_openai.{ChatOpenAI,OpenAI,AzureChatOpenAI,OpenAIEmbeddings}().{invoke,ainvoke,stream,astream,batch,abatch,predict,generate,embed_query,embed_documents}"]
+    calls: ["langchain_openai.{ChatOpenAI,OpenAI,AzureChatOpenAI,OpenAIEmbeddings}{,()}.{invoke,ainvoke,stream,astream,batch,abatch,predict,generate,embed_query,embed_documents}"]
 
   - id: py.langchain.anthropic
     language: python
     class: llm
     processor: Anthropic
-    calls: ["langchain_anthropic.ChatAnthropic().{invoke,ainvoke,stream,astream,batch,abatch,predict,generate}"]
+    calls: ["langchain_anthropic.ChatAnthropic{,()}.{invoke,ainvoke,stream,astream,batch,abatch,predict,generate}"]
 
   - id: py.langchain.google
     language: python
     class: llm
     processor: Google
-    calls: ["langchain_google_genai.{ChatGoogleGenerativeAI,GoogleGenerativeAIEmbeddings}().{invoke,ainvoke,stream,astream,batch,abatch,embed_query,embed_documents}"]
+    calls: ["langchain_google_genai.{ChatGoogleGenerativeAI,GoogleGenerativeAIEmbeddings}{,()}.{invoke,ainvoke,stream,astream,batch,abatch,embed_query,embed_documents}"]
 
   - id: py.langchain.mistral
     language: python
     class: llm
     processor: Mistral
-    calls: ["langchain_mistralai.{ChatMistralAI,MistralAIEmbeddings}().{invoke,ainvoke,stream,astream,batch,abatch,embed_query,embed_documents}"]
+    calls: ["langchain_mistralai.{ChatMistralAI,MistralAIEmbeddings}{,()}.{invoke,ainvoke,stream,astream,batch,abatch,embed_query,embed_documents}"]
 
   # ------------------------------------------------------------------ other third-party SDKs
   - id: py.stripe
     language: python
     class: third_party
     processor: Stripe
-    calls: ["stripe.{Customer,checkout.Session,PaymentIntent,Subscription,Invoice,SetupIntent}.{create,modify}", "stripe.StripeClient().**.{create,update}"]
+    calls: ["stripe.{Customer,checkout.Session,PaymentIntent,Subscription,Invoice,SetupIntent}.{create,modify}", "stripe.StripeClient{,()}.**.{create,update}"]
 
   - id: py.boto3-s3
     language: python
     class: third_party
     processor: Amazon S3
-    calls: ["boto3.client().{put_object,upload_file,upload_fileobj}", "boto3.resource().**.{put,upload_file,upload_fileobj}"]
+    calls: ["boto3.client{,()}.{put_object,upload_file,upload_fileobj}", "boto3.resource{,()}.**.{put,upload_file,upload_fileobj}"]
 
   - id: py.boto3-ses
     language: python
     class: messaging
     processor: Amazon SES
-    calls: ["boto3.client().{send_email,send_raw_email,send_templated_email}"]
+    calls: ["boto3.client{,()}.{send_email,send_raw_email,send_templated_email}"]
 
   - id: py.slack
     language: python
     class: messaging
     processor: Slack
-    calls: ["slack_sdk.WebClient().chat_{postMessage,postEphemeral,update}", "slack_sdk.webhook.WebhookClient().send"]
+    calls: ["slack_sdk.**.WebClient{,()}.chat_{postMessage,postEphemeral,update,scheduleMessage}", "slack_sdk.**.WebhookClient{,()}.send"]
 
   - id: py.gcs
     language: python
@@ -481,13 +481,13 @@ sinks:
   - id: py.requests
     language: python
     class: http
-    calls: ["requests.{get,post,put,patch,delete,head,options}", "requests.Session().{get,post,put,patch,delete,head,options}"]
+    calls: ["requests.{get,post,put,patch,delete,head,options}", "requests.Session{,()}.{get,post,put,patch,delete,head,options}"]
     host: { arg: 0, keyword: url }
 
   - id: py.requests.request
     language: python
     class: http
-    calls: ["requests.request", "requests.Session().request"]
+    calls: ["requests.request", "requests.Session{,()}.request"]
     host: { arg: 1, keyword: url }
 
   - id: py.httpx
@@ -500,13 +500,13 @@ sinks:
     language: python
     class: http
     description: An httpx client; a relative URL resolves against the client's base_url.
-    calls: ["httpx.{Client,AsyncClient}().{get,post,put,patch,delete,head,options,stream}"]
+    calls: ["httpx.{Client,AsyncClient}{,()}.{get,post,put,patch,delete,head,options,stream}"]
     host: { arg: 0, keyword: url, base_url: true }
 
   - id: py.aiohttp
     language: python
     class: http
-    calls: ["aiohttp.ClientSession().{get,post,put,patch,delete,head,options,request}"]
+    calls: ["aiohttp.ClientSession{,()}.{get,post,put,patch,delete,head,options,request}"]
     host: { arg: 0, keyword: url, base_url: true }
 
   - id: py.urllib

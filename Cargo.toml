@@ -2,7 +2,7 @@
 name = "privacy-flow"
 version = "0.1.0"
 edition = "2024"
-rust-version = "1.89"
+rust-version = "1.90"
 description = "Deterministic, offline static analysis of where personal data goes: logs, third-party SDKs, LLM providers and outbound HTTP. Cited file:line flow paths, SARIF, canonical JSON and Fides egress."
 license = "MIT"
 repository = "https://github.com/noru-tech/privacy-flow"
@@ -12,6 +12,18 @@ readme = "README.md"
 keywords = ["privacy", "gdpr", "static-analysis", "taint", "sarif"]
 categories = ["command-line-utilities", "development-tools"]
 authors = ["Noru <bip@noru.tech>"]
+include = [
+  "src/**",
+  "catalogue/**",
+  "schemas/**",
+  "vendor/**",
+  "benches/analysis.rs",
+  "Cargo.toml",
+  "LICENSE",
+  "NOTICE",
+  "README.md",
+  "CHANGELOG.md",
+]
 
 [lib]
 name = "privacy_flow"
@@ -50,3 +62,19 @@ criterion = { version = "0.8", default-features = false }
 [[bench]]
 name = "analysis"
 harness = false
+
+[profile.release]
+lto = "thin"
+codegen-units = 1
+strip = true
+
+# The profile that 'dist' will build with
+[profile.dist]
+inherits = "release"
+lto = "thin"
+
+# cargo-binstall: dist produces `<name>-<target>.tar.xz` archives on GitHub Releases.
+[package.metadata.binstall]
+pkg-url = "{ repo }/releases/download/v{ version }/{ name }-{ target }{ archive-suffix }"
+bin-dir = "{ name }-{ target }/{ bin }{ binary-ext }"
+pkg-fmt = "txz"

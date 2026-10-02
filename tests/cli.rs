@@ -445,3 +445,81 @@ fn datalog_engine_agrees_through_the_cli() {
         .assert()
         .code(0);
 }
+
+/// Acceptance criterion: `explain` shows a complete cited chain for every finding. Every finding
+/// of every fixture explains with exit 0; a flow finding prints one source line per hop, and a
+/// coverage gap prints at least one cited location.
+#[test]
+fn explain_works_for_every_finding_of_every_fixture() {
+    let mut explained = 0;
+    for dir in common::fixtures() {
+        let tmp = tempfile::tempdir().unwrap();
+        let doc_path = tmp.path().join("flows.json");
+        let status = Std::new(env!("CARGO_BIN_EXE_piiflow"))
+            .args(["scan", "-q", "--walk", "-o"])
+            .arg(&doc_path)
+            .arg(&dir)
+            .status()
+            .unwrap();
+        assert!(
+            matches!(status.code(), Some(0 | 1 | 4)),
+            "{}: scan failed",
+            dir.display()
+        );
+        let doc: serde_json::Value =
+            serde_json::from_str(&std::fs::read_to_string(&doc_path).unwrap()).unwrap();
+        let flows: std::collections::BTreeMap<&str, usize> = doc["flows"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|f| {
+                (
+                    f["id"].as_str().unwrap(),
+                    f["path"].as_array().unwrap().len(),
+                )
+            })
+            .collect();
+        for finding in doc["findings"].as_array().unwrap() {
+            let id = finding["id"].as_str().unwrap();
+            let out = Std::new(env!("CARGO_BIN_EXE_piiflow"))
+                .args(["explain", "-q", id, "-i"])
+                .arg(&doc_path)
+                .arg("--root")
+                .arg(&dir)
+                .output()
+                .unwrap();
+            let text = String::from_utf8(out.stdout).unwrap();
+            assert_eq!(
+                out.status.code(),
+                Some(0),
+                "{}: explain {id} failed:\n{}",
+                dir.display(),
+                String::from_utf8_lossy(&out.stderr)
+            );
+            // Source lines are printed as `<indent><line number> | <code>`.
+            let shown = text
+                .lines()
+                .filter(|l| {
+                    l.trim_start()
+                        .split_once(" | ")
+                        .is_some_and(|(n, _)| n.parse::<u32>().is_ok())
+                })
+                .count();
+            match finding["flow"].as_str() {
+                Some(flow) => assert_eq!(
+                    shown,
+                    flows[flow],
+                    "{}: {id} must show one source line per hop:\n{text}",
+                    dir.display()
+                ),
+                None => assert!(
+                    shown >= 1,
+                    "{}: {id} must cite at least one location:\n{text}",
+                    dir.display()
+                ),
+            }
+            explained += 1;
+        }
+    }
+    assert!(explained >= 41, "only {explained} findings explained");
+}

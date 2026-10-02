@@ -3,6 +3,7 @@
 
 pub mod fides;
 pub mod intoto;
+pub mod review;
 pub mod sarif;
 pub mod table;
 
@@ -23,6 +24,9 @@ pub enum Format {
     /// One canonical JSON line per flow: source, sink, category, sink class and processor. The
     /// conformance corpus's external-runner contract reads this.
     Facts,
+    /// A Markdown review queue: findings that need a human decision (maybe-personal names,
+    /// heuristic sinks) and open coverage gaps, each with what would resolve it.
+    Review,
 }
 
 impl Format {
@@ -39,6 +43,8 @@ impl Format {
             Some(Format::Fides)
         } else if name.ends_with(".jsonl") {
             Some(Format::Facts)
+        } else if name.ends_with(".md") {
+            Some(Format::Review)
         } else if name.ends_with(".txt") {
             Some(Format::Table)
         } else {
@@ -55,6 +61,7 @@ pub fn render(doc: &Document, format: Format) -> Result<String> {
         Format::Fides => fides::render(doc),
         Format::InToto => crate::canonical::jcs_bytes(&intoto::render(doc)?)?,
         Format::Facts => facts_lines(doc)?,
+        Format::Review => review::render(doc),
     })
 }
 

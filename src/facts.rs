@@ -928,6 +928,12 @@ impl<'a, 'p> Builder<'a, 'p> {
         if self.data_method(stmt, dst, recv, name, args, lang) {
             return;
         }
+        for prop in &cat.propagators {
+            if prop.def.language == lang && prop.def.receivers.iter().any(|r| r == &receiver) {
+                self.apply_flow(stmt, dst, prop.def.flow, Some(recv), args);
+                return;
+            }
+        }
         // An unknown method on a receiver with no known origin: the receiver's own data flows
         // to the result, and arguments handed to it are a coverage gap.
         for a in args {
