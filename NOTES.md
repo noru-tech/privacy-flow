@@ -228,8 +228,10 @@ full earlier text is kept outside the repository), and `v0.1.0` was tagged at `1
   the demo.
 - Homebrew: `piiflow.rb` in `noru-tech/homebrew-tap`, its four checksums equal to the release's.
 - The conformance corpus's digest list is attested at the tag (`conformance-release.yml`).
-- crates.io: not yet. The publish job failed as expected, because the crate does not exist and
-  trusted publishing can only be configured for an existing crate. The first `cargo publish`
-  is run by an owner from the tag; then the two trusted publishers (release.yml and
-  publish-crate.yml) are added, and later releases publish themselves.
+- crates.io: the release's publish job failed as expected (the crate did not exist, and trusted
+  publishing can only be configured for an existing crate). An owner published 0.1.0 from the
+  tag by hand and added the two trusted publishers (release.yml and publish-crate.yml). The
+  published crate holds only the anchored include list (161 kB); `cargo install privacy-flow
+  --locked` builds it and scans the demo with the same output digest as the local build.
+  Trusted publishing itself is first exercised by the next release.
 
