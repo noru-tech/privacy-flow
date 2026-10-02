@@ -1,0 +1,27 @@
+{
+  "actions_run": 36976371350,
+  "command": [
+    "public.ecr.aws/privado/privado@sha256:349fdd5a01c01acb4b17c9db0df782c8ad2fb4d87b5940247720fc3cac8e7f15",
+    "/app/code",
+    "-ic",
+    "/app/rules",
+    "--skip-upload",
+    "--skip-download-dependencies",
+    "--offline-mode",
+    "-fl",
+    "javascript"
+  ],
+  "excluded_files": 0,
+  "exit_code": 0,
+  "image": "public.ecr.aws/privado/privado@sha256:349fdd5a01c01acb4b17c9db0df782c8ad2fb4d87b5940247720fc3cac8e7f15",
+  "name": "taxonomy",
+  "privado_json": true,
+  "privado_json_sha256": "5f9864c58d8aa41be04b45ceb401b3feabb48b35b9ad349057860619bfabe114",
+  "privado_versions": {
+    "privadoCLIVersion": "Not Detected",
+    "privadoCoreVersion": "1.1.175-78",
+    "privadoLanguageEngineVersion": "0.1.5",
+    "privadoMainVersion": "Not Detected"
+  },
+  "wall_seconds": 25.9
+}

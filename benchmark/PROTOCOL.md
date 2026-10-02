@@ -117,7 +117,8 @@ on the same commits and scopes. Every judgement call is written down here before
   `--skip-upload`, `--skip-download-dependencies`, `--offline-mode` and
   `PRIVADO_METRICS_ENABLED=false`.
 - **Version.** Image `public.ecr.aws/privado/privado@sha256:349fdd5a01c01acb4b17c9db0df782c8ad2fb4d87b5940247720fc3cac8e7f15`
-  (built 2024-11-04; the engine's last release is v1.1.206, 2024-08-28) with the rules repository
+  (built 2024-11-04; it reports privado-core `1.1.175-78` and language engine `0.1.5` in every
+  output, older than the engine's last release, v1.1.206 of 2024-08-28) with the rules repository
   `Privado-Inc/privado` at tag `v1.3.91` mounted, the newest rules, so LLM SDKs added since the
   image was built are known to it.
 - **Language.** One language per application (`-fl javascript` or `-fl python`), matching

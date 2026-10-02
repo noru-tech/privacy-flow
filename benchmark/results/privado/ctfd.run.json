@@ -1,0 +1,27 @@
+{
+  "actions_run": 36976371350,
+  "command": [
+    "public.ecr.aws/privado/privado@sha256:349fdd5a01c01acb4b17c9db0df782c8ad2fb4d87b5940247720fc3cac8e7f15",
+    "/app/code",
+    "-ic",
+    "/app/rules",
+    "--skip-upload",
+    "--skip-download-dependencies",
+    "--offline-mode",
+    "-fl",
+    "python"
+  ],
+  "excluded_files": 0,
+  "exit_code": 0,
+  "image": "public.ecr.aws/privado/privado@sha256:349fdd5a01c01acb4b17c9db0df782c8ad2fb4d87b5940247720fc3cac8e7f15",
+  "name": "ctfd",
+  "privado_json": true,
+  "privado_json_sha256": "4522fe1cee6eeb1e88e0791d8c3d29c15e8e816ee3528c36317dacdfa17ddb27",
+  "privado_versions": {
+    "privadoCLIVersion": "Not Detected",
+    "privadoCoreVersion": "1.1.175-78",
+    "privadoLanguageEngineVersion": "0.1.5",
+    "privadoMainVersion": "Not Detected"
+  },
+  "wall_seconds": 109.5
+}
