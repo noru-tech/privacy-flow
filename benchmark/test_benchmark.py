@@ -52,6 +52,14 @@ class Sampling(unittest.TestCase):
         self.assertEqual(sum(1 for c in chosen.values() if c["item"]["class"] == "http"), 3)
 
 
+class Rendering(unittest.TestCase):
+    def test_collapse_keeps_source_and_sink(self):
+        hop = lambda line, col: {"path": "a.py", "line": line, "column": col}
+        hops = [hop(1, 1), hop(1, 5), hop(2, 1), hop(2, 9), hop(3, 1), hop(3, 4)]
+        self.assertEqual(sheets.collapse(hops), [hop(1, 1), hop(2, 1), hop(3, 1), hop(3, 4)])
+        self.assertEqual(sheets.collapse([hop(1, 1), hop(1, 2)]), [hop(1, 1), hop(1, 2)])
+
+
 class Candidates(unittest.TestCase):
     def test_classification(self):
         cases = {

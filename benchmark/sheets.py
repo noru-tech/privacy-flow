@@ -44,6 +44,23 @@ def h(*parts):
     return hashlib.sha256("\x1f".join((SALT, *parts)).encode()).hexdigest()
 
 
+def collapse(hops):
+    """Drop hops on the same line as the hop before them, keeping the source and the sink.
+
+    Applied to both tools' paths alike: one tool repeats a line many times where the other
+    does not, which would otherwise make the path's length reveal the tool, and a reviewer reads
+    lines, not columns.
+    """
+    if len(hops) <= 2:
+        return hops
+    out = [hops[0]]
+    for hop in hops[1:-1]:
+        if (hop["path"], hop["line"]) != (out[-1]["path"], out[-1]["line"]):
+            out.append(hop)
+    out.append(hops[-1])
+    return out
+
+
 def take(items, k, app, key):
     return sorted(items, key=lambda x: h(app, key(x)))[:k]
 
@@ -66,7 +83,7 @@ def piiflow_items(app, doc):
             entry = chosen.setdefault(item_id, {
                 "item": {
                     "id": item_id, "kind": "flow",
-                    "hops": [{"path": p["path"], "line": p["line"], "column": p["column"]} for p in flow["path"]],
+                    "hops": collapse([{"path": p["path"], "line": p["line"], "column": p["column"]} for p in flow["path"]]),
                     # piiflow's `unknown` (a maybe-personal name) would reveal the tool; both
                     # tools' unspecific categories render as Fideslang's generic `user`.
                     "categories": ["user" if flow["category"] == "unknown" else flow["category"]],
@@ -99,7 +116,7 @@ def privado_items(app, rows):
         for r in take(members, K_PRIVADO_PER_TYPE, app, lambda r: r["native_id"]):
             item_id = "F" + h(app, "privado", r["native_id"])[:10]
             chosen[item_id] = {
-                "item": {"id": item_id, "kind": "flow", "hops": r["hops"], "categories": r["categories"],
+                "item": {"id": item_id, "kind": "flow", "hops": collapse(r["hops"]), "categories": r["categories"],
                          "sink_class": COARSE.get(r["sink_class"], "other")},
                 "key": {"tool": "privado", "native_id": r["native_id"], "strata": [stratum]},
             }

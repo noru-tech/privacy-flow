@@ -85,7 +85,8 @@ of findings for that rule). Recall is the proportion of sampled `personal: yes` 
 
 [`sheets.py`](sheets.py) renders every `flow` item the same way whichever tool reported it: the
 hop locations, each with its line of code read from the fetched application, and the reported
-categories mapped to Fideslang. Items get opaque IDs and are shuffled together; the key that maps
+categories mapped to Fideslang. Consecutive hops on the same line are shown once (the source and
+sink always appear), for both tools alike. Items get opaque IDs and are shuffled together; the key that maps
 items to tools is written to `sheets/key/` and reviewers do not open it until §7 is done.
 
 ## 7. Procedure
