@@ -18,8 +18,8 @@ against, labelled by two reviewers, with Privado's open-source scanner run on th
 | --- | --- |
 | Corpus fixed, protocol written | done (2026-10-02) |
 | `piiflow` run recorded | done: commit `9a78b08`, byte-identical on repeat |
-| Privado run | done for 10 of 12; `polar` and `redash` exceed a standard runner's memory even with swap (recorded as failures) |
-| Sheets drawn | done: 752 items per reviewer (313 blinded flows, 114 gaps, 325 sites) |
+| Privado run | done for 11 of 12; `polar` exceeds a standard runner's memory even with swap (recorded as a failure); `redash` finished on a later attempt |
+| Sheets drawn | done: 776 items per reviewer (337 blinded flows, 114 gaps, 325 sites) |
 | Labelling by R1 and R2 | not started; the labelling desk is live |
 | Scores, write-up, Zenodo DOI | after labelling |
 

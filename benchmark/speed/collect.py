@@ -58,7 +58,17 @@ def fmt_mib(m):
     return f"{m:,} MiB" if m < 1024 else f"{m / 1024:.1f} GiB"
 
 
-def chart(rows, machine, version):
+def cpus_text(machines):
+    """The CPU models the jobs ran on; GitHub assigns runners from a pool, so they can differ."""
+    counts = {}
+    for m in machines:
+        counts[m.get("cpu") or "unknown CPU"] = counts.get(m.get("cpu") or "unknown CPU", 0) + 1
+    if len(counts) == 1:
+        return next(iter(counts))
+    return ", ".join(f"{cpu} ({n} jobs)" for cpu, n in sorted(counts.items(), key=lambda kv: -kv[1]))
+
+
+def chart(rows, machine, version, machines):
     W, L, R, rowh, top = 860, 190, 110, 40, 64
     H = top + len(rows) * rowh + 70
     # The axis runs past the longest bar so its label fits before the ratio column.
@@ -92,13 +102,12 @@ def chart(rows, machine, version):
             why = "out of memory" if r["privado_out_of_memory"] else "did not finish"
             out.append(f'<rect x="{L}" y="{y + 19}" width="{max(vw, 2):.1f}" height="12" rx="2" fill="none" stroke="{bad}" stroke-dasharray="4 3"/>')
             out.append(f'<text x="{L + max(vw, 2) + 6:.1f}" y="{y + 29}" font-size="11.5" fill="{bad}">{why} after {fmt_s(r["privado_seconds"])}</text>')
-    cpu = machine.get("cpu") or ""
-    out.append(f'<text x="24" y="{H - 10}" font-size="11.5" fill="{sub}">GitHub-hosted runner, {machine.get("cpus")} vCPU, {machine.get("memory_gib")} GiB{(" (" + escape(cpu) + ")") if cpu else ""}. piiflow: median of 3 runs. Privado: one run, 14 GiB limit.</text>')
+    out.append(f'<text x="24" y="{H - 10}" font-size="11.5" fill="{sub}">GitHub-hosted runner, {machine.get("cpus")} vCPU, {machine.get("memory_gib")} GiB ({escape(cpus_text(machines))}). piiflow: median of 3 runs. Privado: one run, 14 GiB limit.</text>')
     out.append("</svg>")
     return "\n".join(out) + "\n"
 
 
-def section(rows, machine, version, date):
+def section(rows, machine, version, date, machines):
     done = [r for r in rows if r["privado_finished"]]
     ratios = [r["privado_seconds"] / r["piiflow_seconds"] for r in done]
     pf_total = sum(r["piiflow_seconds"] for r in rows)
@@ -121,7 +130,7 @@ def section(rows, machine, version, date):
         lines.append(f"| [{NAMES[r['app']]}](https://github.com/{r['repository']}) | {r['lines']:,} | {fmt_s(r['piiflow_seconds'])} | {pv_t} | "
                      f"{fmt_mib(r['piiflow_peak_mib'])} | {fmt_mib(r['privado_peak_mib'])} |")
     lines += ["",
-              f"Measured on {date}: piiflow is the released Linux binary, verified by its attestation, median of 3 runs; "
+              f"Measured on {date} ({cpus_text(machines)}): piiflow is the released Linux binary, verified by its attestation, median of 3 runs; "
               f"its output on all {len(rows)} applications was {'byte-identical' if identical == len(rows) else f'byte-identical on {identical} of {len(rows)}'} "
               "to the recorded benchmark run on macOS. Privado is privado-core 1.1.175 from its pinned image with its newest rules, "
               "offline, one run, memory read from Docker once a second. Speed only: whether each tool is *right* is measured by "
@@ -142,12 +151,12 @@ def main():
     version = rows[0]["piiflow_version"].replace("piiflow ", "")
     import datetime
     date = datetime.date.today().isoformat()
-    text = section(rows, machine, version, date)
+    text = section(rows, machine, version, date, machines)
     if not write:
         print(text)
         return
     (HERE / "results.json").write_text(json.dumps({"measured_on": date, "machines": machines, "applications": rows}, indent=2, sort_keys=True) + "\n")
-    (HERE / "chart.svg").write_text(chart(rows, machine, version))
+    (HERE / "chart.svg").write_text(chart(rows, machine, version, machines))
     readme = (ROOT / "README.md").read_text()
     if START not in readme:
         sys.exit("README.md has no speed markers")

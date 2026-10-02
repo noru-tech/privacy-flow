@@ -1,5 +1,17 @@
 {
-  "attempts": [
+  "actions_run": 37014535150,
+  "command": [
+    "public.ecr.aws/privado/privado@sha256:349fdd5a01c01acb4b17c9db0df782c8ad2fb4d87b5940247720fc3cac8e7f15",
+    "/app/code",
+    "-ic",
+    "/app/rules",
+    "--skip-upload",
+    "--skip-download-dependencies",
+    "--offline-mode",
+    "-fl",
+    "python"
+  ],
+  "earlier_attempts": [
     {
       "actions_run": 36976371350,
       "command": [
@@ -44,6 +56,21 @@
       "wall_seconds": 610.2
     }
   ],
+  "excluded_files": 0,
+  "exit_code": 0,
+  "heap_gib": 12,
+  "image": "public.ecr.aws/privado/privado@sha256:349fdd5a01c01acb4b17c9db0df782c8ad2fb4d87b5940247720fc3cac8e7f15",
+  "memory_gib": 14,
   "name": "redash",
-  "outcome": "failed: killed for exceeding memory in both attempts (exit 137); excluded from Privado's numbers (PROTOCOL.md, Deviations)"
+  "note": "Killed for memory twice (runs 36976371350 and 36978183971); finished at the protocol's settings on 2026-10-02 (run 37014535150). See PROTOCOL.md, Deviations.",
+  "privado_json": true,
+  "privado_json_sha256": "9ff77a48071dedec300629be24b0fa54836806f4675a343dca6ae986d72ecc89",
+  "privado_versions": {
+    "privadoCLIVersion": "Not Detected",
+    "privadoCoreVersion": "1.1.175-78",
+    "privadoLanguageEngineVersion": "0.1.5",
+    "privadoMainVersion": "Not Detected"
+  },
+  "swap_gib": 0,
+  "wall_seconds": 449.4
 }

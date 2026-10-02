@@ -199,19 +199,22 @@ thousands of sinks. The budget now has a second case shaped like that
 (benches/wide_summaries.py): engine phase 0.44 s fixed, 16 s with the old code, budget 4 s;
 checked against both builds.
 
-**Privado run (2026-10-02).** Completed on 10 of 12 applications. The image reports
-privado-core 1.1.175, not the last release. `polar` and `redash` were killed for memory twice,
-the second time with 14 GiB plus 21 GiB of swap, and are recorded as Privado failures.
+**Privado run (2026-10-02).** Completed on 11 of 12 applications. The image reports
+privado-core 1.1.175, not the last release. `polar` was killed for memory twice, the second time
+with 14 GiB plus 21 GiB of swap, and is recorded as a Privado failure. `redash` failed the same
+way twice, then finished at the protocol's settings during the speed benchmark and again in a
+repeated protocol run; it rejoined the comparison before labelling (PROTOCOL.md, Deviations).
 
-**Sheets drawn.** 752 items per reviewer: 313 flows (211 piiflow, 102 Privado, blinded and
-shuffled), 114 gaps and 325 candidate sites. Two reviewers, R1 and R2, named in the write-up
+**Sheets drawn.** 776 items per reviewer: 337 flows (211 piiflow, 126 Privado, blinded and
+shuffled), 114 gaps and 325 candidate sites (Redash's sheet redrawn with 24 Privado items when
+Privado completed it). Two reviewers, R1 and R2, named in the write-up
 with their consent (PROTOCOL.md §7); guide in benchmark/REVIEWERS.md.
 
 **Labelling desk (2026-10-02).** A private claude.ai page, shared with the reviewers, built by
 `benchmark/labelling/build.py`: one
 item at a time with code context and GitHub links, keyboard answers, each reviewer's labels in their
 own private store, export to JSON, imported by `benchmark/labelling/import_labels.py` (tested in
-CI). It never sees the key. Full samples kept: 752 items per reviewer.
+CI). It never sees the key. Full samples kept: 776 items per reviewer.
 
 **Next.** Both reviewers label independently; then `score.py --agreement`, adjudication into
 `labels/final/`, `score.py`, the write-up, and the Zenodo deposit (needs Noru's account).

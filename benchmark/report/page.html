@@ -168,7 +168,7 @@ footer { border-top: 1px solid var(--hair-strong); padding-top: 20px; }
       <h3>Do they point at the same places?</h3>
       <div class="legend"><span><i style="background:var(--tool-a)"></i>Both tools</span><span><i style="background:var(--mid)"></i>Only piiflow</span><span><i style="background:var(--tool-b)"></i>Only Privado</span></div>
       <div class="scroll"><svg id="c-overlap" role="img" aria-label="Shared and tool-specific sink lines per application"></svg></div>
-      <p class="small">Lines of code that send data out and where a tool reports personal data arriving, on the ten applications both tools completed.</p>
+      <p class="small" id="overlap-note">Lines of code that send data out and where a tool reports personal data arriving, on the applications both tools completed.</p>
     </div>
   </section>
 
@@ -180,7 +180,7 @@ footer { border-top: 1px solid var(--hair-strong); padding-top: 20px; }
           <h3>Where flows end</h3>
           <div class="legend" id="l-classes"></div>
           <div class="scroll"><svg id="c-classes" role="img" aria-label="Sink classes per tool" style="min-width:300px"></svg></div>
-          <p class="small">Same ten applications.</p>
+          <p class="small" id="classes-note"></p>
         </div>
         <div class="chart">
           <h3>Where piiflow could not see further</h3>
@@ -231,6 +231,10 @@ footer { border-top: 1px solid var(--hair-strong); padding-top: 20px; }
   const sum = (xs, f) => xs.reduce((s, x) => s + f(x), 0);
   const byLines = [...A].sort((a, b) => a.lines - b.lines);
   const shared = A.filter(ok);
+  const words = ["no", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten", "eleven", "twelve"];
+  const count = n => words[n] || String(n);
+  const failedNames = A.filter(a => !ok(a)).map(a => NAMES[a.name]);
+  const listText = xs => xs.length < 2 ? xs.join("") : xs.slice(0, -1).join(", ") + " and " + xs[xs.length - 1];
 
   // ---------- status ----------
   const items = sum(A, a => a.sample.items);
@@ -263,8 +267,8 @@ footer { border-top: 1px solid var(--hair-strong); padding-top: 20px; }
   (function () {
     const note = document.getElementById("answer-note");
     note.textContent = HH
-      ? "On the " + HH.applications.length + " applications both tools completed. Privado could not finish Polar and Redash, so they are left out of the comparison for both tools."
-      : "On the ten applications both tools completed. These numbers appear once both reviewers have labelled every item; until then nothing here says which tool is better.";
+      ? "On the " + count(HH.applications.length) + " applications both tools completed." + (failedNames.length ? " Privado could not finish " + listText(failedNames) + ", so " + (failedNames.length > 1 ? "they are" : "it is") + " left out of the comparison for both tools." : "")
+      : "On the " + count(shared.length) + " applications both tools completed. These numbers appear once both reviewers have labelled every item; until then nothing here says which tool is better.";
     const board = document.getElementById("board");
     const metric = (q, w, color, minor) => {
       const m = h("div", "metric" + (minor ? " minor" : ""));
@@ -328,7 +332,7 @@ footer { border-top: 1px solid var(--hair-strong); padding-top: 20px; }
     add("ok", "Chosen before either tool ran.", "Open-source applications under permissive licences, picked by written rules; every candidate that was rejected is listed with the reason. piiflow was not developed or tuned on any of them.");
     add("ok", "Checked blind.", "Each reviewer labels alone. Flows from both tools are shown in the same format and shuffled together, so a reviewer cannot tell which tool reported which.");
     add("ok", "Privado at its best.", "Its newest rules, run offline from a pinned image, without the telemetry its command-line tool sends.");
-    add("warn", "Privado finished ten of twelve.", "It ran out of memory on Polar and Redash twice, the second time with 35 GB of memory and swap. Both tools are compared on the ten it finished; piiflow's results on all twelve are reported separately.");
+    if (failedNames.length) add("warn", "Privado finished " + count(shared.length) + " of " + count(A.length) + ".", "It ran out of memory on " + listText(failedNames) + " every time, at the protocol's 14 GiB and again with swap added. Both tools are compared on the " + count(shared.length) + " it finished; piiflow's results on all " + count(A.length) + " are reported separately.");
     add("warn", "Privado calls its JavaScript and TypeScript support beta.", "Six of the applications are TypeScript. That is part of what is being measured; the full results are also broken down by language.");
     add("warn", "Not compared:", "how each tool names the kind of data (the two vocabularies only partly line up), and run time (the tools ran on different machines).");
   })();
@@ -387,7 +391,7 @@ footer { border-top: 1px solid var(--hair-strong); padding-top: 20px; }
       const y = top + i * rowH + (a.name === "__all" ? 10 : 0);
       const o = a.sink_lines_overlap, total = o.both + o.piiflow_only + o.privado_only;
       if (a.name === "__all") svgEl("line", { x1: 0, x2: W, y1: y - 6, y2: y - 6, stroke: css("--hair-strong") }, svg);
-      svgEl("text", { x: L - 12, y: y + 15, "text-anchor": "end", "font-size": 13, fill: css("--ink"), "font-weight": a.name === "__all" ? 600 : 400 }, svg, a.name === "__all" ? "All ten" : NAMES[a.name]);
+      svgEl("text", { x: L - 12, y: y + 15, "text-anchor": "end", "font-size": 13, fill: css("--ink"), "font-weight": a.name === "__all" ? 600 : 400 }, svg, a.name === "__all" ? "All " + count(shared.length) : NAMES[a.name]);
       let cx = L; const span = W - L - R;
       [["both", "--tool-a", "#ffffff"], ["piiflow_only", "--mid", "#ffffff"], ["privado_only", "--tool-b", css("--ink")]].forEach(([k, c, tc]) => {
         const v = o[k]; if (!v) return;
@@ -479,6 +483,8 @@ footer { border-top: 1px solid var(--hair-strong); padding-top: 20px; }
     t.appendChild(tb);
   })();
 
+  document.getElementById("overlap-note").textContent = "Lines of code that send data out and where a tool reports personal data arriving, on the " + count(shared.length) + " applications both tools completed.";
+  document.getElementById("classes-note").textContent = "The same " + count(shared.length) + " applications.";
   document.getElementById("commit").textContent = D.generated_from.piiflow_commit.slice(0, 7);
   if (D.release && D.release.analysis_identical) document.getElementById("commit-note").textContent = ", whose analysis code is identical to the " + D.release.tag + " release";
 })();

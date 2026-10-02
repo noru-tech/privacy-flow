@@ -172,8 +172,10 @@ class HeadToHead(unittest.TestCase):
             hh = json.loads((out / "scores.json").read_text())["head_to_head"]
             self.assertEqual(hh["precision"]["piiflow"]["p"], 1.0)
             self.assertEqual(hh["precision"]["privado"]["p"], 0.0)
+            # Exactly the applications Privado completed are compared, for both tools.
+            completed = sorted(p.stem for p in (self.HERE / "results/privado").glob("*.jsonl"))
+            self.assertEqual(hh["applications"], completed)
             self.assertNotIn("polar", hh["applications"])
-            self.assertNotIn("redash", hh["applications"])
             self.assertEqual(hh["recall"]["piiflow_found"]["n"], hh["recall"]["privado_found"]["n"])
 
 

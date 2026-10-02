@@ -174,4 +174,14 @@ on the same commits and scopes. Every judgement call is written down here before
   runner's disk allowed, 36 GiB heap) was killed the same way on both. `polar` and `redash` are
   Privado failures: no Privado items are drawn for them, and Privado's precision and recall are
   computed over the other ten applications, which the write-up states.
+- **2026-10-02, Privado completes Redash; Redash rejoins the comparison.** Timing Privado for
+  the speed benchmark (`benchmark-speed.yml`, run 37012382973) finished `redash` at the
+  protocol's settings (14 GiB, no swap), where both earlier attempts had been killed for memory.
+  The protocol run was repeated for `redash` alone with the unchanged command (run 37014535150):
+  it finished in 449 s and reported 1,022 paths, now in `results/privado/redash.jsonl`; the
+  failed attempts stay in `results/privado/redash.run.json`. Before any label existed, Redash's
+  sheet was redrawn: its 76 items kept their ids, and 24 Privado items (8 per flow type) were
+  added by the unchanged sampling rule; no other application's items changed. Privado's numbers
+  now cover eleven applications. The earlier failures were not reproducible, so a run that a
+  tool loses to memory is retried at the protocol's settings before it is recorded as a failure.
 

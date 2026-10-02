@@ -1,6 +1,16 @@
 # Labels for redash. Fill every field; see benchmark/PROTOCOL.md §3. Do not open
 # benchmark/sheets/key/ until both reviewers are done.
 items:
+  Ffa90334fc2:
+    verdict:        # tp | fp_path | fp_not_personal | unsure
+    category_ok:    # yes | no
+    citation:       # file:line (for fp_path: where the path breaks)
+    note:
+  F87bea00728:
+    verdict:        # tp | fp_path | fp_not_personal | unsure
+    category_ok:    # yes | no
+    citation:       # file:line (for fp_path: where the path breaks)
+    note:
   F235485372f:
     verdict:        # tp | fp_path | fp_not_personal | unsure
     category_ok:    # yes | no
@@ -11,7 +21,17 @@ items:
     category_ok:    # yes | no
     citation:       # file:line (for fp_path: where the path breaks)
     note:
+  Fca4c2403d1:
+    verdict:        # tp | fp_path | fp_not_personal | unsure
+    category_ok:    # yes | no
+    citation:       # file:line (for fp_path: where the path breaks)
+    note:
   Fe8e1414c96:
+    verdict:        # tp | fp_path | fp_not_personal | unsure
+    category_ok:    # yes | no
+    citation:       # file:line (for fp_path: where the path breaks)
+    note:
+  F138d8797a2:
     verdict:        # tp | fp_path | fp_not_personal | unsure
     category_ok:    # yes | no
     citation:       # file:line (for fp_path: where the path breaks)
@@ -41,12 +61,22 @@ items:
     category_ok:    # yes | no
     citation:       # file:line (for fp_path: where the path breaks)
     note:
+  F4324ee582d:
+    verdict:        # tp | fp_path | fp_not_personal | unsure
+    category_ok:    # yes | no
+    citation:       # file:line (for fp_path: where the path breaks)
+    note:
   F363256f38b:
     verdict:        # tp | fp_path | fp_not_personal | unsure
     category_ok:    # yes | no
     citation:       # file:line (for fp_path: where the path breaks)
     note:
   F57565f01a2:
+    verdict:        # tp | fp_path | fp_not_personal | unsure
+    category_ok:    # yes | no
+    citation:       # file:line (for fp_path: where the path breaks)
+    note:
+  F3a0772ffe1:
     verdict:        # tp | fp_path | fp_not_personal | unsure
     category_ok:    # yes | no
     citation:       # file:line (for fp_path: where the path breaks)
@@ -72,6 +102,11 @@ items:
     citation:       # file:line (for fp_path: where the path breaks)
     note:
   Fe463de6de2:
+    verdict:        # tp | fp_path | fp_not_personal | unsure
+    category_ok:    # yes | no
+    citation:       # file:line (for fp_path: where the path breaks)
+    note:
+  Fb45d7905f8:
     verdict:        # tp | fp_path | fp_not_personal | unsure
     category_ok:    # yes | no
     citation:       # file:line (for fp_path: where the path breaks)
@@ -111,7 +146,22 @@ items:
     category_ok:    # yes | no
     citation:       # file:line (for fp_path: where the path breaks)
     note:
+  F09b5f15c84:
+    verdict:        # tp | fp_path | fp_not_personal | unsure
+    category_ok:    # yes | no
+    citation:       # file:line (for fp_path: where the path breaks)
+    note:
   Fa983fc627a:
+    verdict:        # tp | fp_path | fp_not_personal | unsure
+    category_ok:    # yes | no
+    citation:       # file:line (for fp_path: where the path breaks)
+    note:
+  F881a0e830d:
+    verdict:        # tp | fp_path | fp_not_personal | unsure
+    category_ok:    # yes | no
+    citation:       # file:line (for fp_path: where the path breaks)
+    note:
+  F8733dc8ec6:
     verdict:        # tp | fp_path | fp_not_personal | unsure
     category_ok:    # yes | no
     citation:       # file:line (for fp_path: where the path breaks)
@@ -121,7 +171,17 @@ items:
     category_ok:    # yes | no
     citation:       # file:line (for fp_path: where the path breaks)
     note:
+  Ff46076d333:
+    verdict:        # tp | fp_path | fp_not_personal | unsure
+    category_ok:    # yes | no
+    citation:       # file:line (for fp_path: where the path breaks)
+    note:
   F0c79c03366:
+    verdict:        # tp | fp_path | fp_not_personal | unsure
+    category_ok:    # yes | no
+    citation:       # file:line (for fp_path: where the path breaks)
+    note:
+  Fd79ca465ec:
     verdict:        # tp | fp_path | fp_not_personal | unsure
     category_ok:    # yes | no
     citation:       # file:line (for fp_path: where the path breaks)
@@ -141,7 +201,27 @@ items:
     category_ok:    # yes | no
     citation:       # file:line (for fp_path: where the path breaks)
     note:
+  F4beb2f801f:
+    verdict:        # tp | fp_path | fp_not_personal | unsure
+    category_ok:    # yes | no
+    citation:       # file:line (for fp_path: where the path breaks)
+    note:
+  F82b5f0d2ad:
+    verdict:        # tp | fp_path | fp_not_personal | unsure
+    category_ok:    # yes | no
+    citation:       # file:line (for fp_path: where the path breaks)
+    note:
+  Fabd1af3a72:
+    verdict:        # tp | fp_path | fp_not_personal | unsure
+    category_ok:    # yes | no
+    citation:       # file:line (for fp_path: where the path breaks)
+    note:
   Fae8913ac38:
+    verdict:        # tp | fp_path | fp_not_personal | unsure
+    category_ok:    # yes | no
+    citation:       # file:line (for fp_path: where the path breaks)
+    note:
+  F0fdf96df3e:
     verdict:        # tp | fp_path | fp_not_personal | unsure
     category_ok:    # yes | no
     citation:       # file:line (for fp_path: where the path breaks)
@@ -161,7 +241,32 @@ items:
     category_ok:    # yes | no
     citation:       # file:line (for fp_path: where the path breaks)
     note:
+  F6d5018a62c:
+    verdict:        # tp | fp_path | fp_not_personal | unsure
+    category_ok:    # yes | no
+    citation:       # file:line (for fp_path: where the path breaks)
+    note:
+  Fe66b5eeb85:
+    verdict:        # tp | fp_path | fp_not_personal | unsure
+    category_ok:    # yes | no
+    citation:       # file:line (for fp_path: where the path breaks)
+    note:
+  Ff150c06fe7:
+    verdict:        # tp | fp_path | fp_not_personal | unsure
+    category_ok:    # yes | no
+    citation:       # file:line (for fp_path: where the path breaks)
+    note:
+  Fc9f51bc7ba:
+    verdict:        # tp | fp_path | fp_not_personal | unsure
+    category_ok:    # yes | no
+    citation:       # file:line (for fp_path: where the path breaks)
+    note:
   Fefa2774847:
+    verdict:        # tp | fp_path | fp_not_personal | unsure
+    category_ok:    # yes | no
+    citation:       # file:line (for fp_path: where the path breaks)
+    note:
+  F8ba69a2c1c:
     verdict:        # tp | fp_path | fp_not_personal | unsure
     category_ok:    # yes | no
     citation:       # file:line (for fp_path: where the path breaks)
@@ -171,7 +276,22 @@ items:
     category_ok:    # yes | no
     citation:       # file:line (for fp_path: where the path breaks)
     note:
+  F1965003ec3:
+    verdict:        # tp | fp_path | fp_not_personal | unsure
+    category_ok:    # yes | no
+    citation:       # file:line (for fp_path: where the path breaks)
+    note:
+  F1d0ade62a1:
+    verdict:        # tp | fp_path | fp_not_personal | unsure
+    category_ok:    # yes | no
+    citation:       # file:line (for fp_path: where the path breaks)
+    note:
   F0fea990d98:
+    verdict:        # tp | fp_path | fp_not_personal | unsure
+    category_ok:    # yes | no
+    citation:       # file:line (for fp_path: where the path breaks)
+    note:
+  F0b0f4e7edb:
     verdict:        # tp | fp_path | fp_not_personal | unsure
     category_ok:    # yes | no
     citation:       # file:line (for fp_path: where the path breaks)

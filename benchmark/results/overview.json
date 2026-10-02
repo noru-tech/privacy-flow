@@ -520,7 +520,7 @@
     "total": 362,
     "with_piiflow_flow": 94,
     "with_piiflow_flow_or_gap": 99,
-    "with_privado_flow": null
+    "with_privado_flow": 143
    },
    "files": 171,
    "framework": "Flask",
@@ -562,24 +562,31 @@
     "wall_seconds": 0.37
    },
    "privado": {
-    "reason": "out of memory (exit 137) in both attempts",
-    "status": "failed",
-    "wall_seconds": [
-     386.6,
-     610.2
-    ]
+    "by_class": {
+     "http": 399,
+     "log": 242,
+     "third_party": 381
+    },
+    "flows": 1022,
+    "sink_lines": 256,
+    "status": "ok",
+    "wall_seconds": 449.4
    },
    "repository": "getredash/redash",
    "sample": {
     "flows_piiflow": 36,
-    "flows_privado": 0,
+    "flows_privado": 24,
     "gaps": 10,
-    "items": 76,
+    "items": 100,
     "labelled_r1": 0,
     "labelled_r2": 0,
     "sites": 30
    },
-   "sink_lines_overlap": null
+   "sink_lines_overlap": {
+    "both": 64,
+    "piiflow_only": 32,
+    "privado_only": 192
+   }
   },
   {
    "candidate_sites": {
