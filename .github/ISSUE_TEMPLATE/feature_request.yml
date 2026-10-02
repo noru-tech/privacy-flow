@@ -1,0 +1,40 @@
+name: Feature request
+description: Suggest an improvement to the CLI, the GitHub Action, output formats or docs
+labels: [enhancement]
+body:
+  - type: markdown
+    attributes:
+      value: >-
+        For a new rule or a new catalogue entry (a source, sink, sanitiser or framework), use the
+        dedicated forms instead. Please use synthetic personal data in any example.
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options: [CLI, GitHub Action, output format, configuration, installation or packaging, documentation, other]
+    validations:
+      required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem would this solve?
+      description: The situation you are in and what is hard or impossible today.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: What would you like to happen?
+      description: The behaviour, command, flag or output you have in mind.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Workarounds you use today, or other designs you ruled out.
+  - type: input
+    id: version
+    attributes:
+      label: piiflow version
+      placeholder: piiflow --version
