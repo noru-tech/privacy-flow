@@ -87,6 +87,9 @@ Request input is a source only in frameworks whose request objects are modelled
   to its result, and personal data reaching it is an `unresolved_callee` gap. **Silent:** callbacks
   receive no data from the arguments of whatever later invokes them through an event system
   (`emitter.on('x', d => log(d))` after `emitter.emit('x', email)` is missed).
+- **Containers:** a container obtained from another container (`subscribers.get(k).add(cb)`) has
+  no location of its own, so what is added to it is not seen by a later read from the outer
+  container, and calls on those values may not resolve ([ADR 0008](docs/adr/0008-container-identity.md)).
 - **Provenance** (which function or API a call reaches) is flow- and context-insensitive and
   bounded: API paths stop growing at 16 segments, at most 16 API paths are kept per variable, at
   most 4,096 provenance values of any kind, and the fixpoint stops after 64 rounds (18 were needed

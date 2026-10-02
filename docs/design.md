@@ -62,7 +62,9 @@ statements, with bounded path length (16 segments) and bounded sets (16 API path
 - arguments give a local function's parameters their provenance (so a callback resolves inside
   the callee), and a function's return carries its object's fields;
 - containers: what goes in through `set`/`push` comes out of `get`/`pop`, keyed by the container's
-  variable, field or API path; computed keys meet in the container's elements.
+  variable, instance field or API path, but never by a path ending in a call (`Map()` is a new
+  value at each call); computed keys meet in the container's elements; a loop variable is an
+  element of what it iterates ([ADR 0008](adr/0008-container-identity.md)).
 
 Provenance never carries personal data; it only decides which function or API a call reaches.
 

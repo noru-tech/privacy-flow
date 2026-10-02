@@ -29,7 +29,10 @@ propagators:
     description: Language and platform built-ins that transform values.
     calls:
       - "{String,Number,Boolean,BigInt,Symbol,Date,URL,URLSearchParams,Map,Set,WeakMap,WeakSet,Error,TypeError,RangeError,SyntaxError,Headers,Request,Response,FormData,Blob,TextEncoder,TextDecoder,AbortController}"
-      - "{String,Number,Boolean,BigInt,Symbol,Date,URL,URLSearchParams,Map,Set,WeakMap,WeakSet,Error,TypeError,RangeError,SyntaxError,Headers,Request,Response,FormData,Blob,TextEncoder,TextDecoder,AbortController}()**"
+      - "{String,Number,Boolean,BigInt,Symbol,Date,URL,URLSearchParams,Error,TypeError,RangeError,SyntaxError,Headers,Request,Response,FormData,Blob,TextEncoder,TextDecoder,AbortController}()**"
+      # A container's own methods only: a method on an element taken out of it (`cache.get(k).send(x)`)
+      # is a call on whatever the element is, decided by the element's own provenance.
+      - "{Map,Set,WeakMap,WeakSet}().*"
       - "{Array,Object,Promise,Buffer,Math,Intl,Reflect,Number,String,Date,Response}.**"
       - "{structuredClone,encodeURIComponent,encodeURI,decodeURIComponent,decodeURI,escape,unescape,btoa,atob,parseInt,parseFloat,require,setTimeout,setInterval,setImmediate,clearTimeout,clearInterval,queueMicrotask,requestAnimationFrame,cancelAnimationFrame,dispatchEvent,addEventListener,removeEventListener}"
       - "{Uint8Array,Uint16Array,Uint32Array,Int8Array,Int16Array,Int32Array,Float32Array,Float64Array,BigInt64Array,ArrayBuffer,DataView,File,FileReader,Event,CustomEvent,StorageEvent,MessageEvent,ResizeObserver,IntersectionObserver,MutationObserver,ClipboardItem,AbortSignal,ReadableStream,WritableStream,TransformStream,Image,Option}{,()}**"

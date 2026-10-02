@@ -259,6 +259,13 @@ pub enum StmtKind {
         dst: Var,
         ty: Var,
     },
+    /// `dst` is bound to each element of `coll` (`for (const h of handlers)`, `for h in hs`).
+    /// Only provenance reads it: the element is what the container holds, not the container.
+    /// Data needs no statement of its own; a container's data is its elements'.
+    Elements {
+        dst: Var,
+        coll: Var,
+    },
 }
 
 #[derive(Clone, Debug)]

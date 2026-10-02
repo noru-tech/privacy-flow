@@ -198,6 +198,10 @@ pub enum GKind {
         dst: VarId,
         ty: VarId,
     },
+    Elements {
+        dst: VarId,
+        coll: VarId,
+    },
     ThisLoad {
         dst: VarId,
         obj: VarId,
@@ -295,6 +299,13 @@ pub struct Program {
     /// The variables put into containers reached through an API path: a read sees their
     /// provenance and their fields'.
     path_containers: HashMap<Sym, BTreeSet<VarId>>,
+    /// `this.f` read into a temporary → `f`'s own variable: a container written through
+    /// `this.f.set(...)` is the field's, so a later `this.f.get(...)` sees it.
+    this_home: HashMap<VarId, VarId>,
+    /// The variables put into a container, keyed by the container's variable (or the field's
+    /// variable for `this.f`): a read sees their provenance and their fields', as
+    /// `path_containers` does for containers reached through an API path.
+    var_containers: HashMap<VarId, BTreeSet<VarId>>,
 }
 
 fn add_prov(set: &mut Vec<Prov>, p: Prov) -> bool {
@@ -389,6 +400,8 @@ impl Program {
             path_cache: HashMap::new(),
             call_cache: HashMap::new(),
             path_containers: HashMap::new(),
+            this_home: HashMap::new(),
+            var_containers: HashMap::new(),
         };
         let mut pending_reexports: Vec<(FileId, Vec<String>)> = Vec::new();
         for (fi, f) in files.into_iter().enumerate() {
@@ -519,6 +532,10 @@ impl Program {
                     StmtKind::TypeRef { dst, ty } => GKind::TypeRef {
                         dst: dst + vo,
                         ty: ty + vo,
+                    },
+                    StmtKind::Elements { dst, coll } => GKind::Elements {
+                        dst: dst + vo,
+                        coll: coll + vo,
                     },
                     StmtKind::ThisLoad {
                         dst,
@@ -997,6 +1014,13 @@ impl Program {
     }
 
     pub fn solve(&mut self) {
+        if self.this_home.is_empty() {
+            for s in &self.stmts {
+                if let GKind::ThisLoad { dst, var, .. } = s.kind {
+                    self.this_home.insert(dst, var);
+                }
+            }
+        }
         let mut rounds = 0;
         loop {
             rounds += 1;
@@ -1102,6 +1126,48 @@ impl Program {
             return false;
         }
         union_into(self.fprov.entry(v).or_default().entry(k).or_default(), ps)
+    }
+
+    /// What a container holds: the provenance put into it through `set`/`push` (on the
+    /// variable, or on every variable reaching it through the same API path), with the held
+    /// values' fields added to `dst`.
+    fn elements(&mut self, coll: VarId, dst: VarId) -> (Vec<Prov>, bool) {
+        let elem = self.syms.intern("[]");
+        let mut out: Vec<Prov> = self.fget(coll, elem).cloned().unwrap_or_default();
+        let mut changed = false;
+        let home = self.this_home.get(&coll).copied().unwrap_or(coll);
+        let held: Vec<VarId> = self
+            .var_containers
+            .get(&home)
+            .map(|v| v.iter().copied().collect())
+            .unwrap_or_default();
+        for v in held {
+            out.extend(self.prov[v as usize].iter().cloned());
+            for (k, fps) in self.fields_of(v) {
+                changed |= self.fadd(dst, k, &fps);
+            }
+        }
+        let paths: Vec<Sym> = self.prov[coll as usize]
+            .iter()
+            .filter_map(|p| match p {
+                Prov::Api(s) if !self.syms.str(*s).ends_with(')') => Some(*s),
+                _ => None,
+            })
+            .collect();
+        for p in paths {
+            let vars: Vec<VarId> = self
+                .path_containers
+                .get(&p)
+                .map(|v| v.iter().copied().collect())
+                .unwrap_or_default();
+            for v in vars {
+                out.extend(self.prov[v as usize].iter().cloned());
+                for (k, fps) in self.fields_of(v) {
+                    changed |= self.fadd(dst, k, &fps);
+                }
+            }
+        }
+        (out, changed)
     }
 
     fn fields_of(&self, v: VarId) -> Vec<(Sym, Vec<Prov>)> {
@@ -1246,11 +1312,13 @@ impl Program {
                 if let GCallee::Method { recv, name } = callee {
                     let elem = self.syms.intern("[]");
                     // A container reached through an API path (`globalThis.cache`) is the same
-                    // container at every access, whatever temporary holds it.
+                    // container at every access, whatever temporary holds it. A path ending in
+                    // a call (`Map()`, `client.cache()`) is a new value at each call, not one
+                    // location: keying on it would make every `new Map()` one container.
                     let paths: Vec<Sym> = self.prov[*recv as usize]
                         .iter()
                         .filter_map(|p| match p {
-                            Prov::Api(s) => Some(*s),
+                            Prov::Api(s) if !self.syms.str(*s).ends_with(')') => Some(*s),
                             _ => None,
                         })
                         .collect();
@@ -1259,6 +1327,15 @@ impl Program {
                             if let Some(last) = args.last() {
                                 let ps = self.prov[last.var as usize].clone();
                                 changed |= self.fadd(*recv, elem, &ps);
+                                let home = self.this_home.get(recv).copied().unwrap_or(*recv);
+                                if home != *recv {
+                                    changed |= self.fadd(home, elem, &ps);
+                                }
+                                changed |= self
+                                    .var_containers
+                                    .entry(home)
+                                    .or_default()
+                                    .insert(last.var);
                                 for p in paths {
                                     changed |=
                                         self.path_containers.entry(p).or_default().insert(last.var);
@@ -1267,22 +1344,18 @@ impl Program {
                         }
                         "get" | "pop" | "shift" | "at" | "find" | "first" | "last"
                         | "getOrThrow" => {
+                            let (ps, c) = self.elements(*recv, *dst_ref);
+                            out.extend(ps);
+                            changed |= c;
+                        }
+                        // A view of the same elements: iterating it iterates the container.
+                        "values" | "entries" => {
                             if let Some(ps) = self.fget(*recv, elem).cloned() {
-                                out.extend(ps);
+                                changed |= self.fadd(*dst_ref, elem, &ps);
                             }
-                            for p in paths {
-                                let vars: Vec<VarId> = self
-                                    .path_containers
-                                    .get(&p)
-                                    .map(|v| v.iter().copied().collect())
-                                    .unwrap_or_default();
-                                for v in vars {
-                                    out.extend(self.prov[v as usize].iter().cloned());
-                                    for (k, fps) in self.fields_of(v) {
-                                        changed |= self.fadd(*dst_ref, k, &fps);
-                                    }
-                                }
-                            }
+                            let (ps, c) = self.elements(*recv, *dst_ref);
+                            changed |= c;
+                            changed |= self.fadd(*dst_ref, elem, &ps);
                         }
                         _ => {}
                     }
@@ -1324,6 +1397,10 @@ impl Program {
                     changed |= self.fadd(var, k, &fps);
                 }
                 changed | self.fadd(obj, field, &ps)
+            }
+            GKind::Elements { dst, coll } => {
+                let (ps, changed) = self.elements(coll, dst);
+                changed | self.set(dst, &ps)
             }
             GKind::TypeRef { dst, ty } => {
                 let ps: Vec<Prov> = self.prov[ty as usize]

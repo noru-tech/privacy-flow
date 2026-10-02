@@ -266,3 +266,31 @@ object returned across a call, and 6 through a Prisma query or create whose argu
 library model passes to the result. The next precision work with measurable effect on documenso
 is those two, not more intraprocedural sites.
 
+## 2026-10-02 — Database query results and container identity (ADR 0008)
+
+**Found.** The 6 medium PF001 findings on documenso that went through a Prisma call were not the
+query model: `js.databases` already passes nothing from a query's arguments to its result. The
+Prisma client is cached in a `Map` by `remember()`, and every `new Map()` in the program was one
+container for provenance (keyed by the path `Map()`), so the client was also a PDF document, a
+fetch response and a zod schema, each decided against the catalogue as a propagator. 2,198 of
+2,243 Prisma calls were affected. `{…,Map,…}()**` in `js.globals` also matched any call on a
+Map's element.
+
+**Done.** Containers are no longer keyed by paths ending in a call; instance-field containers and
+loop variables (a provenance-only `Elements` statement) resolve to what they hold; the built-in
+containers' catalogue entry covers their own methods only. Fixtures `ts/orm-query-results` and
+`ts/registries`.
+
+**Measured.** documenso: findings 757 → 549, medium PF001 29 → 23, gaps 76 → 67, 2.0 s → 1.8 s;
+every removed flow goes through a database call. Two private monorepos: one 36.6 s → 9.6 s with
+2 flows removed and 248 added (registry lookups now resolve); the other 13 false flows removed.
+
+**On the way.** The first version (container keys only) appeared to remove 8,468 flows on one
+monorepo; nearly all of that was lost resolution of registry lookups that had worked only
+because every Map was merged. Comparing every call's resolved local targets between builds found
+it (223 calls); after the instance-field, loop-variable and held-variable fixes, 2 remain (nested
+containers, now in KNOWN-LIMITATIONS.md).
+
+**Next.** Of documenso's 23 medium PF001 findings, roughly 11 go through an object returned from
+one function and read in another, which needs allocation sites per call context (ADR 0007).
+

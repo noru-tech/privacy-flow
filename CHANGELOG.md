@@ -6,6 +6,14 @@ All notable changes to this project are documented here. The format is based on
 
 ## [Unreleased]
 
+### Fixed
+- Every `new Map()` (and `Set`, `WeakMap`, `WeakSet`) was one container for provenance, so a
+  value cached in a Map, such as a Prisma client, also resolved as whatever any other Map held.
+  Database query filters then reached query results. On documenso, findings go from 757 to 549.
+  Containers in instance fields and loop variables over containers now resolve to what they hold
+  (ADR 0008).
+- The catalogue's built-in containers match their own methods only, not calls on their elements.
+
 ### Changed
 - Plain objects are allocation sites: within a function, and through module-level objects and
   closures, nested fields stay apart (`o = { a: { email, id } }; log(o.a.id)` is no longer
