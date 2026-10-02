@@ -1,0 +1,82 @@
+{
+  "applications": [
+    {
+      "document_sha256": "7daff8cfa8d127d2d85bc7d7f643efc237fae5df9d5aa19867865979be610350",
+      "exit_code": 4,
+      "identical_to_recorded_run": true,
+      "name": "vercel-chatbot"
+    },
+    {
+      "document_sha256": "47d973f3f2b47434b80499ad160f6df3b617e49cf81dd629014fa0201cc179d7",
+      "exit_code": 4,
+      "identical_to_recorded_run": true,
+      "name": "umami"
+    },
+    {
+      "document_sha256": "08ea96fa1c27157c703687ca5e8f72f8f9ffeb31738ae549504bc21d7cbfd683",
+      "exit_code": 4,
+      "identical_to_recorded_run": true,
+      "name": "taxonomy"
+    },
+    {
+      "document_sha256": "f06d97c2d1ef3fa129b23e204cc4e243a55b45aa5a50cdc5a6130c88193e21eb",
+      "exit_code": 4,
+      "identical_to_recorded_run": true,
+      "name": "open-saas"
+    },
+    {
+      "document_sha256": "f03d41c846e4637f60a26e619a023842ad8841a5140b36c7b538917284176290",
+      "exit_code": 4,
+      "identical_to_recorded_run": true,
+      "name": "ghost"
+    },
+    {
+      "document_sha256": "75495ab1d8c8dee31cd66cbbd9ce776273e66a7af8f40cd98904933dc85bf8c3",
+      "exit_code": 4,
+      "identical_to_recorded_run": true,
+      "name": "hoppscotch"
+    },
+    {
+      "document_sha256": "b03a4d84ae0aeb15a84aedf2d91eeeab624c1eb47b6e9d4a8f276fc29d417f0a",
+      "exit_code": 4,
+      "identical_to_recorded_run": true,
+      "name": "healthchecks"
+    },
+    {
+      "document_sha256": "d16ea90ac7829a969c443ba773d6087be5903e896b1be43b8b71c1d88e3542f1",
+      "exit_code": 4,
+      "identical_to_recorded_run": true,
+      "name": "redash"
+    },
+    {
+      "document_sha256": "b951ab28b54ac1b674edfd951fefb6f9cb068376fe6c4aec04cb656a73932e9b",
+      "exit_code": 4,
+      "identical_to_recorded_run": true,
+      "name": "ctfd"
+    },
+    {
+      "document_sha256": "59aa3fe8addacd7387519d05265cf137aac40fe17386282956f3cf75a2dac665",
+      "exit_code": 4,
+      "identical_to_recorded_run": true,
+      "name": "fastapi-template"
+    },
+    {
+      "document_sha256": "04ac0f93018cc84e80e0d691e6de98bec196ddc63aa7ab1aa93ef92cf19cd934",
+      "exit_code": 4,
+      "identical_to_recorded_run": true,
+      "name": "polar"
+    },
+    {
+      "document_sha256": "6d3e07eb9d82e091005cab994f3371e895c865b1aca9ec81b7a850feac255168",
+      "exit_code": 4,
+      "identical_to_recorded_run": true,
+      "name": "private-gpt"
+    }
+  ],
+  "archive": "privacy-flow-aarch64-apple-darwin.tar.xz",
+  "archive_sha256": "6e8639f56e88d6e507789adae778b3083a3152f83ab26224e7bc4dec07fda0f9",
+  "checked_on": "2026-10-02",
+  "identical": 12,
+  "release": "v0.1.0",
+  "total": 12
+}

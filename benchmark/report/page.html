@@ -42,6 +42,16 @@ section, header { display: grid; grid-template-columns: minmax(0, 1fr); gap: 18p
 .bar i { display: block; height: 100%; background: var(--accent); }
 .dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; flex: none; }
 
+/* Version tested */
+.release { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; background: var(--surface); border: 1px solid var(--hair); border-radius: 12px; padding: 18px 20px; }
+.release[hidden] { display: none; }
+.release .top { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 14px; }
+.release .top b { font-family: var(--display); font-weight: 600; color: var(--ink); font-size: 1.15rem; letter-spacing: -0.02em; }
+.release .check { display: flex; gap: 10px; align-items: baseline; font-size: 14px; }
+.installs { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(250px, 100%), 1fr)); gap: 10px; }
+.install { display: grid; gap: 4px; min-width: 0; }
+.install pre { margin: 0; font-family: var(--mono); font-size: 12.5px; background: var(--surface-2); border: 1px solid var(--hair); border-radius: 6px; padding: 8px 10px; overflow-x: auto; color: var(--ink); }
+
 /* Scoreboard */
 .board { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(280px, 100%), 1fr)); gap: 16px; }
 .tool { background: var(--surface); border: 1px solid var(--hair); border-radius: 12px; padding: 20px; display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; align-content: start; min-width: 0; }
@@ -110,6 +120,17 @@ footer { border-top: 1px solid var(--hair-strong); padding-top: 20px; }
     <p class="lede">Two static analysers that look for personal data leaving an application: into logs, third-party services, LLMs and other servers. Both ran on the same twelve open-source applications. Two people now check, by hand and without knowing which tool said what, whether each reported flow is real and which real ones each tool missed.</p>
     <div class="status" id="status"></div>
   </header>
+
+  <section class="release" id="release" hidden aria-labelledby="h-release">
+    <div class="top"><b id="h-release"></b><span class="small" id="release-sub"></span></div>
+    <div class="check"><span class="dot" id="release-dot"></span><span id="release-check"></span></div>
+    <div class="installs">
+      <div class="install"><span class="label">Homebrew</span><pre>brew install noru-tech/tap/piiflow</pre></div>
+      <div class="install"><span class="label">Cargo</span><pre>cargo install privacy-flow --locked</pre></div>
+      <div class="install"><span class="label">Verified download</span><pre>gh attestation verify &lt;archive&gt; \
+  --repo noru-tech/privacy-flow</pre></div>
+    </div>
+  </section>
 
   <section aria-labelledby="h-answer">
     <h2 id="h-answer">The comparison</h2>
@@ -181,7 +202,7 @@ footer { border-top: 1px solid var(--hair-strong); padding-top: 20px; }
   </details>
 
   <footer>
-    <p class="small">piiflow commit <code id="commit"></code>, output byte-identical on every rerun. Privado: privado-core 1.1.175 from a pinned image, newest rules (v1.3.91), networking off. The protocol, the choice of applications, every deviation from the plan, the scripts and the labels are in the repository's <code>benchmark/</code> folder; this page is rebuilt from them with <code>benchmark/report/build.py</code>.</p>
+    <p class="small">Benchmark run recorded at piiflow commit <code id="commit"></code><span id="commit-note"></span>; output byte-identical on every rerun. Privado: privado-core 1.1.175 from a pinned image, newest rules (v1.3.91), networking off. The protocol, the choice of applications, every deviation from the plan, the scripts and the labels are in the repository's <code>benchmark/</code> folder; this page is rebuilt from them with <code>benchmark/report/build.py</code>.</p>
   </footer>
 </div>
 
@@ -222,6 +243,20 @@ footer { border-top: 1px solid var(--hair-strong); padding-top: 20px; }
     else text.append(h("b", null, "Waiting for the labels. "), fmt(labelled) + " of " + fmt(2 * items) + " labels done (" + fmt(items) + " items, each labelled by both reviewers).");
     const bar = h("div", "bar"); const fill = h("i"); fill.style.width = (HH ? 100 : 100 * labelled / (2 * items)).toFixed(1) + "%"; bar.append(fill);
     s.append(dot, text, bar);
+  })();
+
+  // ---------- version tested ----------
+  (function () {
+    const R = D.release;
+    if (!R) return;
+    document.getElementById("release").hidden = false;
+    document.getElementById("h-release").textContent = "Version tested: piiflow " + R.tag.replace(/^v/, "");
+    document.getElementById("release-sub").textContent = "Released " + R.date + " · tag commit " + R.commit + " · GitHub, Homebrew and crates.io";
+    const all = R.identical === R.total;
+    document.getElementById("release-dot").style.background = css(all ? "--ok" : "--bad");
+    document.getElementById("release-check").textContent = all
+      ? "The released binary, downloaded and verified like any user's, reproduces all " + R.total + " applications' results byte for byte. The numbers on this page are what you get when you install it."
+      : "The released binary reproduces " + R.identical + " of " + R.total + " applications' results byte for byte; see results/release-check.json.";
   })();
 
   // ---------- scoreboard ----------
@@ -445,5 +480,6 @@ footer { border-top: 1px solid var(--hair-strong); padding-top: 20px; }
   })();
 
   document.getElementById("commit").textContent = D.generated_from.piiflow_commit.slice(0, 7);
+  if (D.release && D.release.analysis_identical) document.getElementById("commit-note").textContent = ", whose analysis code is identical to the " + D.release.tag + " release";
 })();
 </script>

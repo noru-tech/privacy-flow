@@ -879,5 +879,15 @@
  "generated_from": {
   "piiflow_commit": "9a78b082bcdf01d23f4c890d5ea2bdb7b88d66b8"
  },
+ "release": {
+  "analysis_identical": true,
+  "archive": "privacy-flow-aarch64-apple-darwin.tar.xz",
+  "checked_on": "2026-10-02",
+  "commit": "1029e7e",
+  "date": "2026-10-02",
+  "identical": 12,
+  "tag": "v0.1.0",
+  "total": 12
+ },
  "scores": null
 }

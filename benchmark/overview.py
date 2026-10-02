@@ -11,6 +11,7 @@ Needs the fetched applications' piiflow documents (run.py) and candidates (candi
 import collections
 import json
 import pathlib
+import subprocess
 
 HERE = pathlib.Path(__file__).resolve().parent
 ROOT = HERE.parent
@@ -123,9 +124,24 @@ def main():
                 "labelled_r2": labelled(HERE / "labels/R2" / f"{name}.yml"),
             },
         })
+    release_check = HERE / "results/release-check.json"
+    release = None
+    if release_check.exists():
+        rc = json.loads(release_check.read_text())
+        tag_commit = subprocess.run(["git", "rev-list", "-n", "1", rc["release"]], cwd=HERE.parent,
+                                    capture_output=True, text=True).stdout.strip()
+        run_commit = json.loads((HERE / "results/summary.json").read_text())["piiflow"]["commit"]
+        git = lambda *a: subprocess.run(["git", *a], cwd=HERE.parent, capture_output=True, text=True)
+        release = {"tag": rc["release"], "commit": tag_commit[:7], "checked_on": rc["checked_on"],
+                   "date": git("log", "-1", "--format=%cs", rc["release"]).stdout.strip(),
+                   # The benchmarked commit and the tag have the same analysis code.
+                   "analysis_identical": git("diff", "--quiet", run_commit, rc["release"], "--", "src", "catalogue", "Cargo.lock").returncode == 0,
+                   "archive": rc["archive"], "identical": rc["identical"], "total": rc["total"]}
     scores = HERE / "results/scores.json"
     out = {"generated_from": {"piiflow_commit": json.loads((HERE / "results/summary.json").read_text())["piiflow"]["commit"]},
            "applications": apps,
+           # The released binary re-run on the corpus (results/release-check.json), if checked.
+           "release": release,
            # The labelled results, once score.py has run on final labels; absent until then.
            "scores": json.loads(scores.read_text()) if scores.exists() else None}
     (HERE / "results/overview.json").write_text(json.dumps(out, indent=1, sort_keys=True) + "\n")
