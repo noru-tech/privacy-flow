@@ -1,0 +1,651 @@
+<title>piiflow Labelling Desk</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600&family=Plus+Jakarta+Sans:wght@600&display=swap">
+<style>
+/* Layout: a working desk. Application list on the left, the item and its code in the middle,
+   the answer panel on the right; on narrow screens they stack. Light only, per the Noru brand. */
+:root {
+  color-scheme: light;
+  --canvas: #f7f9f9; --surface: #ffffff; --surface-2: #f4f6f6; --surface-3: #eaeeee; --surface-4: #dfe5e5;
+  --ink: #121a1b; --fg: #3f4a4b; --muted: #54605f; --subtle: #76817f;
+  --hair: rgba(17, 27, 28, 0.10); --hair-strong: rgba(17, 27, 28, 0.18);
+  --accent: #3a5355; --accent-ink: #ffffff; --accent-soft: #e3ebea;
+  --ok: #1e9e5f; --warn: #b4830a; --bad: #b3261e; --idle: #9aa3a2;
+  --mark: #fff4d6;
+  --display: "Plus Jakarta Sans", system-ui, sans-serif;
+  --text: "Montserrat", system-ui, sans-serif;
+  --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+}
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+body { margin: 0; background: var(--canvas); color: var(--fg); font-family: var(--text); font-size: 14px; line-height: 1.5; }
+button, input, textarea, select { font: inherit; color: inherit; }
+button { cursor: pointer; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.app { display: grid; grid-template-columns: 230px minmax(0, 1fr) 330px; grid-template-rows: auto minmax(0, 1fr); height: 100%; }
+header { grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: center; gap: 10px 20px; padding: 12px 20px; padding-top: calc(12px + env(safe-area-inset-top, 0px)); border-bottom: 1px solid var(--hair-strong); background: var(--surface); }
+.brand { display: grid; gap: 0; margin-right: auto; min-width: 0; }
+.brand b { font-family: var(--display); font-weight: 600; color: var(--ink); font-size: 1.05rem; letter-spacing: -0.02em; }
+.brand span { font-size: 12px; color: var(--subtle); }
+.overall { display: flex; align-items: center; gap: 10px; font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.meter { width: 120px; height: 6px; background: var(--surface-3); border-radius: 9999px; overflow: hidden; }
+.meter i { display: block; height: 100%; background: var(--accent); width: 0; transition: width 240ms cubic-bezier(0.16, 1, 0.3, 1); }
+.save { display: inline-flex; align-items: center; gap: 7px; font-size: 12.5px; color: var(--muted); }
+.save .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--ok); }
+.save[data-state="saving"] .dot { background: var(--warn); }
+.save[data-state="local"] .dot, .save[data-state="error"] .dot { background: var(--bad); }
+.btn { border: 1px solid var(--hair-strong); background: var(--surface); border-radius: 9999px; padding: 6px 14px; font-size: 13px; font-weight: 500; color: var(--ink); }
+.btn:hover { background: var(--surface-2); }
+.btn.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+.btn.primary:hover { background: #2f4547; }
+.btn.small { padding: 3px 10px; font-size: 12px; }
+.role { font-size: 12px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--accent); border: 1px solid var(--accent); border-radius: 9999px; padding: 3px 10px; background: var(--accent-soft); }
+
+nav { border-right: 1px solid var(--hair); overflow-y: auto; padding: 14px 10px; background: var(--surface-2); display: grid; align-content: start; gap: 2px; }
+.navlabel { font-size: 11px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: var(--subtle); padding: 2px 10px 8px; }
+.appbtn { display: grid; gap: 5px; text-align: left; border: 0; background: transparent; border-radius: 8px; padding: 8px 10px; }
+.appbtn:hover { background: var(--surface-3); }
+.appbtn[aria-current="true"] { background: var(--surface); box-shadow: 0 1px 2px rgba(17, 27, 28, 0.06); outline: 1px solid var(--hair); }
+.appbtn .row { display: flex; justify-content: space-between; gap: 8px; }
+.appbtn b { font-weight: 500; color: var(--ink); font-size: 13.5px; }
+.appbtn small { font-size: 12px; color: var(--subtle); font-variant-numeric: tabular-nums; }
+.appbtn .meter { width: 100%; height: 4px; }
+.appbtn.complete small { color: var(--ok); }
+
+main { overflow-y: auto; padding: 18px 24px 40px; display: grid; grid-template-columns: minmax(0, 1fr); align-content: start; gap: 16px; min-width: 0; }
+.itemhead { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
+.kind { font-size: 11px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; padding: 3px 9px; border-radius: 4px; background: var(--ink); color: #fff; }
+.kind.gap { background: var(--warn); } .kind.site { background: var(--accent); }
+.chip { font-size: 12.5px; padding: 2px 9px; border: 1px solid var(--hair-strong); border-radius: 9999px; background: var(--surface); color: var(--fg); }
+.pos { margin-left: auto; font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.claim { font-size: 15px; color: var(--ink); max-width: 75ch; }
+.claim code { font-family: var(--mono); font-size: 0.88em; background: var(--surface-3); padding: 1px 5px; border-radius: 4px; }
+.hops { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; }
+.hop { background: var(--surface); border: 1px solid var(--hair); border-radius: 10px; overflow: hidden; }
+.hop.source { border-color: rgba(58, 83, 85, 0.45); } .hop.sink { border-color: rgba(58, 83, 85, 0.45); }
+.hoph { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; padding: 7px 12px; border-bottom: 1px solid var(--hair); background: var(--surface-2); }
+.hoph .r { font-size: 11px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--subtle); min-width: 52px; }
+.hop.source .r, .hop.sink .r { color: var(--accent); }
+.hoph a { font-family: var(--mono); font-size: 12.5px; color: var(--accent); text-decoration: none; word-break: break-all; }
+.hoph a:hover { text-decoration: underline; }
+.hoph .same { font-size: 12px; color: var(--subtle); }
+pre.code { margin: 0; padding: 6px 0; overflow-x: auto; font-family: var(--mono); font-size: 12.5px; line-height: 1.55; color: var(--ink); }
+pre.code div { display: grid; grid-template-columns: 54px max-content; padding-right: 12px; min-width: 100%; width: max-content; }
+pre.code div span:first-child { color: var(--idle); text-align: right; padding-right: 12px; user-select: none; font-variant-numeric: tabular-nums; }
+pre.code div.hit { background: var(--mark); }
+pre.code div.hit span:first-child { color: var(--ink); font-weight: 600; }
+pre.code div span:last-child { white-space: pre; }
+.loading, .empty { color: var(--muted); padding: 30px 0; }
+
+aside { grid-template-columns: minmax(0, 1fr); border-left: 1px solid var(--hair); background: var(--surface); overflow-y: auto; padding: 16px 18px 28px; display: grid; align-content: start; gap: 16px; }
+fieldset { border: 0; padding: 0; margin: 0; display: grid; gap: 7px; min-width: 0; }
+legend { font-size: 12px; font-weight: 600; color: var(--ink); padding: 0; margin-bottom: 7px; }
+.choices { display: grid; gap: 6px; }
+.choice { display: grid; grid-template-columns: 22px 1fr; gap: 2px 8px; align-items: start; text-align: left; border: 1px solid var(--hair-strong); background: var(--surface); border-radius: 8px; padding: 8px 10px; }
+.choice:hover { background: var(--surface-2); }
+.choice kbd { grid-row: span 2; font-family: var(--mono); font-size: 11px; border: 1px solid var(--hair-strong); border-radius: 4px; text-align: center; color: var(--muted); background: var(--surface-2); padding: 1px 0; }
+.choice b { font-weight: 600; color: var(--ink); font-size: 13px; }
+.choice span { font-size: 12px; color: var(--muted); line-height: 1.4; }
+.choice[aria-pressed="true"] { border-color: var(--accent); background: var(--accent-soft); box-shadow: inset 0 0 0 1px var(--accent); }
+.choice[aria-pressed="true"] kbd { background: var(--accent); color: #fff; border-color: var(--accent); }
+.pair { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.pair .choice { grid-template-columns: 22px 1fr; }
+label.f { display: grid; gap: 4px; font-size: 12px; font-weight: 600; color: var(--ink); }
+input[type="text"], textarea { width: 100%; border: 1px solid var(--hair-strong); border-radius: 6px; padding: 7px 9px; background: var(--surface); font-size: 13px; font-weight: 400; }
+textarea { min-height: 64px; resize: vertical; }
+.hint { font-size: 12px; color: var(--muted); font-weight: 400; }
+.warn { font-size: 12px; color: var(--warn); }
+.navbtns { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.navbtns .btn { border-radius: 8px; }
+.navbtns .wide { grid-column: span 2; }
+.keys { font-size: 12px; color: var(--muted); display: grid; gap: 3px; border-top: 1px solid var(--hair); padding-top: 12px; }
+.keys kbd { font-family: var(--mono); font-size: 11px; border: 1px solid var(--hair-strong); border-radius: 4px; padding: 0 5px; background: var(--surface-2); color: var(--ink); }
+.toggle { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--fg); }
+.banner { flex-basis: 100%; margin: 2px -20px -12px; padding: 9px 20px; font-size: 13px; background: #fbefe0; color: #6b4a06; border-bottom: 1px solid rgba(180, 131, 10, 0.3); }
+.banner[hidden] { display: none; }
+.added { display: grid; gap: 8px; border-top: 1px solid var(--hair); padding-top: 14px; }
+.added ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.added li { display: flex; gap: 8px; align-items: baseline; font-size: 12.5px; font-family: var(--mono); color: var(--ink); word-break: break-all; }
+.added li button { margin-left: auto; font-family: var(--text); }
+.added .grid { display: grid; grid-template-columns: 1fr 80px; gap: 6px; }
+
+.overlay { position: fixed; inset: 0; background: rgba(17, 27, 28, 0.35); display: grid; place-items: center; padding: 20px; z-index: 10; }
+.overlay[hidden] { display: none; }
+.dialog { background: var(--surface); border-radius: 12px; max-width: 560px; width: 100%; max-height: 90%; overflow-y: auto; padding: 24px; display: grid; gap: 14px; box-shadow: 0 18px 40px -20px rgba(17, 27, 28, 0.45); }
+.dialog h2 { font-family: var(--display); font-weight: 600; color: var(--ink); font-size: 1.35rem; letter-spacing: -0.025em; margin: 0; }
+.dialog p { margin: 0; }
+.dialog .actions { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; }
+.guide { display: grid; gap: 12px; font-size: 13.5px; }
+.guide h3 { font-size: 13px; margin: 6px 0 0; color: var(--ink); }
+.guide ul { margin: 0; padding-left: 18px; display: grid; gap: 4px; }
+.copybox { width: 100%; min-height: 160px; font-family: var(--mono); font-size: 11.5px; }
+
+@media (max-width: 1000px) {
+  .app { grid-template-columns: 200px minmax(0, 1fr); grid-template-rows: auto auto minmax(0, 1fr) auto; height: auto; min-height: 100%; }
+  aside { grid-column: 1 / -1; border-left: 0; border-top: 1px solid var(--hair); }
+}
+@media (max-width: 680px) {
+  .app { grid-template-columns: minmax(0, 1fr); }
+  nav { border-right: 0; border-bottom: 1px solid var(--hair); grid-auto-flow: column; grid-auto-columns: 150px; overflow-x: auto; overflow-y: hidden; }
+  main { padding: 16px; }
+  header { padding-inline: 16px; }
+  .meter { width: 80px; }
+}
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+
+<div class="app" id="app">
+  <header>
+    <div class="brand"><b>Labelling desk</b><span>privacy-flow benchmark M6 · blind review</span></div>
+    <div class="overall"><span id="overall-text">Loading</span><div class="meter" aria-hidden="true"><i id="overall-bar"></i></div></div>
+    <span class="save" id="save" data-state="ok" aria-live="polite"><span class="dot"></span><span id="save-text">Starting</span></span>
+    <span class="role" id="role" hidden></span>
+    <button class="btn" id="open-guide" type="button">Guide</button>
+    <button class="btn primary" id="export" type="button">Export labels</button>
+    <div class="banner" id="banner" hidden></div>
+  </header>
+  <nav aria-label="Applications" id="apps"><div class="navlabel">Applications</div></nav>
+  <main id="main" aria-live="polite"><div class="loading">Loading the applications.</div></main>
+  <aside id="panel" aria-label="Your answer"></aside>
+</div>
+
+<div class="overlay" id="who" hidden>
+  <div class="dialog" role="dialog" aria-modal="true" aria-labelledby="who-title">
+    <h2 id="who-title">Which reviewer are you?</h2>
+    <p>Each reviewer labels every item alone. Your answers are stored privately: the other reviewer, the page's owner and Claude cannot read them. They leave only when you export them.</p>
+    <p class="hint">Bip is R1. The second reviewer is R2.</p>
+    <div class="actions"><button class="btn" type="button" data-role="R1">I am R1</button><button class="btn" type="button" data-role="R2">I am R2</button></div>
+  </div>
+</div>
+
+<div class="overlay" id="guide" hidden>
+  <div class="dialog" role="dialog" aria-modal="true" aria-labelledby="guide-title">
+    <h2 id="guide-title">How to label</h2>
+    <div class="guide">
+      <p>Label alone, and don't discuss items with the other reviewer until both of you have exported everything. You cannot tell which tool reported a flow, by design.</p>
+      <h3>Flows</h3>
+      <ul>
+        <li><b>Real flow</b>: the data can travel from the source to the sink, along these steps or an equivalent path, in some execution the code allows, and the source holds personal data.</li>
+        <li><b>Path breaks</b>: a step does not pass the value on, or the sink does not receive it. A "sink" that is the application's own response is also a broken path. Cite where it breaks.</li>
+        <li><b>Not personal</b>: the value does reach the sink, but it is not personal data.</li>
+        <li><b>Category right</b>: at least one category shown is right for the source. Generic <code>user</code> is right whenever the data is personal.</li>
+        <li>Judge reachability, not policy: sending an email address to the email provider is still a real flow.</li>
+      </ul>
+      <h3>Coverage gaps</h3>
+      <ul><li>Follow the unresolved call by hand. <b>Hides a flow</b> if personal data reaches a log, third party, LLM, outbound HTTP or browser storage through it; cite that sink.</li></ul>
+      <h3>Call sites</h3>
+      <ul><li>First: is this call really a sink (log, third party, LLM, outbound HTTP, browser storage)? Toasts, the app's own responses, in-process events and database writes are not.</li>
+          <li>If it is: does personal data reach it from anywhere in the application? Give categories and one source.</li></ul>
+      <h3>Personal data</h3>
+      <ul><li>Anything Fideslang files under <code>user.*</code>: names, contact details, identifiers that point to a person (a user's database id included), IP addresses, credentials, content a user wrote. Organisation data is not, unless it identifies a person.</li>
+          <li>Stuck after about five minutes? Choose <b>Unsure</b> and say why in the note.</li></ul>
+      <h3>Pace</h3>
+      <ul><li>Two to three minutes per item. Take a break every hour; label quality drops after that.</li></ul>
+    </div>
+    <div class="actions"><button class="btn primary" type="button" id="close-guide">Close</button></div>
+  </div>
+</div>
+
+<div class="overlay" id="copy" hidden>
+  <div class="dialog" role="dialog" aria-modal="true" aria-labelledby="copy-title">
+    <h2 id="copy-title">Copy your labels</h2>
+    <p>This view cannot save files. Copy the text below into a file named <code id="copy-name"></code> and send it to whoever imports the labels.</p>
+    <textarea class="copybox" id="copy-text" readonly></textarea>
+    <div class="actions"><button class="btn" type="button" id="copy-btn">Copy</button><button class="btn primary" type="button" id="close-copy">Close</button></div>
+  </div>
+</div>
+
+<script>
+(function () {
+  "use strict";
+  const FORMAT = "privacy-flow-labels/1";
+  const GAP_TEXT = {
+    unresolved_callee: "a call into a library whose behaviour is not known",
+    unresolved_method: "a method call on an object of unknown type",
+    dynamic_call: "a call through a function value",
+    depth_bound: "a call chain deeper than the analysis follows",
+    unsupported_framework: "code in a framework the analysis does not model",
+    unsupported_construct: "a construct the analysis does not model",
+  };
+  const CLASS_TEXT = { log: "log", http: "outbound HTTP", third_party: "third-party SDK", llm: "LLM provider", browser_storage: "browser storage", other: "other" };
+  const CATEGORY_SUGGESTIONS = ["user", "user.name", "user.contact.email", "user.contact.phone_number", "user.contact.address",
+    "user.unique_id", "user.account.username", "user.authorization.credentials", "user.authorization.password",
+    "user.device.ip_address", "user.device.cookie_id", "user.content.private", "user.financial", "user.payment", "user.location.precise", "user.health_and_medical"];
+
+  const $ = id => document.getElementById(id);
+  const h = (tag, attrs, ...kids) => {
+    const e = document.createElement(tag);
+    if (attrs) for (const [k, v] of Object.entries(attrs)) {
+      if (v === undefined || v === null || v === false) continue;
+      if (k === "class") e.className = v; else if (k.startsWith("on")) e.addEventListener(k.slice(2), v); else e.setAttribute(k, v === true ? "" : v);
+    }
+    for (const k of kids.flat()) if (k !== null && k !== undefined && k !== false) e.append(k.nodeType ? k : String(k));
+    return e;
+  };
+  const local = {
+    get(k) { try { return JSON.parse(localStorage.getItem(k) || "null"); } catch { return null; } },
+    set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); return true; } catch { return false; } },
+  };
+
+  const S = {
+    apps: [], items: {}, labels: {}, current: null, index: 0, unlabelledOnly: false,
+    reviewer: null, db: null, uid: null, mode: "starting", saveQueue: new Map(), saving: false,
+  };
+
+  // ---------- completeness ----------
+  function itemDone(it, lab) {
+    if (!lab) return false;
+    if (it.kind === "flow") return !!lab.verdict && (lab.verdict !== "tp" || !!lab.category_ok);
+    if (it.kind === "gap") return !!lab.hides_flow;
+    return lab.is_sink === "no" || (lab.is_sink === "yes" && !!lab.personal);
+  }
+  function needsCitation(it, lab) {
+    if (!lab) return false;
+    if (it.kind === "flow") return ["tp", "fp_path", "fp_not_personal"].includes(lab.verdict) && !lab.citation;
+    if (it.kind === "gap") return lab.hides_flow === "yes" && !lab.citation;
+    return lab.personal === "yes" && !lab.source;
+  }
+  function appLabels(name) { return S.labels[name] || (S.labels[name] = { items: {}, added_sites: [] }); }
+  function doneCount(app) {
+    const items = S.items[app.name];
+    const labs = appLabels(app.name).items;
+    if (!items) return Object.keys(labs).filter(k => labs[k] && (labs[k].verdict || labs[k].hides_flow || labs[k].is_sink)).length;
+    return items.filter(it => itemDone(it, labs[it.id])).length;
+  }
+
+  // ---------- storage ----------
+  function setSave(state, text) { $("save").dataset.state = state; $("save-text").textContent = text; }
+  function docFor(app) { return S.db.doc("data/users/" + S.uid + "/" + app); }
+
+  async function loadAll() {
+    if (S.mode === "db") {
+      const profile = await S.db.doc("data/users/" + S.uid + "/profile").get();
+      if (profile.exists) S.reviewer = profile.data().reviewer || null;
+      const snaps = await Promise.all(S.apps.map(a => docFor(a.name).get()));
+      snaps.forEach((snap, i) => {
+        const d = snap.exists ? snap.data() : null;
+        S.labels[S.apps[i].name] = d ? { items: structuredClone(d.items || {}), added_sites: structuredClone(d.added_sites || []) } : { items: {}, added_sites: [] };
+      });
+    } else {
+      S.reviewer = local.get("pf-reviewer");
+      for (const a of S.apps) S.labels[a.name] = local.get("pf-labels-" + a.name) || { items: {}, added_sites: [] };
+    }
+  }
+
+  function queueSave(app) {
+    if (S.mode === "local") {
+      const ok = local.set("pf-labels-" + app, S.labels[app]);
+      setSave(ok ? "local" : "error", ok ? "Saved in this browser only" : "Could not save: export now");
+      return;
+    }
+    S.saveQueue.set(app, true);
+    setSave("saving", "Saving");
+    clearTimeout(S.saveTimer);
+    S.saveTimer = setTimeout(flush, 500);
+  }
+  async function flush() {
+    if (S.saving) return;
+    S.saving = true;
+    try {
+      while (S.saveQueue.size) {
+        const [app] = S.saveQueue.keys();
+        S.saveQueue.delete(app);
+        const body = { items: S.labels[app].items, added_sites: S.labels[app].added_sites, reviewer: S.reviewer, updated_at: new Date().toISOString() };
+        try {
+          await docFor(app).set(body);
+        } catch (e) {
+          if (e && e.code === "unavailable") { await new Promise(r => setTimeout(r, 800 + Math.random() * 800)); await docFor(app).set(body); }
+          else throw e;
+        }
+      }
+      setSave("ok", "All changes saved");
+    } catch (e) {
+      const code = e && e.code;
+      setSave("error", code === "invalid_argument" ? "Not saved: you need Contributor access" : code === "quota_exceeded" ? "Not saved: storage is full" : "Not saved: will retry on your next change");
+      local.set("pf-labels-backup-" + Date.now() % 10, S.labels);
+    } finally {
+      S.saving = false;
+      if (S.saveQueue.size) flush();
+    }
+  }
+
+  async function setReviewer(role) {
+    S.reviewer = role;
+    if (S.mode === "db") {
+      try { await S.db.doc("data/users/" + S.uid + "/profile").set({ reviewer: role }); } catch { setSave("error", "Not saved: reviewer role"); }
+    } else local.set("pf-reviewer", role);
+    $("role").textContent = role; $("role").hidden = false;
+    $("who").hidden = true;
+  }
+
+  // ---------- navigation ----------
+  function visibleIndexes() {
+    const items = S.items[S.current] || [];
+    const labs = appLabels(S.current).items;
+    return items.map((it, i) => i).filter(i => !S.unlabelledOnly || !itemDone(items[i], labs[items[i].id]) || i === S.index);
+  }
+  function move(delta) {
+    const vis = visibleIndexes(); if (!vis.length) return;
+    const at = vis.indexOf(S.index);
+    const next = vis[Math.min(vis.length - 1, Math.max(0, (at === -1 ? 0 : at) + delta))];
+    go(next);
+  }
+  function nextUnlabelled() {
+    const items = S.items[S.current] || []; const labs = appLabels(S.current).items;
+    for (let k = 1; k <= items.length; k++) {
+      const i = (S.index + k) % items.length;
+      if (!itemDone(items[i], labs[items[i].id])) return go(i);
+    }
+  }
+  function go(i) {
+    S.index = i;
+    local.set("pf-pos-" + S.current, i);
+    renderItem(); renderPanel();
+    $("main").scrollTop = 0;
+  }
+  async function openApp(name) {
+    S.current = name;
+    local.set("pf-current", name);
+    renderNav();
+    if (!S.items[name]) {
+      $("main").replaceChildren(h("div", { class: "loading" }, "Loading items."));
+      $("panel").replaceChildren();
+      try {
+        const r = await fetch("items/" + name + ".json");
+        if (!r.ok) throw new Error(r.status);
+        S.items[name] = (await r.json()).items;
+      } catch {
+        $("main").replaceChildren(h("div", { class: "empty" }, "This application's items could not be loaded. Reload the page to try again."));
+        return;
+      }
+    }
+    if (S.current !== name) return;
+    const saved = local.get("pf-pos-" + name);
+    S.index = Number.isInteger(saved) && saved < S.items[name].length ? saved : 0;
+    renderNav(); renderItem(); renderPanel();
+  }
+
+  // ---------- rendering ----------
+  function renderOverall() {
+    const total = S.apps.reduce((s, a) => s + a.items, 0);
+    const done = S.apps.reduce((s, a) => s + doneCount(a), 0);
+    $("overall-text").textContent = done.toLocaleString("en-US") + " of " + total.toLocaleString("en-US") + " labelled";
+    $("overall-bar").style.width = (100 * done / total).toFixed(1) + "%";
+  }
+  function renderNav() {
+    const nav = $("apps");
+    nav.replaceChildren(h("div", { class: "navlabel" }, "Applications"));
+    for (const a of S.apps) {
+      const done = doneCount(a);
+      const bar = h("i"); bar.style.width = (100 * done / a.items).toFixed(1) + "%";
+      nav.append(h("button", { type: "button", class: "appbtn" + (done === a.items ? " complete" : ""), "aria-current": a.name === S.current ? "true" : "false", onclick: () => openApp(a.name) },
+        h("span", { class: "row" }, h("b", null, a.label), h("small", null, done + "/" + a.items)),
+        h("span", { class: "meter", "aria-hidden": "true" }, bar)));
+    }
+    renderOverall();
+  }
+
+  function codeBlock(loc) {
+    const pre = h("pre", { class: "code" });
+    loc.code.forEach((text, k) => {
+      const n = loc.first + k;
+      pre.append(h("div", { class: n === loc.line ? "hit" : null }, h("span", null, n), h("span", null, text || " ")));
+    });
+    return pre;
+  }
+  function locHeader(role, loc, extra) {
+    return h("div", { class: "hoph" }, role ? h("span", { class: "r" }, role) : null,
+      h("a", { href: loc.url, target: "_blank", rel: "noopener" }, loc.path + ":" + loc.line + (loc.column ? ":" + loc.column : "")), extra || null);
+  }
+
+  function renderItem() {
+    const items = S.items[S.current]; const it = items[S.index];
+    const app = S.apps.find(a => a.name === S.current);
+    const labs = appLabels(S.current).items;
+    const vis = visibleIndexes();
+    const head = h("div", { class: "itemhead" },
+      h("span", { class: "kind " + it.kind }, it.kind === "flow" ? "Flow" : it.kind === "gap" ? "Coverage gap" : "Call site"),
+      it.kind === "flow" ? [h("span", { class: "chip" }, "to " + (CLASS_TEXT[it.sink_class] || it.sink_class)), ...it.categories.map(c => h("span", { class: "chip" }, c))] : null,
+      it.kind === "site" ? h("span", { class: "chip" }, "looks like " + (CLASS_TEXT[it.class] || it.class)) : null,
+      h("span", { class: "pos" }, "Item " + (S.index + 1) + " of " + items.length + (S.unlabelledOnly ? " · " + vis.length + " shown" : "") + (itemDone(it, labs[it.id]) ? " · labelled" : "")));
+    const body = [];
+    if (it.kind === "flow") {
+      body.push(h("p", { class: "claim" }, "Claim: data read at the source reaches the " + (CLASS_TEXT[it.sink_class] || "sink") + " call at the end, through these steps. Category: ", it.categories.join(", "), "."));
+      const hops = h("div", { class: "hops" });
+      let prevKey = null;
+      it.hops.forEach(hop => {
+        const key = hop.path + ":" + hop.line;
+        const same = key === prevKey ? h("span", { class: "same" }, "same line as above") : null;
+        hops.append(h("div", { class: "hop " + hop.role }, locHeader(hop.role, hop, same), codeBlock(hop)));
+        prevKey = key;
+      });
+      body.push(hops);
+    } else if (it.kind === "gap") {
+      body.push(h("p", { class: "claim" }, "The analysis stopped at ", GAP_TEXT[it.gap_kind] || it.gap_kind, ": ", h("code", null, it.detail),
+        ". Personal data from " + it.sources + " source" + (it.sources === 1 ? "" : "s") + " reaches it. Does that data go on to a sink?"));
+      const hops = h("div", { class: "hops" });
+      it.locations.forEach((loc, k) => hops.append(h("div", { class: "hop" }, locHeader(it.locations.length > 1 ? "at " + (k + 1) : "at", loc), codeBlock(loc))));
+      body.push(hops);
+    } else {
+      body.push(h("p", { class: "claim" }, "A call that looks like a " + (CLASS_TEXT[it.class] || it.class) + " call by its name: ", h("code", null, it.callee),
+        ". Is it a real sink, and does personal data reach it from anywhere in the application?"));
+      body.push(h("div", { class: "hops" }, h("div", { class: "hop sink" }, locHeader("call", it.at), codeBlock(it.at))));
+    }
+    $("main").replaceChildren(h("div", { class: "hint" }, app.repository + " at " + app.commit.slice(0, 7) + (app.scope !== "." ? " · scope " + app.scope : "") + " · links open the line on GitHub"), head, ...body);
+  }
+
+  function choice(key, title, text, pressed, onclick) {
+    return h("button", { type: "button", class: "choice", "aria-pressed": pressed ? "true" : "false", onclick },
+      h("kbd", null, key), h("b", null, title), h("span", null, text));
+  }
+  function textField(label, value, placeholder, oninput, extra) {
+    const input = h("input", { type: "text", value: value || "", placeholder, autocomplete: "off", spellcheck: "false" });
+    input.addEventListener("input", () => oninput(input.value.trim()));
+    return h("label", { class: "f" }, label, input, extra || null);
+  }
+
+  function setField(field, value, rerender) {
+    const it = S.items[S.current][S.index];
+    const labs = appLabels(S.current).items;
+    const lab = labs[it.id] = Object.assign({}, labs[it.id]);
+    if (value === "" || value === null || (Array.isArray(value) && !value.length)) delete lab[field]; else lab[field] = value;
+    if (field === "verdict" && value !== "tp" && value !== "fp_path" && value !== "fp_not_personal") delete lab.category_ok;
+    if (field === "is_sink" && value === "no") { delete lab.personal; delete lab.categories; delete lab.source; }
+    if (field === "personal" && value !== "yes") { delete lab.categories; delete lab.source; }
+    if (!Object.keys(lab).length) delete labs[it.id];
+    queueSave(S.current);
+    if (rerender) { renderPanel(); renderItem(); renderNav(); } else { renderNav(); }
+  }
+
+  function renderPanel() {
+    const items = S.items[S.current]; if (!items) return;
+    const it = items[S.index];
+    const lab = appLabels(S.current).items[it.id] || {};
+    const parts = [];
+    if (it.kind === "flow") {
+      const v = lab.verdict;
+      parts.push(h("fieldset", null, h("legend", null, "Is this a real flow of personal data?"), h("div", { class: "choices" },
+        choice("1", "Real flow", "Data can travel this way and the source is personal.", v === "tp", () => setField("verdict", v === "tp" ? "" : "tp", true)),
+        choice("2", "Path breaks", "A step does not pass the value on, or it is not a sink.", v === "fp_path", () => setField("verdict", v === "fp_path" ? "" : "fp_path", true)),
+        choice("3", "Not personal", "It reaches the sink, but it is not personal data.", v === "fp_not_personal", () => setField("verdict", v === "fp_not_personal" ? "" : "fp_not_personal", true)),
+        choice("4", "Unsure", "Can't decide in five minutes; say why in the note.", v === "unsure", () => setField("verdict", v === "unsure" ? "" : "unsure", true)))));
+      if (v && v !== "unsure") parts.push(h("fieldset", null, h("legend", null, "Is at least one category right?"), h("div", { class: "pair" },
+        choice("Y", "Yes", "", lab.category_ok === "yes", () => setField("category_ok", lab.category_ok === "yes" ? "" : "yes", true)),
+        choice("N", "No", "", lab.category_ok === "no", () => setField("category_ok", lab.category_ok === "no" ? "" : "no", true)))));
+      const sink = it.hops[it.hops.length - 1];
+      parts.push(textField(v === "fp_path" ? "Where the path breaks (file:line)" : "Citation (file:line)", lab.citation, v === "fp_path" ? "e.g. app/x.py:42" : "e.g. " + sink.path + ":" + sink.line,
+        val => setField("citation", val, false),
+        v === "tp" ? h("button", { type: "button", class: "btn small", style: "justify-self:start", onclick: () => setField("citation", sink.path + ":" + sink.line, true) }, "Use the sink line") : null));
+    } else if (it.kind === "gap") {
+      const v = lab.hides_flow;
+      parts.push(h("fieldset", null, h("legend", null, "Does personal data reach a sink through it?"), h("div", { class: "choices" },
+        choice("1", "Hides a flow", "Following it by hand, personal data reaches a sink.", v === "yes", () => setField("hides_flow", v === "yes" ? "" : "yes", true)),
+        choice("2", "No flow", "It does not lead to a sink.", v === "no", () => setField("hides_flow", v === "no" ? "" : "no", true)),
+        choice("3", "Unsure", "Can't tell in five minutes; say why in the note.", v === "unsure", () => setField("hides_flow", v === "unsure" ? "" : "unsure", true)))));
+      if (v === "yes") parts.push(textField("The sink it reaches (file:line)", lab.citation, "e.g. app/mail.py:88", val => setField("citation", val, false)));
+    } else {
+      const s = lab.is_sink, p = lab.personal;
+      parts.push(h("fieldset", null, h("legend", null, "Is this call a real sink?"), h("div", { class: "pair" },
+        choice("Y", "Yes", "Log, third party, LLM, HTTP or browser storage.", s === "yes", () => setField("is_sink", s === "yes" ? "" : "yes", true)),
+        choice("N", "No", "Something else.", s === "no", () => setField("is_sink", s === "no" ? "" : "no", true)))));
+      if (s === "yes") {
+        parts.push(h("fieldset", null, h("legend", null, "Does personal data reach it?"), h("div", { class: "choices" },
+          choice("1", "Yes", "From anywhere in the application, in some execution.", p === "yes", () => setField("personal", p === "yes" ? "" : "yes", true)),
+          choice("2", "No", "", p === "no", () => setField("personal", p === "no" ? "" : "no", true)),
+          choice("3", "Unsure", "Say why in the note.", p === "unsure", () => setField("personal", p === "unsure" ? "" : "unsure", true)))));
+        if (p === "yes") {
+          parts.push(textField("Categories (comma-separated Fideslang keys)", (lab.categories || []).join(", "), "e.g. user.contact.email",
+            val => setField("categories", val.split(",").map(x => x.trim()).filter(Boolean), false)));
+          const dl = $("cats"); if (dl) parts[parts.length - 1].querySelector("input").setAttribute("list", "cats");
+          parts.push(textField("One source (file:line)", lab.source, "e.g. app/users.py:17", val => setField("source", val, false)));
+        }
+      }
+    }
+    const note = h("textarea", { placeholder: "Anything the other reviewer would need to understand your answer" });
+    note.value = lab.note || "";
+    note.addEventListener("input", () => setField("note", note.value.trim(), false));
+    parts.push(h("label", { class: "f" }, "Note", note));
+    if (needsCitation(it, lab)) parts.push(h("div", { class: "warn" }, it.kind === "site" ? "Add one source for this answer." : "Add a citation for this answer."));
+
+    const unl = h("input", { type: "checkbox", id: "unl" }); unl.checked = S.unlabelledOnly;
+    unl.addEventListener("change", () => { S.unlabelledOnly = unl.checked; renderItem(); });
+    parts.push(h("div", { class: "navbtns" },
+      h("button", { type: "button", class: "btn", onclick: () => move(-1) }, "Previous"),
+      h("button", { type: "button", class: "btn", onclick: () => move(1) }, "Next"),
+      h("button", { type: "button", class: "btn primary wide", onclick: nextUnlabelled }, "Next unlabelled")));
+    parts.push(h("label", { class: "toggle", for: "unl" }, unl, "Skip labelled items when moving"));
+    parts.push(h("div", { class: "keys" },
+      h("div", null, h("kbd", null, "1"), "–", h("kbd", null, "4"), " answer · ", h("kbd", null, "Y"), " ", h("kbd", null, "N"), " yes or no"),
+      h("div", null, h("kbd", null, "J"), " next · ", h("kbd", null, "K"), " previous · ", h("kbd", null, "U"), " next unlabelled"),
+      h("div", null, h("kbd", null, "C"), " citation · ", h("kbd", null, "Esc"), " leave a text field")));
+    parts.push(renderAdded());
+    $("panel").replaceChildren(...parts);
+  }
+
+  function renderAdded() {
+    const lab = appLabels(S.current);
+    const list = h("ul");
+    lab.added_sites.forEach((s, k) => list.append(h("li", null, s.path + ":" + s.line + (s.categories && s.categories.length ? " · " + s.categories.join(", ") : ""),
+      h("button", { type: "button", class: "btn small", onclick: () => { lab.added_sites.splice(k, 1); queueSave(S.current); renderPanel(); } }, "Remove"))));
+    const path = h("input", { type: "text", placeholder: "path/in/app.py", "aria-label": "Path" });
+    const line = h("input", { type: "text", placeholder: "line", inputmode: "numeric", "aria-label": "Line" });
+    const cats = h("input", { type: "text", placeholder: "categories, comma-separated", "aria-label": "Categories", list: "cats" });
+    const src = h("input", { type: "text", placeholder: "one source, file:line", "aria-label": "Source" });
+    const msg = h("div", { class: "hint" });
+    const add = h("button", { type: "button", class: "btn small", style: "justify-self:start" }, "Add sink");
+    add.addEventListener("click", () => {
+      const n = parseInt(line.value, 10);
+      if (!path.value.trim() || !(n > 0)) { msg.textContent = "Give a path and a line number."; return; }
+      lab.added_sites.push({ path: path.value.trim(), line: n, categories: cats.value.split(",").map(x => x.trim()).filter(Boolean), source: src.value.trim() });
+      queueSave(S.current); renderPanel();
+    });
+    return h("details", { class: "added" }, h("summary", { class: "hint" }, "Sinks you found that are not items (" + lab.added_sites.length + ")"),
+      h("p", { class: "hint" }, "A sink that receives personal data and is not an item in this application. Reported separately."),
+      list, h("div", { class: "grid" }, path, line), cats, src, add, msg);
+  }
+
+  // ---------- export ----------
+  function exportDoc() {
+    const apps = {};
+    for (const a of S.apps) {
+      const l = appLabels(a.name);
+      if (Object.keys(l.items).length || l.added_sites.length) apps[a.name] = { items: l.items, added_sites: l.added_sites };
+    }
+    return { format: FORMAT, reviewer: S.reviewer, exported_at: new Date().toISOString(), apps };
+  }
+  async function doExport() {
+    if (!S.reviewer) { $("who").hidden = false; return; }
+    const doc = exportDoc();
+    const stamp = doc.exported_at.slice(0, 16).replace(/[-:T]/g, "");
+    const filename = "labels-" + S.reviewer + "-" + stamp + ".json";
+    const text = JSON.stringify(doc, null, 1);
+    const downloads = await claude.use("downloads").catch(() => null);
+    if (downloads) {
+      try { await downloads.save({ filename, data: text }); return; }
+      catch (e) { if (e && e.code === "declined") return; }
+    }
+    $("copy-name").textContent = filename; $("copy-text").value = text; $("copy").hidden = false;
+  }
+  $("copy-btn").addEventListener("click", async () => {
+    try { await navigator.clipboard.writeText($("copy-text").value); $("copy-btn").textContent = "Copied"; }
+    catch { $("copy-text").select(); $("copy-btn").textContent = "Selected: press Ctrl+C or Cmd+C"; }
+  });
+  $("close-copy").addEventListener("click", () => { $("copy").hidden = true; });
+  $("export").addEventListener("click", doExport);
+  $("open-guide").addEventListener("click", () => { $("guide").hidden = false; });
+  $("close-guide").addEventListener("click", () => { $("guide").hidden = true; });
+  document.querySelectorAll("#who [data-role]").forEach(b => b.addEventListener("click", () => setReviewer(b.dataset.role)));
+
+  // ---------- keyboard ----------
+  document.addEventListener("keydown", e => {
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+    const t = e.target;
+    if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA")) { if (e.key === "Escape") t.blur(); return; }
+    if (!$("who").hidden || !$("copy").hidden) return;
+    if (!$("guide").hidden) { if (e.key === "Escape") $("guide").hidden = true; return; }
+    const items = S.items[S.current]; if (!items) return;
+    const it = items[S.index]; const lab = appLabels(S.current).items[it.id] || {};
+    const k = e.key.toLowerCase();
+    const toggle = (f, v) => setField(f, lab[f] === v ? "" : v, true);
+    let handled = true;
+    if (k === "j" || e.key === "ArrowRight") move(1);
+    else if (k === "k" || e.key === "ArrowLeft") move(-1);
+    else if (k === "u") nextUnlabelled();
+    else if (k === "c") { const f = $("panel").querySelector('input[type="text"]'); if (f) f.focus(); else handled = false; }
+    else if (it.kind === "flow" && "1234".includes(k)) toggle("verdict", ["tp", "fp_path", "fp_not_personal", "unsure"][+k - 1]);
+    else if (it.kind === "flow" && (k === "y" || k === "n") && lab.verdict && lab.verdict !== "unsure") toggle("category_ok", k === "y" ? "yes" : "no");
+    else if (it.kind === "gap" && "123".includes(k)) toggle("hides_flow", ["yes", "no", "unsure"][+k - 1]);
+    else if (it.kind === "site" && (k === "y" || k === "n")) toggle("is_sink", k === "y" ? "yes" : "no");
+    else if (it.kind === "site" && "123".includes(k) && lab.is_sink === "yes") toggle("personal", ["yes", "no", "unsure"][+k - 1]);
+    else handled = false;
+    if (handled) e.preventDefault();
+  });
+
+  // ---------- start ----------
+  const NAMES = { "vercel-chatbot": "Vercel chatbot", "umami": "Umami", "taxonomy": "Taxonomy", "open-saas": "Open SaaS", "ghost": "Ghost",
+    "hoppscotch": "Hoppscotch", "healthchecks": "Healthchecks", "redash": "Redash", "ctfd": "CTFd", "fastapi-template": "FastAPI template", "polar": "Polar", "private-gpt": "PrivateGPT" };
+  document.body.append(h("datalist", { id: "cats" }, CATEGORY_SUGGESTIONS.map(c => h("option", { value: c }))));
+
+  async function start() {
+    try {
+      const r = await fetch("apps.json");
+      S.apps = (await r.json()).apps.map(a => Object.assign(a, { label: NAMES[a.name] || a.name }));
+    } catch {
+      $("main").replaceChildren(h("div", { class: "empty" }, "The list of applications could not be loaded. Reload the page to try again."));
+      return;
+    }
+    let db = null, user = null;
+    if (window.claude && typeof window.claude.use === "function") {
+      [db, user] = await Promise.all([claude.use("db").catch(() => null), claude.use("user").catch(() => null)]);
+    }
+    const uid = user ? await user.id().catch(() => null) : null;
+    if (db && uid) { S.db = db; S.uid = uid; S.mode = "db"; }
+    else {
+      S.mode = "local";
+      $("banner").textContent = "Your labels can't be stored privately in this view, so they are kept in this browser only. Open the page from claude.ai while signed in, or export often.";
+      $("banner").hidden = false;
+    }
+    try { await loadAll(); }
+    catch {
+      S.mode = "local";
+      $("banner").textContent = "Your saved labels could not be read, so this view keeps new answers in this browser only. Reload to try again before labelling.";
+      $("banner").hidden = false;
+      for (const a of S.apps) S.labels[a.name] = local.get("pf-labels-" + a.name) || { items: {}, added_sites: [] };
+    }
+    setSave(S.mode === "db" ? "ok" : "local", S.mode === "db" ? "All changes saved" : "Saved in this browser only");
+    if (S.reviewer) { $("role").textContent = S.reviewer; $("role").hidden = false; } else $("who").hidden = false;
+    renderNav();
+    const last = local.get("pf-current");
+    await openApp(S.apps.some(a => a.name === last) ? last : S.apps[0].name);
+    // Load the other applications' items quietly so their progress counts are exact.
+    for (const a of S.apps) {
+      if (S.items[a.name]) continue;
+      try { const r = await fetch("items/" + a.name + ".json"); if (r.ok) S.items[a.name] = (await r.json()).items; } catch { /* counted from labels until opened */ }
+    }
+    renderNav();
+  }
+  window.addEventListener("beforeunload", e => { if (S.saveQueue.size || S.saving) { e.preventDefault(); e.returnValue = ""; } });
+  start();
+})();
+</script>

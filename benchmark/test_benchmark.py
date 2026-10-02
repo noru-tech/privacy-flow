@@ -9,6 +9,10 @@ import unittest
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
 
+import json  # noqa: E402
+import subprocess  # noqa: E402
+import tempfile  # noqa: E402
+
 import candidates  # noqa: E402
 import score  # noqa: E402
 import sheets  # noqa: E402
@@ -80,6 +84,54 @@ class Candidates(unittest.TestCase):
         self.assertFalse(g.match("x/testsuite/a.py"))
         self.assertTrue(candidates.glob_regex("**/*.test.*").match("src/a.test.ts"))
         self.assertIn("**/node_modules/**", candidates.default_excludes())
+
+
+class Importer(unittest.TestCase):
+    """An export from the labelling app round-trips into labels score.py reads."""
+
+    HERE = pathlib.Path(__file__).resolve().parent
+
+    def run_import(self, export, labels_dir, *extra):
+        path = pathlib.Path(labels_dir) / "export.json"
+        path.write_text(json.dumps(export))
+        return subprocess.run([sys.executable, str(self.HERE / "labelling/import_labels.py"), str(path),
+                               "--labels-dir", str(labels_dir), *extra], capture_output=True, text=True)
+
+    def test_round_trip_and_refusals(self):
+        try:
+            import yaml  # noqa: F401  (score.load_labels needs it)
+        except ImportError:
+            self.skipTest("PyYAML not installed")
+        sheet = self.HERE / "sheets/taxonomy.items.jsonl"
+        if not sheet.exists():
+            self.skipTest("sheets not drawn")
+        items = [json.loads(l) for l in sheet.read_text().splitlines()]
+        flow = next(i for i in items if i["kind"] == "flow")
+        site = next(i for i in items if i["kind"] == "site")
+        export = {"format": "privacy-flow-labels/1", "reviewer": "R1", "apps": {"taxonomy": {
+            "items": {flow["id"]: {"verdict": "tp", "category_ok": "yes", "citation": "a.ts:1", "note": 'says "hi"'},
+                      site["id"]: {"is_sink": "yes", "personal": "yes", "categories": ["user.contact.email"], "source": "b.ts:2"}},
+            "added_sites": [{"path": "c.ts", "line": 3, "categories": [], "source": ""}]}}}
+        with tempfile.TemporaryDirectory() as tmp:
+            r = self.run_import(export, tmp)
+            self.assertEqual(r.returncode, 0, r.stderr)
+            labels, added = score.load_labels(pathlib.Path(tmp) / "R1", "taxonomy")
+            self.assertEqual(labels[flow["id"]]["verdict"], "tp")
+            self.assertEqual(labels[flow["id"]]["note"], 'says "hi"')
+            self.assertEqual(labels[site["id"]]["categories"], ["user.contact.email"])
+            self.assertEqual(len(labels), len(items))
+            self.assertEqual(added[0]["line"], 3)
+            # A smaller export does not replace more work without --force.
+            smaller = json.loads(json.dumps(export))
+            del smaller["apps"]["taxonomy"]["items"][site["id"]]
+            self.assertNotEqual(self.run_import(smaller, tmp).returncode, 0)
+            self.assertEqual(self.run_import(smaller, tmp, "--force").returncode, 0)
+            # Values outside the protocol stop the import.
+            bad = json.loads(json.dumps(export))
+            bad["apps"]["taxonomy"]["items"][flow["id"]]["verdict"] = "yes"
+            r = self.run_import(bad, tmp, "--force")
+            self.assertNotEqual(r.returncode, 0)
+            self.assertIn("verdict", r.stderr)
 
 
 if __name__ == "__main__":

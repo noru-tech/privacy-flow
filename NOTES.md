@@ -207,5 +207,11 @@ the second time with 14 GiB plus 21 GiB of swap, and are recorded as Privado fai
 shuffled), 114 gaps and 325 candidate sites. Reviewers: Bip (R1) and a colleague (R2); guide in
 benchmark/REVIEWERS.md.
 
+**Labelling desk (2026-10-02).** A private claude.ai page
+(https://claude.ai/artifact/4F1JxaMQ1j3rNFKvw1tM5C) built by `benchmark/labelling/build.py`: one
+item at a time with code context and GitHub links, keyboard answers, each reviewer's labels in their
+own private store, export to JSON, imported by `benchmark/labelling/import_labels.py` (tested in
+CI). It never sees the key. Full samples kept: 752 items per reviewer.
+
 **Next.** Both reviewers label independently; then `score.py --agreement`, adjudication into
 `labels/final/`, `score.py`, the write-up, and the Zenodo deposit (needs Noru's account).

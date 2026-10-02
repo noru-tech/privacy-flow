@@ -5,17 +5,29 @@ Label alone: do not discuss items with the other reviewer, and do not open
 `benchmark/sheets/key/` or the tools' outputs in `.benchmark-cache/results/` until both of you
 have finished every application.
 
-## Set up (once)
+## Where to label
+
+Label in the **labelling desk**, a private claude.ai page shared with both reviewers
+(<https://claude.ai/artifact/4F1JxaMQ1j3rNFKvw1tM5C>; you need Contributor access or above).
+It shows one item at a time with the code around every step and a link to that line on GitHub at
+the pinned commit, takes each answer with one click or key, and saves as you go. Your answers are
+stored privately: the other reviewer, the page's owner and Claude cannot read them. They leave the
+page only when you press **Export labels**, which saves a `labels-R1-….json` file.
+
+To bring an export into the repository (after both reviewers have finished, or as a backup on your
+own branch):
 
 ```bash
-python3 benchmark/fetch.py          # the applications at their pinned commits
-python3 benchmark/sheets.py         # renders .benchmark-cache/sheets/<app>.md; never touches labels
+python3 benchmark/labelling/import_labels.py labels-R1-202610021530.json
 ```
 
-Open `.benchmark-cache/sheets/<app>.md` next to your `benchmark/labels/<R1|R2>/<app>.yml`, and
-the application itself (`.benchmark-cache/<app>/<scope>`) in an editor, to read the code
-around each location. Commit your label files to a branch of your own; they are merged after
-both reviewers are done.
+It writes `benchmark/labels/R1/<app>.yml`, checks every value, and refuses to replace a file with
+more labels than the export holds unless you add `--force`. The YAML files can still be edited by
+hand, after `python3 benchmark/fetch.py && python3 benchmark/sheets.py` renders the sheets
+locally; don't mix the two for the same application.
+
+The desk is rebuilt from the committed items and the fetched applications with
+`python3 benchmark/labelling/build.py <dir>`; it never reads `benchmark/sheets/key/`.
 
 ## Flow items (`F…`)
 
