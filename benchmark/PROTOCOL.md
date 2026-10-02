@@ -81,6 +81,22 @@ and as a stratum-weighted estimate (each application's sample proportion weighte
 of findings for that rule). Recall is the proportion of sampled `personal: yes` sites a tool finds
 (and, for `piiflow`, flags), with a Wilson interval, pooled and per language.
 
+### Head to head
+
+The comparison of the two tools uses only the applications both completed, for both tools:
+
+- **Precision**: of the flows a tool reports, the share that are real (`verdict: tp`). Each
+  tool's sampled reports are weighted back to how many reports each stratum holds in each
+  application (piiflow: findings per rule and its maybe-personal findings; Privado: flows per
+  flow type), with a 95 % interval from the stratified variance. piiflow is shown twice: all its
+  reports, and only the findings it raises (without its maybe-personal ones), because Privado has
+  no such split.
+- **Recall**: of the sampled sink sites that receive personal data, the share each tool finds,
+  on the same sites for both tools, with the paired counts (both, one only, neither).
+
+The categories are not compared: the two tools name data differently, and the crosswalk is
+approximate for some of Privado's elements.
+
 ## 6. Blinding
 
 [`sheets.py`](sheets.py) renders every `flow` item the same way whichever tool reported it: the

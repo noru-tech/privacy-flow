@@ -101,6 +101,10 @@ def score(args, corpus):
     recall_obs = []                            # (language, piiflow_found, piiflow_flagged, privado_found)
     populations, unsure, added = {}, {"flow": 0, "gap": 0, "site": 0}, 0
     have_privado = False
+    # Head to head, on the applications both tools completed: (app, stratum, real flow?) per
+    # sampled report, and (piiflow found, piiflow flagged, Privado found) per personal sink site.
+    h2h_reports = {"piiflow": [], "piiflow_raised": [], "privado": []}
+    h2h_sites = []
     for entry in apps(corpus):
         app = entry["name"]
         labels = load_labels(args.labels / "final", app)
@@ -134,6 +138,14 @@ def score(args, corpus):
                 tp = verdict == "tp"
                 cat_ok = norm(lab.get("category_ok")) == "yes"
                 tool_obs[k["tool"]].append((app, k["strata"][0], tp))
+                if pv_ran and k["tool"] == "privado":
+                    h2h_reports["privado"].append((app, k["strata"][0], tp))
+                if pv_ran and k["tool"] == "piiflow":
+                    for f in k.get("findings", []):
+                        stratum = "piiflow:info" if f["severity"] == "info" else "piiflow:" + f["rule"]
+                        h2h_reports["piiflow"].append((app, stratum, tp))
+                        if f["severity"] != "info":
+                            h2h_reports["piiflow_raised"].append((app, stratum, tp))
                 if k["tool"] == "privado":
                     privado_type_obs.setdefault(k["strata"][0], []).append((app, tp))
                 for f in k.get("findings", []):
@@ -161,6 +173,10 @@ def score(args, corpus):
                 found = at in pf_sink_lines
                 # Privado's recall counts only applications it completed (None elsewhere).
                 recall_obs.append((entry["language"], found, found or at in pf_gap_lines, (at in pv_sink_lines) if pv_ran else None))
+                if pv_ran:
+                    h2h_sites.append((found, found or at in pf_gap_lines, at in pv_sink_lines))
+
+    both_apps = sorted(a for a in populations if (HERE / "results/privado" / f"{a}.jsonl").exists())
 
     def pooled(obs):
         return wilson(sum(1 for _, c in obs if c), len(obs))
@@ -174,7 +190,57 @@ def score(args, corpus):
             den += n_pop
         return round(num / den, 4) if den else None
 
+    def stratified(obs, counts):
+        """Share of a tool's reports that are real flows. Each (application, stratum) is weighted
+        by how many reports it holds; the 95 % interval is normal, from the stratified variance
+        with the finite-population correction. `counts(app)` names the strata that make up the
+        tool's reports; strata with reports but no usable label are left out, and their share of
+        all reports is given as `uncovered`."""
+        cells = {}
+        for app, stratum, ok in obs:
+            cells.setdefault((app, stratum), []).append(ok)
+        covered = sum(populations[a].get(st, 0) for a, st in cells)
+        everything = sum(n for a in both_apps for st, n in populations[a].items() if counts(st))
+        if not covered:
+            return None
+        est = var = 0.0
+        for (app, stratum), xs in cells.items():
+            n_pop, n = populations[app].get(stratum, 0), len(xs)
+            p = sum(xs) / n
+            w = n_pop / covered
+            est += w * p
+            if n > 1 and n_pop > 1:
+                var += w * w * p * (1 - p) / (n - 1) * (1 - n / n_pop)
+        half = 1.959964 * math.sqrt(var)
+        return {"p": round(est, 4), "lo": round(max(0.0, est - half), 4), "hi": round(min(1.0, est + half), 4),
+                "n": len(obs), "reports": covered, "uncovered": round(1 - covered / everything, 4) if everything else None}
+
+    head_to_head = None
+    if have_privado:
+        n_sites = len(h2h_sites)
+        head_to_head = {
+            "applications": both_apps,
+            "precision": {
+                "piiflow": stratified(h2h_reports["piiflow"], lambda st: st.startswith("piiflow:PF") or st == "piiflow:info") if h2h_reports["piiflow"] else None,
+                "piiflow_raised": stratified(h2h_reports["piiflow_raised"], lambda st: st.startswith("piiflow:PF")) if h2h_reports["piiflow_raised"] else None,
+                "privado": stratified(h2h_reports["privado"], lambda st: st.startswith("privado:")) if h2h_reports["privado"] else None,
+            },
+            "recall": {
+                "sites": n_sites,
+                "piiflow_found": wilson(sum(f for f, _, _ in h2h_sites), n_sites),
+                "piiflow_flagged": wilson(sum(g for _, g, _ in h2h_sites), n_sites),
+                "privado_found": wilson(sum(p for _, _, p in h2h_sites), n_sites),
+                "paired": {
+                    "both": sum(1 for f, _, p in h2h_sites if f and p),
+                    "piiflow_only": sum(1 for f, _, p in h2h_sites if f and not p),
+                    "privado_only": sum(1 for f, _, p in h2h_sites if p and not f),
+                    "neither": sum(1 for f, _, p in h2h_sites if not f and not p),
+                },
+            },
+        }
+
     result = {
+        "head_to_head": head_to_head,
         "precision": {
             "piiflow_flows": wilson(sum(t for *_, t in tool_obs["piiflow"]), len(tool_obs["piiflow"])),
             "privado_flows": wilson(sum(t for *_, t in tool_obs["privado"]), len(tool_obs["privado"])) if have_privado else None,
@@ -198,8 +264,8 @@ def score(args, corpus):
         "unsure_excluded": unsure,
         "reviewer_added_sites": added,
     }
-    out = HERE / "results"
-    out.mkdir(exist_ok=True)
+    out = args.out
+    out.mkdir(parents=True, exist_ok=True)
     (out / "scores.json").write_text(json.dumps(result, indent=2, sort_keys=True) + "\n")
     (out / "scores.md").write_text(markdown(result))
     print(markdown(result))
@@ -209,12 +275,25 @@ def score(args, corpus):
 def fmt(w):
     if not w:
         return "—"
-    return f"{w['p']:.2f} [{w['lo']:.2f}, {w['hi']:.2f}] (n={w['n']})"
+    return f"{100 * w['p']:.0f} % [{100 * w['lo']:.0f}–{100 * w['hi']:.0f} %] (n={w['n']})"
 
 
 def markdown(r):
     p = r["precision"]
-    lines = ["# Benchmark results", "", "Proportions with 95 % Wilson intervals; see PROTOCOL.md.", "",
+    lines = ["# Benchmark results", ""]
+    hh = r.get("head_to_head")
+    if hh:
+        pr, rc = hh["precision"], hh["recall"]
+        pc = rc["paired"]
+        lines += [f"## piiflow and Privado, head to head ({len(hh['applications'])} applications both completed)", "",
+                  "| Question | piiflow | Privado |", "| --- | --- | --- |",
+                  f"| Of the flows a tool reports, how many are real? | {fmt(pr['piiflow'])} | {fmt(pr['privado'])} |",
+                  f"| ...counting only piiflow's findings (not its maybe-personal ones) | {fmt(pr['piiflow_raised'])} | |",
+                  f"| Of the sinks that really receive personal data, how many does it find? | {fmt(rc['piiflow_found'])} | {fmt(rc['privado_found'])} |",
+                  f"| ...or flags as a place it could not see | {fmt(rc['piiflow_flagged'])} | |", "",
+                  f"Of {rc['sites']} sampled sinks that receive personal data: both tools found {pc['both']}, only piiflow {pc['piiflow_only']}, "
+                  f"only Privado {pc['privado_only']}, neither {pc['neither']}.", ""]
+    lines += ["## Detail", "", "Proportions with 95 % Wilson intervals; see PROTOCOL.md.", "",
              "## Precision", "", "| | Pooled | Weighted |", "| --- | --- | --- |",
              f"| piiflow, all sampled flows | {fmt(p['piiflow_flows'])} | |",
              f"| Privado, all sampled flows | {fmt(p['privado_flows'])} | |"]
@@ -238,6 +317,7 @@ def main():
     ap.add_argument("--agreement", action="store_true")
     ap.add_argument("--labels", type=pathlib.Path, default=HERE / "labels")
     ap.add_argument("--cache", default=str(ROOT / ".benchmark-cache"))
+    ap.add_argument("--out", type=pathlib.Path, default=HERE / "results", help="where scores.json and scores.md go")
     args = ap.parse_args()
     corpus = json.loads((HERE / "corpus.json").read_text())
     if args.agreement:

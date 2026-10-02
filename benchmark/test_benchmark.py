@@ -134,5 +134,48 @@ class Importer(unittest.TestCase):
             self.assertIn("verdict", r.stderr)
 
 
+class HeadToHead(unittest.TestCase):
+    """Constructed labels with a known answer must come back as that answer."""
+
+    HERE = pathlib.Path(__file__).resolve().parent
+
+    def test_known_answer(self):
+        try:
+            import yaml  # noqa: F401
+        except ImportError:
+            self.skipTest("PyYAML not installed")
+        if not (self.HERE.parent / ".benchmark-cache/results/taxonomy/flows.json").exists():
+            self.skipTest("benchmark applications not fetched and run")
+        sys.path.insert(0, str(self.HERE / "labelling"))
+        import import_labels
+        with tempfile.TemporaryDirectory() as tmp:
+            final = pathlib.Path(tmp) / "final"
+            final.mkdir()
+            for sheet in sorted((self.HERE / "sheets").glob("*.items.jsonl")):
+                app = sheet.name.split(".")[0]
+                items = [json.loads(l) for l in sheet.read_text().splitlines()]
+                key = json.loads((self.HERE / "sheets/key" / f"{app}.json").read_text())["items"]
+                labels = {}
+                for it in items:
+                    if it["kind"] == "flow":
+                        real = key[it["id"]]["tool"] == "piiflow"
+                        labels[it["id"]] = {"verdict": "tp" if real else "fp_path", "category_ok": "yes"}
+                    elif it["kind"] == "gap":
+                        labels[it["id"]] = {"hides_flow": "no"}
+                    else:
+                        labels[it["id"]] = {"is_sink": "yes", "personal": "yes"}
+                (final / f"{app}.yml").write_text(import_labels.render(app, items, labels, []))
+            out = pathlib.Path(tmp) / "out"
+            r = subprocess.run([sys.executable, str(self.HERE / "score.py"), "--labels", tmp, "--out", str(out)],
+                               capture_output=True, text=True)
+            self.assertEqual(r.returncode, 0, r.stderr)
+            hh = json.loads((out / "scores.json").read_text())["head_to_head"]
+            self.assertEqual(hh["precision"]["piiflow"]["p"], 1.0)
+            self.assertEqual(hh["precision"]["privado"]["p"], 0.0)
+            self.assertNotIn("polar", hh["applications"])
+            self.assertNotIn("redash", hh["applications"])
+            self.assertEqual(hh["recall"]["piiflow_found"]["n"], hh["recall"]["privado_found"]["n"])
+
+
 if __name__ == "__main__":
     unittest.main()
