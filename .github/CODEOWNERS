@@ -1,0 +1,9 @@
+# Review ownership. Changes to the schemas, rules and catalogue carry compatibility commitments;
+# changes to the action and workflows run with repository credentials.
+*                       @bipthelin
+/schemas/               @bipthelin
+/catalogue/             @bipthelin
+/src/rules.rs           @bipthelin
+/src/report.rs          @bipthelin
+/action.yml             @bipthelin
+/.github/               @bipthelin

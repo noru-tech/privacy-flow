@@ -1,0 +1,46 @@
+name: Bug report
+description: A missed flow, a false flow, a wrong gap, a crash, or different output for the same input
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: >-
+        Outputs contain code excerpts. Please attach a **minimal synthetic** reproduction (see
+        `tests/fixtures/`) rather than code from a private repository, and never real personal data.
+  - type: input
+    id: version
+    attributes:
+      label: piiflow version
+      placeholder: piiflow --version
+    validations:
+      required: true
+  - type: dropdown
+    id: kind
+    attributes:
+      label: Kind
+      options: [missed flow (false negative), false flow (false positive), wrong or missing coverage gap, non-deterministic output, crash or error, output format or schema, GitHub Action, other]
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Reproduction
+      description: The smallest program that shows it, with file names. Mark the sink line you expected (or did not expect) a finding on.
+      render: typescript
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: What happened?
+      description: Command, exit code and output (`piiflow explain <id>` helps for a false flow).
+      render: shell
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What did you expect?
+      description: For a rule, cite its condition in docs/rules/. If KNOWN-LIMITATIONS.md lists it, say so.
+    validations:
+      required: true

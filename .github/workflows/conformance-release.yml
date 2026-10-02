@@ -1,0 +1,45 @@
+# Sign the conformance corpus's digest list at each release tag. The signature is a GitHub
+# artifact attestation over conformance/CORPUS-DIGESTS.txt, the same mechanism release.yml uses
+# for the binaries. Verify a release's corpus with
+#   gh attestation verify conformance/CORPUS-DIGESTS.txt --repo noru-tech/privacy-flow \
+#     --signer-workflow noru-tech/privacy-flow/.github/workflows/conformance-release.yml \
+#     --source-ref refs/tags/vX.Y.Z
+# and then `python3 conformance/digests.py --check` to match the files you have against the
+# signed list.
+name: conformance-release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: read
+
+jobs:
+  sign:
+    name: sign the corpus digest list
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+      attestations: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: The digest list matches the tagged files
+        run: python3 conformance/digests.py --check
+      - name: Attest the digest list
+        id: attest
+        uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2
+        with:
+          subject-path: conformance/CORPUS-DIGESTS.txt
+      - name: Report
+        env:
+          URL: ${{ steps.attest.outputs.attestation-url }}
+        run: |
+          {
+            echo "corpus digest list: sha256:$(sha256sum conformance/CORPUS-DIGESTS.txt | cut -d' ' -f1)"
+            echo "attestation: $URL"
+          } | tee -a "$GITHUB_STEP_SUMMARY"

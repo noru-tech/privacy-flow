@@ -1,0 +1,14 @@
+[default.extend-words]
+# in-toto: the module name and the conventional `.intoto.json` attestation suffix.
+intoto = "intoto"
+# The binary name.
+piiflow = "piiflow"
+# Short locals: new distance (engine) and function offset (program assembly).
+nd = "nd"
+fo = "fo"
+# Electronic health record.
+EHR = "EHR"
+unparseable = "unparseable"
+
+[files]
+extend-exclude = ["target/**", "tests/fixtures/**", "tests/goldens/**", "conformance/vectors/**", "conformance/CORPUS-DIGESTS.txt", "conformance/MANIFEST.json", "vendor/**", "Cargo.lock"]

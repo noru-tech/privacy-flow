@@ -1,0 +1,41 @@
+name: Catalogue entry
+description: A sink, source, sanitiser, propagator or framework the catalogue does not know
+labels: [catalogue]
+body:
+  - type: markdown
+    attributes:
+      value: >-
+        The catalogue is data (catalogue/*.yml, documented in docs/catalogue.md). Every entry
+        needs a citation to the library's own documentation and a fixture.
+  - type: dropdown
+    id: kind
+    attributes:
+      label: Kind
+      options: [sink, source, sanitiser, propagator, framework]
+    validations:
+      required: true
+  - type: input
+    id: api
+    attributes:
+      label: Library and API
+      placeholder: e.g. npm @vendor/sdk, client.track(event, properties)
+    validations:
+      required: true
+  - type: input
+    id: citation
+    attributes:
+      label: Documentation link
+      description: The page that describes the API (and for a sink, where the data goes).
+    validations:
+      required: true
+  - type: textarea
+    id: entry
+    attributes:
+      label: Proposed entry
+      description: The YAML, if you have it; which arguments carry data, the sink class, the processor.
+      render: yaml
+  - type: textarea
+    id: fixture
+    attributes:
+      label: Example
+      description: A short synthetic program that should (or should not) produce a flow.

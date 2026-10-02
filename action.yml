@@ -1,0 +1,210 @@
+# Composite GitHub Action: install a verified `piiflow` release, report the personal-data flows a
+# pull request introduces, and upload them as SARIF.
+#
+# The analysis is the same offline, deterministic one the CLI performs; this file only fetches the
+# binary, runs `piiflow diff` and `piiflow check`, renders the requested format and a job summary,
+# and maps the exit code to the step outcome. See docs/github-action.md.
+name: privacy-flow
+# Kept under the GitHub Marketplace limit of 125 characters.
+description: >-
+  Finds where personal data goes in a pull request: logs, third-party SDKs, LLM providers and
+  outbound HTTP. Offline, no model.
+author: Noru
+branding:
+  icon: eye
+  color: blue
+
+inputs:
+  version:
+    description: >-
+      The privacy-flow release to install (a tag without the leading v). Pin it for byte-stable
+      output across runs.
+    required: false
+    default: "0.1.0"
+  path:
+    description: Directory to analyse, relative to the repository root.
+    required: false
+    default: "."
+  base:
+    description: Base revision of the comparison. Defaults to the pull request's base commit.
+    required: false
+    default: ${{ github.event.pull_request.base.sha }}
+  head:
+    description: Head revision. Defaults to the pull request's head commit, or the pushed commit.
+    required: false
+    default: ${{ github.event.pull_request.head.sha || github.sha }}
+  dispositions:
+    description: >-
+      A flow-facts document with recorded dispositions to honour. Defaults to
+      .privacy-flow/flows.json under `path` when it exists.
+    required: false
+    default: ""
+  as-of:
+    description: >-
+      Date to evaluate dispositions on (YYYY-MM-DD). Defaults to today in UTC, computed here: the
+      binary itself never reads the clock.
+    required: false
+    default: ""
+  format:
+    description: Output format written to `output` — sarif, json, table, fides, in-toto or facts.
+    required: false
+    default: sarif
+  output:
+    description: Path of the rendered output file.
+    required: false
+    default: privacy-flow.sarif
+  upload-sarif:
+    description: >-
+      Upload the SARIF output to code scanning (needs `security-events: write`). Only when format
+      is sarif.
+    required: false
+    default: "true"
+  fail-on-findings:
+    description: >-
+      Fail the step when the policy threshold is exceeded (exit 1) or coverage is incomplete
+      (exit 4). Set to false for advisory mode; the exit code is still an output.
+    required: false
+    default: "true"
+  verify-attestation:
+    description: >-
+      Verify the downloaded archive's GitHub artifact attestation with `gh attestation verify`
+      before running it. Requires the gh CLI (present on GitHub-hosted runners).
+    required: false
+    default: "true"
+  token:
+    description: Token for `gh attestation verify` (read-only).
+    required: false
+    default: ${{ github.token }}
+
+outputs:
+  exit-code:
+    description: >-
+      piiflow's exit code: 0 passed, 1 policy threshold exceeded, 4 coverage incomplete. Other codes
+      always fail the step.
+    value: ${{ steps.check.outputs.exit-code }}
+  output:
+    description: Path of the rendered output file.
+    value: ${{ steps.check.outputs.output }}
+  document:
+    description: Path of the JSON flow-facts document for the pull request's changes.
+    value: ${{ steps.diff.outputs.document }}
+
+runs:
+  using: composite
+  steps:
+    - name: Install piiflow
+      shell: bash
+      env:
+        PIIFLOW_VERSION: ${{ inputs.version }}
+        PIIFLOW_VERIFY: ${{ inputs.verify-attestation }}
+        GH_TOKEN: ${{ inputs.token }}
+      run: |
+        set -euo pipefail
+        case "$(uname -s)-$(uname -m)" in
+          Linux-x86_64)  target=x86_64-unknown-linux-musl ;;
+          Linux-aarch64) target=aarch64-unknown-linux-musl ;;
+          Darwin-x86_64) target=x86_64-apple-darwin ;;
+          Darwin-arm64)  target=aarch64-apple-darwin ;;
+          *) echo "::error::unsupported runner platform $(uname -s)-$(uname -m); privacy-flow ships Linux and macOS binaries" >&2; exit 1 ;;
+        esac
+        archive="privacy-flow-${target}.tar.xz"
+        base="https://github.com/noru-tech/privacy-flow/releases/download/v${PIIFLOW_VERSION}"
+        dir="${RUNNER_TEMP}/privacy-flow-${PIIFLOW_VERSION}"
+        mkdir -p "$dir"
+        cd "$dir"
+        curl --proto '=https' --tlsv1.2 -sSfL --retry 3 -o "$archive" "${base}/${archive}"
+        curl --proto '=https' --tlsv1.2 -sSfL --retry 3 -o "${archive}.sha256" "${base}/${archive}.sha256"
+        if command -v sha256sum >/dev/null; then sha256sum -c "${archive}.sha256"; else shasum -a 256 -c "${archive}.sha256"; fi
+        if [ "$PIIFLOW_VERIFY" = "true" ]; then
+          if ! command -v gh >/dev/null; then
+            echo "::error::verify-attestation is true but the gh CLI is not installed; install it or set verify-attestation: false" >&2
+            exit 1
+          fi
+          gh attestation verify "$archive" --repo noru-tech/privacy-flow
+        fi
+        tar -xJf "$archive"
+        echo "${dir}/privacy-flow-${target}" >> "$GITHUB_PATH"
+        "${dir}/privacy-flow-${target}/piiflow" --version
+
+    - name: Analyse the changes
+      id: diff
+      shell: bash
+      env:
+        PF_PATH: ${{ inputs.path }}
+        PF_BASE: ${{ inputs.base }}
+        PF_HEAD: ${{ inputs.head }}
+        PF_DISPOSITIONS: ${{ inputs.dispositions }}
+      run: |
+        # The exit code is the verdict, so it is captured, not fatal.
+        set +e -uo pipefail
+        if [ -z "$PF_BASE" ]; then
+          echo "::error::no base revision: set the base input or run on a pull_request event" >&2
+          exit 1
+        fi
+        if ! git -C "$PF_PATH" cat-file -e "${PF_BASE}^{commit}" 2>/dev/null; then
+          echo "::error::base commit ${PF_BASE} is not in the checkout; use actions/checkout with fetch-depth: 0" >&2
+          exit 1
+        fi
+        document="${RUNNER_TEMP}/privacy-flow-diff.json"
+        args=(-q diff "${PF_BASE}..${PF_HEAD}" "$PF_PATH" --format json --output "$document")
+        if [ -n "$PF_DISPOSITIONS" ]; then args+=(--dispositions "$PF_DISPOSITIONS"); fi
+        piiflow "${args[@]}"
+        code=$?
+        case "$code" in
+          0|4) ;;
+          *) echo "::error::piiflow diff failed with exit code $code" >&2; exit "$code" ;;
+        esac
+        echo "document=$document" >> "$GITHUB_OUTPUT"
+
+    - name: Check policy
+      id: check
+      shell: bash
+      env:
+        PF_DOCUMENT: ${{ steps.diff.outputs.document }}
+        PF_AS_OF: ${{ inputs.as-of }}
+        PF_FORMAT: ${{ inputs.format }}
+        PF_OUTPUT: ${{ inputs.output }}
+      run: |
+        set +e -uo pipefail
+        as_of="${PF_AS_OF:-$(date -u +%F)}"
+        piiflow -q check "$PF_DOCUMENT" --as-of "$as_of" --format "$PF_FORMAT" --output "$PF_OUTPUT"
+        code=$?
+        case "$code" in
+          0|1|4) ;;
+          *) echo "::error::piiflow check failed with exit code $code" >&2; exit "$code" ;;
+        esac
+        echo "exit-code=$code" >> "$GITHUB_OUTPUT"
+        echo "output=$PF_OUTPUT" >> "$GITHUB_OUTPUT"
+        {
+          echo "### privacy-flow"
+          echo
+          echo '```'
+          piiflow -q check "$PF_DOCUMENT" --as-of "$as_of" --format table 2>/dev/null || true
+          echo '```'
+          case "$code" in
+            0) echo "Result: **pass** — no new flow at or above the policy threshold." ;;
+            1) echo "Result: **policy threshold exceeded** (exit 1). See \`$PF_OUTPUT\`." ;;
+            4) echo "Result: **coverage incomplete** (exit 4) — a clean result cannot be claimed." ;;
+          esac
+        } >> "$GITHUB_STEP_SUMMARY"
+
+    - name: Upload SARIF
+      if: ${{ always() && inputs.upload-sarif == 'true' && inputs.format == 'sarif' && steps.check.outputs.output != '' }}
+      uses: github/codeql-action/upload-sarif@2892aa5e19bbd11bc0cff5427e3b750a04d9e3c2 # v4.38.2
+      with:
+        sarif_file: ${{ steps.check.outputs.output }}
+        category: privacy-flow
+
+    - name: Verdict
+      shell: bash
+      env:
+        PF_CODE: ${{ steps.check.outputs.exit-code }}
+        PF_FAIL: ${{ inputs.fail-on-findings }}
+      run: |
+        if [ "${PF_CODE:-0}" -ne 0 ]; then
+          if [ "$PF_FAIL" = "true" ]; then
+            echo "::error::privacy-flow exit code $PF_CODE" >&2
+            exit "$PF_CODE"
+          fi
+          echo "::warning::privacy-flow exit code $PF_CODE (advisory mode)" >&2
+        fi

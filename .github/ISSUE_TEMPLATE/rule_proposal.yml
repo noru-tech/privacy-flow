@@ -1,0 +1,28 @@
+name: Rule proposal
+description: Propose a new rule or a change to an existing rule's condition
+labels: [rule]
+body:
+  - type: markdown
+    attributes:
+      value: >-
+        Rules are deterministic conditions over cited flows. They never read prose or ask a model.
+        See docs/rules/ and CONTRIBUTING.md.
+  - type: textarea
+    id: condition
+    attributes:
+      label: Exact condition
+      description: Which sources, sinks and categories; when it fires, when it does not, and what is reported as a gap instead.
+    validations:
+      required: true
+  - type: textarea
+    id: why
+    attributes:
+      label: Why it matters
+      description: The privacy obligation or engineering policy the finding supports.
+    validations:
+      required: true
+  - type: textarea
+    id: fixtures
+    attributes:
+      label: Fixtures
+      description: Sketch one failing and one passing synthetic case, in TypeScript and Python if you can.
