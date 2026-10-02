@@ -434,11 +434,15 @@ impl<'a> Ctx<'a> {
         // sink already found, is not a gap.
         let reached_states: std::collections::HashSet<(VarId, Token)> =
             best.keys().map(|(v, t, _)| (*v, *t)).collect();
+        // Taken before the loop, which only adds depth-bound targets, never the hits and
+        // globals it checks; a scan of `found` per cut was quadratic in large summaries.
+        let reached_targets: std::collections::HashSet<STarget> =
+            found.keys().map(|(t, _)| *t).collect();
         for (cut, site, depth, d, at, tail) in cuts {
             let reached = match cut {
                 Cut::State(v, t) => reached_states.contains(&(v, t)),
-                Cut::Hit(h) => found.keys().any(|(t, _)| *t == STarget::Hit(h)),
-                Cut::Global(v, t) => found.keys().any(|(x, _)| *x == STarget::Global(v, t)),
+                Cut::Hit(h) => reached_targets.contains(&STarget::Hit(h)),
+                Cut::Global(v, t) => reached_targets.contains(&STarget::Global(v, t)),
             };
             if !reached {
                 record(&mut found, STarget::DepthBound(site), depth, d, at, tail);
