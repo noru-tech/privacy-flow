@@ -1,0 +1,5 @@
+{
+  "description": "Fields of an object returned from a helper stay apart in the caller.",
+  "language": "javascript",
+  "status": "required"
+}

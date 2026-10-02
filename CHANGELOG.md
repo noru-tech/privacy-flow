@@ -6,6 +6,12 @@ All notable changes to this project are documented here. The format is based on
 
 ## [Unreleased]
 
+### Changed
+- Plain objects are allocation sites: within a function, and through module-level objects and
+  closures, nested fields stay apart (`o = { a: { email, id } }; log(o.a.id)` is no longer
+  reported), and a field written through one variable is seen through another that holds the
+  same object (ADR 0007).
+
 ## [0.1.0] - 2026-10-02
 
 ### Added

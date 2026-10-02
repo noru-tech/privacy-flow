@@ -238,3 +238,31 @@ full earlier text is kept outside the repository), and `v0.1.0` was tagged at `1
   --locked` builds it and scans the demo with the same output digest as the local build.
   Trusted publishing itself is first exercised by the next release.
 
+## 2026-10-02 — Allocation sites for plain objects (ADR 0007)
+
+**Done.** Every literal is an allocation site; a flow-insensitive points-to pass in the facts
+builder (`src/facts/heap.rs`) gives each written field of a site its own variable and turns field
+reads of variables that hold only known sites into copies from those variables. The engines are
+unchanged. Nested fields stay apart within a function and through module-level objects and
+closures, and writes through an alias are seen. Four new required conformance vectors and two
+fixtures; the fixtures fail on the previous build (four false findings, two missed flows). A new
+CI break, `allocation-sites`, checks that the corpus notices the pass is gone. The `stores` break
+went unnoticed once field reads inside a function stopped using `Store` tokens; the
+`ts-returned-object` vector covers it again with an object that crosses a return.
+
+**Found on the way.** The first version did not make a field read of an unknown value unknown,
+so `({ options = {} })` resolved `options.providerName` against the empty default only and lost a
+real flow. On two private TypeScript monorepos it appeared to remove 2,730 flows, almost all of
+them through that hole. With the fix, one false flow is removed and none is lost.
+
+**Open.** Most false flows still seen on real code go through wrapper objects returned from one
+function and read in another (`return { success: true, data: result }`). Allocation sites stop at
+calls, because a context-insensitive extension would let a callee's return slot hold its callers'
+data (ADR 0007). Doing this properly means sites cloned per call context.
+
+**documenso (2026-10-02).** Output identical at `8a41a3bf` (1,448 flows, 29 medium PF001); 1.9 s to
+2.0 s, 355 MB to 400 MB peak. Of the 29 medium findings, roughly 12 are true, 11 go through an
+object returned across a call, and 6 through a Prisma query or create whose arguments the
+library model passes to the result. The next precision work with measurable effect on documenso
+is those two, not more intraprocedural sites.
+

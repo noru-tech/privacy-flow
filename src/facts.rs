@@ -6,6 +6,8 @@
 //! parameters into seeds. Nothing here decides whether data reaches anything: that is the
 //! engines' job, and both engines read exactly these facts.
 
+mod heap;
+
 use std::collections::{BTreeMap, BTreeSet, HashMap};
 
 use crate::catalogue::{ArgSel, Catalogue, Flow, ParamRule, SinkClass, SourceKind};
@@ -212,6 +214,8 @@ struct Builder<'a, 'p> {
     defs: Vec<Vec<u32>>,
     seed_keys: BTreeSet<(VarId, Token, String)>,
     types_by_name: BTreeMap<String, Vec<usize>>,
+    /// Named field reads, resolved against allocation sites once every edge exists.
+    loads: Vec<heap::PendingLoad>,
 }
 
 pub fn build(p: &mut Program, inp: &Inputs) -> Facts {
@@ -247,6 +251,7 @@ pub fn build(p: &mut Program, inp: &Inputs) -> Facts {
         defs: vec![Vec::new(); nvars],
         seed_keys: BTreeSet::new(),
         types_by_name,
+        loads: Vec::new(),
     };
     let handlers = b.find_handlers();
     if handlers.iter().any(|h| h.provenance.is_some()) {
@@ -274,6 +279,8 @@ pub fn build(p: &mut Program, inp: &Inputs) -> Facts {
     b.annotation_seeds();
     b.param_name_seeds();
     b.static_gaps();
+    let loads = std::mem::take(&mut b.loads);
+    heap::resolve(b.p, &mut b.f, &b.defs, loads);
     for (i, h) in b.f.hits.iter().enumerate() {
         for &a in &h.args {
             if !b.f.hit_args[a as usize].contains(&(i as u32)) {
@@ -400,7 +407,12 @@ impl<'a, 'p> Builder<'a, 'p> {
                 } => {
                     let name = self.p.syms.str(*k).to_string();
                     if !self.inp.catalogue.non_propagating(lang, &name) {
-                        self.edge(*obj, *dst, EdgeKind::Load(*k), stmt);
+                        self.loads.push(heap::PendingLoad {
+                            obj: *obj,
+                            dst: *dst,
+                            field: *k,
+                            stmt,
+                        });
                     }
                     self.field_read(stmt, *obj, *dst, &name);
                     self.read_source(stmt, *dst, lang);

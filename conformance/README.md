@@ -15,7 +15,8 @@ the same key.
 
 ## What a vector tests
 
-Each vector isolates one behaviour: field sensitivity, whole-object logging, spreads, string
+Each vector isolates one behaviour: field sensitivity, nested objects, writes through an alias,
+whole-object logging, spreads, string
 building, helpers that return or sink their argument, context-sensitivity, cross-file imports,
 default exports, class fields, instance isolation, closures, array callbacks, predicates,
 computed keys, request input (Express, Flask), keyword arguments, comprehensions. The ground
@@ -67,7 +68,8 @@ FILE` writes every vector's outcome with its missing and unexpected flows.
 ## Keeping the corpus honest
 
 - A corpus that a broken analyser also passes proves nothing. CI breaks one semantic at a time
-  (field sensitivity, interprocedural binding, instance isolation, sanitisers, field stores;
+  (field sensitivity, interprocedural binding, instance isolation, sanitisers, field stores,
+  allocation sites;
   [`.github/scripts/break_engine.py`](../.github/scripts/break_engine.py)) and requires the
   corpus to fail for each.
 - `python3 conformance/digests.py --check` runs in CI: the digest list and the manifest must match

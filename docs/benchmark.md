@@ -38,7 +38,7 @@ python3 conformance/run.py --verifier "piiflow -q scan --walk -f facts"
 | Required vectors | 30, all pass |
 | Known-limitation vectors | 2, both fail as documented (flow-insensitivity) |
 | Flow-level precision / recall on required vectors | 1.00 / 1.00 |
-| Deliberately broken analysers the corpus rejects | 5 of 5 (field sensitivity, interprocedural binding, instance isolation, sanitisers, field stores) |
+| Deliberately broken analysers the corpus rejects | 6 of 6 (field sensitivity, interprocedural binding, instance isolation, sanitisers, field stores, allocation sites) |
 
 The corpus is an answer key for specific behaviours, not a sample of real code.
 

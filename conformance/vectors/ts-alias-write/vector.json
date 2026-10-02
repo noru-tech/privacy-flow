@@ -1,0 +1,5 @@
+{
+  "description": "A field written through one variable is read through another that holds the same object.",
+  "language": "javascript",
+  "status": "required"
+}

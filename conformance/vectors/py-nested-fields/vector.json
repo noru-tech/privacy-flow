@@ -1,0 +1,5 @@
+{
+  "description": "Keys of a nested dict stay apart: reading one key of an inner dict does not carry its sibling.",
+  "language": "python",
+  "status": "required"
+}

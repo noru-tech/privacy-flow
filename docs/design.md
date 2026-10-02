@@ -82,6 +82,12 @@ own shared variable, which gives two levels of field sensitivity on instances; a
 its own `this`, returned through the constructor's summary, so an instance carries only what it
 was built with.
 
+Plain objects ([ADR 0007](adr/0007-allocation-sites.md)): every literal is an allocation site,
+and a flow-insensitive points-to analysis inside the facts builder gives each written field of a
+site its own variable. A field read of a variable that holds only known sites copies from those
+variables, so nested fields stay apart; a read of a value from a parameter, a call or an import
+keeps its `Load` edge.
+
 ## 5. Engines
 
 Both engines implement the same normative semantics, written out in

@@ -1,0 +1,5 @@
+{
+  "description": "Fields of a nested object stay apart: reading one field of an inner object does not carry its sibling.",
+  "language": "javascript",
+  "status": "required"
+}
