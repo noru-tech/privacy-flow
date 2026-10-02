@@ -44,6 +44,8 @@ The corpus is an answer key for specific behaviours, not a sample of real code.
 
 ### Real-world corpus (labelled precision and recall): in progress
 
+The readable summary, with charts, is [benchmark/REPORT.md](../benchmark/REPORT.md).
+
 Milestone M6 measures precision and recall on twelve applications `piiflow` was not developed
 against, six TypeScript and six Python, labelled by two reviewers and compared with Privado's
 open-source scanner. Everything is in [`benchmark/`](../benchmark/README.md):

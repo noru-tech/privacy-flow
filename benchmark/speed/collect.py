@@ -143,7 +143,7 @@ def section(rows, machine, version, date, machines):
               f"output matched the recorded macOS run byte for byte on {'every' if identical == len(rows) else f'{identical} of {len(rows)}'} application. "
               "Privado is privado-core 1.1.175 from its pinned image with its newest rules, offline, one run, 14 GiB limit. "
               "This measures speed and memory only; whether each tool's findings are *right* is measured by the "
-              "[labelled benchmark](docs/benchmark.md), which is in progress. "
+              "[labelled benchmark](benchmark/REPORT.md), which is in progress. "
               "[Method and how to rerun it](benchmark/speed/README.md).", "", END]
     return "\n".join(lines)
 
