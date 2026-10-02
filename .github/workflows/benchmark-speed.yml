@@ -1,0 +1,84 @@
+# Speed benchmark: piiflow and Privado on the twelve benchmark applications, both on the same
+# GitHub-hosted runner (benchmark/speed/README.md). Manual only. piiflow is the released Linux
+# binary, verified by its attestation; Privado is the protocol's pinned image, offline. The
+# collect job writes results.json, chart.svg and the README table as an artifact, committed by
+# hand with `python3 benchmark/speed/collect.py <downloaded dir> --write`.
+name: benchmark-speed
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: piiflow release to time
+        default: v0.1.0
+
+permissions:
+  contents: read
+
+jobs:
+  time:
+    name: time (${{ matrix.app }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 150
+    strategy:
+      fail-fast: false
+      max-parallel: 12
+      matrix:
+        app: [vercel-chatbot, umami, taxonomy, open-saas, ghost, hoppscotch, healthchecks, redash, ctfd, fastapi-template, polar, private-gpt]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Download and verify the released piiflow
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ inputs.version }}
+        run: |
+          ARCHIVE=privacy-flow-x86_64-unknown-linux-musl.tar.xz
+          gh release download "$VERSION" --repo "$GITHUB_REPOSITORY" --pattern "$ARCHIVE" --dir /tmp/piiflow
+          gh attestation verify "/tmp/piiflow/$ARCHIVE" --repo "$GITHUB_REPOSITORY" \
+            --signer-workflow "$GITHUB_REPOSITORY/.github/workflows/release.yml"
+          tar -xJf "/tmp/piiflow/$ARCHIVE" -C /tmp/piiflow --strip-components 1
+          /tmp/piiflow/piiflow --version
+      - name: Fetch the application at its pinned commit
+        env:
+          APP: ${{ matrix.app }}
+        run: python3 benchmark/fetch.py "$APP"
+      - name: Fetch Privado's rules at v1.3.91
+        run: |
+          git init -q rules
+          git -C rules fetch -q --depth 1 https://github.com/Privado-Inc/privado.git 6787aa47c8db31e21b0d297e5fb494941c4dca94
+          git -C rules checkout -q FETCH_HEAD
+      - name: Pull Privado's pinned image (not timed)
+        run: docker pull public.ecr.aws/privado/privado@sha256:349fdd5a01c01acb4b17c9db0df782c8ad2fb4d87b5940247720fc3cac8e7f15
+      - name: Time both tools
+        env:
+          APP: ${{ matrix.app }}
+        run: python3 benchmark/speed/job.py "$APP" --piiflow /tmp/piiflow/piiflow --rules rules --out "out/$APP"
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: speed-${{ matrix.app }}
+          path: out/${{ matrix.app }}/${{ matrix.app }}.json
+
+  collect:
+    name: collect
+    needs: time
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          pattern: speed-*
+          path: runs
+          merge-multiple: true
+      - run: python3 benchmark/speed/collect.py runs --write
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: speed-results
+          path: |
+            benchmark/speed/results.json
+            benchmark/speed/chart.svg
+            README.md

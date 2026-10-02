@@ -22,6 +22,34 @@ IMAGE = "public.ecr.aws/privado/privado@sha256:349fdd5a01c01acb4b17c9db0df782c8a
 LANGUAGE = {"typescript": "javascript", "python": "python"}
 
 
+def prepare_work(entry, src, work):
+    """Copy the application's scope to `work` minus corpus.json excludes; return files removed."""
+    if work.exists():
+        shutil.rmtree(work, ignore_errors=True)
+    shutil.copytree(src, work, ignore=shutil.ignore_patterns(".git"), symlinks=True)
+    removed = 0
+    for glob in entry["exclude"]:
+        for p in sorted(work.glob(glob), reverse=True):
+            if p.is_file() or p.is_symlink():
+                p.unlink()
+                removed += 1
+    return removed
+
+
+def command(work, rules, language, memory_gib, swap_gib, heap_gib, run_args=("--rm",)):
+    """The protocol's Privado invocation (PROTOCOL.md §8): pinned image, no network, no upload."""
+    return [
+        "docker", "run", *run_args, "--network", "none", "--platform", "linux/amd64",
+        "--memory", f"{memory_gib}g", "--memory-swap", f"{memory_gib + swap_gib}g",
+        "-e", "PRIVADO_METRICS_ENABLED=false", "-e", f"JAVA_TOOL_OPTIONS=-Xmx{heap_gib}g",
+        "-v", f"{work}:/app/code", "-v", f"{pathlib.Path(rules).resolve()}:/app/rules:ro",
+        IMAGE,
+        "/app/code", "-ic", "/app/rules",
+        "--skip-upload", "--skip-download-dependencies", "--offline-mode",
+        "-fl", LANGUAGE[language],
+    ]
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("name")
@@ -41,26 +69,9 @@ def main():
     # Outside `out` (which is uploaded); the container writes .privado/ as root, so the copy may
     # not be fully removable afterwards without privileges.
     work = out.parent / f".work-{entry['name']}"
-    if work.exists():
-        shutil.rmtree(work, ignore_errors=True)
-    shutil.copytree(src, work, ignore=shutil.ignore_patterns(".git"), symlinks=True)
-    removed = 0
-    for glob in entry["exclude"]:
-        for p in sorted(work.glob(glob), reverse=True):
-            if p.is_file() or p.is_symlink():
-                p.unlink()
-                removed += 1
+    removed = prepare_work(entry, src, work)
     heap = args.heap_gib or max(2, args.memory_gib - 2)
-    cmd = [
-        "docker", "run", "--rm", "--network", "none", "--platform", "linux/amd64",
-        "--memory", f"{args.memory_gib}g", "--memory-swap", f"{args.memory_gib + args.swap_gib}g",
-        "-e", "PRIVADO_METRICS_ENABLED=false", "-e", f"JAVA_TOOL_OPTIONS=-Xmx{heap}g",
-        "-v", f"{work}:/app/code", "-v", f"{pathlib.Path(args.rules).resolve()}:/app/rules:ro",
-        IMAGE,
-        "/app/code", "-ic", "/app/rules",
-        "--skip-upload", "--skip-download-dependencies", "--offline-mode",
-        "-fl", LANGUAGE[entry["language"]],
-    ]
+    cmd = command(work, args.rules, entry["language"], args.memory_gib, args.swap_gib, heap)
     start = time.perf_counter()
     proc = subprocess.run(cmd, capture_output=True, text=True)
     wall = time.perf_counter() - start

@@ -176,6 +176,9 @@ model: the flow through the helper is computed per argument and per field.
 | **Benchmark** — accuracy and performance, and what is not measured yet | [docs](docs/benchmark.md) |
 
 <a id="what-it-is-not"></a>
+<!-- speed:start -->
+<!-- speed:end -->
+
 ## What does piiflow not do?
 
 It does not find security vulnerabilities, scan data at rest or in databases, observe the running
