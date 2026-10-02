@@ -6,7 +6,7 @@ against, labelled by two reviewers, with Privado's open-source scanner run on th
 - [PROTOCOL.md](PROTOCOL.md): units, labels, sampling, blinding, scoring, the Privado judgement
   calls, and deviations. Fixed before labelling.
 - [SELECTION.md](SELECTION.md): the criteria and every candidate considered.
-- [report/](report/): the readable report page, rebuilt from the results with `python3 benchmark/overview.py && python3 benchmark/report/build.py out.html`; published at https://claude.ai/artifact/UPjNHRC7oEBiFDSNG9YjvL.
+- [report/](report/): the readable report page, rebuilt from the results with `python3 benchmark/overview.py && python3 benchmark/report/build.py out.html`.
 - [REVIEWERS.md](REVIEWERS.md): how R1 and R2 label, in the labelling desk (`labelling/`).
 - [corpus.json](corpus.json): the applications, pinned by commit, with scope and exclusions.
 - [results/summary.json](results/summary.json): what `piiflow` reported on each application, the

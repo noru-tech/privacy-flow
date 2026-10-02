@@ -5,7 +5,7 @@ milestone status is at the bottom. Decisions are never rewritten; a reversal get
 
 ## 2026-10-02 — Decision: where the open/closed line sits
 
-Decided by Bip before any code was written. The suggested split is adopted unchanged.
+Decided before any code was written.
 
 **Open (this repository, MIT):** parsing, the intermediate representation, flow analysis, the
 source/sink/sanitiser/propagator catalogue, the rules, and every output format (table, canonical
@@ -39,10 +39,10 @@ Checked on 2026-10-02:
 | `piiflow` | crates.io | free (404) |
 | `privflow` | crates.io | free (404) |
 
-`spinje/pflow` targets the same audience Noru sells to (teams building on LLM APIs), so a
+`spinje/pflow` is aimed at teams building on LLM APIs, the same teams this tool is for, so a
 `pflow` binary would collide on exactly the machines that matter.
 
-**Decision (Bip):** the package is `privacy-flow` everywhere (crate, repository, GitHub Action),
+**Decision:** the package is `privacy-flow` everywhere (crate, repository, GitHub Action),
 and the binary is `piiflow`. (Corrected 2026-10-02: the Homebrew formula is `piiflow`, so the
 install command names what it installs, `brew install noru-tech/tap/piiflow`; see the release
 entry below.) This follows the `acc` convention: one
@@ -204,11 +204,11 @@ privado-core 1.1.175, not the last release. `polar` and `redash` were killed for
 the second time with 14 GiB plus 21 GiB of swap, and are recorded as Privado failures.
 
 **Sheets drawn.** 752 items per reviewer: 313 flows (211 piiflow, 102 Privado, blinded and
-shuffled), 114 gaps and 325 candidate sites. Reviewers: Bip (R1) and a colleague (R2); guide in
-benchmark/REVIEWERS.md.
+shuffled), 114 gaps and 325 candidate sites. Two reviewers, R1 and R2, named in the write-up
+with their consent (PROTOCOL.md §7); guide in benchmark/REVIEWERS.md.
 
-**Labelling desk (2026-10-02).** A private claude.ai page
-(https://claude.ai/artifact/4F1JxaMQ1j3rNFKvw1tM5C) built by `benchmark/labelling/build.py`: one
+**Labelling desk (2026-10-02).** A private claude.ai page, shared with the reviewers, built by
+`benchmark/labelling/build.py`: one
 item at a time with code context and GitHub links, keyboard answers, each reviewer's labels in their
 own private store, export to JSON, imported by `benchmark/labelling/import_labels.py` (tested in
 CI). It never sees the key. Full samples kept: 752 items per reviewer.

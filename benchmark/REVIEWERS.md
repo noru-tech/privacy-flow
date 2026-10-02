@@ -7,8 +7,8 @@ have finished every application.
 
 ## Where to label
 
-Label in the **labelling desk**, a private claude.ai page shared with both reviewers
-(<https://claude.ai/artifact/4F1JxaMQ1j3rNFKvw1tM5C>; you need Contributor access or above).
+Label in the **labelling desk**, a private claude.ai page whose link you get from whoever runs the
+benchmark (you need Contributor access or above).
 It shows one item at a time with the code around every step and a link to that line on GitHub at
 the pinned commit, takes each answer with one click or key, and saves as you go. Your answers are
 stored privately: the other reviewer, the page's owner and Claude cannot read them. They leave the
