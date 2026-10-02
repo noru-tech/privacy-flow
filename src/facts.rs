@@ -197,6 +197,12 @@ pub struct Facts {
     pub static_gaps: Vec<StaticGap>,
     /// Handlers recognised per source id, for `doctor` and coverage notes.
     pub handlers: BTreeMap<String, usize>,
+    /// The function each return slot belongs to: its return value, and the field variables of
+    /// the sites it returns (ADR 0009).
+    pub slot_of: Vec<Option<FuncId>>,
+    /// Per return slot: (call site, the caller's variable it exits to). A function's return
+    /// value exits to each call's result, in the order of its callers.
+    pub exits: Vec<Vec<(u32, VarId)>>,
 }
 
 pub struct Inputs<'a> {
@@ -247,6 +253,8 @@ pub fn build(p: &mut Program, inp: &Inputs) -> Facts {
                 .collect(),
             static_gaps: Vec::new(),
             handlers: BTreeMap::new(),
+            slot_of: Vec::new(),
+            exits: Vec::new(),
         },
         defs: vec![Vec::new(); nvars],
         seed_keys: BTreeSet::new(),
@@ -280,7 +288,21 @@ pub fn build(p: &mut Program, inp: &Inputs) -> Facts {
     b.param_name_seeds();
     b.static_gaps();
     let loads = std::mem::take(&mut b.loads);
-    heap::resolve(b.p, &mut b.f, &b.defs, loads);
+    let slot_exits = heap::resolve(b.p, &mut b.f, &b.defs, loads);
+    let nvars = b.p.vars.len();
+    b.f.slot_of = vec![None; nvars];
+    b.f.exits = vec![Vec::new(); nvars];
+    for (g, func) in b.p.funcs.iter().enumerate() {
+        b.f.slot_of[func.ret as usize] = Some(g as FuncId);
+        b.f.exits[func.ret as usize] = b.f.callers[g]
+            .iter()
+            .map(|&site| (site, b.f.sites[site as usize].dst))
+            .collect();
+    }
+    for e in slot_exits {
+        b.f.slot_of[e.slot as usize] = Some(e.func);
+        b.f.exits[e.slot as usize].push((e.site, e.to));
+    }
     for (i, h) in b.f.hits.iter().enumerate() {
         for &a in &h.args {
             if !b.f.hit_args[a as usize].contains(&(i as u32)) {

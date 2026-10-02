@@ -1,0 +1,5 @@
+{
+  "description": "An object returned with a spread keeps its own fields apart from the spread's.",
+  "language": "javascript",
+  "status": "required"
+}

@@ -88,7 +88,10 @@ Plain objects ([ADR 0007](adr/0007-allocation-sites.md)): every literal is an al
 and a flow-insensitive points-to analysis inside the facts builder gives each written field of a
 site its own variable. A field read of a variable that holds only known sites copies from those
 variables, so nested fields stay apart; a read of a value from a parameter, a call or an import
-keeps its `Load` edge.
+keeps its `Load` edge. Across calls ([ADR 0009](adr/0009-call-context-sites.md)), a call that
+reaches only local functions holds a per-call-site clone of each site its callee returns; the
+callee's site fields are extra return slots, applied through summaries like the return value, so
+the clone's fields are context-sensitive. What spreads into a literal is the literal's rest.
 
 ## 5. Engines
 

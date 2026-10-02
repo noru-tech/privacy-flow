@@ -11,6 +11,10 @@ All notable changes to this project are documented here. The format is based on
   configuration and data maps, run by ClusterFuzzLite on pull requests and weekly.
 
 ### Changed
+- Objects returned from calls keep their fields apart in the caller, per call site: a helper's
+  `return { ...record, user: { id, email } }` read as `r.user.id` no longer reports the email
+  address. Spreads into a literal are its rest, not its identity. On documenso, medium PF001
+  findings go from 23 to 14 (ADR 0009).
 - Plain objects are allocation sites: within a function, and through module-level objects and
   closures, nested fields stay apart (`o = { a: { email, id } }; log(o.a.id)` is no longer
   reported), and a field written through one variable is seen through another that holds the

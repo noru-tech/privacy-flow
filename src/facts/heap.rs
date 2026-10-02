@@ -16,12 +16,21 @@
 //! written with a computed key (`o[k] = x`) is dirty, and reads of it keep the `Load` edge too.
 //! Field writes keep their `Store` edge, so the whole object (`log(o)`) still carries every field.
 //! Both engines read the resulting edges; neither knows about sites.
+//!
+//! **Across calls** (ADR 0009): a call that reaches only local functions gets, at its call site,
+//! a clone of each site its callee returns, keyed by (call site, original literal), so a
+//! wrapper's `return { data: { email, id } }` read as `r.data.id` in the caller keeps the inner
+//! object's fields apart. A clone's field variables are filled through the call boundary, not by
+//! edges: each callee-side field variable of a returned site is an extra **return slot** of the
+//! callee, with an exit at each call site to the clone's variable. The engines apply slots as
+//! they apply the return value, through summaries, so a helper called with an email address and
+//! with an ID does not mix them.
 
 use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet, VecDeque};
 
 use super::{Edge, EdgeKind, Facts};
 use crate::ir::VarKind;
-use crate::program::{GKind, GVar, Program, Sym, VarId};
+use crate::program::{GCallee, GKind, GVar, Program, Sym, VarId};
 
 /// A named field read whose edge waits for the points-to result.
 pub(super) struct PendingLoad {
@@ -58,10 +67,35 @@ struct Solver {
     queued: Vec<bool>,
     /// A node that holds only `UNKNOWN`: the source of computed-key writes.
     unknown_node: u32,
+    /// Sites are statement indices of literals; clones are numbered from here.
+    clone0: u32,
+    /// Clone `clone0 + i` is (call site, original literal).
+    clones: Vec<(u32, u32)>,
+    clone_id: HashMap<(u32, u32), u32>,
+    /// Clones made per call site, against `MAX_SITES`.
+    clones_at: HashMap<u32, usize>,
+    /// The function owning each site: the literal's, or for a clone the call site's caller.
+    site_owner: Vec<u32>,
+    /// Facts call sites: (callee, the function containing the call).
+    call_sites: Vec<(u32, u32)>,
+    /// Source node → (target node, call site): the target holds the source's sites as seen
+    /// from the caller at that call site.
+    mapped: HashMap<u32, Vec<(u32, u32)>>,
+    /// (callee-side site, clone, call site): the clone stands for that site at that call site.
+    mirrors: BTreeSet<(u32, u32, u32)>,
+    mirrors_of: HashMap<u32, Vec<(u32, u32)>>,
+    fields_of_site: HashMap<u32, Vec<Sym>>,
+    /// Site → its rest node: what spreads into a literal (`{ ...x }`, each spread copied into
+    /// it), or a clone's rest, filled through the call. A field read of the site also reads
+    /// that field of the rest.
+    rests: HashMap<u32, Vec<u32>>,
+    /// (callee-side rest, clone, call site) for the exits.
+    rest_exits: BTreeSet<(u32, u32, u32)>,
+    loads_done: HashSet<(u32, u32, Sym)>,
 }
 
 impl Solver {
-    fn new(nvars: usize) -> Self {
+    fn new(nvars: usize, clone0: u32, site_owner: Vec<u32>, call_sites: Vec<(u32, u32)>) -> Self {
         let mut s = Solver {
             pts: vec![Vec::new(); nvars],
             copy_out: vec![Vec::new(); nvars],
@@ -72,6 +106,19 @@ impl Solver {
             queue: VecDeque::new(),
             queued: vec![false; nvars],
             unknown_node: 0,
+            clone0,
+            clones: Vec::new(),
+            clone_id: HashMap::new(),
+            clones_at: HashMap::new(),
+            site_owner,
+            call_sites,
+            mapped: HashMap::new(),
+            mirrors: BTreeSet::new(),
+            mirrors_of: HashMap::new(),
+            fields_of_site: HashMap::new(),
+            rests: HashMap::new(),
+            rest_exits: BTreeSet::new(),
+            loads_done: HashSet::new(),
         };
         s.unknown_node = s.push_node();
         s.add(s.unknown_node, UNKNOWN);
@@ -92,7 +139,85 @@ impl Solver {
         }
         let n = self.push_node();
         self.fields.insert((site, k), n);
+        self.fields_of_site.entry(site).or_default().push(k);
+        // Every clone standing for this site gets the field too.
+        for (clone, c) in self.mirrors_of.get(&site).cloned().unwrap_or_default() {
+            let to = self.field(clone, k);
+            self.add_mapped(n, to, c);
+        }
         n
+    }
+
+    fn owner(&self, site: u32) -> u32 {
+        self.site_owner[site as usize]
+    }
+
+    fn base(&self, site: u32) -> u32 {
+        if site >= self.clone0 {
+            self.clones[(site - self.clone0) as usize].1
+        } else {
+            site
+        }
+    }
+
+    /// What `x`, seen inside the callee of call site `c`, is in the caller: a site the callee
+    /// owns is the call site's clone of its literal; anything else is itself.
+    fn map(&mut self, c: u32, x: u32) -> u32 {
+        if x == UNKNOWN {
+            return UNKNOWN;
+        }
+        let (callee, caller) = self.call_sites[c as usize];
+        if self.owner(x) != callee {
+            return x;
+        }
+        let key = (c, self.base(x));
+        let clone = match self.clone_id.get(&key) {
+            Some(&id) => id,
+            None => {
+                let n = self.clones_at.entry(c).or_default();
+                if *n >= MAX_SITES {
+                    return UNKNOWN;
+                }
+                *n += 1;
+                let id = self.clone0 + self.clones.len() as u32;
+                self.clones.push(key);
+                self.clone_id.insert(key, id);
+                self.site_owner.push(caller);
+                let base = key.1;
+                if self.rests.contains_key(&base) {
+                    let r = self.push_node();
+                    self.rests.insert(id, vec![r]);
+                }
+                id
+            }
+        };
+        if self.mirrors.insert((x, clone, c)) {
+            self.mirrors_of.entry(x).or_default().push((clone, c));
+            if let Some(&rc) = self.rests.get(&clone).and_then(|r| r.first()) {
+                for rest in self.rests.get(&x).cloned().unwrap_or_default() {
+                    self.rest_exits.insert((rest, clone, c));
+                    self.add_mapped(rest, rc, c);
+                }
+            }
+            for k in self.fields_of_site.get(&x).cloned().unwrap_or_default() {
+                let from = self.field(x, k);
+                let to = self.field(clone, k);
+                self.add_mapped(from, to, c);
+            }
+        }
+        clone
+    }
+
+    fn add_mapped(&mut self, from: u32, to: u32, c: u32) {
+        let list = self.mapped.entry(from).or_default();
+        if list.contains(&(to, c)) {
+            return;
+        }
+        list.push((to, c));
+        for x in self.pts[from as usize].clone() {
+            let y = self.map(c, x);
+            self.add(to, y);
+        }
     }
 
     fn enqueue(&mut self, n: u32) {
@@ -150,6 +275,12 @@ impl Solver {
                     self.add(to, x);
                 }
             }
+            for (to, c) in self.mapped.get(&n).cloned().unwrap_or_default() {
+                for &x in &xs {
+                    let y = self.map(c, x);
+                    self.add(to, y);
+                }
+            }
             let sites = self.sites(n);
             let stores = self.stores_into.get(&n).cloned().unwrap_or_default();
             for (src, k) in stores {
@@ -158,42 +289,114 @@ impl Solver {
                     self.add_copy(src, f);
                 }
             }
-            let unknown = self.unknown(n);
             let loads = self.loads_from.get(&n).cloned().unwrap_or_default();
             for (dst, k) in loads {
-                // A field of an unknown value is unknown.
-                if unknown {
-                    self.add(dst, UNKNOWN);
-                }
-                for &s in &sites {
-                    let f = self.field(s, k);
-                    self.add_copy(f, dst);
-                    let d = self.field(s, DIRTY);
-                    self.add_copy(d, dst);
-                }
+                self.apply_load(n, dst, k);
             }
         }
+    }
+
+    /// `dst = n.k`: the field of each site, and the same read of each site's rests.
+    fn apply_load(&mut self, n: u32, dst: u32, k: Sym) {
+        // A field of an unknown value is unknown.
+        if self.unknown(n) {
+            self.add(dst, UNKNOWN);
+        }
+        for s in self.sites(n) {
+            let f = self.field(s, k);
+            self.add_copy(f, dst);
+            let d = self.field(s, DIRTY);
+            self.add_copy(d, dst);
+            for r in self.rests.get(&s).cloned().unwrap_or_default() {
+                self.add_load(r, dst, k);
+            }
+        }
+    }
+
+    fn add_load(&mut self, obj: u32, dst: u32, k: Sym) {
+        if !self.loads_done.insert((obj, dst, k)) {
+            return;
+        }
+        self.loads_from.entry(obj).or_default().push((dst, k));
+        self.apply_load(obj, dst, k);
+    }
+}
+
+/// A callee-side return slot and where it exits at one call site.
+pub(super) struct SlotExit {
+    pub slot: VarId,
+    pub func: u32,
+    pub site: u32,
+    pub to: VarId,
+}
+
+/// Whether a call reaches local functions and nothing else, so its result is what they return.
+fn local_only(p: &Program, stmt: u32) -> bool {
+    p.calls.get(&stmt).is_some_and(|t| {
+        !t.funcs.is_empty()
+            && t.classes.is_empty()
+            && t.apis.is_empty()
+            && t.unresolved.is_empty()
+            && !t.dynamic
+            && t.plain_method.is_none()
+    })
+}
+
+/// `p.catch(f)` and `p.finally(f)` on a JavaScript promise hold what `p` holds: the receiver,
+/// for a call that is one of them.
+fn promise_passthrough(p: &Program, stmt: u32) -> Option<VarId> {
+    let st = &p.stmts[stmt as usize];
+    if p.files[st.file as usize].lang.family() != "javascript" {
+        return None;
+    }
+    match &st.kind {
+        GKind::Call {
+            callee: GCallee::Method { recv, name },
+            ..
+        } if matches!(p.syms.str(*name), "catch" | "finally") => Some(*recv),
+        _ => None,
     }
 }
 
 /// Resolve the pending field reads into edges, adding a variable per written field of each
-/// allocation site.
-pub(super) fn resolve(p: &mut Program, f: &mut Facts, defs: &[Vec<u32>], loads: Vec<PendingLoad>) {
+/// allocation site and of each call site's clones, and return the clones' slot exits.
+pub(super) fn resolve(
+    p: &mut Program,
+    f: &mut Facts,
+    defs: &[Vec<u32>],
+    loads: Vec<PendingLoad>,
+) -> Vec<SlotExit> {
     let nvars = p.vars.len();
-    let mut s = Solver::new(nvars);
+    let clone0 = p.stmts.len() as u32;
+    let site_owner: Vec<u32> = p.stmts.iter().map(|st| st.func).collect();
+    let call_sites: Vec<(u32, u32)> = f
+        .sites
+        .iter()
+        .map(|site| (site.func, p.stmts[site.stmt as usize].func))
+        .collect();
+    let mut s = Solver::new(nvars, clone0, site_owner, call_sites);
 
-    // Unknown by construction: anything but a local or temporary, and anything with a
-    // definition other than a literal, a copy or a named field read.
+    // Unknown by construction: anything but a local, a temporary or a return slot, and
+    // anything with a definition other than a literal, a copy, a named field read or a call
+    // that reaches only local functions.
     for (v, ds) in defs.iter().enumerate().take(nvars) {
         let kind = p.vars[v].kind;
-        let modelled = matches!(kind, VarKind::Local | VarKind::Temp)
-            && !ds.is_empty()
-            && ds.iter().all(|&d| {
-                matches!(
-                    p.stmts[d as usize].kind,
-                    GKind::Lit { .. } | GKind::Copy { .. } | GKind::Load { field: Some(_), .. }
-                )
-            });
+        let modelled = match kind {
+            VarKind::Ret => ds.is_empty(),
+            VarKind::Local | VarKind::Temp => {
+                !ds.is_empty()
+                    && ds.iter().all(|&d| match p.stmts[d as usize].kind {
+                        GKind::Lit { .. }
+                        | GKind::Copy { .. }
+                        | GKind::Load { field: Some(_), .. } => true,
+                        GKind::Call { .. } => {
+                            local_only(p, d) || promise_passthrough(p, d).is_some()
+                        }
+                        _ => false,
+                    })
+            }
+            _ => false,
+        };
         if !modelled {
             s.add(v as u32, UNKNOWN);
         }
@@ -206,13 +409,57 @@ pub(super) fn resolve(p: &mut Program, f: &mut Facts, defs: &[Vec<u32>], loads: 
             s.add(dst, i as u32);
         }
     }
+    // A literal's own temporary: defined by the literal and by what spreads into it.
+    let mut literal_of: HashMap<VarId, u32> = HashMap::new();
+    for (i, st) in p.stmts.iter().enumerate() {
+        if let GKind::Lit { dst, .. } = st.kind {
+            let ds = &defs[dst as usize];
+            let lits = ds
+                .iter()
+                .filter(|&&d| matches!(p.stmts[d as usize].kind, GKind::Lit { .. }))
+                .count();
+            if p.vars[dst as usize].kind == VarKind::Temp
+                && lits == 1
+                && ds.iter().all(|&d| {
+                    matches!(
+                        p.stmts[d as usize].kind,
+                        GKind::Lit { .. } | GKind::Copy { .. }
+                    )
+                })
+            {
+                literal_of.insert(dst, i as u32);
+            }
+        }
+    }
     // Field writes, with their statements, for the edges to emit afterwards.
     let mut stores: Vec<(VarId, VarId, Sym, u32)> = Vec::new();
+    // (literal, what spreads into it, the spread's statement)
+    let mut spreads: Vec<(u32, VarId, u32)> = Vec::new();
     for (from, edges) in f.out.iter().enumerate() {
         let from = from as u32;
         for e in edges {
             match (e.kind, &p.stmts[e.stmt as usize].kind) {
-                (EdgeKind::Copy, GKind::Copy { .. }) => s.copy_out[from as usize].push(e.to),
+                (EdgeKind::Copy, GKind::Copy { .. }) if literal_of.contains_key(&e.to) => {
+                    spreads.push((literal_of[&e.to], from, e.stmt));
+                }
+                (EdgeKind::Copy, GKind::Copy { .. } | GKind::Return { .. }) => {
+                    s.copy_out[from as usize].push(e.to)
+                }
+                // The promise's value passes through `catch`/`finally`; the callback, a function
+                // value, carries nothing.
+                (EdgeKind::Collapse | EdgeKind::Copy, GKind::Call { .. })
+                    if promise_passthrough(p, e.stmt).is_some() =>
+                {
+                    if promise_passthrough(p, e.stmt) == Some(from) {
+                        s.copy_out[from as usize].push(e.to);
+                    } else if !defs[from as usize]
+                        .iter()
+                        .all(|&d| matches!(p.stmts[d as usize].kind, GKind::FuncRef { .. }))
+                        || defs[from as usize].is_empty()
+                    {
+                        s.add(e.to, UNKNOWN);
+                    }
+                }
                 (EdgeKind::Store(k), GKind::Store { .. }) => {
                     s.stores_into.entry(e.to).or_default().push((from, k));
                     stores.push((from, e.to, k, e.stmt));
@@ -225,11 +472,34 @@ pub(super) fn resolve(p: &mut Program, f: &mut Facts, defs: &[Vec<u32>], loads: 
             }
         }
     }
+    // A literal's rest is a node of its own, owned by the literal's function, that every spread
+    // copies into: the spreads stay cited, and the rest can be a return slot.
+    spreads.sort_unstable();
+    for &(site, from, _) in &spreads {
+        let r = match s.rests.get(&site) {
+            Some(r) => r[0],
+            None => {
+                let r = s.push_node();
+                s.rests.insert(site, vec![r]);
+                r
+            }
+        };
+        s.copy_out[from as usize].push(r);
+    }
     for l in &loads {
         s.loads_from
             .entry(l.obj)
             .or_default()
             .push((l.dst, l.field));
+    }
+    // A call that reaches only local functions holds what they return, as seen from the call
+    // site.
+    for c in 0..f.sites.len() {
+        let site = f.sites[c];
+        if local_only(p, site.stmt) {
+            let ret = p.funcs[site.func as usize].ret;
+            s.add_mapped(ret, site.dst, c as u32);
+        }
     }
     for n in 0..nvars as u32 {
         s.enqueue(n);
@@ -266,38 +536,115 @@ pub(super) fn resolve(p: &mut Program, f: &mut Facts, defs: &[Vec<u32>], loads: 
             field_edges.push(((site, k), src, stmt, false));
         }
     }
-    for l in &loads {
-        let sites = s.sites(l.obj);
-        let dirty = sites
-            .iter()
-            .any(|&site| s.fields.get(&(site, DIRTY)).is_some_and(|&d| s.unknown(d)));
-        if s.unknown(l.obj) || sites.is_empty() || dirty {
-            new_edges.insert((l.obj, l.stmt, l.dst), EdgeKind::Load(l.field));
-        }
-        if s.unknown(l.obj) {
-            continue;
-        }
-        for site in sites {
-            if written.contains(&(site, l.field)) {
-                field_edges.push(((site, l.field), l.dst, l.stmt, true));
+    // A clone's field exists where the field it stands for does, through any number of calls.
+    loop {
+        let mut grew = false;
+        for &(x, clone, _) in &s.mirrors {
+            for &k in s
+                .fields_of_site
+                .get(&x)
+                .map(|v| v.as_slice())
+                .unwrap_or(&[])
+            {
+                if k != DIRTY && written.contains(&(x, k)) && written.insert((clone, k)) {
+                    grew = true;
+                }
             }
         }
+        if !grew {
+            break;
+        }
     }
+    // Where a site is: its literal, or for a clone the call.
+    let site_stmt = |site: u32| -> u32 {
+        if site >= clone0 {
+            f.sites[s.clones[(site - clone0) as usize].0 as usize].stmt
+        } else {
+            site
+        }
+    };
     let mut var_of: BTreeMap<(u32, Sym), VarId> = BTreeMap::new();
     for &(site, k) in &written {
-        let st = &p.stmts[site as usize];
+        let st = &p.stmts[site_stmt(site) as usize];
         let v = p.vars.len() as VarId;
         p.vars.push(GVar {
             name: format!("{{}}.{}", p.syms.str(k)),
             kind: VarKind::Temp,
-            func: st.func,
+            func: s.owner(site),
             file: st.file,
             pos: st.pos,
         });
         p.prov.push(Vec::new());
         var_of.insert((site, k), v);
     }
+    // Rest variables: a literal's belongs to its function, a clone's to the caller.
+    let mut rest_var: HashMap<u32, VarId> = HashMap::new();
+    let mut rest_owner: Vec<(VarId, u32)> = Vec::new();
+    let mut all_rests: Vec<(u32, u32)> = s.rests.iter().map(|(site, r)| (*site, r[0])).collect();
+    all_rests.sort_unstable();
+    for (clone, node) in all_rests {
+        let st = &p.stmts[site_stmt(clone) as usize];
+        let v = p.vars.len() as VarId;
+        p.vars.push(GVar {
+            name: "{...}".to_string(),
+            kind: VarKind::Temp,
+            func: s.owner(clone),
+            file: st.file,
+            pos: st.pos,
+        });
+        p.prov.push(Vec::new());
+        rest_var.insert(node, v);
+        rest_owner.push((v, s.owner(clone)));
+    }
+    let var_of_node = |n: u32| -> VarId { rest_var.get(&n).copied().unwrap_or(n) };
     let mut funcs: BTreeMap<VarId, BTreeSet<u32>> = BTreeMap::new();
+    // Each spread copies into its literal's rest, citing the spread.
+    for &(site, from, stmt) in &spreads {
+        let r = var_of_node(s.rests[&site][0]);
+        new_edges.insert((from, stmt, r), EdgeKind::Copy);
+        funcs
+            .entry(r)
+            .or_default()
+            .insert(p.stmts[stmt as usize].func);
+    }
+    let node_of_var: HashMap<VarId, u32> = rest_var.iter().map(|(&n, &v)| (v, n)).collect();
+
+    // Field reads, following each site's rests as further reads of the same field.
+    let mut queue: VecDeque<(VarId, VarId, Sym, u32)> = loads
+        .iter()
+        .map(|l| (l.obj, l.dst, l.field, l.stmt))
+        .collect();
+    let mut seen: HashSet<(VarId, VarId, Sym, u32)> = HashSet::new();
+    while let Some((obj, dst, k, stmt)) = queue.pop_front() {
+        if !seen.insert((obj, dst, k, stmt)) {
+            continue;
+        }
+        let n = node_of_var.get(&obj).copied().unwrap_or(obj);
+        let sites = s.sites(n);
+        let dirty = sites
+            .iter()
+            .any(|&site| s.fields.get(&(site, DIRTY)).is_some_and(|&d| s.unknown(d)));
+        if s.unknown(n) || sites.is_empty() || dirty {
+            new_edges.insert((obj, stmt, dst), EdgeKind::Load(k));
+            if obj >= nvars as VarId {
+                funcs
+                    .entry(obj)
+                    .or_default()
+                    .insert(p.stmts[stmt as usize].func);
+            }
+        }
+        if s.unknown(n) {
+            continue;
+        }
+        for site in sites {
+            if written.contains(&(site, k)) {
+                field_edges.push(((site, k), dst, stmt, true));
+            }
+            for &r in s.rests.get(&site).map(|v| v.as_slice()).unwrap_or(&[]) {
+                queue.push_back((var_of_node(r), dst, k, stmt));
+            }
+        }
+    }
     for &(key, other, stmt, from_field) in &field_edges {
         let fv = var_of[&key];
         let (from, to) = if from_field { (fv, other) } else { (other, fv) };
@@ -312,18 +659,59 @@ pub(super) fn resolve(p: &mut Program, f: &mut Facts, defs: &[Vec<u32>], loads: 
     f.out.extend((0..added).map(|_| Vec::new()));
     f.bindings.extend((0..added).map(|_| Vec::new()));
     f.hit_args.extend((0..added).map(|_| Vec::new()));
-    for (&(site, _), &v) in &var_of {
-        let owner = p.stmts[site as usize].func;
-        // Shared when the site's function is a module, or the field is used from another
-        // function: summaries stop at it, and the search continues from it.
-        let shared = p.funcs[owner as usize].is_module
+    // Shared when the owner is a module, or the variable is used from a function that is
+    // neither its owner nor nested in it: summaries stop at it, and the search continues from
+    // it. A closure's use is not sharing, as for the locals it captures.
+    let within = |mut g: u32, owner: u32| loop {
+        if g == owner {
+            return true;
+        }
+        match p.funcs[g as usize].parent {
+            Some(parent) => g = parent,
+            None => return false,
+        }
+    };
+    let shared = |v: VarId, owner: u32| {
+        p.funcs[owner as usize].is_module
             || funcs
                 .get(&v)
-                .is_some_and(|fs| fs.iter().any(|&g| g != owner));
+                .is_some_and(|fs| fs.iter().any(|&g| !within(g, owner)))
+    };
+    for (&(site, _), &v) in &var_of {
         debug_assert_eq!(f.shared.len(), v as usize);
-        f.shared.push(shared);
+        f.shared.push(shared(v, s.owner(site)));
+    }
+    for &(v, owner) in &rest_owner {
+        debug_assert_eq!(f.shared.len(), v as usize);
+        f.shared.push(shared(v, owner));
     }
     for ((from, stmt, to), kind) in new_edges {
         f.out[from as usize].push(Edge { to, kind, stmt });
     }
+    // Each field variable of a site a callee returns exits, at each call site, to the field
+    // variable of that call site's clone; each of its rests, to the clone's rest.
+    let mut exits = Vec::new();
+    for &(x, clone, c) in &s.mirrors {
+        for (&(site, k), &slot) in var_of.range((x, 0)..=(x, Sym::MAX)) {
+            debug_assert_eq!(site, x);
+            if let Some(&to) = var_of.get(&(clone, k)) {
+                exits.push(SlotExit {
+                    slot,
+                    func: s.call_sites[c as usize].0,
+                    site: c,
+                    to,
+                });
+            }
+        }
+    }
+    for &(rest, clone, c) in &s.rest_exits {
+        let to = var_of_node(s.rests[&clone][0]);
+        exits.push(SlotExit {
+            slot: var_of_node(rest),
+            func: s.call_sites[c as usize].0,
+            site: c,
+            to,
+        });
+    }
+    exits
 }
