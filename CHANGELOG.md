@@ -6,6 +6,16 @@ All notable changes to this project are documented here. The format is based on
 
 ## [Unreleased]
 
+### Added
+- Fuzzing: cargo-fuzz targets for lowering, the whole pipeline (with a determinism check),
+  configuration and data maps, run by ClusterFuzzLite on pull requests and weekly.
+
+### Changed
+- Plain objects are allocation sites: within a function, and through module-level objects and
+  closures, nested fields stay apart (`o = { a: { email, id } }; log(o.a.id)` is no longer
+  reported), and a field written through one variable is seen through another that holds the
+  same object (ADR 0007).
+
 ### Fixed
 - Every `new Map()` (and `Set`, `WeakMap`, `WeakSet`) was one container for provenance, so a
   value cached in a Map, such as a Prisma client, also resolved as whatever any other Map held.
@@ -14,11 +24,23 @@ All notable changes to this project are documented here. The format is based on
   (ADR 0008).
 - The catalogue's built-in containers match their own methods only, not calls on their elements.
 
+## [0.1.1] - 2026-10-02
+
+No change to the analysis: for the same input, 0.1.1 reports the same flows, findings and gaps as
+0.1.0, and only the version recorded in the outputs differs.
+
+### Added
+- A speed and memory benchmark of piiflow and Privado on the twelve applications of the benchmark
+  corpus, run on the same GitHub-hosted runners, with its method and results in the repository and
+  a summary in the README.
+- The benchmark report (`benchmark/REPORT.md`), tied to the released binary.
+- A logo, a social preview image, a feature request form and a Discussions link in the issue
+  chooser.
+- Releases are archived on Zenodo from this release on.
+
 ### Changed
-- Plain objects are allocation sites: within a function, and through module-level objects and
-  closures, nested fields stay apart (`o = { a: { email, id } }; log(o.a.id)` is no longer
-  reported), and a field written through one variable is seen through another that holds the
-  same object (ADR 0007).
+- The control-mapping notes no longer say the review is due before the first release; the mapping
+  is still pending review.
 
 ## [0.1.0] - 2026-10-02
 
@@ -46,5 +68,6 @@ All notable changes to this project are documented here. The format is based on
   criterion benchmarks, a CI performance budget, and a release pipeline with artifact
   attestations, checksums and an SBOM.
 
-[Unreleased]: https://github.com/noru-tech/privacy-flow/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/noru-tech/privacy-flow/compare/v0.1.1...HEAD
+[0.1.1]: https://github.com/noru-tech/privacy-flow/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/noru-tech/privacy-flow/releases/tag/v0.1.0

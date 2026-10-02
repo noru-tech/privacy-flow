@@ -8,8 +8,15 @@ authors:
 repository-code: https://github.com/noru-tech/privacy-flow
 url: https://github.com/noru-tech/privacy-flow
 license: MIT
-# A Zenodo concept DOI is added here with the first archived release.
-version: "0.1.0"
+# The concept DOI resolves to the latest release archived on Zenodo; each release also has its own
+# version DOI, listed on the Zenodo record.
+doi: 10.5281/zenodo.23104908
+identifiers:
+  - type: doi
+    value: 10.5281/zenodo.23104908
+    description: Concept DOI for every archived release (resolves to the latest).
+version: "0.1.1"
+date-released: "2026-10-02"
 keywords:
   - privacy
   - GDPR

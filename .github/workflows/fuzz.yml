@@ -1,0 +1,39 @@
+# Fuzzing with ClusterFuzzLite: the cargo-fuzz targets in fuzz/, built by .clusterfuzzlite/.
+# Every pull request is fuzzed for five minutes (the check is required on main, so it runs even
+# when only docs change); every week, and on demand, each target runs for longer. A crash fails
+# the job and uploads the reproducing input.
+name: fuzz
+
+on:
+  pull_request:
+  schedule:
+    - cron: "41 4 * * 3"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: fuzz-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  fuzz:
+    name: fuzz (address sanitizer)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Build fuzzers
+        id: build
+        uses: google/clusterfuzzlite/actions/build_fuzzers@884713a6c30a92e5e8544c39945cd7cb630abcd1 # v1
+        with:
+          language: rust
+          sanitizer: address
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Run fuzzers
+        id: run
+        uses: google/clusterfuzzlite/actions/run_fuzzers@884713a6c30a92e5e8544c39945cd7cb630abcd1 # v1
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          fuzz-seconds: ${{ github.event_name == 'pull_request' && 300 || 1800 }}
+          mode: ${{ github.event_name == 'pull_request' && 'code-change' || 'batch' }}
+          sanitizer: address

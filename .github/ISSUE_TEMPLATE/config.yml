@@ -3,3 +3,6 @@ contact_links:
   - name: Security vulnerability
     url: https://github.com/noru-tech/privacy-flow/security/advisories/new
     about: Report privately; see SECURITY.md. Do not open a public issue for an unfixed vulnerability.
+  - name: Question or idea
+    url: https://github.com/noru-tech/privacy-flow/discussions
+    about: Ask how piiflow handles your stack, or discuss an idea before opening an issue.

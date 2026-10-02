@@ -19,7 +19,9 @@ right; this one measures only cost. The README's "How fast is it?" section is ge
   fixes it: privado-core 1.1.175 from the pinned image, rules v1.3.91, no network, 14 GiB
   memory limit, the same files excluded. Its image is pulled before timing starts; the JVM's
   start-up is part of its time, because it is part of every run. Memory is what Docker reports
-  for the container, read once a second, so short peaks can be missed.
+  for the container, read once a second, so short peaks can be missed. A run still going after
+  an hour is stopped and shown as not finished, with the time it ran; piiflow's numbers are saved
+  before Privado starts, so they survive whatever happens to Privado's run.
 - **Not in the numbers:** fetching the applications, pulling the image, and the CPU model
   (GitHub assigns runners from a pool; the model is recorded per job).
 

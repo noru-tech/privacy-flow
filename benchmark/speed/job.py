@@ -65,7 +65,7 @@ def run_piiflow(binary, entry, repeat):
             "version": subprocess.run([binary, "--version"], capture_output=True, text=True).stdout.strip()}
 
 
-def run_privado(entry, rules, out):
+def run_privado(entry, rules, out, limit_seconds):
     work = out / f".work-{entry['name']}"
     scan.prepare_work(entry, ROOT / ".benchmark-cache" / entry["name"] / entry["scope"], work)
     name = "pf-speed-" + entry["name"]
@@ -74,7 +74,12 @@ def run_privado(entry, rules, out):
     start = time.perf_counter()
     subprocess.run(cmd, check=True, capture_output=True, text=True)
     peak = 0.0
+    timed_out = False
     while True:
+        if time.perf_counter() - start > limit_seconds:
+            subprocess.run(["docker", "kill", name], capture_output=True)
+            timed_out = True
+            break
         state = subprocess.run(["docker", "inspect", "-f", "{{.State.Running}}", name], capture_output=True, text=True).stdout.strip()
         if state != "true":
             break
@@ -91,7 +96,8 @@ def run_privado(entry, rules, out):
     subprocess.run(["docker", "rm", "-f", name], capture_output=True)
     finished = (work / ".privado" / "privado.json").exists()
     return {"exit_code": exit_code, "wall_seconds": round(wall, 1), "peak_memory_mib": round(peak),
-            "finished": finished, "out_of_memory": oom or exit_code == 137, "image": scan.IMAGE,
+            "finished": finished and not timed_out, "out_of_memory": (oom or exit_code == 137) and not timed_out,
+            "timed_out": timed_out, "time_limit_seconds": limit_seconds, "image": scan.IMAGE,
             "memory_limit_gib": 14}
 
 
@@ -102,13 +108,16 @@ def main():
     ap.add_argument("--rules", required=True)
     ap.add_argument("--out", required=True)
     ap.add_argument("--repeat", type=int, default=3)
+    ap.add_argument("--privado-limit", type=int, default=3600, help="seconds before Privado is stopped and recorded as not finished")
     args = ap.parse_args()
     corpus = json.loads((ROOT / "benchmark/corpus.json").read_text())
     entry = next(e for e in corpus["repositories"] if e["name"] == args.app)
     out = pathlib.Path(args.out).resolve()
     out.mkdir(parents=True, exist_ok=True)
     result = {"app": entry["name"], "machine": machine(), "piiflow": run_piiflow(os.path.abspath(args.piiflow), entry, args.repeat)}
-    result["privado"] = run_privado(entry, args.rules, out)
+    # Saved before Privado starts, so piiflow's numbers survive whatever happens to Privado's run.
+    (out / f"{entry['name']}.json").write_text(json.dumps(result, indent=2, sort_keys=True) + "\n")
+    result["privado"] = run_privado(entry, args.rules, out, args.privado_limit)
     (out / f"{entry['name']}.json").write_text(json.dumps(result, indent=2, sort_keys=True) + "\n")
     print(json.dumps(result, sort_keys=True))
 
