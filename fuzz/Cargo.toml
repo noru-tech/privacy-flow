@@ -1,0 +1,47 @@
+[package]
+name = "privacy-flow-fuzz"
+version = "0.0.0"
+publish = false
+edition = "2024"
+
+[package.metadata]
+cargo-fuzz = true
+
+[dependencies]
+libfuzzer-sys = "0.4"
+privacy-flow = { path = ".." }
+
+# Its own workspace: the fuzz crate needs nightly and is not part of the published package.
+[workspace]
+members = ["."]
+
+[profile.release]
+debug = 1
+
+[[bin]]
+name = "lower"
+path = "fuzz_targets/lower.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "scan"
+path = "fuzz_targets/scan.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "config"
+path = "fuzz_targets/config.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "datamap"
+path = "fuzz_targets/datamap.rs"
+test = false
+doc = false
+bench = false

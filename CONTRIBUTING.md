@@ -39,6 +39,7 @@ tests/fixtures/   one directory per case, expectations as `expect:` markers on s
 tests/goldens/    canonical outputs of every fixture, compared byte for byte
 conformance/      the conformance corpus and its runner
 benches/          criterion benchmarks and the synthetic service generator
+fuzz/             cargo-fuzz targets and their seed corpus, run in CI by .clusterfuzzlite/
 docs/             design, ADRs, one page per rule, configuration, catalogue, output, action
 ```
 
@@ -87,6 +88,20 @@ python3 conformance/digests.py                     # after changing a vector
 cargo clippy --all-targets -- -D warnings
 cargo fmt --all --check
 ```
+
+### Fuzzing
+
+The targets in `fuzz/fuzz_targets/` cover lowering one file, the whole pipeline on an in-memory
+tree (which must also give the same digest twice), `.privacy-flow.yml` and Fides data maps. They
+need a nightly toolchain and [cargo-fuzz](https://github.com/rust-fuzz/cargo-fuzz):
+
+```bash
+python3 fuzz/seeds.py                              # seed corpus from the fixtures and the demo
+cd fuzz && cargo +nightly fuzz run scan corpus/scan -- -max_total_time=300
+```
+
+The `fuzz` workflow runs every target on each pull request and weekly
+for longer. A crash input belongs in a regression test or fixture alongside the fix.
 
 `PIIFLOW_DEBUG_IR=1 piiflow scan …` prints every statement of the program with its provenance and
 call targets to stderr, which is the fastest way to see why a call was or was not resolved.
