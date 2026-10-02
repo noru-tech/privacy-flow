@@ -45,7 +45,7 @@ PFC01 is about the analysis, not about a control: it maps to none. It supports e
 
 These mappings are identifiers with Noru's own short gloss; no normative text from any standard is
 quoted. They are a guide for control owners, not a compliance claim, and are pending review by a
-privacy lawyer or Noru's compliance lead before the first release
+privacy lawyer or Noru's compliance lead
 ([control mapping](../control-mapping.md)).
 
 ## Failing example

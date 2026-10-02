@@ -5,7 +5,7 @@ is assessed against. Each entry is an identifier with Noru's own short gloss. No
 from any standard is quoted.
 
 > **Status: pending review.** This mapping must be checked by a privacy lawyer or Noru's
-> compliance lead before the first release (v0.1.0). Until then it is a working draft: a guide
+> compliance lead. Until then it is a working draft: a guide
 > for control owners, never a compliance claim. A finding is evidence that a flow exists in the
 > code, not a determination that processing is unlawful, and the absence of findings is evidence
 > only about the scanned scope, with its coverage gaps listed.

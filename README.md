@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="./docs/assets/privacy-flow-logo.png" alt="privacy-flow logo" width="480">
+</p>
+
 # privacy-flow
 
 Deterministic, offline static analysis of where personal data goes: logs, third-party SDKs, LLM providers and outbound HTTP. Cited file:line flow paths, SARIF, canonical JSON and Fides egress.
@@ -141,7 +145,6 @@ flow-1b97b0cc5aa9541b (user.contact.phone_number, call depth 2):
 The helper `format` does not use the email address, so the email address does not reach the
 model: the flow through the helper is computed per argument and per field.
 
-
 - **Sources** are reads of fields the [classification table](vendor/classification/classification.json)
   names (`user.email`, `customer.phone_number`), parameters named that way, objects typed with a
   type that declares such fields, request input in Express, Fastify, Next.js, FastAPI, Flask and
@@ -175,7 +178,6 @@ model: the flow through the helper is computed per argument and per field.
 | **Design** — how it works, and an ADR per major choice | [design](docs/design.md), [ADRs](docs/adr/README.md) |
 | **Benchmark** — piiflow against Privado on twelve real applications, and what is not measured yet | [report](benchmark/REPORT.md) · [method](docs/benchmark.md) |
 
-<a id="what-it-is-not"></a>
 <!-- speed:start -->
 
 ## How fast is it?
@@ -203,6 +205,7 @@ model: the flow through the helper is computed per argument and per field.
 
 <!-- speed:end -->
 
+<a id="what-it-is-not"></a>
 ## What does piiflow not do?
 
 It does not find security vulnerabilities, scan data at rest or in databases, observe the running
@@ -234,7 +237,7 @@ and says how to fix it or record a disposition ([all rules](docs/rules/README.md
 Declaring a processor in `.privacy-flow.yml` (with a citation to the DPA or vendor record) turns
 PF002 into an informational egress fact: that is how the tool fits a team that already keeps a
 processor list. The [control mapping](docs/control-mapping.md) is pending review by a privacy
-lawyer or Noru's compliance lead before the first release.
+lawyer or Noru's compliance lead.
 
 ## Commands
 
@@ -301,9 +304,12 @@ goldens are updated.
 ## How to cite
 
 `CITATION.cff` has the citation metadata. Releases will be archived on Zenodo with a concept DOI,
-as `acc`'s are; the DOI is added here with the first release.
+which resolves to the latest release; it is added here, and to `CITATION.cff`, with the first
+archived release.
 
 ## Trust
+
+How a release gets from this repository to your machine, and how to check it:
 
 - **Built in CI, from a tag.** Releases are built by [cargo-dist](https://github.com/axodotdev/cargo-dist)
   in GitHub Actions ([release.yml](.github/workflows/release.yml)) from the tagged commit.
@@ -332,7 +338,8 @@ the model"; the flow-facts schema is stable and versioned for them.
 
 ## License
 
-MIT, see [LICENSE](./LICENSE). The vendored Fideslang taxonomy is © Ethyca, Inc. under CC BY 4.0;
-see [NOTICE](NOTICE).
+MIT, see [LICENSE](./LICENSE). The tool, the catalogue, the schemas and the conformance corpus are
+MIT-licensed and independent of the Noru platform. The vendored Fideslang taxonomy is © Ethyca,
+Inc. under CC BY 4.0; see [NOTICE](NOTICE).
 
 Maintained by [Noru](https://noru.tech), a continuous compliance platform.
