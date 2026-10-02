@@ -18,6 +18,7 @@ Deterministic, offline static analysis of where personal data goes: logs, third-
 [![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/noru-tech/privacy-flow/badge)](https://scorecard.dev/viewer/?uri=github.com/noru-tech/privacy-flow)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](./LICENSE)
 [![crates.io](https://img.shields.io/crates/v/privacy-flow.svg)](https://crates.io/crates/privacy-flow)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.23104908.svg)](https://doi.org/10.5281/zenodo.23104908)
 
 ## Install
 
