@@ -144,7 +144,7 @@ Acceptance criteria for v0.1.0, checked 2026-10-02:
 | Byte-identical output across thread counts, Linux and macOS | done: 1 and 8 threads, committed goldens, and CI's byte comparison of Linux and macOS output passed on 2026-10-02 (commit `8bd779a`) |
 | A scan with coverage gaps never exits 0 | done: exit 4 takes precedence over 1; principle test |
 | `explain` shows a complete cited chain for every finding | done: a CLI test explains every finding of every fixture and checks one source line per hop |
-| Release archives verify with `gh attestation verify` as the README documents | **pending**: needs a tagged release |
+| Release archives verify with `gh attestation verify` as the README documents | done: v0.1.0, see the release entry |
 | KNOWN-LIMITATIONS.md lists every unsupported framework, construct and depth bound | done |
 | The benchmark write-up exists | done for fixtures, conformance and performance; the labelled corpus is M6 |
 
@@ -215,3 +215,21 @@ CI). It never sees the key. Full samples kept: 752 items per reviewer.
 
 **Next.** Both reviewers label independently; then `score.py --agreement`, adjudication into
 `labels/final/`, `score.py`, the write-up, and the Zenodo deposit (needs Noru's account).
+
+## 2026-10-02 — v0.1.0 released
+
+The repository was made public, after the internal wording in these notes was neutralised (the
+full earlier text is kept outside the repository), and `v0.1.0` was tagged at `1029e7e`.
+
+- GitHub release with four archives (macOS and Linux, arm64 and x86_64), checksums, the
+  CycloneDX SBOM and the source archive. Verified as a user would: `gh attestation verify` on
+  the aarch64 macOS archive passes with the release workflow at the tag as signer, the archive's
+  digest is one of the attested subjects, `shasum -c` passes, and the binary scans and validates
+  the demo.
+- Homebrew: `piiflow.rb` in `noru-tech/homebrew-tap`, its four checksums equal to the release's.
+- The conformance corpus's digest list is attested at the tag (`conformance-release.yml`).
+- crates.io: not yet. The publish job failed as expected, because the crate does not exist and
+  trusted publishing can only be configured for an existing crate. The first `cargo publish`
+  is run by an owner from the tag; then the two trusted publishers (release.yml and
+  publish-crate.yml) are added, and later releases publish themselves.
+
