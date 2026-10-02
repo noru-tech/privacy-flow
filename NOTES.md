@@ -74,7 +74,14 @@ crates.io job by trusted publishing. Dry run on 2026-10-02: `dist plan` lists fo
 ADRs 0001 (shared IR) and 0002 (flow engine, with measured numbers), then 0003 to 0006 as the
 analysis grew.
 
-**Not verified yet.** The workflows have run locally step by step, not on GitHub. Release
+**First run on GitHub (2026-10-02).** It found two mistakes, both fixed: the SARIF goldens were
+never committed (`.gitignore` excluded `*.sarif`), and the engine-break jobs inherited
+`-D warnings`, so a deliberate break failed to compile instead of failing the corpus. CodeQL and
+Scorecard cannot run on a private repository without GitHub Code Security (CodeQL's upload is
+refused; Scorecard's token cannot read the repository), so both are skipped while the repository
+is private. They start working when it is made public, or when Code Security is enabled.
+
+**Not verified yet.** Release
 attestations cannot be verified until a tag is pushed.
 
 ## 2026-10-02 — M1 status: TypeScript, log sinks, PF001, `explain`, SARIF

@@ -22,6 +22,9 @@ concurrency:
 jobs:
   analyze:
     name: analyze (${{ matrix.language }})
+    # Code scanning needs GitHub Code Security on a private repository; until the repository is
+    # public (or Code Security is enabled), this job is skipped rather than failing every run.
+    if: ${{ !github.event.repository.private }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
     permissions:

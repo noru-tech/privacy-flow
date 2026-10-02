@@ -152,6 +152,9 @@ jobs:
     # require the corpus to fail.
     name: conformance catches ${{ matrix.break }}
     runs-on: ubuntu-latest
+    env:
+      # A deliberate break leaves dead code behind; it must still build.
+      RUSTFLAGS: ""
     strategy:
       fail-fast: false
       matrix:

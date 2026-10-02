@@ -18,8 +18,9 @@ jobs:
   analysis:
     name: Scorecard analysis
     runs-on: ubuntu-latest
-    # publish_results only works from the default branch.
-    if: github.event.repository.default_branch == github.ref_name
+    # publish_results only works from the default branch, and Scorecard cannot read a private
+    # repository with the workflow token; the job runs once the repository is public.
+    if: ${{ github.event.repository.default_branch == github.ref_name && !github.event.repository.private }}
     permissions:
       # Upload the SARIF results to code scanning.
       security-events: write

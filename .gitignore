@@ -6,6 +6,8 @@
 # dispositions; it contains file paths and source excerpts, not personal data values.
 /.privacy-flow/
 *.sarif
+# ...except the committed SARIF goldens.
+!/tests/goldens/*.sarif
 
 # OS
 .DS_Store
