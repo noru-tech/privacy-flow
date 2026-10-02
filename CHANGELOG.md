@@ -6,6 +6,10 @@ All notable changes to this project are documented here. The format is based on
 
 ## [Unreleased]
 
+### Added
+- Fuzzing: cargo-fuzz targets for lowering, the whole pipeline (with a determinism check),
+  configuration and data maps, run by ClusterFuzzLite on pull requests and weekly.
+
 ## [0.1.0] - 2026-10-02
 
 ### Added
