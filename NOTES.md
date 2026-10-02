@@ -141,7 +141,7 @@ Acceptance criteria for v0.1.0, checked 2026-10-02:
 | Criterion | State |
 | --- | --- |
 | Every rule has failing and passing fixtures in both languages, run by CI | done: 52 fixtures, 41 expected findings, all matched; Datalog oracle agrees on 52 of 52 |
-| Byte-identical output across thread counts, Linux and macOS | done locally (1 and 8 threads, goldens); the cross-OS job runs once the repository is on GitHub |
+| Byte-identical output across thread counts, Linux and macOS | done: 1 and 8 threads, committed goldens, and CI's byte comparison of Linux and macOS output passed on 2026-10-02 (commit `8bd779a`) |
 | A scan with coverage gaps never exits 0 | done: exit 4 takes precedence over 1; principle test |
 | `explain` shows a complete cited chain for every finding | done: a CLI test explains every finding of every fixture and checks one source line per hop |
 | Release archives verify with `gh attestation verify` as the README documents | **pending**: needs a tagged release |
@@ -160,8 +160,7 @@ decision, not a build step. Before the first tag:
 2. Configure crates.io trusted publishing for `privacy-flow` (repository
    `noru-tech/privacy-flow`, workflow `publish-crate.yml`); the first publish of a new crate may
    need a token, as `acc`'s did.
-3. Let CI pass once on GitHub, including the cross-OS comparison.
-4. Tag `v0.1.0`, then run the README's `gh attestation verify` commands against the release.
+3. Tag `v0.1.0`, then run the README's `gh attestation verify` commands against the release.
 
 **Open questions.**
 
