@@ -1,0 +1,326 @@
+{
+  "applications": [
+    {
+      "app": "fastapi-template",
+      "language": "python",
+      "lines": 1520,
+      "piiflow_identical_to_recorded_run": true,
+      "piiflow_peak_mib": 14,
+      "piiflow_runs": [
+        0.169,
+        0.123,
+        0.11
+      ],
+      "piiflow_seconds": 0.12,
+      "piiflow_version": "piiflow 0.1.0",
+      "privado_finished": true,
+      "privado_image": "public.ecr.aws/privado/privado@sha256:349fdd5a01c01acb4b17c9db0df782c8ad2fb4d87b5940247720fc3cac8e7f15",
+      "privado_memory_limit_gib": 14,
+      "privado_out_of_memory": false,
+      "privado_peak_mib": 1015,
+      "privado_seconds": 10.3,
+      "repository": "fastapi/full-stack-fastapi-template"
+    },
+    {
+      "app": "taxonomy",
+      "language": "typescript",
+      "lines": 7788,
+      "piiflow_identical_to_recorded_run": true,
+      "piiflow_peak_mib": 21,
+      "piiflow_runs": [
+        0.224,
+        0.174,
+        0.183
+      ],
+      "piiflow_seconds": 0.18,
+      "piiflow_version": "piiflow 0.1.0",
+      "privado_finished": true,
+      "privado_image": "public.ecr.aws/privado/privado@sha256:349fdd5a01c01acb4b17c9db0df782c8ad2fb4d87b5940247720fc3cac8e7f15",
+      "privado_memory_limit_gib": 14,
+      "privado_out_of_memory": false,
+      "privado_peak_mib": 807,
+      "privado_seconds": 20.6,
+      "repository": "shadcn-ui/taxonomy"
+    },
+    {
+      "app": "open-saas",
+      "language": "typescript",
+      "lines": 10774,
+      "piiflow_identical_to_recorded_run": true,
+      "piiflow_peak_mib": 23,
+      "piiflow_runs": [
+        0.13,
+        0.126,
+        0.121
+      ],
+      "piiflow_seconds": 0.13,
+      "piiflow_version": "piiflow 0.1.0",
+      "privado_finished": true,
+      "privado_image": "public.ecr.aws/privado/privado@sha256:349fdd5a01c01acb4b17c9db0df782c8ad2fb4d87b5940247720fc3cac8e7f15",
+      "privado_memory_limit_gib": 14,
+      "privado_out_of_memory": false,
+      "privado_peak_mib": 1191,
+      "privado_seconds": 12.8,
+      "repository": "wasp-lang/open-saas"
+    },
+    {
+      "app": "healthchecks",
+      "language": "python",
+      "lines": 17110,
+      "piiflow_identical_to_recorded_run": true,
+      "piiflow_peak_mib": 31,
+      "piiflow_runs": [
+        0.61,
+        0.574,
+        0.569
+      ],
+      "piiflow_seconds": 0.57,
+      "piiflow_version": "piiflow 0.1.0",
+      "privado_finished": true,
+      "privado_image": "public.ecr.aws/privado/privado@sha256:349fdd5a01c01acb4b17c9db0df782c8ad2fb4d87b5940247720fc3cac8e7f15",
+      "privado_memory_limit_gib": 14,
+      "privado_out_of_memory": false,
+      "privado_peak_mib": 2851,
+      "privado_seconds": 51.2,
+      "repository": "healthchecks/healthchecks"
+    },
+    {
+      "app": "vercel-chatbot",
+      "language": "typescript",
+      "lines": 20446,
+      "piiflow_identical_to_recorded_run": true,
+      "piiflow_peak_mib": 32,
+      "piiflow_runs": [
+        0.252,
+        0.226,
+        0.221
+      ],
+      "piiflow_seconds": 0.23,
+      "piiflow_version": "piiflow 0.1.0",
+      "privado_finished": true,
+      "privado_image": "public.ecr.aws/privado/privado@sha256:349fdd5a01c01acb4b17c9db0df782c8ad2fb4d87b5940247720fc3cac8e7f15",
+      "privado_memory_limit_gib": 14,
+      "privado_out_of_memory": false,
+      "privado_peak_mib": 1783,
+      "privado_seconds": 21.1,
+      "repository": "vercel/chatbot"
+    },
+    {
+      "app": "ctfd",
+      "language": "python",
+      "lines": 23488,
+      "piiflow_identical_to_recorded_run": true,
+      "piiflow_peak_mib": 36,
+      "piiflow_runs": [
+        0.783,
+        0.772,
+        0.758
+      ],
+      "piiflow_seconds": 0.77,
+      "piiflow_version": "piiflow 0.1.0",
+      "privado_finished": true,
+      "privado_image": "public.ecr.aws/privado/privado@sha256:349fdd5a01c01acb4b17c9db0df782c8ad2fb4d87b5940247720fc3cac8e7f15",
+      "privado_memory_limit_gib": 14,
+      "privado_out_of_memory": false,
+      "privado_peak_mib": 3341,
+      "privado_seconds": 56.4,
+      "repository": "CTFd/CTFd"
+    },
+    {
+      "app": "hoppscotch",
+      "language": "typescript",
+      "lines": 27376,
+      "piiflow_identical_to_recorded_run": true,
+      "piiflow_peak_mib": 48,
+      "piiflow_runs": [
+        0.427,
+        0.432,
+        0.428
+      ],
+      "piiflow_seconds": 0.43,
+      "piiflow_version": "piiflow 0.1.0",
+      "privado_finished": true,
+      "privado_image": "public.ecr.aws/privado/privado@sha256:349fdd5a01c01acb4b17c9db0df782c8ad2fb4d87b5940247720fc3cac8e7f15",
+      "privado_memory_limit_gib": 14,
+      "privado_out_of_memory": false,
+      "privado_peak_mib": 2896,
+      "privado_seconds": 25.5,
+      "repository": "hoppscotch/hoppscotch"
+    },
+    {
+      "app": "redash",
+      "language": "python",
+      "lines": 27804,
+      "piiflow_identical_to_recorded_run": true,
+      "piiflow_peak_mib": 49,
+      "piiflow_runs": [
+        0.993,
+        0.95,
+        0.982
+      ],
+      "piiflow_seconds": 0.98,
+      "piiflow_version": "piiflow 0.1.0",
+      "privado_finished": true,
+      "privado_image": "public.ecr.aws/privado/privado@sha256:349fdd5a01c01acb4b17c9db0df782c8ad2fb4d87b5940247720fc3cac8e7f15",
+      "privado_memory_limit_gib": 14,
+      "privado_out_of_memory": false,
+      "privado_peak_mib": 9111,
+      "privado_seconds": 437.3,
+      "repository": "getredash/redash"
+    },
+    {
+      "app": "private-gpt",
+      "language": "python",
+      "lines": 96645,
+      "piiflow_identical_to_recorded_run": true,
+      "piiflow_peak_mib": 133,
+      "piiflow_runs": [
+        6.594,
+        6.544,
+        6.69
+      ],
+      "piiflow_seconds": 6.59,
+      "piiflow_version": "piiflow 0.1.0",
+      "privado_finished": true,
+      "privado_image": "public.ecr.aws/privado/privado@sha256:349fdd5a01c01acb4b17c9db0df782c8ad2fb4d87b5940247720fc3cac8e7f15",
+      "privado_memory_limit_gib": 14,
+      "privado_out_of_memory": false,
+      "privado_peak_mib": 4616,
+      "privado_seconds": 165.4,
+      "repository": "zylon-ai/private-gpt"
+    },
+    {
+      "app": "umami",
+      "language": "typescript",
+      "lines": 107365,
+      "piiflow_identical_to_recorded_run": true,
+      "piiflow_peak_mib": 152,
+      "piiflow_runs": [
+        2.845,
+        2.729,
+        2.706
+      ],
+      "piiflow_seconds": 2.73,
+      "piiflow_version": "piiflow 0.1.0",
+      "privado_finished": true,
+      "privado_image": "public.ecr.aws/privado/privado@sha256:349fdd5a01c01acb4b17c9db0df782c8ad2fb4d87b5940247720fc3cac8e7f15",
+      "privado_memory_limit_gib": 14,
+      "privado_out_of_memory": false,
+      "privado_peak_mib": 4493,
+      "privado_seconds": 309.8,
+      "repository": "umami-software/umami"
+    },
+    {
+      "app": "ghost",
+      "language": "typescript",
+      "lines": 160029,
+      "piiflow_identical_to_recorded_run": true,
+      "piiflow_peak_mib": 196,
+      "piiflow_runs": [
+        3.043,
+        2.977,
+        2.979
+      ],
+      "piiflow_seconds": 2.98,
+      "piiflow_version": "piiflow 0.1.0",
+      "privado_finished": true,
+      "privado_image": "public.ecr.aws/privado/privado@sha256:349fdd5a01c01acb4b17c9db0df782c8ad2fb4d87b5940247720fc3cac8e7f15",
+      "privado_memory_limit_gib": 14,
+      "privado_out_of_memory": false,
+      "privado_peak_mib": 6796,
+      "privado_seconds": 519.3,
+      "repository": "TryGhost/Ghost"
+    }
+  ],
+  "machines": [
+    {
+      "cpu": "AMD EPYC 9V45 96-Core Processor",
+      "cpus": 4,
+      "machine": "x86_64",
+      "memory_gib": 15.6,
+      "runner": "ubuntu24 20260927.320.1",
+      "system": "Linux"
+    },
+    {
+      "cpu": "Intel(R) Xeon(R) Platinum 8370C CPU @ 2.80GHz",
+      "cpus": 4,
+      "machine": "x86_64",
+      "memory_gib": 15.6,
+      "runner": "ubuntu24 20260927.320.1",
+      "system": "Linux"
+    },
+    {
+      "cpu": "AMD EPYC 7763 64-Core Processor",
+      "cpus": 4,
+      "machine": "x86_64",
+      "memory_gib": 15.6,
+      "runner": "ubuntu24 20260927.320.1",
+      "system": "Linux"
+    },
+    {
+      "cpu": "AMD EPYC 9V45 96-Core Processor",
+      "cpus": 4,
+      "machine": "x86_64",
+      "memory_gib": 15.6,
+      "runner": "ubuntu24 20260927.320.1",
+      "system": "Linux"
+    },
+    {
+      "cpu": "AMD EPYC 9V45 96-Core Processor",
+      "cpus": 4,
+      "machine": "x86_64",
+      "memory_gib": 15.6,
+      "runner": "ubuntu24 20260927.320.1",
+      "system": "Linux"
+    },
+    {
+      "cpu": "AMD EPYC 9V45 96-Core Processor",
+      "cpus": 4,
+      "machine": "x86_64",
+      "memory_gib": 15.6,
+      "runner": "ubuntu24 20260927.320.1",
+      "system": "Linux"
+    },
+    {
+      "cpu": "AMD EPYC 7763 64-Core Processor",
+      "cpus": 4,
+      "machine": "x86_64",
+      "memory_gib": 15.6,
+      "runner": "ubuntu24 20260927.320.1",
+      "system": "Linux"
+    },
+    {
+      "cpu": "AMD EPYC 9V74 80-Core Processor",
+      "cpus": 4,
+      "machine": "x86_64",
+      "memory_gib": 15.6,
+      "runner": "ubuntu24 20260927.320.1",
+      "system": "Linux"
+    },
+    {
+      "cpu": "INTEL(R) XEON(R) PLATINUM 8573C",
+      "cpus": 4,
+      "machine": "x86_64",
+      "memory_gib": 15.6,
+      "runner": "ubuntu24 20260927.320.1",
+      "system": "Linux"
+    },
+    {
+      "cpu": "AMD EPYC 9V74 80-Core Processor",
+      "cpus": 4,
+      "machine": "x86_64",
+      "memory_gib": 15.6,
+      "runner": "ubuntu24 20260927.320.1",
+      "system": "Linux"
+    },
+    {
+      "cpu": "AMD EPYC 7763 64-Core Processor",
+      "cpus": 4,
+      "machine": "x86_64",
+      "memory_gib": 15.6,
+      "runner": "ubuntu24 20260927.320.1",
+      "system": "Linux"
+    }
+  ],
+  "measured_on": "2026-10-02"
+}

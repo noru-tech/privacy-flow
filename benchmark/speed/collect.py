@@ -51,6 +51,8 @@ def load(src):
 
 
 def fmt_s(s):
+    if s >= 120:
+        return f"{s / 60:.1f} min"
     return f"{s:.2f} s" if s < 10 else f"{s:.1f} s" if s < 100 else f"{s:,.0f} s"
 
 
@@ -77,7 +79,7 @@ def chart(rows, machine, version, machines):
     ink, sub, grid, a, b, bad = "#121a1b", "#5f6b6a", "#e3e8e8", "#3a5355", "#9cb8b5", "#b3261e"
     out = [f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {W} {H}" width="{W}" height="{H}" font-family="-apple-system, Segoe UI, Helvetica, Arial, sans-serif">',
            f'<rect width="{W}" height="{H}" rx="10" fill="#ffffff"/>',
-           f'<text x="24" y="32" font-size="17" font-weight="600" fill="{ink}">Time to scan one application (seconds, log scale)</text>',
+           f'<text x="24" y="32" font-size="17" font-weight="600" fill="{ink}">Time to scan one application (log scale)</text>',
            f'<rect x="24" y="44" width="11" height="11" rx="2" fill="{a}"/><text x="41" y="54" font-size="12.5" fill="{sub}">piiflow {escape(version)}</text>',
            f'<rect x="150" y="44" width="11" height="11" rx="2" fill="{b}"/><text x="167" y="54" font-size="12.5" fill="{sub}">Privado (privado-core 1.1.175)</text>']
     for t in [0.01, 0.1, 1, 10, 100, 1000]:
@@ -102,40 +104,47 @@ def chart(rows, machine, version, machines):
             why = "out of memory" if r["privado_out_of_memory"] else "did not finish"
             out.append(f'<rect x="{L}" y="{y + 19}" width="{max(vw, 2):.1f}" height="12" rx="2" fill="none" stroke="{bad}" stroke-dasharray="4 3"/>')
             out.append(f'<text x="{L + max(vw, 2) + 6:.1f}" y="{y + 29}" font-size="11.5" fill="{bad}">{why} after {fmt_s(r["privado_seconds"])}</text>')
-    out.append(f'<text x="24" y="{H - 10}" font-size="11.5" fill="{sub}">GitHub-hosted runner, {machine.get("cpus")} vCPU, {machine.get("memory_gib")} GiB ({escape(cpus_text(machines))}). piiflow: median of 3 runs. Privado: one run, 14 GiB limit.</text>')
+    out.append(f'<text x="24" y="{H - 10}" font-size="11.5" fill="{sub}">Same GitHub-hosted runner for both tools ({machine.get("cpus")} vCPU, {machine.get("memory_gib")} GiB). piiflow: median of 3 runs. Privado: one run, 14 GiB limit.</text>')
     out.append("</svg>")
     return "\n".join(out) + "\n"
 
 
 def section(rows, machine, version, date, machines):
+    corpus = [e["name"] for e in json.loads((ROOT / "benchmark/corpus.json").read_text())["repositories"]]
+    pending = [NAMES[n] for n in corpus if n not in {r["app"] for r in rows}]
     done = [r for r in rows if r["privado_finished"]]
-    ratios = [r["privado_seconds"] / r["piiflow_seconds"] for r in done]
-    pf_total = sum(r["piiflow_seconds"] for r in rows)
-    pv_total = sum(r["privado_seconds"] for r in done)
-    pf_same = sum(r["piiflow_seconds"] for r in done)
     failed = [NAMES[r["app"]] for r in rows if not r["privado_finished"]]
+    ratios = [r["privado_seconds"] / r["piiflow_seconds"] for r in done]
     identical = sum(r["piiflow_identical_to_recorded_run"] for r in rows)
-    lines = [START, "", "## How fast is it?", "",
-             f"piiflow {version} and Privado's open-source scanner on the twelve applications of the "
-             f"[benchmark corpus](benchmark/SELECTION.md), {sum(r['lines'] for r in rows):,} lines in all, each tool on the same "
-             f"GitHub-hosted runner ({machine.get('cpus')} vCPU, {machine.get('memory_gib')} GiB). "
-             f"On the {len(done)} applications both finished, piiflow took {fmt_s(pf_same)} in total and Privado "
-             f"{fmt_s(pv_total)}; the median application ran {statistics.median(ratios):,.0f} times faster."
-             + (f" Privado ran out of memory on {' and '.join(failed)}." if failed else ""), "",
+    cpu_models = len({m.get("cpu") for m in machines})
+    pf_t = [r["piiflow_seconds"] for r in rows]
+    pv_t = [r["privado_seconds"] for r in done]
+    lead = (f"**On the same machine, piiflow scanned each application in {fmt_s(min(pf_t))} to {fmt_s(max(pf_t))}, "
+            f"using at most {fmt_mib(max(r['piiflow_peak_mib'] for r in rows))} of memory. Privado took "
+            f"{fmt_s(min(pv_t))} to {fmt_s(max(pv_t))} and up to {fmt_mib(max(r['privado_peak_mib'] for r in done))}"
+            + (f", and ran out of memory on {' and '.join(failed)}" if failed else "") + ".** "
+            f"Half the applications ran more than {statistics.median(ratios):,.0f} times faster with piiflow.")
+    lines = [START, "", "## How fast is it?", "", lead, "",
              "![Time to scan each application, piiflow and Privado](benchmark/speed/chart.svg)", "",
-             "| Application | Lines | piiflow | Privado | piiflow memory | Privado memory |",
+             "| Application | Lines of code | piiflow | Privado | piiflow memory | Privado memory |",
              "| --- | ---: | ---: | ---: | ---: | ---: |"]
     for r in rows:
-        pv_t = fmt_s(r["privado_seconds"]) if r["privado_finished"] else ("out of memory" if r["privado_out_of_memory"] else "did not finish")
-        lines.append(f"| [{NAMES[r['app']]}](https://github.com/{r['repository']}) | {r['lines']:,} | {fmt_s(r['piiflow_seconds'])} | {pv_t} | "
+        pv = fmt_s(r["privado_seconds"]) if r["privado_finished"] else ("out of memory" if r["privado_out_of_memory"] else "did not finish")
+        lines.append(f"| [{NAMES[r['app']]}](https://github.com/{r['repository']}) | {r['lines']:,} | {fmt_s(r['piiflow_seconds'])} | {pv} | "
                      f"{fmt_mib(r['piiflow_peak_mib'])} | {fmt_mib(r['privado_peak_mib'])} |")
+    for name in pending:
+        lines.append(f"| {name} | | still running | still running | | |")
     lines += ["",
-              f"Measured on {date} ({cpus_text(machines)}): piiflow is the released Linux binary, verified by its attestation, median of 3 runs; "
-              f"its output on all {len(rows)} applications was {'byte-identical' if identical == len(rows) else f'byte-identical on {identical} of {len(rows)}'} "
-              "to the recorded benchmark run on macOS. Privado is privado-core 1.1.175 from its pinned image with its newest rules, "
-              "offline, one run, memory read from Docker once a second. Speed only: whether each tool is *right* is measured by "
-              "the [labelled benchmark](docs/benchmark.md), which is in progress. Rerun with the `benchmark-speed` workflow; "
-              "method in [benchmark/speed](benchmark/speed/README.md).", "", END]
+              f"**How this was measured** ({date}). The {len(corpus)} open-source applications of the "
+              f"[benchmark corpus](benchmark/SELECTION.md); each one on its own GitHub-hosted runner "
+              f"({machine.get('cpus')} vCPU, {machine.get('memory_gib')} GiB; {cpu_models} different CPU model{'s' if cpu_models != 1 else ''} "
+              "across jobs, listed in [results.json](benchmark/speed/results.json)), with both tools run one after the other on it. "
+              f"piiflow {version} is the released Linux binary, verified by its attestation; the median of 3 runs is shown, and its "
+              f"output matched the recorded macOS run byte for byte on {'every' if identical == len(rows) else f'{identical} of {len(rows)}'} application. "
+              "Privado is privado-core 1.1.175 from its pinned image with its newest rules, offline, one run, 14 GiB limit. "
+              "This measures speed and memory only; whether each tool's findings are *right* is measured by the "
+              "[labelled benchmark](docs/benchmark.md), which is in progress. "
+              "[Method and how to rerun it](benchmark/speed/README.md).", "", END]
     return "\n".join(lines)
 
 
