@@ -95,7 +95,11 @@ for files of similar size.
 
 CI enforces a coarse budget on the 100k-line synthetic service (10 s, 1,500 MiB on a shared
 runner) with [`.github/scripts/perf_budget.py`](../.github/scripts/perf_budget.py), which catches an
-accidental quadratic rather than a few percent. `cargo bench` runs the criterion benchmarks,
+accidental quadratic rather than a few percent. A second case,
+[`benches/wide_summaries.py`](../benches/wide_summaries.py), reproduces the shape that made the
+engine quadratic on Polar (summaries reaching 12,000 sinks, each found and cut by the depth bound
+in the same search): its engine phase takes 0.44 s, against 16 s before the fix, and the budget
+is 4 s. `cargo bench` runs the criterion benchmarks,
 including the engine comparison in [ADR 0002](adr/0002-flow-engine.md).
 
 ## Determinism

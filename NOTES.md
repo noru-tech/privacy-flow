@@ -195,7 +195,9 @@ decision, not a build step. Before the first tag:
 **Found on the way.** The engine was quadratic in depth-bound cuts: Polar took 130 s; it now
 takes 12 s with byte-identical output (recorded as a protocol deviation). The CI performance
 budget's synthetic service did not catch it, because the quadratic needs summaries that reach
-thousands of sinks; a regression test shaped like that would be worth adding.
+thousands of sinks. The budget now has a second case shaped like that
+(benches/wide_summaries.py): engine phase 0.44 s fixed, 16 s with the old code, budget 4 s;
+checked against both builds.
 
 **Privado run (2026-10-02).** Completed on 10 of 12 applications. The image reports
 privado-core 1.1.175, not the last release. `polar` and `redash` were killed for memory twice,
