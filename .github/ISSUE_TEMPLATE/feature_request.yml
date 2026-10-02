@@ -1,40 +1,36 @@
 name: Feature request
-description: Suggest an improvement to the CLI, the GitHub Action, output formats or docs
+description: A new option, output format, language or integration that is not a rule or a catalogue entry
 labels: [enhancement]
 body:
   - type: markdown
     attributes:
       value: >-
-        For a new rule or a new catalogue entry (a source, sink, sanitiser or framework), use the
-        dedicated forms instead. Please use synthetic personal data in any example.
+        For a new rule use the rule proposal form, and for a sink, source, sanitiser, propagator or
+        framework use the catalogue entry form. piiflow stays offline and deterministic: a feature
+        that needs a network call or a model at scan time is out of scope (see CONTRIBUTING.md).
   - type: dropdown
     id: area
     attributes:
       label: Area
-      options: [CLI, GitHub Action, output format, configuration, installation or packaging, documentation, other]
+      options: [command line, configuration, output format or schema, Fides export, GitHub Action, language support, performance, documentation, other]
     validations:
       required: true
   - type: textarea
     id: problem
     attributes:
-      label: What problem would this solve?
-      description: The situation you are in and what is hard or impossible today.
+      label: What are you trying to do?
+      description: The task or obligation behind the request, and what gets in the way today.
     validations:
       required: true
   - type: textarea
     id: proposal
     attributes:
-      label: What would you like to happen?
-      description: The behaviour, command, flag or output you have in mind.
+      label: What would you like piiflow to do?
+      description: The command, option or output you have in mind. Show an example if you can.
     validations:
       required: true
   - type: textarea
     id: alternatives
     attributes:
-      label: Alternatives considered
-      description: Workarounds you use today, or other designs you ruled out.
-  - type: input
-    id: version
-    attributes:
-      label: piiflow version
-      placeholder: piiflow --version
+      label: What do you do instead today?
+      description: Workarounds or other tools you have tried.
