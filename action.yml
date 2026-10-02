@@ -20,7 +20,7 @@ inputs:
       The privacy-flow release to install (a tag without the leading v). Pin it for byte-stable
       output across runs.
     required: false
-    default: "0.1.0"
+    default: "0.1.1"
   path:
     description: Directory to analyse, relative to the repository root.
     required: false

@@ -9,7 +9,7 @@ repository-code: https://github.com/noru-tech/privacy-flow
 url: https://github.com/noru-tech/privacy-flow
 license: MIT
 # A Zenodo concept DOI is added here with the first archived release.
-version: "0.1.0"
+version: "0.1.1"
 keywords:
   - privacy
   - GDPR
