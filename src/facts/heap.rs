@@ -414,12 +414,12 @@ pub(super) fn resolve(
     for (i, st) in p.stmts.iter().enumerate() {
         if let GKind::Lit { dst, .. } = st.kind {
             let ds = &defs[dst as usize];
-            let lits = ds
+            let literals = ds
                 .iter()
                 .filter(|&&d| matches!(p.stmts[d as usize].kind, GKind::Lit { .. }))
                 .count();
             if p.vars[dst as usize].kind == VarKind::Temp
-                && lits == 1
+                && literals == 1
                 && ds.iter().all(|&d| {
                     matches!(
                         p.stmts[d as usize].kind,
