@@ -123,8 +123,11 @@ def main():
                 "labelled_r2": labelled(HERE / "labels/R2" / f"{name}.yml"),
             },
         })
+    scores = HERE / "results/scores.json"
     out = {"generated_from": {"piiflow_commit": json.loads((HERE / "results/summary.json").read_text())["piiflow"]["commit"]},
-           "applications": apps}
+           "applications": apps,
+           # The labelled results, once score.py has run on final labels; absent until then.
+           "scores": json.loads(scores.read_text()) if scores.exists() else None}
     (HERE / "results/overview.json").write_text(json.dumps(out, indent=1, sort_keys=True) + "\n")
     tot = lambda f: sum(f(a) for a in apps)
     print(f"{len(apps)} applications, {tot(lambda a: a['lines']):,} lines; piiflow {tot(lambda a: a['piiflow']['flows']):,} flows, "
