@@ -1,0 +1,49 @@
+# An example .privacy-flow.yml; every key is described in docs/configuration.md.
+version: 1
+
+system:
+  fides_key: checkout_service
+  name: Checkout service
+
+exclude:
+  - "scripts/**"
+default_excludes: true
+
+max_call_depth: 32
+
+processors:
+  - name: PostHog
+    citation: "DPA signed 2026-03-01, vendor record VR-0042"
+  - name: Acme CRM
+    hosts: [crm.acme.example]
+    citation: "Contract C-2026-19"
+
+fields:
+  - name: member_ref
+    category: user.unique_id
+    citation: "Data dictionary v3, entity Member"
+
+not_personal:
+  - name: payload
+    citation: "Job payloads hold IDs only (reviewed in SEC-101)"
+
+sanitisers:
+  - id: acme.redact
+    language: javascript
+    functions: ["src/lib/redact.ts:redact"]
+    removes: ["*"]
+    citation: "Masks all but the domain; reviewed in SEC-142"
+
+sinks:
+  - id: acme.audit
+    language: javascript
+    class: third_party
+    processor: Acme Audit
+    calls: ["@acme/audit-sdk:**.record"]
+    citation: "Audit vendor SDK reference, PR #12"
+
+policy:
+  fail_on: medium
+  rules:
+    PF001: { severity: high }
+    PF006: { enabled: false }

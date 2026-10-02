@@ -1,0 +1,19 @@
+cff-version: 1.2.0
+message: If you reference the tool or its conformance corpus, please cite it as below.
+title: "privacy-flow: deterministic static analysis of personal-data flows"
+type: software
+authors:
+  - name: Noru
+    website: https://noru.tech
+repository-code: https://github.com/noru-tech/privacy-flow
+url: https://github.com/noru-tech/privacy-flow
+license: MIT
+# A Zenodo concept DOI is added here with the first archived release.
+version: "0.1.0"
+keywords:
+  - privacy
+  - GDPR
+  - static analysis
+  - data flow
+  - taint analysis
+  - records of processing

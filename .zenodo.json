@@ -1,0 +1,26 @@
+{
+  "title": "privacy-flow: deterministic static analysis of personal-data flows",
+  "upload_type": "software",
+  "description": "<p><code>piiflow</code> finds where personal data goes in a codebase — logs, third-party SDKs, LLM providers and outbound HTTP — and reports each path as a cited chain of file:line hops, with SARIF, canonical JSON flow facts and Fides egress declarations. It is deterministic and offline and calls no model. This archive holds the tool, its rule catalogue, the flow-facts and configuration JSON Schemas, and the conformance corpus (<code>conformance/</code>): small programs with hand-written expected flows and an external-runner contract for scoring any analyser.</p>",
+  "creators": [
+    {
+      "name": "Noru"
+    }
+  ],
+  "license": "MIT",
+  "keywords": [
+    "privacy",
+    "GDPR",
+    "static analysis",
+    "data flow",
+    "records of processing",
+    "conformance"
+  ],
+  "related_identifiers": [
+    {
+      "identifier": "https://github.com/noru-tech/privacy-flow",
+      "relation": "isSupplementTo",
+      "resource_type": "software"
+    }
+  ]
+}

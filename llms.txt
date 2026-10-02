@@ -1,0 +1,35 @@
+# privacy-flow
+
+> Deterministic, offline static analysis of where personal data goes: logs, third-party SDKs, LLM providers and outbound HTTP. Cited file:line flow paths, SARIF, canonical JSON and Fides egress.
+
+The command-line tool is `piiflow`; the package is `privacy-flow` everywhere (the names `pflow` on crates.io and PyPI belong to unrelated tools). It analyses TypeScript, JavaScript and Python with tree-sitter, follows calls across files and packages through function summaries, and reports each flow of personal data (Fideslang categories) to a sink as a chain of file:line:column hops. Anything it cannot see is reported as a coverage gap, and a result with open gaps never exits as clean. It makes no network calls, sends no telemetry and calls no model. MIT licensed, maintained by Noru (https://noru.tech).
+
+Install:
+
+```bash
+brew install noru-tech/tap/piiflow         # Homebrew, macOS and Linux
+cargo binstall privacy-flow                # prebuilt binary from GitHub Releases
+cargo install privacy-flow --locked        # build from crates.io
+```
+
+Use:
+
+```bash
+piiflow scan .                             # writes .privacy-flow/flows.json; exit 4 if coverage is incomplete
+piiflow explain pf-<id>                    # the hop chain, with the source line of each hop
+piiflow check .privacy-flow/flows.json --as-of 2026-10-01    # exit 1 above the policy threshold
+piiflow diff origin/main..HEAD -f sarif -o pr.sarif          # only flows a change introduces
+```
+
+## Docs
+
+- [README](https://github.com/noru-tech/privacy-flow/blob/main/README.md): install, quick start, rules, commands
+- [Rules](https://github.com/noru-tech/privacy-flow/blob/main/docs/rules/README.md): PF001–PF006, PFC01
+- [Exit codes](https://github.com/noru-tech/privacy-flow/blob/main/docs/exit-codes.md)
+- [Configuration](https://github.com/noru-tech/privacy-flow/blob/main/docs/configuration.md): .privacy-flow.yml
+- [Catalogue](https://github.com/noru-tech/privacy-flow/blob/main/docs/catalogue.md): API paths, sinks, sources, sanitisers
+- [Output](https://github.com/noru-tech/privacy-flow/blob/main/docs/output.md): the flow-facts document, IDs, digest, dispositions
+- [Design](https://github.com/noru-tech/privacy-flow/blob/main/docs/design.md) and [ADRs](https://github.com/noru-tech/privacy-flow/blob/main/docs/adr/README.md)
+- [GitHub Action](https://github.com/noru-tech/privacy-flow/blob/main/docs/github-action.md)
+- [Known limitations](https://github.com/noru-tech/privacy-flow/blob/main/KNOWN-LIMITATIONS.md)
+- [Conformance corpus](https://github.com/noru-tech/privacy-flow/blob/main/conformance/README.md)
