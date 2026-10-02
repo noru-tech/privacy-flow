@@ -21,3 +21,6 @@ Thumbs.db
 # Local scratch
 *.local
 /man/
+
+# Benchmark repositories, fetched at pinned commits (benchmark/fetch.py); never committed.
+/.benchmark-cache/

@@ -1,0 +1,203 @@
+{
+  "version": "1.0",
+  "fixed_on": "2026-10-02",
+  "selection": "benchmark/SELECTION.md",
+  "piiflow_under_test": "the commit that freezes this file; see PROTOCOL.md section 'Freeze'",
+  "repositories": [
+    {
+      "name": "vercel-chatbot",
+      "repository": "vercel/chatbot",
+      "commit": "c2f8235e1f3ea903ad8b7f61447c4f74164b5c58",
+      "licence": "Apache-2.0",
+      "language": "typescript",
+      "scope": ".",
+      "exclude": [],
+      "framework": "Next.js App Router",
+      "sink_libraries": [
+        "ai",
+        "@ai-sdk/*"
+      ]
+    },
+    {
+      "name": "umami",
+      "repository": "umami-software/umami",
+      "commit": "ec0ff50388c264ed8ce46f00967e92f7e71476ae",
+      "licence": "MIT",
+      "language": "typescript",
+      "scope": ".",
+      "exclude": [],
+      "framework": "Next.js App Router",
+      "sink_libraries": [
+        "logging"
+      ]
+    },
+    {
+      "name": "taxonomy",
+      "repository": "shadcn-ui/taxonomy",
+      "commit": "298a8857c7128a0d121e7f699dfd729f23b3966d",
+      "licence": "MIT",
+      "language": "typescript",
+      "scope": ".",
+      "exclude": [],
+      "framework": "Next.js (App Router and Pages API routes)",
+      "sink_libraries": [
+        "nodemailer",
+        "postmark",
+        "stripe"
+      ]
+    },
+    {
+      "name": "open-saas",
+      "repository": "wasp-lang/open-saas",
+      "commit": "88b221e274d87c148bcb4cdd3db12cbb1b6b997e",
+      "licence": "MIT",
+      "language": "typescript",
+      "scope": "template/app",
+      "exclude": [],
+      "framework": "Wasp (not modelled)",
+      "sink_libraries": [
+        "openai",
+        "stripe",
+        "@lemonsqueezy/*",
+        "@aws-sdk/*"
+      ]
+    },
+    {
+      "name": "ghost",
+      "repository": "TryGhost/Ghost",
+      "commit": "f869a2d1aa8f7d89b0e8b9240d933332f8ae516d",
+      "licence": "MIT",
+      "language": "typescript",
+      "scope": "ghost/core",
+      "exclude": [],
+      "framework": "Express",
+      "sink_libraries": [
+        "@sentry/*",
+        "mailgun",
+        "nodemailer",
+        "stripe",
+        "@slack/*",
+        "@aws-sdk/*"
+      ]
+    },
+    {
+      "name": "hoppscotch",
+      "repository": "hoppscotch/hoppscotch",
+      "commit": "63273f8e599e73f0fb38c0739314e8d46b6bc83d",
+      "licence": "MIT",
+      "language": "typescript",
+      "scope": "packages/hoppscotch-backend",
+      "exclude": [],
+      "framework": "NestJS (unsupported)",
+      "sink_libraries": [
+        "nodemailer",
+        "posthog-node"
+      ]
+    },
+    {
+      "name": "healthchecks",
+      "repository": "healthchecks/healthchecks",
+      "commit": "69aac3a437890c66eab363a9e871927e9550e3b2",
+      "licence": "BSD-3-Clause",
+      "language": "python",
+      "scope": ".",
+      "exclude": [
+        "static/**"
+      ],
+      "framework": "Django",
+      "sink_libraries": [
+        "logging",
+        "smtp",
+        "outbound HTTP (integrations)"
+      ]
+    },
+    {
+      "name": "redash",
+      "repository": "getredash/redash",
+      "commit": "28c836154b5b643e87bbc354957f2ce25dc4ebca",
+      "licence": "BSD-2-Clause",
+      "language": "python",
+      "scope": ".",
+      "exclude": [
+        "client/**",
+        "viz-lib/**"
+      ],
+      "framework": "Flask",
+      "sink_libraries": [
+        "sentry-sdk",
+        "requests",
+        "boto3"
+      ]
+    },
+    {
+      "name": "ctfd",
+      "repository": "CTFd/CTFd",
+      "commit": "ea0ae40cb0abab16e21562c509cce64632394815",
+      "licence": "Apache-2.0",
+      "language": "python",
+      "scope": ".",
+      "exclude": [
+        "CTFd/themes/**"
+      ],
+      "framework": "Flask",
+      "sink_libraries": [
+        "requests",
+        "boto3",
+        "smtp"
+      ]
+    },
+    {
+      "name": "fastapi-template",
+      "repository": "fastapi/full-stack-fastapi-template",
+      "commit": "cb740b656d7a0a6c5e12c7bf8e50343ec94ee9c7",
+      "licence": "MIT",
+      "language": "python",
+      "scope": "backend",
+      "exclude": [],
+      "framework": "FastAPI",
+      "sink_libraries": [
+        "emails",
+        "httpx",
+        "sentry-sdk"
+      ]
+    },
+    {
+      "name": "polar",
+      "repository": "polarsource/polar",
+      "commit": "15d3568132b4995e508648c538c59a98ce1d33ed",
+      "licence": "Apache-2.0",
+      "language": "python",
+      "scope": "server",
+      "exclude": [],
+      "framework": "FastAPI",
+      "sink_libraries": [
+        "stripe",
+        "posthog",
+        "openai",
+        "sentry-sdk",
+        "logfire",
+        "structlog",
+        "httpx",
+        "boto3"
+      ]
+    },
+    {
+      "name": "private-gpt",
+      "repository": "zylon-ai/private-gpt",
+      "commit": "01ac43d72bc4c0b7565994197fe23476539059a7",
+      "licence": "Apache-2.0",
+      "language": "python",
+      "scope": ".",
+      "exclude": [],
+      "framework": "FastAPI",
+      "sink_libraries": [
+        "openai",
+        "anthropic",
+        "llama-index",
+        "langchain",
+        "httpx",
+        "boto3"
+      ]
+    }
+  ]
+}
