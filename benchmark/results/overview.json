@@ -1,0 +1,882 @@
+{
+ "applications": [
+  {
+   "candidate_sites": {
+    "by_class": {
+     "http": 20,
+     "llm": 9,
+     "log": 19,
+     "storage": 1
+    },
+    "total": 49,
+    "with_piiflow_flow": 15,
+    "with_piiflow_flow_or_gap": 15,
+    "with_privado_flow": 3
+   },
+   "files": 146,
+   "framework": "Next.js App Router",
+   "language": "typescript",
+   "lines": 20446,
+   "name": "vercel-chatbot",
+   "piiflow": {
+    "by_class": {
+     "browser_storage": 3,
+     "http": 8,
+     "llm": 36,
+     "log": 2
+    },
+    "findings": 46,
+    "findings_by_rule": {
+     "PF001": 2,
+     "PF002": 5,
+     "PF003": 30
+    },
+    "findings_by_severity": {
+     "high": 5,
+     "info": 9,
+     "medium": 32
+    },
+    "flows": 49,
+    "flows_maybe_personal": 29,
+    "gaps": 51,
+    "gaps_by_kind": {
+     "dynamic_call": 3,
+     "unresolved_callee": 37,
+     "unresolved_method": 7,
+     "unsupported_construct": 4
+    },
+    "peak_rss_mib": 43,
+    "processors": [
+     "api.open-meteo.com",
+     "geocoding-api.open-meteo.com"
+    ],
+    "sink_lines": 17,
+    "wall_seconds": 0.13
+   },
+   "privado": {
+    "by_class": {
+     "http": 3,
+     "log": 2
+    },
+    "flows": 5,
+    "sink_lines": 4,
+    "status": "ok",
+    "wall_seconds": 56.2
+   },
+   "repository": "vercel/chatbot",
+   "sample": {
+    "flows_piiflow": 24,
+    "flows_privado": 5,
+    "gaps": 10,
+    "items": 69,
+    "labelled_r1": 0,
+    "labelled_r2": 0,
+    "sites": 30
+   },
+   "sink_lines_overlap": {
+    "both": 2,
+    "piiflow_only": 15,
+    "privado_only": 2
+   }
+  },
+  {
+   "candidate_sites": {
+    "by_class": {
+     "analytics": 11,
+     "http": 26,
+     "log": 76,
+     "messaging": 2,
+     "storage": 2
+    },
+    "total": 117,
+    "with_piiflow_flow": 13,
+    "with_piiflow_flow_or_gap": 14,
+    "with_privado_flow": 7
+   },
+   "files": 1087,
+   "framework": "Next.js App Router",
+   "language": "typescript",
+   "lines": 107365,
+   "name": "umami",
+   "piiflow": {
+    "by_class": {
+     "browser_storage": 27,
+     "http": 22,
+     "log": 18
+    },
+    "findings": 37,
+    "findings_by_rule": {},
+    "findings_by_severity": {
+     "info": 37
+    },
+    "flows": 67,
+    "flows_maybe_personal": 64,
+    "gaps": 307,
+    "gaps_by_kind": {
+     "dynamic_call": 6,
+     "unresolved_callee": 270,
+     "unresolved_method": 31
+    },
+    "peak_rss_mib": 198,
+    "processors": [],
+    "sink_lines": 14,
+    "wall_seconds": 0.95
+   },
+   "privado": {
+    "by_class": {
+     "http": 2,
+     "log": 18
+    },
+    "flows": 20,
+    "sink_lines": 20,
+    "status": "ok",
+    "wall_seconds": 526.7
+   },
+   "repository": "umami-software/umami",
+   "sample": {
+    "flows_piiflow": 10,
+    "flows_privado": 10,
+    "gaps": 10,
+    "items": 60,
+    "labelled_r1": 0,
+    "labelled_r2": 0,
+    "sites": 30
+   },
+   "sink_lines_overlap": {
+    "both": 0,
+    "piiflow_only": 14,
+    "privado_only": 20
+   }
+  },
+  {
+   "candidate_sites": {
+    "by_class": {
+     "http": 8,
+     "third_party": 2
+    },
+    "total": 10,
+    "with_piiflow_flow": 4,
+    "with_piiflow_flow_or_gap": 4,
+    "with_privado_flow": 0
+   },
+   "files": 129,
+   "framework": "Next.js (App Router and Pages API routes)",
+   "language": "typescript",
+   "lines": 7788,
+   "name": "taxonomy",
+   "piiflow": {
+    "by_class": {
+     "http": 5,
+     "third_party": 3
+    },
+    "findings": 3,
+    "findings_by_rule": {
+     "PF002": 1
+    },
+    "findings_by_severity": {
+     "high": 1,
+     "info": 2
+    },
+    "flows": 8,
+    "flows_maybe_personal": 7,
+    "gaps": 5,
+    "gaps_by_kind": {
+     "dynamic_call": 2,
+     "unresolved_callee": 3
+    },
+    "peak_rss_mib": 27,
+    "processors": [
+     "Postmark",
+     "Stripe"
+    ],
+    "sink_lines": 5,
+    "wall_seconds": 0.09
+   },
+   "privado": {
+    "by_class": {},
+    "flows": 0,
+    "sink_lines": 0,
+    "status": "ok",
+    "wall_seconds": 25.9
+   },
+   "repository": "shadcn-ui/taxonomy",
+   "sample": {
+    "flows_piiflow": 3,
+    "flows_privado": 0,
+    "gaps": 5,
+    "items": 18,
+    "labelled_r1": 0,
+    "labelled_r2": 0,
+    "sites": 10
+   },
+   "sink_lines_overlap": {
+    "both": 0,
+    "piiflow_only": 5,
+    "privado_only": 0
+   }
+  },
+  {
+   "candidate_sites": {
+    "by_class": {
+     "http": 6,
+     "llm": 1,
+     "log": 28,
+     "messaging": 1,
+     "storage": 2,
+     "third_party": 5
+    },
+    "total": 43,
+    "with_piiflow_flow": 1,
+    "with_piiflow_flow_or_gap": 2,
+    "with_privado_flow": 7
+   },
+   "files": 145,
+   "framework": "Wasp (not modelled)",
+   "language": "typescript",
+   "lines": 10774,
+   "name": "open-saas",
+   "piiflow": {
+    "by_class": {
+     "http": 1,
+     "log": 4
+    },
+    "findings": 5,
+    "findings_by_rule": {},
+    "findings_by_severity": {
+     "info": 5
+    },
+    "flows": 5,
+    "flows_maybe_personal": 5,
+    "gaps": 14,
+    "gaps_by_kind": {
+     "dynamic_call": 1,
+     "unresolved_callee": 12,
+     "unresolved_method": 1
+    },
+    "peak_rss_mib": 29,
+    "processors": [],
+    "sink_lines": 4,
+    "wall_seconds": 0.09
+   },
+   "privado": {
+    "by_class": {
+     "log": 6,
+     "third_party": 3
+    },
+    "flows": 9,
+    "sink_lines": 7,
+    "status": "ok",
+    "wall_seconds": 33.2
+   },
+   "repository": "wasp-lang/open-saas",
+   "sample": {
+    "flows_piiflow": 5,
+    "flows_privado": 9,
+    "gaps": 10,
+    "items": 54,
+    "labelled_r1": 0,
+    "labelled_r2": 0,
+    "sites": 30
+   },
+   "sink_lines_overlap": {
+    "both": 0,
+    "piiflow_only": 4,
+    "privado_only": 7
+   }
+  },
+  {
+   "candidate_sites": {
+    "by_class": {
+     "error_tracking": 20,
+     "http": 61,
+     "llm": 2,
+     "log": 892,
+     "messaging": 47,
+     "storage": 10,
+     "third_party": 9
+    },
+    "total": 1041,
+    "with_piiflow_flow": 39,
+    "with_piiflow_flow_or_gap": 190,
+    "with_privado_flow": 14
+   },
+   "files": 1319,
+   "framework": "Express",
+   "language": "typescript",
+   "lines": 160029,
+   "name": "ghost",
+   "piiflow": {
+    "by_class": {
+     "browser_storage": 5,
+     "http": 30,
+     "log": 14,
+     "third_party": 51
+    },
+    "findings": 104,
+    "findings_by_rule": {
+     "PF001": 3,
+     "PF002": 23,
+     "PF005": 10,
+     "PF006": 3
+    },
+    "findings_by_severity": {
+     "high": 33,
+     "info": 65,
+     "medium": 3,
+     "warning": 3
+    },
+    "flows": 100,
+    "flows_maybe_personal": 76,
+    "gaps": 619,
+    "gaps_by_kind": {
+     "depth_bound": 10,
+     "dynamic_call": 85,
+     "unresolved_callee": 184,
+     "unresolved_method": 339,
+     "unsupported_framework": 1
+    },
+    "peak_rss_mib": 252,
+    "processors": [
+     "Amazon S3",
+     "Mailgun",
+     "Sentry",
+     "Stripe"
+    ],
+    "sink_lines": 41,
+    "wall_seconds": 1.46
+   },
+   "privado": {
+    "by_class": {
+     "http": 162,
+     "log": 6,
+     "third_party": 11
+    },
+    "flows": 179,
+    "sink_lines": 31,
+    "status": "ok",
+    "wall_seconds": 986.9
+   },
+   "repository": "TryGhost/Ghost",
+   "sample": {
+    "flows_piiflow": 29,
+    "flows_privado": 22,
+    "gaps": 10,
+    "items": 91,
+    "labelled_r1": 0,
+    "labelled_r2": 0,
+    "sites": 30
+   },
+   "sink_lines_overlap": {
+    "both": 7,
+    "piiflow_only": 34,
+    "privado_only": 24
+   }
+  },
+  {
+   "candidate_sites": {
+    "by_class": {
+     "analytics": 2,
+     "http": 1,
+     "log": 83,
+     "messaging": 67
+    },
+    "total": 153,
+    "with_piiflow_flow": 3,
+    "with_piiflow_flow_or_gap": 5,
+    "with_privado_flow": 2
+   },
+   "files": 193,
+   "framework": "NestJS (unsupported)",
+   "language": "typescript",
+   "lines": 27376,
+   "name": "hoppscotch",
+   "piiflow": {
+    "by_class": {
+     "log": 7
+    },
+    "findings": 7,
+    "findings_by_rule": {},
+    "findings_by_severity": {
+     "info": 7
+    },
+    "flows": 7,
+    "flows_maybe_personal": 7,
+    "gaps": 89,
+    "gaps_by_kind": {
+     "dynamic_call": 9,
+     "unresolved_callee": 24,
+     "unresolved_method": 54,
+     "unsupported_framework": 2
+    },
+    "peak_rss_mib": 69,
+    "processors": [],
+    "sink_lines": 3,
+    "wall_seconds": 0.23
+   },
+   "privado": {
+    "by_class": {
+     "http": 5,
+     "third_party": 1
+    },
+    "flows": 6,
+    "sink_lines": 5,
+    "status": "ok",
+    "wall_seconds": 75.4
+   },
+   "repository": "hoppscotch/hoppscotch",
+   "sample": {
+    "flows_piiflow": 7,
+    "flows_privado": 6,
+    "gaps": 10,
+    "items": 53,
+    "labelled_r1": 0,
+    "labelled_r2": 0,
+    "sites": 30
+   },
+   "sink_lines_overlap": {
+    "both": 0,
+    "piiflow_only": 3,
+    "privado_only": 5
+   }
+  },
+  {
+   "candidate_sites": {
+    "by_class": {
+     "http": 12,
+     "log": 43,
+     "messaging": 11
+    },
+    "total": 66,
+    "with_piiflow_flow": 4,
+    "with_piiflow_flow_or_gap": 4,
+    "with_privado_flow": 2
+   },
+   "files": 234,
+   "framework": "Django",
+   "language": "python",
+   "lines": 17110,
+   "name": "healthchecks",
+   "piiflow": {
+    "by_class": {
+     "log": 4,
+     "third_party": 1
+    },
+    "findings": 4,
+    "findings_by_rule": {
+     "PF001": 1
+    },
+    "findings_by_severity": {
+     "info": 3,
+     "medium": 1
+    },
+    "flows": 5,
+    "flows_maybe_personal": 4,
+    "gaps": 58,
+    "gaps_by_kind": {
+     "dynamic_call": 24,
+     "unresolved_callee": 21,
+     "unresolved_method": 13
+    },
+    "peak_rss_mib": 42,
+    "processors": [],
+    "sink_lines": 4,
+    "wall_seconds": 0.27
+   },
+   "privado": {
+    "by_class": {
+     "http": 37,
+     "log": 25,
+     "third_party": 2
+    },
+    "flows": 64,
+    "sink_lines": 17,
+    "status": "ok",
+    "wall_seconds": 88.7
+   },
+   "repository": "healthchecks/healthchecks",
+   "sample": {
+    "flows_piiflow": 4,
+    "flows_privado": 16,
+    "gaps": 10,
+    "items": 60,
+    "labelled_r1": 0,
+    "labelled_r2": 0,
+    "sites": 30
+   },
+   "sink_lines_overlap": {
+    "both": 1,
+    "piiflow_only": 3,
+    "privado_only": 16
+   }
+  },
+  {
+   "candidate_sites": {
+    "by_class": {
+     "error_tracking": 2,
+     "http": 60,
+     "log": 293,
+     "messaging": 7
+    },
+    "total": 362,
+    "with_piiflow_flow": 94,
+    "with_piiflow_flow_or_gap": 99,
+    "with_privado_flow": null
+   },
+   "files": 171,
+   "framework": "Flask",
+   "language": "python",
+   "lines": 27804,
+   "name": "redash",
+   "piiflow": {
+    "by_class": {
+     "http": 103,
+     "log": 139
+    },
+    "findings": 246,
+    "findings_by_rule": {
+     "PF001": 45,
+     "PF002": 2,
+     "PF005": 16,
+     "PF006": 41
+    },
+    "findings_by_severity": {
+     "high": 18,
+     "info": 142,
+     "medium": 45,
+     "warning": 41
+    },
+    "flows": 242,
+    "flows_maybe_personal": 180,
+    "gaps": 139,
+    "gaps_by_kind": {
+     "dynamic_call": 21,
+     "unresolved_callee": 101,
+     "unresolved_method": 17
+    },
+    "peak_rss_mib": 71,
+    "processors": [
+     "version.redash.io",
+     "www.googleapis.com"
+    ],
+    "sink_lines": 96,
+    "wall_seconds": 0.37
+   },
+   "privado": {
+    "reason": "out of memory (exit 137) in both attempts",
+    "status": "failed",
+    "wall_seconds": [
+     386.6,
+     610.2
+    ]
+   },
+   "repository": "getredash/redash",
+   "sample": {
+    "flows_piiflow": 36,
+    "flows_privado": 0,
+    "gaps": 10,
+    "items": 76,
+    "labelled_r1": 0,
+    "labelled_r2": 0,
+    "sites": 30
+   },
+   "sink_lines_overlap": null
+  },
+  {
+   "candidate_sites": {
+    "by_class": {
+     "http": 38,
+     "log": 72,
+     "messaging": 13,
+     "storage": 2
+    },
+    "total": 125,
+    "with_piiflow_flow": 13,
+    "with_piiflow_flow_or_gap": 16,
+    "with_privado_flow": 7
+   },
+   "files": 193,
+   "framework": "Flask",
+   "language": "python",
+   "lines": 23488,
+   "name": "ctfd",
+   "piiflow": {
+    "by_class": {
+     "http": 8,
+     "log": 31
+    },
+    "findings": 37,
+    "findings_by_rule": {
+     "PF001": 10,
+     "PF006": 1
+    },
+    "findings_by_severity": {
+     "info": 26,
+     "medium": 10,
+     "warning": 1
+    },
+    "flows": 39,
+    "flows_maybe_personal": 32,
+    "gaps": 75,
+    "gaps_by_kind": {
+     "dynamic_call": 17,
+     "unresolved_callee": 32,
+     "unresolved_method": 26
+    },
+    "peak_rss_mib": 49,
+    "processors": [
+     "versioning.ctfd.io"
+    ],
+    "sink_lines": 13,
+    "wall_seconds": 0.33
+   },
+   "privado": {
+    "by_class": {
+     "http": 15,
+     "log": 75
+    },
+    "flows": 90,
+    "sink_lines": 23,
+    "status": "ok",
+    "wall_seconds": 109.5
+   },
+   "repository": "CTFd/CTFd",
+   "sample": {
+    "flows_piiflow": 19,
+    "flows_privado": 16,
+    "gaps": 10,
+    "items": 75,
+    "labelled_r1": 0,
+    "labelled_r2": 0,
+    "sites": 30
+   },
+   "sink_lines_overlap": {
+    "both": 7,
+    "piiflow_only": 6,
+    "privado_only": 16
+   }
+  },
+  {
+   "candidate_sites": {
+    "by_class": {
+     "http": 10,
+     "log": 4,
+     "messaging": 1
+    },
+    "total": 15,
+    "with_piiflow_flow": 1,
+    "with_piiflow_flow_or_gap": 2,
+    "with_privado_flow": 1
+   },
+   "files": 25,
+   "framework": "FastAPI",
+   "language": "python",
+   "lines": 1520,
+   "name": "fastapi-template",
+   "piiflow": {
+    "by_class": {
+     "log": 3
+    },
+    "findings": 3,
+    "findings_by_rule": {
+     "PF001": 3
+    },
+    "findings_by_severity": {
+     "medium": 3
+    },
+    "flows": 3,
+    "flows_maybe_personal": 1,
+    "gaps": 9,
+    "gaps_by_kind": {
+     "dynamic_call": 3,
+     "unresolved_callee": 3,
+     "unresolved_method": 3
+    },
+    "peak_rss_mib": 16,
+    "processors": [],
+    "sink_lines": 1,
+    "wall_seconds": 0.06
+   },
+   "privado": {
+    "by_class": {
+     "log": 2
+    },
+    "flows": 2,
+    "sink_lines": 1,
+    "status": "ok",
+    "wall_seconds": 14.9
+   },
+   "repository": "fastapi/full-stack-fastapi-template",
+   "sample": {
+    "flows_piiflow": 3,
+    "flows_privado": 2,
+    "gaps": 9,
+    "items": 29,
+    "labelled_r1": 0,
+    "labelled_r2": 0,
+    "sites": 15
+   },
+   "sink_lines_overlap": {
+    "both": 1,
+    "piiflow_only": 0,
+    "privado_only": 0
+   }
+  },
+  {
+   "candidate_sites": {
+    "by_class": {
+     "analytics": 8,
+     "error_tracking": 13,
+     "http": 92,
+     "log": 743,
+     "messaging": 38,
+     "third_party": 3
+    },
+    "total": 897,
+    "with_piiflow_flow": 311,
+    "with_piiflow_flow_or_gap": 321,
+    "with_privado_flow": null
+   },
+   "files": 1234,
+   "framework": "FastAPI",
+   "language": "python",
+   "lines": 222747,
+   "name": "polar",
+   "piiflow": {
+    "by_class": {
+     "http": 441,
+     "log": 9474,
+     "third_party": 25
+    },
+    "findings": 9974,
+    "findings_by_rule": {
+     "PF001": 4778,
+     "PF002": 7,
+     "PF005": 497,
+     "PF006": 229
+    },
+    "findings_by_severity": {
+     "high": 504,
+     "info": 4463,
+     "medium": 4778,
+     "warning": 229
+    },
+    "flows": 9940,
+    "flows_maybe_personal": 6439,
+    "gaps": 915,
+    "gaps_by_kind": {
+     "depth_bound": 1,
+     "dynamic_call": 227,
+     "unresolved_callee": 247,
+     "unresolved_method": 439,
+     "unsupported_framework": 1
+    },
+    "peak_rss_mib": 902,
+    "processors": [
+     "Sentry"
+    ],
+    "sink_lines": 312,
+    "wall_seconds": 12.75
+   },
+   "privado": {
+    "reason": "out of memory (exit 137) in both attempts",
+    "status": "failed",
+    "wall_seconds": [
+     480.3,
+     1066.6
+    ]
+   },
+   "repository": "polarsource/polar",
+   "sample": {
+    "flows_piiflow": 41,
+    "flows_privado": 0,
+    "gaps": 10,
+    "items": 81,
+    "labelled_r1": 0,
+    "labelled_r2": 0,
+    "sites": 30
+   },
+   "sink_lines_overlap": null
+  },
+  {
+   "candidate_sites": {
+    "by_class": {
+     "http": 29,
+     "llm": 11,
+     "log": 759,
+     "messaging": 4
+    },
+    "total": 802,
+    "with_piiflow_flow": 163,
+    "with_piiflow_flow_or_gap": 164,
+    "with_privado_flow": 51
+   },
+   "files": 688,
+   "framework": "FastAPI",
+   "language": "python",
+   "lines": 96645,
+   "name": "private-gpt",
+   "piiflow": {
+    "by_class": {
+     "http": 21,
+     "log": 739,
+     "third_party": 1
+    },
+    "findings": 749,
+    "findings_by_rule": {
+     "PF001": 200,
+     "PF002": 4,
+     "PF005": 40
+    },
+    "findings_by_severity": {
+     "high": 44,
+     "info": 505,
+     "medium": 200
+    },
+    "flows": 761,
+    "flows_maybe_personal": 521,
+    "gaps": 273,
+    "gaps_by_kind": {
+     "dynamic_call": 75,
+     "unresolved_callee": 182,
+     "unresolved_method": 16
+    },
+    "peak_rss_mib": 210,
+    "processors": [
+     "Amazon S3",
+     "api.search.brave.com"
+    ],
+    "sink_lines": 164,
+    "wall_seconds": 2.49
+   },
+   "privado": {
+    "by_class": {
+     "http": 2,
+     "llm": 13,
+     "log": 81
+    },
+    "flows": 96,
+    "sink_lines": 62,
+    "status": "ok",
+    "wall_seconds": 300.7
+   },
+   "repository": "zylon-ai/private-gpt",
+   "sample": {
+    "flows_piiflow": 30,
+    "flows_privado": 16,
+    "gaps": 10,
+    "items": 86,
+    "labelled_r1": 0,
+    "labelled_r2": 0,
+    "sites": 30
+   },
+   "sink_lines_overlap": {
+    "both": 20,
+    "piiflow_only": 144,
+    "privado_only": 42
+   }
+  }
+ ],
+ "generated_from": {
+  "piiflow_commit": "9a78b082bcdf01d23f4c890d5ea2bdb7b88d66b8"
+ }
+}
