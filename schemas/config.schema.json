@@ -171,6 +171,7 @@
         "methods": { "$ref": "#/$defs/patterns" },
         "args": { "oneOf": [{ "const": "all" }, { "type": "array", "items": { "type": "integer", "minimum": 0 } }] },
         "keywords": { "$ref": "#/$defs/patterns" },
+        "receiver": { "type": "boolean" },
         "host": {
           "type": "object",
           "additionalProperties": false,

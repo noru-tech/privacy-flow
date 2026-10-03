@@ -345,6 +345,28 @@ Time +20–40%: each formal-site field is summarised as a parameter.
 
 **Next.** Summarise formal-site parameters only for the tokens their function reads.
 
+## 2026-10-03 — Email, messaging and push sinks
+
+**Why.** Scoring the imported partial labels (R1, ten applications; provenance unconfirmed, so
+for prioritising only) put piiflow's recall at 33 of 114 sampled personal sinks. Email and
+messaging calls were the largest group of misses: libraries the catalogue did not list
+(`smtplib`, Flask-Mail, `emails`, Apprise, `@nestjs-modules/mailer`, Wasp's `emailSender`, Expo),
+and Django messages whose data is in the message object, not in `send()`'s arguments.
+
+**Done.** Sinks take `receiver: true` (the receiver is sent too); Django, Flask-Mail, `emails`
+and Apprise use it. Thirty-odd email, SMS, chat and push SDKs in both languages, each in fixture
+`py/messaging` or `ts/messaging`. Propagators cover only the message constructors and builder
+methods, so other calls into these SDKs stay gaps.
+
+**Measured** (benchmark corpus, base `36c2ea4`). Messaging flows: Healthchecks 1 → 87 (every
+outgoing email, previously silent), Ghost 1 → 6, Redash 0 → 7, Hoppscotch 0 → 6, CTFd 0 → 4,
+fastapi-template 0 → 3, Polar 0 → 3, open-saas 0 → 1; gaps down by 1 or 2 in each. Against the R1
+site labels: found 33 → 36 of 114; one site lost (fastapi-template logs the result of
+`message.send`, which was a propagating gap and is now a sink whose result carries nothing).
+
+**Next.** Most remaining messaging misses are wrappers reached through dynamic dispatch
+(`self.transport.notify`, `this.mailer.send`, inherited `send`): inheritance and methods on typed
+fields, not catalogue.
 
 ## 2026-10-03 — Inheritance (ADR 0011)
 

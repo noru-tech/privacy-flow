@@ -119,8 +119,22 @@ sinks:
   - id: js.nodemailer
     language: javascript
     class: messaging
-    description: Nodemailer; the receiving SMTP provider is configured at run time, so no processor is named.
-    calls: ["nodemailer:**.sendMail"]
+    description: >-
+      Nodemailer, and Ghost's published wrapper of it; the receiving SMTP provider is configured
+      at run time, so no processor is named.
+    calls: ["{nodemailer,@tryghost/nodemailer}:**.sendMail"]
+
+  - id: js.nestjs-mailer
+    language: javascript
+    class: messaging
+    description: The NestJS mailer module (Nodemailer underneath); the transport is configured at run time.
+    calls: ["@nestjs-modules/mailer:MailerService{,()}.sendMail"]
+
+  - id: js.wasp-email
+    language: javascript
+    class: messaging
+    description: Wasp's email sender; the provider (SMTP, SendGrid, Mailgun) is chosen in the Wasp file.
+    calls: ["wasp/server/email:emailSender.send"]
 
   - id: js.resend
     language: javascript
@@ -139,6 +153,94 @@ sinks:
     class: messaging
     processor: Amazon SES
     calls: ["{@aws-sdk/client-ses,@aws-sdk/client-sesv2}:**.send"]
+
+  - id: js.aws-sns
+    language: javascript
+    class: messaging
+    processor: Amazon SNS
+    calls: ["@aws-sdk/client-sns:**.send"]
+
+  - id: js.mailersend
+    language: javascript
+    class: messaging
+    processor: MailerSend
+    calls: ["mailersend:MailerSend{,()}.{email,sms}.send"]
+
+  - id: js.mailchimp-transactional
+    language: javascript
+    class: messaging
+    processor: Mailchimp Transactional
+    calls: ["@mailchimp/mailchimp_transactional:**.messages.{send,sendTemplate}"]
+
+  - id: js.brevo
+    language: javascript
+    class: messaging
+    processor: Brevo
+    calls: ["{@getbrevo/brevo,sib-api-v3-sdk}:**.{sendTransacEmail,sendTransacSms}"]
+
+  - id: js.mailjet
+    language: javascript
+    class: messaging
+    processor: Mailjet
+    calls: ["node-mailjet:**.post().request"]
+
+  - id: js.vonage
+    language: javascript
+    class: messaging
+    processor: Vonage
+    calls: ["@vonage/server-sdk:Vonage{,()}.{sms,messages}.send"]
+
+  - id: js.telegram
+    language: javascript
+    class: messaging
+    processor: Telegram
+    calls:
+      - "node-telegram-bot-api:**.{sendMessage,sendPhoto,sendDocument,sendContact,sendLocation}"
+      - "telegraf:**.telegram.{sendMessage,sendPhoto,sendDocument,sendContact,sendLocation}"
+
+  - id: js.firebase-messaging
+    language: javascript
+    class: messaging
+    processor: Firebase Cloud Messaging
+    calls:
+      - "firebase-admin:**.messaging().{send,sendEach,sendEachForMulticast,sendMulticast,sendAll,sendToDevice,sendToTopic}"
+      - "firebase-admin/messaging:getMessaging().{send,sendEach,sendEachForMulticast,sendMulticast,sendAll}"
+
+  - id: js.expo-push
+    language: javascript
+    class: messaging
+    processor: Expo
+    calls: ["expo-server-sdk:Expo{,()}.sendPushNotificationsAsync"]
+
+  - id: js.web-push
+    language: javascript
+    class: messaging
+    description: Web Push; the push service is the subscription's endpoint, so no processor is named.
+    calls: ["web-push:{sendNotification,default.sendNotification}"]
+
+  - id: js.novu
+    language: javascript
+    class: messaging
+    processor: Novu
+    calls: ["{@novu/node,@novu/api}:Novu{,()}.trigger"]
+
+  - id: js.knock
+    language: javascript
+    class: messaging
+    processor: Knock
+    calls: ["@knocklabs/node:Knock{,()}.workflows.trigger"]
+
+  - id: js.customerio
+    language: javascript
+    class: messaging
+    processor: Customer.io
+    calls: ["customerio-node:{TrackClient,APIClient}{,()}.{identify,track,trackAnonymous,sendEmail,sendPush}"]
+
+  - id: js.loops
+    language: javascript
+    class: messaging
+    processor: Loops
+    calls: ["loops:LoopsClient{,()}.{sendTransactionalEmail,createContact,updateContact,sendEvent}"]
 
   # ------------------------------------------------------------------ LLM providers
   - id: js.openai
@@ -387,8 +489,109 @@ sinks:
   - id: py.django.mail
     language: python
     class: messaging
-    description: Django's email API; the receiving provider is whatever the email backend is configured to use.
+    description: >-
+      Django's email API; the receiving provider is whatever the email backend is configured to
+      use. A message object sends what it was built with.
     calls: ["django.core.mail.{send_mail,send_mass_mail,mail_admins,mail_managers}", "django.core.mail.{EmailMessage,EmailMultiAlternatives}{,()}.send"]
+    receiver: true
+
+  - id: py.smtplib
+    language: python
+    class: messaging
+    description: >-
+      The standard library's SMTP client; the receiving server is configured at run time, so no
+      processor is named.
+    calls: ["smtplib.{SMTP,SMTP_SSL,LMTP}{,()}.{sendmail,send_message}"]
+
+  - id: py.flask-mail
+    language: python
+    class: messaging
+    description: Flask-Mail; the SMTP server is configured at run time. A message object sends what it was built with.
+    calls: ["flask_mail.{Mail,Connection}{,()}.{send,send_message}", "flask_mail.Mail{,()}.connect{,()}.{send,send_message}", "flask_mail.Message{,()}.send"]
+    receiver: true
+
+  - id: py.fastapi-mail
+    language: python
+    class: messaging
+    description: fastapi-mail; the SMTP server is configured at run time.
+    calls: ["fastapi_mail.FastMail{,()}.send_message"]
+
+  - id: py.emails
+    language: python
+    class: messaging
+    description: The `emails` package; the SMTP server is given to `send`. A message object sends what it was built with.
+    calls: ["emails.{Message,html,message.Message,message.html}{,()}.send"]
+    receiver: true
+
+  - id: py.apprise
+    language: python
+    class: messaging
+    description: >-
+      Apprise; the notification services (and their credentials and recipients) are the URLs
+      added to the instance, so no processor is named and the instance is sent with the message.
+    calls: ["apprise.Apprise{,()}.{notify,async_notify}"]
+    receiver: true
+
+  - id: py.resend
+    language: python
+    class: messaging
+    processor: Resend
+    calls: ["resend.{Emails,Batch}.send"]
+
+  - id: py.mailjet
+    language: python
+    class: messaging
+    processor: Mailjet
+    calls: ["mailjet_rest.Client{,()}.send.create"]
+
+  - id: py.brevo
+    language: python
+    class: messaging
+    processor: Brevo
+    calls: ["{sib_api_v3_sdk,brevo_python}.{TransactionalEmailsApi,TransactionalSMSApi}{,()}.{send_transac_email,send_transac_sms}"]
+
+  - id: py.mailchimp-transactional
+    language: python
+    class: messaging
+    processor: Mailchimp Transactional
+    calls: ["mailchimp_transactional.Client{,()}.messages.{send,send_template}"]
+
+  - id: py.vonage
+    language: python
+    class: messaging
+    processor: Vonage
+    calls: ["vonage.{Client,Vonage}{,()}.{sms,messages}.{send,send_message}"]
+
+  - id: py.telegram
+    language: python
+    class: messaging
+    processor: Telegram
+    calls: ["telegram.Bot{,()}.{send_message,send_photo,send_document,send_contact,send_location}"]
+
+  - id: py.boto3-sns
+    language: python
+    class: messaging
+    processor: Amazon SNS
+    description: Amazon SNS (`publish` on a boto3 client, which is SNS's call for SMS, push and topics).
+    calls: ["boto3.client{,()}.{publish,publish_batch}"]
+
+  - id: py.firebase-messaging
+    language: python
+    class: messaging
+    processor: Firebase Cloud Messaging
+    calls: ["firebase_admin.messaging.{send,send_each,send_each_for_multicast,send_multicast,send_all}"]
+
+  - id: py.expo-push
+    language: python
+    class: messaging
+    processor: Expo
+    calls: ["exponent_server_sdk.PushClient{,()}.{publish,publish_multiple}"]
+
+  - id: py.webpush
+    language: python
+    class: messaging
+    description: Web Push; the push service is the subscription's endpoint, so no processor is named.
+    calls: ["pywebpush.webpush", "pywebpush.WebPusher{,()}.send"]
 
   # ------------------------------------------------------------------ LLM providers
   - id: py.openai
