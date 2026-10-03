@@ -177,7 +177,7 @@ model: the flow through the helper is computed per argument and per field.
 | **GitHub Action** — the flows a pull request introduces, as SARIF and a job summary | [`action.yml`](action.yml), [docs](docs/github-action.md) |
 | **Conformance corpus** — programs with expected flows, and a runner any analyser can use | [`conformance/`](conformance/README.md) |
 | **Design** — how it works, and an ADR per major choice | [design](docs/design.md), [ADRs](docs/adr/README.md) |
-| **Benchmark** — piiflow against Privado on twelve real applications, and what is not measured yet | [report](benchmark/REPORT.md) · [method](docs/benchmark.md) |
+| **Benchmark** — piiflow 0.1.0 against Privado on real applications, labelled blind by two reviewers: on the ten labelled, 72 % of the flows piiflow reports are real (Privado 22 %), and it finds 31 % of sampled sinks that receive personal data (Privado 14 %), 38 % counting the places it flags | [report](benchmark/REPORT.md) · [scores](benchmark/results/scores.md) · [method](docs/benchmark.md) |
 
 <!-- speed:start -->
 
@@ -202,7 +202,7 @@ model: the flow through the helper is computed per argument and per field.
 | [Ghost](https://github.com/TryGhost/Ghost) | 160,029 | 3.95 s | 14 min | 192 MiB | 6.3 GiB |
 | [Polar](https://github.com/polarsource/polar) | 222,747 | 40.8 s | not finished after 60 min | 624 MiB | 12.8 GiB |
 
-**How this was measured** (2026-10-02). The 12 open-source applications of the [benchmark corpus](benchmark/SELECTION.md); each one on its own GitHub-hosted runner (4 vCPU, 15.6 GiB; 4 different CPU models across jobs, listed in [results.json](benchmark/speed/results.json)), with both tools run one after the other on it. piiflow 0.1.0 is the released Linux binary, verified by its attestation; the median of 3 runs is shown, and its output matched the recorded macOS run byte for byte on every application. Privado is privado-core 1.1.175 from its pinned image with its newest rules, offline, one run, 14 GiB limit. This measures speed and memory only; whether each tool's findings are *right* is measured by the [labelled benchmark](benchmark/REPORT.md), which is in progress. [Method and how to rerun it](benchmark/speed/README.md).
+**How this was measured** (2026-10-02). The 12 open-source applications of the [benchmark corpus](benchmark/SELECTION.md); each one on its own GitHub-hosted runner (4 vCPU, 15.6 GiB; 4 different CPU models across jobs, listed in [results.json](benchmark/speed/results.json)), with both tools run one after the other on it. piiflow 0.1.0 is the released Linux binary, verified by its attestation; the median of 3 runs is shown, and its output matched the recorded macOS run byte for byte on every application. Privado is privado-core 1.1.175 from its pinned image with its newest rules, offline, one run, 14 GiB limit. This measures speed and memory only; whether each tool's findings are *right* is measured by the [labelled benchmark](benchmark/REPORT.md). [Method and how to rerun it](benchmark/speed/README.md).
 
 <!-- speed:end -->
 

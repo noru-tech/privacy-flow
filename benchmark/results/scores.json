@@ -1,0 +1,274 @@
+{
+  "applications_without_final_labels": [
+    "polar",
+    "private-gpt"
+  ],
+  "gaps_hiding_a_flow": {
+    "hi": 0.3936,
+    "k": 26,
+    "lo": 0.2078,
+    "n": 89,
+    "p": 0.2921
+  },
+  "head_to_head": {
+    "applications": [
+      "ctfd",
+      "fastapi-template",
+      "ghost",
+      "healthchecks",
+      "hoppscotch",
+      "open-saas",
+      "redash",
+      "taxonomy",
+      "umami",
+      "vercel-chatbot"
+    ],
+    "precision": {
+      "piiflow": {
+        "hi": 0.7876,
+        "lo": 0.6513,
+        "n": 127,
+        "p": 0.7194,
+        "reports": 489,
+        "uncovered": 0.0061
+      },
+      "piiflow_raised": {
+        "hi": 0.7733,
+        "lo": 0.533,
+        "n": 71,
+        "p": 0.6531,
+        "reports": 193,
+        "uncovered": 0.0153
+      },
+      "privado": {
+        "hi": 0.4136,
+        "lo": 0.0232,
+        "n": 103,
+        "p": 0.2184,
+        "reports": 1397,
+        "uncovered": 0.0
+      }
+    },
+    "recall": {
+      "paired": {
+        "both": 9,
+        "neither": 69,
+        "piiflow_only": 24,
+        "privado_only": 6
+      },
+      "piiflow_flagged": {
+        "hi": 0.4738,
+        "k": 41,
+        "lo": 0.2937,
+        "n": 108,
+        "p": 0.3796
+      },
+      "piiflow_found": {
+        "hi": 0.3979,
+        "k": 33,
+        "lo": 0.2266,
+        "n": 108,
+        "p": 0.3056
+      },
+      "privado_found": {
+        "hi": 0.2166,
+        "k": 15,
+        "lo": 0.086,
+        "n": 108,
+        "p": 0.1389
+      },
+      "sites": 108
+    }
+  },
+  "precision": {
+    "piiflow_flows": {
+      "hi": 0.694,
+      "k": 76,
+      "lo": 0.525,
+      "n": 124,
+      "p": 0.6129
+    },
+    "piiflow_info": {
+      "pooled": {
+        "hi": 0.6598,
+        "k": 30,
+        "lo": 0.407,
+        "n": 56,
+        "p": 0.5357
+      },
+      "weighted": 0.7627
+    },
+    "piiflow_rules": {
+      "PF001": {
+        "pooled": {
+          "hi": 0.8364,
+          "k": 15,
+          "lo": 0.4732,
+          "n": 22,
+          "p": 0.6818
+        },
+        "weighted": 0.6578
+      },
+      "PF002": {
+        "pooled": {
+          "hi": 0.891,
+          "k": 11,
+          "lo": 0.4805,
+          "n": 15,
+          "p": 0.7333
+        },
+        "weighted": 0.7235
+      },
+      "PF003": {
+        "pooled": {
+          "hi": 0.8124,
+          "k": 3,
+          "lo": 0.1876,
+          "n": 6,
+          "p": 0.5
+        },
+        "weighted": 0.5
+      },
+      "PF004": {
+        "pooled": null,
+        "weighted": null
+      },
+      "PF005": {
+        "pooled": {
+          "hi": 0.8152,
+          "k": 10,
+          "lo": 0.3864,
+          "n": 16,
+          "p": 0.625
+        },
+        "weighted": 0.5385
+      },
+      "PF006": {
+        "pooled": {
+          "hi": 0.8619,
+          "k": 8,
+          "lo": 0.3906,
+          "n": 12,
+          "p": 0.6667
+        },
+        "weighted": 0.5444
+      }
+    },
+    "privado_by_type": {
+      "privado:internal_apis": {
+        "pooled": {
+          "hi": 0.2833,
+          "k": 1,
+          "lo": 0.0111,
+          "n": 16,
+          "p": 0.0625
+        },
+        "weighted": 0.1007
+      },
+      "privado:leakages": {
+        "pooled": {
+          "hi": 0.3699,
+          "k": 10,
+          "lo": 0.1284,
+          "n": 44,
+          "p": 0.2273
+        },
+        "weighted": 0.1905
+      },
+      "privado:third_parties": {
+        "pooled": {
+          "hi": 0.3262,
+          "k": 8,
+          "lo": 0.0974,
+          "n": 43,
+          "p": 0.186
+        },
+        "weighted": 0.2376
+      }
+    },
+    "privado_flows": {
+      "hi": 0.2702,
+      "k": 19,
+      "lo": 0.1214,
+      "n": 103,
+      "p": 0.1845
+    }
+  },
+  "recall": {
+    "all": {
+      "piiflow_flagged": {
+        "hi": 0.4738,
+        "k": 41,
+        "lo": 0.2937,
+        "n": 108,
+        "p": 0.3796
+      },
+      "piiflow_found": {
+        "hi": 0.3979,
+        "k": 33,
+        "lo": 0.2266,
+        "n": 108,
+        "p": 0.3056
+      },
+      "privado_found": {
+        "hi": 0.2166,
+        "k": 15,
+        "lo": 0.086,
+        "n": 108,
+        "p": 0.1389
+      }
+    },
+    "python": {
+      "piiflow_flagged": {
+        "hi": 0.578,
+        "k": 15,
+        "lo": 0.2714,
+        "n": 36,
+        "p": 0.4167
+      },
+      "piiflow_found": {
+        "hi": 0.5242,
+        "k": 13,
+        "lo": 0.2248,
+        "n": 36,
+        "p": 0.3611
+      },
+      "privado_found": {
+        "hi": 0.4399,
+        "k": 10,
+        "lo": 0.1585,
+        "n": 36,
+        "p": 0.2778
+      }
+    },
+    "typescript": {
+      "piiflow_flagged": {
+        "hi": 0.4765,
+        "k": 26,
+        "lo": 0.2598,
+        "n": 72,
+        "p": 0.3611
+      },
+      "piiflow_found": {
+        "hi": 0.3905,
+        "k": 20,
+        "lo": 0.1876,
+        "n": 72,
+        "p": 0.2778
+      },
+      "privado_found": {
+        "hi": 0.1525,
+        "k": 5,
+        "lo": 0.03,
+        "n": 72,
+        "p": 0.0694
+      }
+    }
+  },
+  "reviewer_added_sites": 0,
+  "unsure_excluded": {
+    "flow": 23,
+    "gap": 5,
+    "site": 19
+  }
+}

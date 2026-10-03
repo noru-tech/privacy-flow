@@ -1,0 +1,122 @@
+# Final labels for fastapi-template, from R1 and R2 by benchmark/labelling/finalise.py: 24 items both
+# answered the same way, 5 they did not (unsure, not settled by discussion). See PROTOCOL.md.
+items:
+  F02ca0d10e0:
+    note: R1 and R2 disagree; not settled by discussion
+    verdict: unsure
+  F3ff7c42c7b:
+    category_ok: 'yes'
+    citation: app/utils.py:56
+    verdict: fp_path
+  F8e3f505683:
+    note: R1 and R2 disagree; not settled by discussion
+    verdict: unsure
+  Fc7f8e43d59:
+    note: R1 and R2 disagree; not settled by discussion
+    verdict: unsure
+  Fcfe5ff2827:
+    note: R1 and R2 disagree; not settled by discussion
+    verdict: unsure
+  G1a7bdf52b9:
+    citation: null
+    hides_flow: 'no'
+  G1e83dbfb46:
+    citation: null
+    hides_flow: 'no'
+  G6822496555:
+    citation: null
+    hides_flow: 'no'
+  G6fd9570fde:
+    citation: app/utils.py:56
+    hides_flow: 'yes'
+  G95cd40ff78:
+    citation: null
+    hides_flow: 'no'
+  Gb75c5cb6e9:
+    citation: null
+    hides_flow: 'no'
+  Gbfb7edca9c:
+    citation: null
+    hides_flow: 'no'
+  Gc30ba26960:
+    citation: null
+    hides_flow: 'no'
+  Gee8feddfd4:
+    citation: null
+    hides_flow: 'no'
+  S26f3ec1f78:
+    categories: []
+    is_sink: 'no'
+    personal: null
+    source: null
+  S28b8b24daf:
+    is_sink: unsure
+    note: R1 and R2 disagree; not settled by discussion
+    personal: unsure
+  S3bbfe40233:
+    categories: []
+    is_sink: 'no'
+    personal: null
+    source: null
+  S4e82fbcbfb:
+    categories: []
+    is_sink: 'yes'
+    personal: 'no'
+    source: null
+  S4f0dd6de37:
+    categories:
+    - user.contact.email
+    - user.authorization.password
+    is_sink: 'yes'
+    personal: 'yes'
+    source: app/api/routes/users.py:70
+  S79cc25e49d:
+    categories: []
+    is_sink: 'no'
+    personal: null
+    source: null
+  S79ed5f67f8:
+    categories: []
+    is_sink: 'yes'
+    personal: 'no'
+    source: null
+  S7c397a7399:
+    categories: []
+    is_sink: 'no'
+    personal: null
+    source: null
+  S836bc5c9af:
+    categories: []
+    is_sink: 'no'
+    personal: null
+    source: null
+  Sb3e3c493f1:
+    categories: []
+    is_sink: 'no'
+    personal: null
+    source: null
+  Sc33a758ca8:
+    categories: []
+    is_sink: 'no'
+    personal: null
+    source: null
+  Scd1769a2e8:
+    categories: []
+    is_sink: 'no'
+    personal: null
+    source: null
+  Sd07a1e18b8:
+    categories: []
+    is_sink: 'no'
+    personal: null
+    source: null
+  Se2c8e210ba:
+    categories: []
+    is_sink: 'yes'
+    personal: 'no'
+    source: null
+  Sfa2fffeb9b:
+    categories: []
+    is_sink: 'no'
+    personal: null
+    source: null

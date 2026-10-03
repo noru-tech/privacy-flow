@@ -33,9 +33,8 @@ Not yet labelled: Polar and PrivateGPT for R1; PrivateGPT and the rest of Polar 
 - The desk stores labels server-side, per signed-in claude.ai account, not in the browser; it could
   not be checked whether the reviewers' desk stores hold these labels.
 
-## Before these are used
+## Decision
 
-`benchmark/PROTOCOL.md` requires two independent human reviewers. Until the provenance above is
-confirmed, for example by each reviewer exporting from the desk directly and the exports matching
-these files, agreement (κ) and precision computed from them should not be published as human
-ground truth.
+On 2026-10-03 the benchmark's owner decided to score and publish these labels as R1's and R2's.
+The final labels are built from them by `benchmark/labelling/finalise.py` (PROTOCOL.md,
+Deviations, 2026-10-03). The record above is kept as it was written.
