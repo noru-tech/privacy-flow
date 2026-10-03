@@ -191,6 +191,13 @@
       "status": "required"
     },
     {
+      "description": "A class assigned to module.exports and loaded with require is constructed and called.",
+      "expected_flows": 1,
+      "language": "javascript",
+      "name": "ts-commonjs-require",
+      "status": "required"
+    },
+    {
       "description": "An identity helper called twice: only the call that passed the data flows.",
       "expected_flows": 0,
       "language": "javascript",

@@ -160,10 +160,11 @@ calls known not to be sinks:
   language: javascript
   calls: ["{@prisma/client,drizzle-orm,mongoose,knex,pg,redis}:**"]
   receivers: [prisma, tx, db]   # any method on a receiver with these names and unknown origin
-  flow: none                    # args_to_result | args_to_receiver | receiver_to_callback | none
+  flow: none                    # args_to_result | args_only | args_to_receiver | receiver_to_callback | none
 ```
 
-`args_to_result` is the default for string building, validation, formatting and framework
+`args_only` passes the arguments but not the receiver: a call on a service client returns the
+service's data, not the client's configuration (the API key it was built with). `args_to_result` is the default for string building, validation, formatting and framework
 plumbing; `args_to_receiver` puts arguments into the receiver (`xs.push(x)`);
 `receiver_to_callback` hands the receiver's elements to a callback's first parameter (`xs.map(f)`);
 `none` passes nothing (database clients: writing to the system's own store is data at rest, and a

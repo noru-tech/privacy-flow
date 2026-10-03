@@ -968,7 +968,16 @@ impl Program {
     fn import_prov(&mut self, imp: &GImport) -> Vec<Prov> {
         let py = self.is_python(imp.file);
         match (&imp.target, &imp.kind) {
-            (Target::Local(f), ImportKind::Namespace) => vec![Prov::Module(*f)],
+            // `require('./m')` (and `import * as m`): the module, and in JavaScript whatever it
+            // assigned to `module.exports` (`module.exports = class Mailer`), which is what
+            // `require` returns.
+            (Target::Local(f), ImportKind::Namespace) => {
+                let mut out = vec![Prov::Module(*f)];
+                if !py && let Some(v) = self.export_var(*f, "default") {
+                    out.extend(self.prov[v as usize].iter().cloned());
+                }
+                out
+            }
             (Target::Local(f), ImportKind::Default) => match self.export_var(*f, "default") {
                 Some(v) => self.prov[v as usize].clone(),
                 None => vec![Prov::Module(*f)],
@@ -2068,8 +2077,11 @@ impl Program {
                 let imp = self.imports[import as usize].clone();
                 let ps = self.import_prov(&imp);
                 let mut changed = self.set(imp.var, &ps);
-                // A default import of an object literal carries its fields.
-                if let (Target::Local(f), ImportKind::Default) = (&imp.target, &imp.kind)
+                // A default import of an object literal carries its fields, as does `require` of a
+                // module whose `module.exports` is one.
+                if let (Target::Local(f), ImportKind::Default | ImportKind::Namespace) =
+                    (&imp.target, &imp.kind)
+                    && !self.is_python(*f)
                     && let Some(v) = self.export_var(*f, "default")
                 {
                     for (k, ps) in self.fields_of(v) {

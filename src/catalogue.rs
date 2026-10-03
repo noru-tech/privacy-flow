@@ -260,6 +260,10 @@ pub struct SanitiserDef {
 pub enum Flow {
     /// Arguments (and the receiver, for methods) flow to the result.
     ArgsToResult,
+    /// Arguments flow to the result, the receiver does not: a call on a service client returns
+    /// the service's data, not the client's configuration (`stripe.subscriptions.retrieve(id)`
+    /// does not carry the key the client was built with).
+    ArgsOnly,
     /// Arguments flow into the receiver (`xs.push(x)`), and to the result.
     ArgsToReceiver,
     /// The receiver's elements flow into the first parameter of a callback argument, and the

@@ -489,3 +489,24 @@ Polar: PF002 high +252, PF006 +470; no new medium log findings. Time unchanged.
 
 **Next.** The rest of the identifier names (`sub`, `owner` IDs) by config; the recorded run of
 the next release.
+
+## 2026-10-03 — CommonJS `require`, service clients, record parameters
+
+**Why.** Re-scoring the R1 site labels against main + #20 (45 of 114 found), the largest analysis
+group left was Ghost's: mailers and services wired through constructor options in CommonJS.
+`require('./m')` gave the module, never what it assigned to `module.exports`, so
+`new (require('./mailer'))()` resolved to nothing.
+
+**Done.** `require` of a local module carries its `module.exports` value and fields. Exposing
+Ghost showed two precision problems, fixed generally: service clients' non-sink calls return the
+service's data, not the client (`args_only`; the Stripe key no longer "returns" from
+`subscriptions.retrieve`), and a parameter whose fields are read is a record, not the attribute
+its name says (Ghost's `email` newsletter). Vector `ts-commonjs-require`, fixture `ts/commonjs`.
+
+**Measured** (against #20's build). Ghost: unresolved-method gaps 396 → 156, gaps 681 → 606,
+flows 115 → 874; PF002 high +177 (member and recipient emails to Stripe and Mailgun, customer
+IDs, request IPs), PF005 high +2; time 1.6 → 4.0 s. Elsewhere small decreases from the record
+rule. R1 sampled sinks found 45 → 47.
+
+**Next.** Request objects passed through middleware lose which field a flow came from (a
+`req.params` read is attributed to `req.body`).

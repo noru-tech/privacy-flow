@@ -64,6 +64,15 @@ All notable changes to this project are documented here. The format is based on
   same object (ADR 0007).
 
 ### Fixed
+- `require('./m')` of a CommonJS module is what the module assigned to `module.exports` (a class,
+  an object of exports), not only the module: `new (require('./mailer'))()` and
+  `const { GhostMailer } = require('../mail')` resolve. On Ghost, whose server is CommonJS,
+  unresolved-method gaps go from 396 to 156 and flows from 115 to 874; time 1.6 s to 4.0 s.
+- A call on a service client (Stripe, AWS, Slack …) that is not a sink no longer returns the
+  client's own configuration: `stripe.subscriptions.retrieve(id)` does not carry the secret key
+  the client was built with (new propagator flow `args_only`).
+- A parameter named like a personal attribute whose function reads named fields of it
+  (`email.id`, `email.subject`) is a record, not that attribute, and not a source by its name.
 - A flow of unknown category was dropped when a classified field read lay on its way, whatever
   its source; this "narrowing" now applies to request input only, as documented, so a
   maybe-personal field logged beside a classified one is no longer hidden.

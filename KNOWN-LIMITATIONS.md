@@ -124,6 +124,10 @@ Request input is a source only in frameworks whose request objects are modelled
 
 ## Sources and sinks
 
+- **Parameters named like data:** a parameter named `email` is an email address unless its
+  function reads named fields of it (then it is a record, such as a newsletter, and not a source
+  by its name). **Silent:** a record passed straight on without a field read keeps the name's
+  category.
 - **Sources are names.** A field, dict key or parameter is personal data when the
   [classification table](vendor/classification/classification.json), a catalogue or config entry,
   or an ingested data map says so; names the table marks only *maybe* personal are reported at

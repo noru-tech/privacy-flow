@@ -8,7 +8,7 @@
 
 mod heap;
 
-use std::collections::{BTreeMap, BTreeSet, HashMap};
+use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
 
 use crate::catalogue::{ArgSel, Catalogue, Flow, ParamRule, SinkClass, SourceKind};
 use crate::classify::{Classifier, Place, UNKNOWN};
@@ -1039,6 +1039,11 @@ impl<'a, 'p> Builder<'a, 'p> {
         let mut vars = Self::arg_vars(args);
         vars.extend(recv);
         match flow {
+            Flow::ArgsOnly => {
+                for a in args {
+                    self.edge(a.var, dst, EdgeKind::Collapse, stmt);
+                }
+            }
             Flow::ArgsToResult => {
                 for v in vars {
                     self.edge(v, dst, EdgeKind::Collapse, stmt);
@@ -1687,11 +1692,27 @@ impl<'a, 'p> Builder<'a, 'p> {
     }
 
     fn param_name_seeds(&mut self) {
+        // A parameter its function reads named fields of is a record, not the attribute its name
+        // says (Ghost's `email` is an Email model: `email.id`, `email.get('subject')`).
+        let mut records: HashSet<VarId> = HashSet::new();
+        for st in &self.p.stmts {
+            if let GKind::Load {
+                obj,
+                field: Some(k),
+                ..
+            } = st.kind
+            {
+                let lang = self.lang(st.file);
+                if !self.inp.catalogue.non_propagating(lang, self.p.syms.str(k)) {
+                    records.insert(obj);
+                }
+            }
+        }
         for fi in 0..self.p.funcs.len() {
             let formals = self.f.formals[fi].clone();
             for (i, var) in formals.into_iter().enumerate() {
                 let v = &self.p.vars[var as usize];
-                if v.kind != VarKind::Param || v.name.is_empty() {
+                if v.kind != VarKind::Param || v.name.is_empty() || records.contains(&var) {
                     continue;
                 }
                 let name = v.name.clone();

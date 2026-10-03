@@ -1,0 +1,5 @@
+{
+  "description": "A class assigned to module.exports and loaded with require is constructed and called.",
+  "language": "javascript",
+  "status": "required"
+}

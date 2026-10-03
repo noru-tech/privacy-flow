@@ -7,6 +7,7 @@
 # framework plumbing. They propagate and are never gaps.
 #
 # flow: args_to_result       arguments (and the receiver) flow to the result
+#       args_only            arguments flow to the result, the receiver does not (service clients)
 #       args_to_receiver     arguments flow into the receiver (`xs.push(x)`) and the result
 #       receiver_to_callback the receiver's elements flow into a callback's first parameter,
 #                            and the callback's return value to the result (`xs.map(f)`)
@@ -82,6 +83,16 @@ propagators:
     receivers: [prisma, tx, trx, knex, db, dbClient]
     flow: none
 
+  - id: js.service-clients
+    language: javascript
+    description: >-
+      Clients of the services the sinks name, for their calls that are not sinks (reads,
+      lookups, configuration). What a call returns is the service's data: the arguments may be
+      in it, the client's own configuration (its API key) is not.
+    calls:
+      - "{pino,winston,bunyan,nodemailer,ai,@ai-sdk/*,stripe,inngest,@aws-sdk/*,@azure/*,@google-cloud/*,@slack/*}:**"
+    flow: args_only
+
   - id: js.internal-modules
     language: javascript
     description: >-
@@ -106,7 +117,6 @@ propagators:
       - "{pdf-lib,@cantoo/pdf-lib,@libpdf/core,pdfjs-dist,pdfjs-dist/*,sharp,jimp,qrcode,papaparse,csv-parse,csv-parse/sync,csv-stringify,xlsx,exceljs,marked,dompurify,isomorphic-dompurify,sanitize-html,he,entities,mime,mime-types,file-type,fflate,jszip,content-disposition,@sindresorhus/slugify,ua-parser-js,isbot,colord}:**"
       - "{react-email,@react-email/*,nuqs,react-call,@hello-pangea/dnd,react-colorful,remix-themes,fumadocs-ui/*,fumadocs-core/*,@dnd-kit/*,react-day-picker,embla-carousel-react,input-otp,react-resizable-panels,usehooks-ts,@uidotdev/usehooks}:**"
       - "{@noble/*,@scure/*,@oslojs/*,oslo,oslo/*,arctic,@simplewebauthn/*,otplib,speakeasy,uuidv7,@paralleldrive/cuid2}:**"
-      - "{pino,winston,bunyan,nodemailer,ai,@ai-sdk/*,stripe,inngest,@aws-sdk/*,@azure/*,@google-cloud/*,@slack/*}:**"
     flow: args_to_result
 
   # ------------------------------------------------------------------ Python
