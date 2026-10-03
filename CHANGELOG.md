@@ -7,6 +7,11 @@ All notable changes to this project are documented here. The format is based on
 ## [Unreleased]
 
 ### Added
+- Identifiers (ADR 0015): `user_id`, `customer_id`, `member_id` and the like, and `id` on a
+  person's record (`user.id`, `customer["id"]`, `User.id`), are `user.unique_id.pseudonymous`
+  sources. They count as personal data for PF002 to PF006; an identifier alone reaching a log is
+  reported as a flow but is not a PF001 finding. On Polar, 252 new PF002 findings (identifiers to
+  undeclared processors).
 - Exceptions (ADR 0014): a value thrown reaches the `catch`/`except` parameter, across calls and
   out of callbacks handed to libraries, and the error of a library call inside a `try` may carry
   the call's arguments (hop kind `error`, reported at `info` for review). Hop kinds `throw` and
@@ -59,6 +64,9 @@ All notable changes to this project are documented here. The format is based on
   same object (ADR 0007).
 
 ### Fixed
+- A flow of unknown category was dropped when a classified field read lay on its way, whatever
+  its source; this "narrowing" now applies to request input only, as documented, so a
+  maybe-personal field logged beside a classified one is no longer hidden.
 - A call whose callee has two API paths that match the same sink (an aliased import and its
   original name) made two sinks at one place, and every flow into it was reported twice. The same
   anchor at the same place is now one source or sink. On Polar, 4,077 duplicate flows go.

@@ -26,3 +26,26 @@ contextual:
     siblings:
       [city, town, locality, postal_code, postcode, post_code, zip, zip_code, zipcode, country,
        country_code, street, street_address, address_line1, address_line_1, address1, line1, county]
+
+  # ------------------------------------------------------------------ identifiers of people
+  # The table names no identifiers: an `id` is a person's only on a person's record. These are
+  # pseudonymous data (GDPR Recital 26): personal data, though not identifying on their own.
+  - id: person-identifiers
+    description: Field and parameter names that hold the identifier of a user, customer or member.
+    category: user.unique_id.pseudonymous
+    names:
+      [user_id, userid, customer_id, customerid, member_id, memberid, subscriber_id, account_user_id,
+       stripe_customer_id, distinct_id, external_customer_id, payment_processor_user_id]
+
+  - id: person-record-id
+    description: >-
+      `id`, `uid` and `uuid` are a person's identifier when read from a person's record
+      (`user.id`, `customer["id"]`, the `id` of a class or type named `User`), and an identifier
+      of something else everywhere else.
+    category: user.unique_id.pseudonymous
+    names: [id, uid, uuid]
+    objects:
+      ["user", "users", "*_user", "user_*", "customer", "customers", "*_customer", "customer_*",
+       "member", "*_member", "member_*", "subscriber", "person", "people", "author", "owner",
+       "creator", "recipient", "*_recipient", "account_holder", "patient", "student", "employee"]
+

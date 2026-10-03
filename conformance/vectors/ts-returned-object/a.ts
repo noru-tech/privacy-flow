@@ -1,8 +1,8 @@
 function build(user) {
-  return { id: user.id, slot: user.email };
+  return { plan: user.plan, slot: user.email };
 }
 export function f(user) {
   const o = build(user);
-  console.log(o.id);
+  console.log(o.plan);
   console.log(o.slot);
 }

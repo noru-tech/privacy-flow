@@ -130,6 +130,10 @@ Request input is a source only in frameworks whose request objects are modelled
   `info` for review. **Silent:** personal data held under a name the table does not know (`foo`)
   is not a source until it is declared under `fields`; a local variable named `email` assigned from
   an unknown call is not a source.
+- **Identifiers** ([ADR 0015](docs/adr/0015-identifiers.md)): `user_id`, `customer_id` and the
+  like, and `id` on a person's record, are pseudonymous identifiers. A flow of one to a log is
+  reported but is not a PF001 finding. **Silent:** identifiers under other names (`sub`, an
+  `owner` field holding an ID) are not sources unless declared under `fields`.
 - **Context-dependent names:** `state` and `province` are an address's only on an object named
   like an address or beside other address fields
   ([`catalogue/classification.yml`](catalogue/classification.yml)). **Silent:** an address state

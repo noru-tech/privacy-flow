@@ -11,3 +11,4 @@ system:
         type: "system"
         data_categories:
           - "user.demographic.religious_belief"
+          - "user.unique_id.pseudonymous"

@@ -474,3 +474,18 @@ identifiers or unmodelled request input, which no source names.
 
 **Next.** Identifiers (user and customer IDs) as sources, which the remaining misses in both
 groups need; then a new recorded benchmark run.
+
+## 2026-10-03 — Identifiers as sources (ADR 0015)
+
+**Done.** `catalogue/classification.yml` entries can add names with a category: person
+identifiers everywhere, `id`/`uid`/`uuid` on person-like objects. PF001 does not fire on an
+identifier alone (the owner's choice: logging an ID instead of contact data is good practice);
+PF002 to PF006 do. Narrowing restricted to request input, as documented. Conformance vectors use
+`plan` instead of `id` as the non-personal field, so the corpus is neutral on identifiers; both
+this build and the previous pass all of them. Fixture `py/identifiers`.
+
+**Measured** (against ADR 0014's build). R1 sampled sinks found 39 → 45 of 114 (Open SaaS 2 → 8).
+Polar: PF002 high +252, PF006 +470; no new medium log findings. Time unchanged.
+
+**Next.** The rest of the identifier names (`sub`, `owner` IDs) by config; the recorded run of
+the next release.

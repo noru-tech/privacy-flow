@@ -121,7 +121,11 @@ do not, and this file keeps them to the context where the table's category holds
   siblings: [city, postal_code, zip, country, street]   # names beside it that are context enough
 ```
 
-A name in `names` is classified only when the object it is read from (`address.state`,
+An entry with a `category` adds names instead of limiting the table's: classified with that
+category everywhere when it gives no context (`user_id`, `customer_id`), and only in context when
+it does (`id` on a `user` or a `Customer`; [ADR 0015](adr/0015-identifiers.md)).
+
+A name in `names` of an entry without a `category` is classified only when the object it is read from (`address.state`,
 `billing_address["state"]`, `this.state` in a class named `Address`) matches one of `objects`,
 or when another field of the same type, or another parameter of the same function, is one of
 `siblings`. Otherwise it is not a source: `context.state` and `def set_state(state)` are

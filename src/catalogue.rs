@@ -328,6 +328,10 @@ pub struct ContextualDef {
     pub id: String,
     #[serde(default)]
     pub description: Option<String>,
+    /// With a category, the entry adds its names (the table does not have them), in context
+    /// when it gives one, everywhere when it does not.
+    #[serde(default)]
+    pub category: Option<String>,
     pub names: Vec<String>,
     /// Globs over the table key of the object the name is read from.
     #[serde(default)]
