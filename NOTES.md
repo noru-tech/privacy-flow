@@ -510,3 +510,25 @@ rule. R1 sampled sinks found 45 → 47.
 
 **Next.** Request objects passed through middleware lose which field a flow came from (a
 `req.params` read is attributed to `req.body`).
+
+## 2026-10-03 — Payment SDKs, records, and Ghost's logger held back
+
+**Why.** Re-scoring against main + #21 (47 of 114 found). Of the remaining misses, nine are found
+through a wrapper (the flow passes the labelled call, its sink is inside the wrapper), which the
+protocol does not count; changing that is a protocol decision, not made here. The cheapest real
+group was catalogue gaps.
+
+**Done.** Stripe billing portal sessions and the Polar SDK as sinks. The record rule now covers
+field reads and their copies, and values passed to local functions that use them as a record or
+class (Ghost's `this.#models.Email` passed to a helper calling `Model.findOne`). Ghost's
+`@tryghost/logging` was tried as a log sink: +3 labelled sites, but about 520 new medium findings
+on Ghost, two of three sampled imprecise (a 78-hop chain; an object folded into another). The
+owner chose to hold it back until long chains are more precise. Fixture `ts/payments`.
+
+**Measured** (against #21's build). R1 sampled sinks found 47 → 51 (Open SaaS 8 → 11, Taxonomy
+3 → 4). PrivateGPT −233 and Polar −118 maybe-personal findings, Ghost −6 high PF002 (records).
+Healthchecks loses one medium finding whose source was a phone *record*
+(`self.channel.phone`); its number, `phone.value`, is not classified by name.
+
+**Next.** Precision of long chains (Ghost); then the logger. Kafka and signal-cli stay out:
+queues and daemons on the system's own infrastructure are not sinks.

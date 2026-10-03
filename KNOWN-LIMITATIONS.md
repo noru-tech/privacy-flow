@@ -124,10 +124,13 @@ Request input is a source only in frameworks whose request objects are modelled
 
 ## Sources and sinks
 
-- **Parameters named like data:** a parameter named `email` is an email address unless its
-  function reads named fields of it (then it is a record, such as a newsletter, and not a source
-  by its name). **Silent:** a record passed straight on without a field read keeps the name's
-  category.
+- **Values named like data:** a parameter or field read named `email` is an email address
+  unless it is used as a record or a class (named fields read, non-string methods called, here or
+  in a function it is passed to). **Silent:** the attribute inside such a record under a generic
+  name (`channel.phone.value`) is not classified by the record's name.
+- **Ghost's logger** (`@tryghost/logging`) is not a sink yet: on Ghost it reaches about 520
+  medium findings, most of the sampled ones through long, imprecise chains. **Silent:** what
+  Ghost logs through it.
 - **Sources are names.** A field, dict key or parameter is personal data when the
   [classification table](vendor/classification/classification.json), a catalogue or config entry,
   or an ingested data map says so; names the table marks only *maybe* personal are reported at

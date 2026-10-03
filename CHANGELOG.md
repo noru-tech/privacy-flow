@@ -7,6 +7,8 @@ All notable changes to this project are documented here. The format is based on
 ## [Unreleased]
 
 ### Added
+- Sinks: Stripe's billing portal sessions (JavaScript and Python), and the Polar (polar.sh) SDK
+  (`@polar-sh/sdk`, `polar_sdk`).
 - Identifiers (ADR 0015): `user_id`, `customer_id`, `member_id` and the like, and `id` on a
   person's record (`user.id`, `customer["id"]`, `User.id`), are `user.unique_id.pseudonymous`
   sources. They count as personal data for PF002 to PF006; an identifier alone reaching a log is
@@ -71,8 +73,10 @@ All notable changes to this project are documented here. The format is based on
 - A call on a service client (Stripe, AWS, Slack …) that is not a sink no longer returns the
   client's own configuration: `stripe.subscriptions.retrieve(id)` does not carry the secret key
   the client was built with (new propagator flow `args_only`).
-- A parameter named like a personal attribute whose function reads named fields of it
-  (`email.id`, `email.subject`) is a record, not that attribute, and not a source by its name.
+- A value named like a personal attribute that is used as a record or a class (its named fields
+  read, methods other than a string's called on it, here or in a function it is passed to) is
+  not that attribute: a parameter or a field read named `email` that holds Ghost's Email model
+  is not a source by its name. On PrivateGPT, 233 maybe-personal findings go; on Polar, 118.
 - A flow of unknown category was dropped when a classified field read lay on its way, whatever
   its source; this "narrowing" now applies to request input only, as documented, so a
   maybe-personal field logged beside a classified one is no longer hidden.

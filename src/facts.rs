@@ -222,6 +222,12 @@ struct Builder<'a, 'p> {
     types_by_name: BTreeMap<String, Vec<usize>>,
     /// Each class's `this` and constructor `this`, to its class.
     this_class: HashMap<VarId, usize>,
+    /// Variables used as records or classes: their named fields are read, or methods other than
+    /// a string's are called on them. A value named like a personal attribute (`email`) that is
+    /// one of these is not that attribute (Ghost's `email` is an Email model).
+    records: HashSet<VarId>,
+    /// Plain copies between variables (`const email = data.email`), by source.
+    copies: HashMap<VarId, Vec<VarId>>,
     /// Named field reads, resolved against allocation sites once every edge exists.
     loads: Vec<heap::PendingLoad>,
     /// (function, formal) pairs some call binds other than one argument to one parameter
@@ -272,6 +278,8 @@ pub fn build(p: &mut Program, inp: &Inputs) -> Facts {
         seed_keys: BTreeSet::new(),
         types_by_name,
         this_class,
+        records: HashSet::new(),
+        copies: HashMap::new(),
         loads: Vec::new(),
         inexact: BTreeSet::new(),
     };
@@ -454,6 +462,34 @@ impl<'a, 'p> Builder<'a, 'p> {
 
     fn statements(&mut self) {
         self.field_links();
+        self.records = self.find_records();
+        // Copies, and arguments bound to the parameters of local functions (a model class passed
+        // to a helper that calls `Model.findOne` is a record there).
+        let mut copies: HashMap<VarId, Vec<VarId>> = HashMap::new();
+        for (i, st) in self.p.stmts.iter().enumerate() {
+            match &st.kind {
+                GKind::Copy { dst, src } => copies.entry(*src).or_default().push(*dst),
+                GKind::Call { args, .. } => {
+                    let Some(t) = self.p.calls.get(&(i as u32)) else {
+                        continue;
+                    };
+                    for &(f, bound) in &t.funcs {
+                        let params = &self.p.funcs[f as usize].params;
+                        let mut pos = usize::from(bound);
+                        for a in args {
+                            if matches!(a.kind, GArgKind::Positional) {
+                                if let Some(q) = params.get(pos).filter(|q| !q.rest) {
+                                    copies.entry(a.var).or_default().push(q.var);
+                                }
+                                pos += 1;
+                            }
+                        }
+                    }
+                }
+                _ => {}
+            }
+        }
+        self.copies = copies;
         for i in 0..self.p.stmts.len() {
             let stmt = i as u32;
             let s = self.p.stmts[i].clone();
@@ -614,6 +650,10 @@ impl<'a, 'p> Builder<'a, 'p> {
             object: object.as_deref(),
             siblings: &siblings,
         };
+        // `data.email` used as a record (`email.id`, `email.get(...)`) is not an address.
+        if self.read_as_record(dst) {
+            return;
+        }
         for c in self.inp.classifier.classify_in(name, &place) {
             let seed = self.stmt_seed(
                 stmt,
@@ -1691,23 +1731,121 @@ impl<'a, 'p> Builder<'a, 'p> {
         }
     }
 
-    fn param_name_seeds(&mut self) {
-        // A parameter its function reads named fields of is a record, not the attribute its name
-        // says (Ghost's `email` is an Email model: `email.id`, `email.get('subject')`).
-        let mut records: HashSet<VarId> = HashSet::new();
+    fn find_records(&self) -> HashSet<VarId> {
+        const STRING_METHODS: &[&str] = &[
+            "toLowerCase",
+            "toUpperCase",
+            "toLocaleLowerCase",
+            "toLocaleUpperCase",
+            "trim",
+            "trimStart",
+            "trimEnd",
+            "split",
+            "includes",
+            "startsWith",
+            "endsWith",
+            "replace",
+            "replaceAll",
+            "slice",
+            "substring",
+            "substr",
+            "indexOf",
+            "lastIndexOf",
+            "match",
+            "matchAll",
+            "search",
+            "toString",
+            "valueOf",
+            "localeCompare",
+            "normalize",
+            "padStart",
+            "padEnd",
+            "charAt",
+            "charCodeAt",
+            "codePointAt",
+            "at",
+            "concat",
+            "repeat",
+            "lower",
+            "upper",
+            "strip",
+            "lstrip",
+            "rstrip",
+            "startswith",
+            "endswith",
+            "encode",
+            "decode",
+            "format",
+            "casefold",
+            "title",
+            "capitalize",
+            "find",
+            "rfind",
+            "index",
+            "count",
+            "join",
+            "isdigit",
+            "isalpha",
+            "isalnum",
+            "zfill",
+            "partition",
+            "rpartition",
+            "removeprefix",
+            "removesuffix",
+            "splitlines",
+            "expandtabs",
+            "translate",
+        ];
+        let mut records = HashSet::new();
         for st in &self.p.stmts {
-            if let GKind::Load {
-                obj,
-                field: Some(k),
-                ..
-            } = st.kind
-            {
-                let lang = self.lang(st.file);
-                if !self.inp.catalogue.non_propagating(lang, self.p.syms.str(k)) {
-                    records.insert(obj);
+            match &st.kind {
+                GKind::Load {
+                    obj,
+                    field: Some(k),
+                    ..
+                } => {
+                    let lang = self.lang(st.file);
+                    if !self
+                        .inp
+                        .catalogue
+                        .non_propagating(lang, self.p.syms.str(*k))
+                    {
+                        records.insert(*obj);
+                    }
                 }
+                GKind::Call {
+                    callee: GCallee::Method { recv, name },
+                    ..
+                } if !STRING_METHODS.contains(&self.p.syms.str(*name)) => {
+                    records.insert(*recv);
+                }
+                _ => {}
             }
         }
+        records
+    }
+
+    /// Whether a value read into `dst` is used as a record: `dst` itself, or a variable it is
+    /// copied into (`const email = data.email`), a step or two on.
+    fn read_as_record(&self, dst: VarId) -> bool {
+        let mut frontier = vec![dst];
+        for _ in 0..3 {
+            if frontier.iter().any(|v| self.records.contains(v)) {
+                return true;
+            }
+            frontier = frontier
+                .iter()
+                .flat_map(|v| self.copies.get(v).into_iter().flatten().copied())
+                .collect();
+            if frontier.is_empty() {
+                return false;
+            }
+        }
+        frontier.iter().any(|v| self.records.contains(v))
+    }
+
+    fn param_name_seeds(&mut self) {
+        let records = self.records.clone();
         for fi in 0..self.p.funcs.len() {
             let formals = self.f.formals[fi].clone();
             for (i, var) in formals.into_iter().enumerate() {
