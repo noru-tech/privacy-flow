@@ -352,14 +352,20 @@ impl<'a> Anchors<'a> {
 }
 
 /// Assign IDs from anchors that survive unrelated edits (no line numbers); duplicates of the
-/// same anchor are numbered in source order.
+/// same anchor are numbered in source order. The same anchor at the same place is one source
+/// or sink, and one ID: a base method copied into its subclasses has its sinks once.
 fn ids_from_anchors(prefix: &str, anchors: &[(String, (String, u32, u32))]) -> Vec<String> {
     use sha2::{Digest, Sha256};
     let mut order: Vec<usize> = (0..anchors.len()).collect();
     order.sort_by(|&a, &b| anchors[a].1.cmp(&anchors[b].1).then(a.cmp(&b)));
     let mut seen: HashMap<&str, u32> = HashMap::new();
+    let mut placed: HashMap<(&str, &(String, u32, u32)), String> = HashMap::new();
     let mut out = vec![String::new(); anchors.len()];
     for i in order {
+        if let Some(id) = placed.get(&(anchors[i].0.as_str(), &anchors[i].1)) {
+            out[i] = id.clone();
+            continue;
+        }
         let n = seen.entry(anchors[i].0.as_str()).or_insert(0);
         let mut h = Sha256::new();
         h.update(anchors[i].0.as_bytes());
@@ -368,6 +374,7 @@ fn ids_from_anchors(prefix: &str, anchors: &[(String, (String, u32, u32))]) -> V
         let d = h.finalize();
         let hex: String = d.iter().take(8).map(|b| format!("{b:02x}")).collect();
         out[i] = format!("{prefix}-{hex}");
+        placed.insert((anchors[i].0.as_str(), &anchors[i].1), out[i].clone());
         *n += 1;
     }
     out
@@ -534,17 +541,22 @@ pub fn build(p: &Program, f: &Facts, reaches: &[Reach], ctx: &Context) -> Result
     let mut used_seeds = BTreeSet::new();
     let mut used_hits = BTreeSet::new();
     let mut flows = Vec::new();
+    let mut flow_ids: BTreeSet<String> = BTreeSet::new();
     let mut cited: BTreeSet<String> = BTreeSet::new();
     for rf in &raw_flows {
         let s = &f.seeds[rf.seed as usize];
-        used_seeds.insert(rf.seed);
-        used_hits.insert(rf.hit);
         let source_id = seed_ids[rf.seed as usize].clone();
         let sink_id = hit_ids[rf.hit as usize].clone();
         let id = format!(
             "flow-{}",
             short_hash(&serde_json::json!([source_id, sink_id, s.category]))
         );
+        // The same flow through another copy of a base method.
+        if !flow_ids.insert(id.clone()) {
+            continue;
+        }
+        used_seeds.insert(rf.seed);
+        used_hits.insert(rf.hit);
         let path = hops(p, f, cat, rf.seed, rf.hit, &rf.path);
         for h in &path {
             cited.insert(h.path.clone());
@@ -907,6 +919,9 @@ fn sort_facts(doc: &mut Document) {
         .sort_by(|a, b| a.location.cmp(&b.location).then(a.id.cmp(&b.id)));
     doc.sinks
         .sort_by(|a, b| a.location.cmp(&b.location).then(a.id.cmp(&b.id)));
+    // A source or sink in a base method copied into subclasses is one, under one ID.
+    doc.sources.dedup_by(|a, b| a.id == b.id);
+    doc.sinks.dedup_by(|a, b| a.id == b.id);
     let src_loc: BTreeMap<&str, &Loc> = doc
         .sources
         .iter()

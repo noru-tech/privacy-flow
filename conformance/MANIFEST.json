@@ -142,6 +142,13 @@
       "status": "required"
     },
     {
+      "description": "A base class method calls a method that a subclass overrides, which prints.",
+      "expected_flows": 1,
+      "language": "python",
+      "name": "py-template-method",
+      "status": "required"
+    },
+    {
       "description": "A call on a value typed with a base class reaches a subclass's override.",
       "expected_flows": 1,
       "language": "python",
@@ -366,6 +373,13 @@
       "status": "required"
     },
     {
+      "description": "Two subclasses share a template method: what one is given does not reach the other's override.",
+      "expected_flows": 1,
+      "language": "javascript",
+      "name": "ts-template-isolation",
+      "status": "required"
+    },
+    {
       "description": "A call on a field typed with a base class reaches a subclass's override.",
       "expected_flows": 1,
       "language": "javascript",
@@ -373,11 +387,11 @@
       "status": "required"
     },
     {
-      "description": "A base class method calls a method that a subclass overrides, which logs (a call on this follows only the class's own method).",
+      "description": "A base class method calls a method that a subclass overrides, which logs.",
       "expected_flows": 1,
       "language": "javascript",
       "name": "ts-virtual-dispatch",
-      "status": "known-limitation"
+      "status": "required"
     },
     {
       "description": "Logging a whole object that holds a classified field is a flow.",
