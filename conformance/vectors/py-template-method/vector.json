@@ -1,0 +1,5 @@
+{
+  "description": "A base class method calls a method that a subclass overrides, which prints.",
+  "language": "python",
+  "status": "required"
+}

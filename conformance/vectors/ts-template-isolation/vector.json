@@ -1,0 +1,5 @@
+{
+  "description": "Two subclasses share a template method: what one is given does not reach the other's override.",
+  "language": "javascript",
+  "status": "required"
+}

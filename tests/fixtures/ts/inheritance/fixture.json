@@ -1,4 +1,3 @@
 {
-  "complete": false,
-  "gaps": ["dynamic_call"]
+  "complete": true
 }

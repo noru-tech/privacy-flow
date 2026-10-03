@@ -17,3 +17,4 @@ what follows. Records are never rewritten; a reversal is a new record that super
 | [0010](0010-formal-sites.md) | Formal sites: objects passed into a call keep their fields apart | Accepted |
 | [0011](0011-inheritance.md) | Inheritance, virtual calls on typed values, and properties | Accepted |
 | [0012](0012-interfaces.md) | TypeScript interfaces are supertypes of their implementations | Accepted |
+| [0013](0013-per-subclass-methods.md) | Template methods are analysed per subclass | Accepted |
