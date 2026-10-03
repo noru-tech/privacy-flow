@@ -1,4 +1,4 @@
-privacy-flow 0.1.1 · no commit · typescript 1 files · directory walk
+privacy-flow 0.2.0 · no commit · typescript 1 files · directory walk
 
 PF002  high     pf-b857f9248f1f921a  src/assistant.ts:9:10
                 user.contact.email from `customer.email (customer: Customer)` (src/assistant.ts:7) reaches OpenAI, a processor not declared in .privacy-flow.yml, at src/assistant.ts:9

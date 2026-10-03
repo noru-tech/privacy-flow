@@ -6,6 +6,14 @@ All notable changes to this project are documented here. The format is based on
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-10-03
+
+What `piiflow` sees grows: email, messaging and push SDKs, inheritance and interfaces, exceptions,
+CommonJS modules, and identifiers of people. Expect more flows and findings than 0.1.1 on the same
+code, mostly PF002 for identifiers and emails sent to processors not yet declared, and fewer
+maybe-personal findings where a name like `state` or `email` turned out to be something else.
+`piiflow scan` reports dispositions it could not carry over to a changed finding, as before.
+
 ### Added
 - Sinks: Stripe's billing portal sessions (JavaScript and Python), and the Polar (polar.sh) SDK
   (`@polar-sh/sdk`, `polar_sdk`).
@@ -137,6 +145,7 @@ No change to the analysis: for the same input, 0.1.1 reports the same flows, fin
   criterion benchmarks, a CI performance budget, and a release pipeline with artifact
   attestations, checksums and an SBOM.
 
-[Unreleased]: https://github.com/noru-tech/privacy-flow/compare/v0.1.1...HEAD
+[Unreleased]: https://github.com/noru-tech/privacy-flow/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/noru-tech/privacy-flow/compare/v0.1.1...v0.2.0
 [0.1.1]: https://github.com/noru-tech/privacy-flow/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/noru-tech/privacy-flow/releases/tag/v0.1.0

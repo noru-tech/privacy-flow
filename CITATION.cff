@@ -15,7 +15,7 @@ identifiers:
   - type: doi
     value: 10.5281/zenodo.23104908
     description: Concept DOI for every archived release (resolves to the latest).
-version: "0.1.1"
+version: "0.2.0"
 date-released: "2026-10-02"
 keywords:
   - privacy
