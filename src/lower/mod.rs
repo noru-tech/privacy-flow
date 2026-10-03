@@ -370,6 +370,8 @@ impl<'s> Builder<'s> {
             ctor_this: None,
             methods: Vec::new(),
             bases: Vec::new(),
+            implements: Vec::new(),
+            is_interface: false,
             pos,
         });
         // `this` is an instance of the class, so `this.method()` resolves.

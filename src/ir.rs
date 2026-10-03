@@ -120,6 +120,12 @@ pub struct ClassIr {
     /// The base classes as written (`extends Base`, `class C(Base, Mixin)`), lowered into
     /// variables of the enclosing function, in order.
     pub bases: Vec<Var>,
+    /// The TypeScript interfaces a class implements (or an interface extends): it is one of
+    /// their subtypes, so a call on a value typed with one reaches it. Members are never looked
+    /// up in them.
+    pub implements: Vec<Var>,
+    /// A TypeScript interface: a type with no members of its own.
+    pub is_interface: bool,
     pub pos: Pos,
 }
 

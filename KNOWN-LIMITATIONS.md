@@ -86,8 +86,12 @@ Request input is a source only in frameworks whose request objects are modelled
   with a base class reaches every override. A call on `this`/`self` follows only the class's own
   method: where subclasses override it (a template method), personal data passed to it is a
   `dynamic_call` gap. **Silent:** a value a subclass stores in an inherited field is not seen by
-  base class methods. TypeScript interfaces do not reach their implementations, and a base class
-  built by a function call (a mixin) is not resolved. Reading a property or getter gives what it
+  base class methods. A base class built by a function call (a mixin) is not resolved.
+- **TypeScript interfaces** ([ADR 0012](docs/adr/0012-interfaces.md)): a call on a value typed
+  with an interface reaches every local class that declares `implements` (directly, through an
+  extending interface, or through a base class). Classes that match an interface structurally
+  without `implements`, object literals typed with an interface, and object type aliases are not
+  implementations; a call on such a value stays a gap when personal data reaches it. Reading a property or getter gives what it
   returns; setters are field writes.
 - **Exceptions:** a value thrown is not connected to the `catch` parameter. **Silent:**
   `try { throw new Error(email) } catch (e) { log(e) }` is missed.

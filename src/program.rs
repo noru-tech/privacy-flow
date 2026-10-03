@@ -115,6 +115,9 @@ pub struct GClass {
     pub methods: Vec<(String, FuncId)>,
     /// The base-class expressions as written; their provenance gives the bases.
     pub bases: Vec<VarId>,
+    /// The interfaces it implements: supertypes for dispatch, never for member lookup.
+    pub implements: Vec<VarId>,
+    pub is_interface: bool,
     pub pos: Pos,
 }
 
@@ -285,6 +288,9 @@ pub struct CallTargets {
     /// A method called on `this`/`self` that this many subclasses override: the class's own
     /// (or inherited) method is followed, the overrides are not.
     pub overridden: usize,
+    /// The receiver is typed with an interface, whose implementations may come from anywhere:
+    /// the local ones it reaches do not make its other, unknown targets less of a gap.
+    pub open_world: bool,
 }
 
 pub use crate::resolve::Resolver;
@@ -481,6 +487,8 @@ impl Program {
                     ctor_this: c.ctor_this.map(|t| t + vo),
                     methods: c.methods.iter().map(|(n, m)| (n.clone(), m + fo)).collect(),
                     bases: c.bases.iter().map(|b| b + vo).collect(),
+                    implements: c.implements.iter().map(|b| b + vo).collect(),
+                    is_interface: c.is_interface,
                     pos: c.pos,
                 });
             }
@@ -1019,6 +1027,16 @@ impl Program {
         out
     }
 
+    /// Whether nothing is known of what `v` is beyond, at most, an interface it is typed with: a
+    /// method none of the interface's implementations defines is then a method of a plain
+    /// value, as it was before interfaces had provenance (`logger.info` on a local `Logger`
+    /// interface is still a logger by name, `rows.push` still a mutator).
+    fn opaque(&self, v: VarId) -> bool {
+        self.prov[v as usize]
+            .iter()
+            .all(|p| matches!(p, Prov::Instance(c) if self.classes[*c as usize].is_interface))
+    }
+
     /// Whether `v` is a class's own instance as its methods (or its constructor) see it: `this`,
     /// Python's `self`.
     fn is_this(&self, v: VarId) -> bool {
@@ -1084,10 +1102,12 @@ impl Program {
         lineage.iter().find_map(|&k| self.own_method(k, name))
     }
 
-    /// The local classes `c`'s base expressions name, in order.
+    /// The local classes `c`'s base expressions name, in order, then the interfaces it
+    /// implements (which define no members, so lookup passes through them).
     fn local_bases(&self, c: ClassId) -> Vec<ClassId> {
         let mut out = Vec::new();
-        for &b in &self.classes[c as usize].bases {
+        let class = &self.classes[c as usize];
+        for &b in class.bases.iter().chain(&class.implements) {
             for p in &self.prov[b as usize] {
                 if let Prov::Class(x) = p
                     && *x != c
@@ -1516,7 +1536,7 @@ impl Program {
                 // A method on a plain value with a callback (`xs.reduce(f, {})`, `xs.map(f)`):
                 // the result is what the callback returns.
                 if let GCallee::Method { recv, .. } = callee
-                    && self.prov[*recv as usize].is_empty()
+                    && self.opaque(*recv)
                 {
                     let funcs: Vec<FuncId> = args
                         .iter()
@@ -1733,6 +1753,11 @@ impl Program {
                 }
             }
             let _ = is_new;
+            if let GCallee::Method { recv, .. } = &callee {
+                t.open_world = self.prov[*recv as usize].iter().any(
+                    |p| matches!(p, Prov::Instance(c) if self.classes[*c as usize].is_interface),
+                );
+            }
             if let GCallee::Method { recv, name } = &callee
                 && self.is_this(*recv)
             {
@@ -1751,7 +1776,7 @@ impl Program {
             }
             if provs.is_empty() {
                 match &callee {
-                    GCallee::Method { recv, name } if recv_provs.is_empty() => {
+                    GCallee::Method { recv, name } if self.opaque(*recv) => {
                         t.plain_method = Some((*recv, *name));
                     }
                     _ => t.dynamic = true,
