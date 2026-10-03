@@ -309,7 +309,14 @@ sinks:
     language: javascript
     class: third_party
     processor: Stripe
-    calls: ["stripe:**.{customers,checkout.sessions,paymentIntents,subscriptions,invoices,setupIntents,paymentLinks}.{create,update}"]
+    calls: ["stripe:**.{customers,checkout.sessions,billingPortal.sessions,paymentIntents,subscriptions,invoices,setupIntents,paymentLinks}.{create,update}"]
+
+  - id: js.polar
+    language: javascript
+    class: third_party
+    processor: Polar
+    description: Polar (polar.sh) payments; its SDK groups calls by resource (`polar.customers.create`).
+    calls: ["@polar-sh/sdk:Polar{,()}.**.{create,update}"]
 
   - id: js.aws-s3
     language: javascript
@@ -654,7 +661,13 @@ sinks:
     language: python
     class: third_party
     processor: Stripe
-    calls: ["stripe.{Customer,checkout.Session,PaymentIntent,Subscription,Invoice,SetupIntent}.{create,modify}", "stripe.StripeClient{,()}.**.{create,update}"]
+    calls: ["stripe.{Customer,checkout.Session,billing_portal.Session,PaymentIntent,Subscription,Invoice,SetupIntent}.{create,modify}", "stripe.StripeClient{,()}.**.{create,update}"]
+
+  - id: py.polar
+    language: python
+    class: third_party
+    processor: Polar
+    calls: ["polar_sdk.Polar{,()}.**.{create,update}"]
 
   - id: py.boto3-s3
     language: python
