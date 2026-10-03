@@ -421,6 +421,7 @@ impl<'a, 'p> Builder<'a, 'p> {
     // ------------------------------------------------------------------ statements
 
     fn statements(&mut self) {
+        self.field_links();
         for i in 0..self.p.stmts.len() {
             let stmt = i as u32;
             let s = self.p.stmts[i].clone();
@@ -485,6 +486,28 @@ impl<'a, 'p> Builder<'a, 'p> {
                     dst, callee, args, ..
                 } => self.call(stmt, *dst, callee, args, lang),
                 _ => {}
+            }
+        }
+    }
+
+    /// What a class stores in a field flows to the same field of its subclasses, cited where
+    /// the subclass reads (or else writes) the field.
+    fn field_links(&mut self) {
+        let mut site: HashMap<VarId, u32> = HashMap::new();
+        for (i, s) in self.p.stmts.iter().enumerate() {
+            match s.kind {
+                GKind::ThisLoad { var, .. } => {
+                    site.insert(var, i as u32);
+                }
+                GKind::ThisStore { var, .. } => {
+                    site.entry(var).or_insert(i as u32);
+                }
+                _ => {}
+            }
+        }
+        for (from, to) in self.p.field_links.clone() {
+            if let Some(&stmt) = site.get(&to) {
+                self.edge(from, to, EdgeKind::Copy, stmt);
             }
         }
     }
@@ -714,6 +737,23 @@ impl<'a, 'p> Builder<'a, 'p> {
         if let Some((r, name)) = t.plain_method {
             let name = self.p.syms.str(name).to_string();
             self.plain_method(stmt, dst, r, &name, args, lang);
+        }
+        if t.overridden > 0 {
+            // `this.run(x)` in a base class: the overrides in subclasses are not followed.
+            let detail = format!(
+                "{} (overridden in {} subclass{})",
+                callee_text(&self.p.stmts[stmt as usize].text),
+                t.overridden,
+                if t.overridden == 1 { "" } else { "es" }
+            );
+            self.hit(
+                stmt,
+                HitKind::Gap {
+                    kind: GapKind::DynamicCall,
+                    detail,
+                },
+                Self::arg_vars(args),
+            );
         }
     }
 

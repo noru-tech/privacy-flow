@@ -81,9 +81,14 @@ Request input is a source only in frameworks whose request objects are modelled
 - **Calls into the project's own code** are followed through summaries, context-sensitively for
   parameters. Calls through function values the analysis cannot resolve (a callback parameter with
   no resolvable caller, `handlers[name](x)`) are `dynamic_call` gaps when personal data is passed.
-- **Inheritance:** methods inherited from a base class, and `super.method()`, are not resolved;
-  passing personal data to one is a `dynamic_call` gap. Getters and setters are field reads and
-  writes, not calls.
+- **Inheritance** ([ADR 0011](docs/adr/0011-inheritance.md)): inherited methods, constructors
+  and fields, `super`, and members of external base classes resolve, and a call on a value typed
+  with a base class reaches every override. A call on `this`/`self` follows only the class's own
+  method: where subclasses override it (a template method), personal data passed to it is a
+  `dynamic_call` gap. **Silent:** a value a subclass stores in an inherited field is not seen by
+  base class methods. TypeScript interfaces do not reach their implementations, and a base class
+  built by a function call (a mixin) is not resolved. Reading a property or getter gives what it
+  returns; setters are field writes.
 - **Exceptions:** a value thrown is not connected to the `catch` parameter. **Silent:**
   `try { throw new Error(email) } catch (e) { log(e) }` is missed.
 - **Libraries:** a call into a module the catalogue does not know is assumed to pass its arguments

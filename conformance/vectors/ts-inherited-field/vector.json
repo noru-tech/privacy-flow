@@ -1,0 +1,5 @@
+{
+  "description": "A field the base class constructor sets is logged by a subclass method.",
+  "language": "javascript",
+  "status": "required"
+}

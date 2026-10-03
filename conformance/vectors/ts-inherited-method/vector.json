@@ -1,0 +1,5 @@
+{
+  "description": "A method a subclass inherits from its base class logs its argument.",
+  "language": "javascript",
+  "status": "required"
+}

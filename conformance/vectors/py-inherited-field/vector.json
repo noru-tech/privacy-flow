@@ -1,0 +1,5 @@
+{
+  "description": "An attribute the base class __init__ sets is printed by a subclass method.",
+  "language": "python",
+  "status": "required"
+}

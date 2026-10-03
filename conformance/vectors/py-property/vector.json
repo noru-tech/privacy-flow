@@ -1,0 +1,5 @@
+{
+  "description": "A property's return annotation says what reading it gives.",
+  "language": "python",
+  "status": "required"
+}

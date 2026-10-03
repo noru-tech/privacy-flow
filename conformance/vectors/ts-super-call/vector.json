@@ -1,0 +1,5 @@
+{
+  "description": "An override passes its argument on to the base class method through super.",
+  "language": "javascript",
+  "status": "required"
+}

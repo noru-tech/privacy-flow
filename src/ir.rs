@@ -99,6 +99,9 @@ pub struct FuncIr {
     pub ret_annot: Option<String>,
     /// Decorator expressions (Python), lowered into variables of the enclosing function.
     pub decorators: Vec<Var>,
+    /// A property: reading the member (`obj.name`, without a call) runs it and gives its result
+    /// (Python `@property`, JavaScript `get name()`).
+    pub is_property: bool,
     pub pos: Pos,
     /// True for the synthetic function holding a file's top-level statements.
     pub is_module: bool,
@@ -114,6 +117,9 @@ pub struct ClassIr {
     pub ctor_this: Option<Var>,
     /// (method name, function) in declaration order.
     pub methods: Vec<(String, FuncIdx)>,
+    /// The base classes as written (`extends Base`, `class C(Base, Mixin)`), lowered into
+    /// variables of the enclosing function, in order.
+    pub bases: Vec<Var>,
     pub pos: Pos,
 }
 
@@ -258,6 +264,12 @@ pub enum StmtKind {
     TypeRef {
         dst: Var,
         ty: Var,
+    },
+    /// `dst` is `super` in a method of `class`: the base classes, for calling their methods and
+    /// constructors (`super.send(x)`, `super().__init__(x)`, `super(x)`). Only provenance reads it.
+    Super {
+        dst: Var,
+        class: ClassIdx,
     },
     /// `dst` is bound to each element of `coll` (`for (const h of handlers)`, `for h in hs`).
     /// Only provenance reads it: the element is what the container holds, not the container.

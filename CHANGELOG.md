@@ -7,6 +7,13 @@ All notable changes to this project are documented here. The format is based on
 ## [Unreleased]
 
 ### Added
+- Inheritance (ADR 0011): methods, constructors and fields inherited from local base classes,
+  `super.m()` and `super().m()`, and members of external base classes
+  (`class Analytics extends PostHog`) resolve. A call on a value typed with a base class (a
+  parameter, a field, a property) reaches every subclass's override; a call on `this` follows the
+  class's own method and is a `dynamic_call` gap where subclasses override it. Reading a Python
+  property or a JavaScript getter gives what it returns. On Polar, `dynamic_call` gaps go from
+  227 to 64; on Healthchecks, coverage gaps from 58 to 28.
 - Fuzzing: cargo-fuzz targets for lowering, the whole pipeline (with a determinism check),
   configuration and data maps, run by ClusterFuzzLite on pull requests and weekly.
 

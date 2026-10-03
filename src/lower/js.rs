@@ -554,7 +554,14 @@ impl<'s> Js<'s> {
                 (None, Some(&c)) => self.b.ir.classes[c as usize].this,
                 _ => self.b.lit(node, None),
             },
-            "super" => self.b.lit(node, None),
+            "super" => match self.b.class_stack.last() {
+                Some(&class) => {
+                    let dst = self.b.temp(self.b.pos(node));
+                    self.b.emit(node, StmtKind::Super { dst, class });
+                    dst
+                }
+                None => self.b.lit(node, None),
+            },
             "member_expression" => {
                 let obj = match node.child_by_field_name("object") {
                     Some(o) => self.expr(o),
@@ -1084,11 +1091,7 @@ impl<'s> Js<'s> {
         }
         let (callee, method) = match func {
             Some(f) if f.kind() == "member_expression" => {
-                let recv = match f.child_by_field_name("object") {
-                    Some(o) if o.kind() == "super" => None,
-                    Some(o) => Some(self.expr(o)),
-                    None => None,
-                };
+                let recv = f.child_by_field_name("object").map(|o| self.expr(o));
                 let name = f
                     .child_by_field_name("property")
                     .map(|p| self.text(p).trim_start_matches('#').to_string())
@@ -1124,7 +1127,6 @@ impl<'s> Js<'s> {
                     _ => (Callee::Dynamic, None),
                 }
             }
-            Some(f) if f.kind() == "super" => (Callee::Dynamic, None),
             Some(f) => (Callee::Value(self.expr(f)), None),
             None => (Callee::Dynamic, None),
         };
@@ -1317,6 +1319,24 @@ impl<'s> Js<'s> {
             _ => self.b.temp(pos),
         };
         self.b.emit(node, StmtKind::ClassRef { dst: var, class: c });
+        // `extends Base` (TypeScript wraps it in an `extends_clause`; `implements` names types,
+        // not values, and is not a base).
+        for h in named_children(node) {
+            if h.kind() != "class_heritage" {
+                continue;
+            }
+            for e in named_children(h) {
+                let value = match e.kind() {
+                    "extends_clause" => e.child_by_field_name("value").or_else(|| e.named_child(0)),
+                    "implements_clause" => None,
+                    _ => Some(e),
+                };
+                if let Some(v) = value {
+                    let b = self.expr(v);
+                    self.b.ir.classes[c as usize].bases.push(b);
+                }
+            }
+        }
         let type_index = self.b.ir.types.len();
         self.b.ir.types.push(TypeDecl {
             name: display.clone(),
@@ -1332,6 +1352,10 @@ impl<'s> Js<'s> {
                         let mname = m.child_by_field_name("name").and_then(|k| self.key_name(k));
                         if m.kind() == "method_definition" {
                             let f = self.function(m, mname.clone(), Some(c));
+                            let mut cur = m.walk();
+                            if m.children(&mut cur).any(|k| k.kind() == "get") {
+                                self.b.ir.funcs[f as usize].is_property = true;
+                            }
                             if let Some(mname) = mname {
                                 self.b.ir.classes[c as usize].methods.push((mname, f));
                             }

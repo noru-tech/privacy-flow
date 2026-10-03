@@ -51,6 +51,20 @@
       "status": "required"
     },
     {
+      "description": "An attribute the base class __init__ sets is printed by a subclass method.",
+      "expected_flows": 1,
+      "language": "python",
+      "name": "py-inherited-field",
+      "status": "required"
+    },
+    {
+      "description": "A method a subclass inherits from its base class prints its argument.",
+      "expected_flows": 1,
+      "language": "python",
+      "name": "py-inherited-method",
+      "status": "required"
+    },
+    {
       "description": "Two instances: the one built without personal data does not carry it.",
       "expected_flows": 0,
       "language": "python",
@@ -86,6 +100,13 @@
       "status": "required"
     },
     {
+      "description": "A property's return annotation says what reading it gives.",
+      "expected_flows": 1,
+      "language": "python",
+      "name": "py-property",
+      "status": "required"
+    },
+    {
       "description": "Overwritten before it is printed: no flow at run time. Flow-insensitive analysis reports one.",
       "expected_flows": 0,
       "language": "python",
@@ -111,6 +132,20 @@
       "expected_flows": 1,
       "language": "python",
       "name": "py-subscript-source",
+      "status": "required"
+    },
+    {
+      "description": "An override passes its argument on to the base class method through super().",
+      "expected_flows": 1,
+      "language": "python",
+      "name": "py-super-call",
+      "status": "required"
+    },
+    {
+      "description": "A call on a value typed with a base class reaches a subclass's override.",
+      "expected_flows": 1,
+      "language": "python",
+      "name": "py-virtual-dispatch",
       "status": "required"
     },
     {
@@ -188,6 +223,27 @@
       "expected_flows": 1,
       "language": "javascript",
       "name": "ts-field-sensitivity",
+      "status": "required"
+    },
+    {
+      "description": "A getter's declared return type says what reading it gives.",
+      "expected_flows": 1,
+      "language": "javascript",
+      "name": "ts-getter",
+      "status": "required"
+    },
+    {
+      "description": "A field the base class constructor sets is logged by a subclass method.",
+      "expected_flows": 1,
+      "language": "javascript",
+      "name": "ts-inherited-field",
+      "status": "required"
+    },
+    {
+      "description": "A method a subclass inherits from its base class logs its argument.",
+      "expected_flows": 1,
+      "language": "javascript",
+      "name": "ts-inherited-method",
       "status": "required"
     },
     {
@@ -289,11 +345,32 @@
       "status": "required"
     },
     {
+      "description": "An override passes its argument on to the base class method through super.",
+      "expected_flows": 1,
+      "language": "javascript",
+      "name": "ts-super-call",
+      "status": "required"
+    },
+    {
       "description": "Template literals and concatenation carry data.",
       "expected_flows": 2,
       "language": "javascript",
       "name": "ts-template",
       "status": "required"
+    },
+    {
+      "description": "A call on a field typed with a base class reaches a subclass's override.",
+      "expected_flows": 1,
+      "language": "javascript",
+      "name": "ts-typed-dispatch",
+      "status": "required"
+    },
+    {
+      "description": "A base class method calls a method that a subclass overrides, which logs (a call on this follows only the class's own method).",
+      "expected_flows": 1,
+      "language": "javascript",
+      "name": "ts-virtual-dispatch",
+      "status": "known-limitation"
     },
     {
       "description": "Logging a whole object that holds a classified field is a flow.",

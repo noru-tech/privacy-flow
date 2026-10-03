@@ -10,7 +10,7 @@
 //! writes, calls and returns, with bounded path length and set size so that it terminates.
 //! Provenance decides which function a call reaches; it never carries personal data.
 
-use std::collections::{BTreeMap, BTreeSet, HashMap};
+use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
 
 use crate::ir::*;
 
@@ -29,6 +29,10 @@ const MAX_API_PROVS: usize = 16;
 /// and every one matters (a component's render callbacks from all of its call sites), so this
 /// is only a safety bound.
 const MAX_PROVS: usize = 4096;
+/// Bounds on a class hierarchy walk: ancestors of one class, and subclasses a virtual call
+/// dispatches to.
+const MAX_LINEAGE: usize = 32;
+const MAX_DESCENDANTS: usize = 256;
 
 #[derive(Default, Debug)]
 pub struct Interner {
@@ -97,6 +101,7 @@ pub struct GFunc {
     pub bound_self: bool,
     pub ret_annot: Option<String>,
     pub decorators: Vec<VarId>,
+    pub is_property: bool,
     pub pos: Pos,
     pub is_module: bool,
 }
@@ -108,6 +113,8 @@ pub struct GClass {
     pub this: VarId,
     pub ctor_this: Option<VarId>,
     pub methods: Vec<(String, FuncId)>,
+    /// The base-class expressions as written; their provenance gives the bases.
+    pub bases: Vec<VarId>,
     pub pos: Pos,
 }
 
@@ -198,6 +205,10 @@ pub enum GKind {
         dst: VarId,
         ty: VarId,
     },
+    Super {
+        dst: VarId,
+        class: ClassId,
+    },
     Elements {
         dst: VarId,
         coll: VarId,
@@ -271,6 +282,9 @@ pub struct CallTargets {
     /// A method call on a receiver with no provenance: a plain value such as a string or an
     /// array, or an object the analysis cannot see the origin of.
     pub plain_method: Option<(VarId, Sym)>,
+    /// A method called on `this`/`self` that this many subclasses override: the class's own
+    /// (or inherited) method is followed, the overrides are not.
+    pub overridden: usize,
 }
 
 pub use crate::resolve::Resolver;
@@ -306,6 +320,16 @@ pub struct Program {
     /// variable for `this.f`): a read sees their provenance and their fields', as
     /// `path_containers` does for containers reached through an API path.
     var_containers: HashMap<VarId, BTreeSet<VarId>>,
+    /// Direct local subclasses of each class, from the provenance of their base expressions.
+    pub subclasses: Vec<Vec<ClassId>>,
+    /// The variable of each class's own `this.f`, by field.
+    class_fields: Vec<BTreeMap<Sym, VarId>>,
+    /// Every class's `this` and constructor `this`.
+    this_vars: HashSet<VarId>,
+    /// (ancestor's `this.f`, a subclass's `this.f`): what a base class stores in a field, its
+    /// subclasses read (a base constructor sets `self.channel`, a subclass method reads it).
+    /// Not the other way, or every subclass would see what its siblings store.
+    pub field_links: Vec<(VarId, VarId)>,
 }
 
 fn add_prov(set: &mut Vec<Prov>, p: Prov) -> bool {
@@ -402,6 +426,10 @@ impl Program {
             path_containers: HashMap::new(),
             this_home: HashMap::new(),
             var_containers: HashMap::new(),
+            subclasses: Vec::new(),
+            class_fields: Vec::new(),
+            this_vars: HashSet::new(),
+            field_links: Vec::new(),
         };
         let mut pending_reexports: Vec<(FileId, Vec<String>)> = Vec::new();
         for (fi, f) in files.into_iter().enumerate() {
@@ -440,6 +468,7 @@ impl Program {
                     bound_self: func.bound_self,
                     ret_annot: func.ret_annot.clone(),
                     decorators: func.decorators.iter().map(|d| d + vo).collect(),
+                    is_property: func.is_property,
                     pos: func.pos,
                     is_module: func.is_module,
                 });
@@ -451,6 +480,7 @@ impl Program {
                     this: c.this + vo,
                     ctor_this: c.ctor_this.map(|t| t + vo),
                     methods: c.methods.iter().map(|(n, m)| (n.clone(), m + fo)).collect(),
+                    bases: c.bases.iter().map(|b| b + vo).collect(),
                     pos: c.pos,
                 });
             }
@@ -532,6 +562,10 @@ impl Program {
                     StmtKind::TypeRef { dst, ty } => GKind::TypeRef {
                         dst: dst + vo,
                         ty: ty + vo,
+                    },
+                    StmtKind::Super { dst, class } => GKind::Super {
+                        dst: dst + vo,
+                        class: class + co,
                     },
                     StmtKind::Elements { dst, coll } => GKind::Elements {
                         dst: dst + vo,
@@ -969,13 +1003,9 @@ impl Program {
                     out.extend(self.submodule(&d, &field));
                 }
                 Prov::Class(c) | Prov::Instance(c) => {
-                    let class = &self.classes[c as usize];
-                    if let Some((_, m)) = class.methods.iter().find(|(n, _)| *n == field) {
-                        out.push(Prov::Func(*m));
-                    }
-                    if let Some(ps) = self.fget(class.this, name) {
-                        out.extend(ps.iter().cloned());
-                    }
+                    let instance = matches!(p, Prov::Instance(_));
+                    let on_this = self.is_this(obj);
+                    out.extend(self.class_member(c, instance && !on_this, name));
                 }
                 Prov::Func(f) => {
                     if matches!(field.as_str(), "bind" | "call" | "apply") {
@@ -989,6 +1019,204 @@ impl Program {
         out
     }
 
+    /// Whether `v` is a class's own instance as its methods (or its constructor) see it: `this`,
+    /// Python's `self`.
+    fn is_this(&self, v: VarId) -> bool {
+        self.this_vars.contains(&v)
+    }
+
+    /// `name` on a class (`C.name`, `super.name`, `this.name`) or on an instance of it held
+    /// elsewhere (`obj.name`): the method it defines or inherits, a field of its instances, or a
+    /// member of an external base class. On an instance held elsewhere the call is virtual: a
+    /// subclass's override may run instead (`transport.notify()` on a value typed `Transport`).
+    /// On `this` it is not: a base class method's one summary serves every subclass, so
+    /// dispatching `this.run()` to every override would hand each subclass's data to all the
+    /// others.
+    fn class_member(&mut self, c: ClassId, instance: bool, name: Sym) -> Vec<Prov> {
+        let field = self.syms.str(name).to_string();
+        let mut out = Vec::new();
+        let lineage = self.lineage(c);
+        let mut methods: Vec<FuncId> = self.find_method(&lineage, &field).into_iter().collect();
+        let mut classes = lineage.clone();
+        if instance {
+            for d in self.descendants(c) {
+                if let Some(m) = self.own_method(d, &field) {
+                    methods.push(m);
+                }
+                classes.push(d);
+            }
+        }
+        for m in methods {
+            if self.funcs[m as usize].is_property {
+                // Reading a property runs it: the value is what it returns.
+                let ret = self.funcs[m as usize].ret;
+                out.extend(self.prov[ret as usize].iter().cloned());
+            } else {
+                out.push(Prov::Func(m));
+            }
+        }
+        for k in classes {
+            if let Some(ps) = self.fget(self.classes[k as usize].this, name) {
+                out.extend(ps.iter().cloned());
+            }
+        }
+        if out.is_empty() {
+            for s in self.external_bases(&lineage) {
+                let base = if instance { self.api_call(s) } else { Some(s) };
+                if let Some(m) = base.and_then(|b| self.api_member(b, &field)) {
+                    out.push(Prov::Api(m));
+                }
+            }
+        }
+        out
+    }
+
+    fn own_method(&self, c: ClassId, name: &str) -> Option<FuncId> {
+        self.classes[c as usize]
+            .methods
+            .iter()
+            .find(|(n, _)| n == name)
+            .map(|(_, f)| *f)
+    }
+
+    /// The first class of a lineage that defines `name`.
+    fn find_method(&self, lineage: &[ClassId], name: &str) -> Option<FuncId> {
+        lineage.iter().find_map(|&k| self.own_method(k, name))
+    }
+
+    /// The local classes `c`'s base expressions name, in order.
+    fn local_bases(&self, c: ClassId) -> Vec<ClassId> {
+        let mut out = Vec::new();
+        for &b in &self.classes[c as usize].bases {
+            for p in &self.prov[b as usize] {
+                if let Prov::Class(x) = p
+                    && *x != c
+                    && !out.contains(x)
+                {
+                    out.push(*x);
+                }
+            }
+        }
+        out
+    }
+
+    /// `c` and its local ancestors, nearest first (breadth-first, a stand-in for the method
+    /// resolution order).
+    pub fn lineage(&self, c: ClassId) -> Vec<ClassId> {
+        let mut out = vec![c];
+        let mut i = 0;
+        while i < out.len() && out.len() < MAX_LINEAGE {
+            for b in self.local_bases(out[i]) {
+                if !out.contains(&b) {
+                    out.push(b);
+                }
+            }
+            i += 1;
+        }
+        out
+    }
+
+    /// Every local class that inherits from `c`, directly or not.
+    pub fn descendants(&self, c: ClassId) -> Vec<ClassId> {
+        let mut out: Vec<ClassId> = Vec::new();
+        let mut stack = vec![c];
+        while let Some(k) = stack.pop() {
+            for &d in self.subclasses.get(k as usize).into_iter().flatten() {
+                if d != c && !out.contains(&d) && out.len() < MAX_DESCENDANTS {
+                    out.push(d);
+                    stack.push(d);
+                }
+            }
+        }
+        out.sort();
+        out
+    }
+
+    /// API paths of the external classes a lineage extends (`class Analytics extends PostHog`).
+    fn external_bases(&self, lineage: &[ClassId]) -> Vec<Sym> {
+        let mut out = Vec::new();
+        for &k in lineage {
+            for &b in &self.classes[k as usize].bases {
+                for p in &self.prov[b as usize] {
+                    if let Prov::Api(s) = p
+                        && !out.contains(s)
+                    {
+                        out.push(*s);
+                    }
+                }
+            }
+        }
+        out
+    }
+
+    /// Recompute subclasses and linked fields from the bases' provenance. True if either changed.
+    fn refresh_hierarchy(&mut self) -> bool {
+        if self.class_fields.len() != self.classes.len() {
+            let this_of: HashMap<VarId, ClassId> = self
+                .classes
+                .iter()
+                .enumerate()
+                .map(|(i, c)| (c.this, i as ClassId))
+                .collect();
+            let mut fields = vec![BTreeMap::new(); self.classes.len()];
+            for s in &self.stmts {
+                let (GKind::ThisLoad {
+                    obj, field, var, ..
+                }
+                | GKind::ThisStore {
+                    obj, field, var, ..
+                }) = s.kind
+                else {
+                    continue;
+                };
+                if let Some(&c) = this_of.get(&obj) {
+                    fields[c as usize].entry(field).or_insert(var);
+                }
+            }
+            self.class_fields = fields;
+            self.this_vars = self
+                .classes
+                .iter()
+                .flat_map(|c| [Some(c.this), c.ctor_this])
+                .flatten()
+                .collect();
+        }
+        let mut subclasses = vec![Vec::new(); self.classes.len()];
+        let mut links = Vec::new();
+        for c in 0..self.classes.len() as ClassId {
+            for b in self.local_bases(c) {
+                subclasses[b as usize].push(c);
+            }
+            let lineage = self.lineage(c);
+            for &a in &lineage[1..] {
+                for (f, &v) in &self.class_fields[c as usize] {
+                    if let Some(&w) = self.class_fields[a as usize].get(f) {
+                        links.push((w, v));
+                    }
+                }
+            }
+        }
+        links.sort();
+        links.dedup();
+        let changed = subclasses != self.subclasses || links != self.field_links;
+        self.subclasses = subclasses;
+        self.field_links = links;
+        changed
+    }
+
+    /// A subclass's field sees what its ancestor stores in the same field.
+    fn link_fields(&mut self) -> bool {
+        let mut changed = false;
+        for (x, y) in self.field_links.clone() {
+            let ps = self.prov[x as usize].clone();
+            changed |= self.set(y, &ps);
+            for (k, fps) in self.fields_of(x) {
+                changed |= self.fadd(y, k, &fps);
+            }
+        }
+        changed
+    }
+
     fn callee_provs(&mut self, callee: &GCallee) -> Vec<Prov> {
         match callee {
             GCallee::Value(v) => self.prov[*v as usize].clone(),
@@ -997,13 +1225,12 @@ impl Program {
         }
     }
 
+    /// The constructor `new C()` runs: its own, or the nearest ancestor's.
     fn ctor(&self, c: ClassId) -> Option<FuncId> {
-        let class = &self.classes[c as usize];
-        class
-            .methods
-            .iter()
-            .find(|(n, _)| n == "constructor" || n == "__init__")
-            .map(|(_, f)| *f)
+        self.lineage(c).into_iter().find_map(|k| {
+            self.own_method(k, "constructor")
+                .or_else(|| self.own_method(k, "__init__"))
+        })
     }
 
     // ------------------------------------------------------------------ provenance fixpoint
@@ -1024,10 +1251,11 @@ impl Program {
         let mut rounds = 0;
         loop {
             rounds += 1;
-            let mut changed = false;
+            let mut changed = self.refresh_hierarchy();
             for i in 0..self.stmts.len() {
                 changed |= self.step(i);
             }
+            changed |= self.link_fields();
             if !changed || rounds > 64 {
                 if std::env::var_os("PIIFLOW_DEBUG_IR").is_some() {
                     eprintln!("provenance: {rounds} round(s), converged: {}", !changed);
@@ -1413,6 +1641,19 @@ impl Program {
                     .collect();
                 self.set(dst, &ps)
             }
+            GKind::Super { dst, class } => {
+                let mut ps: Vec<Prov> = self
+                    .local_bases(class)
+                    .into_iter()
+                    .map(Prov::Class)
+                    .collect();
+                for s in self.external_bases(&[class]) {
+                    if let Some(i) = self.api_call(s) {
+                        ps.push(Prov::Api(i));
+                    }
+                }
+                self.set(dst, &ps)
+            }
             GKind::FuncRef { dst, func } => self.set(dst, &[Prov::Func(func)]),
             GKind::ClassRef { dst, class } => self.set(dst, &[Prov::Class(class)]),
             GKind::Global { dst, ref name } => {
@@ -1492,6 +1733,22 @@ impl Program {
                 }
             }
             let _ = is_new;
+            if let GCallee::Method { recv, name } = &callee
+                && self.is_this(*recv)
+            {
+                let name = self.syms.str(*name).to_string();
+                let mut overrides = BTreeSet::new();
+                for p in &recv_provs {
+                    if let Prov::Instance(c) = p {
+                        for d in self.descendants(*c) {
+                            if self.own_method(d, &name).is_some() {
+                                overrides.insert(d);
+                            }
+                        }
+                    }
+                }
+                t.overridden = overrides.len();
+            }
             if provs.is_empty() {
                 match &callee {
                     GCallee::Method { recv, name } if recv_provs.is_empty() => {

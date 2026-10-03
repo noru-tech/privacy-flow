@@ -1,0 +1,5 @@
+{
+  "description": "A base class method calls a method that a subclass overrides, which logs (a call on this follows only the class's own method).",
+  "language": "javascript",
+  "status": "known-limitation"
+}
