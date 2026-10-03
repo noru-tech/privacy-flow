@@ -354,7 +354,7 @@ pub struct Program {
     /// A copied statement's original, for identities and citations.
     pub stmt_origin: Vec<u32>,
     /// Temporaries that hold one string literal: the key of `registry.get("smtp")`.
-    lits: HashMap<VarId, Sym>,
+    literals: HashMap<VarId, Sym>,
     /// (ancestor's `this.f`, a subclass's `this.f`): what a base class stores in a field, its
     /// subclasses read (a base constructor sets `self.channel`, a subclass method reads it).
     /// Not the other way, or every subclass would see what its siblings store.
@@ -462,7 +462,7 @@ impl Program {
             complete_dispatch: HashSet::new(),
             method_of: Vec::new(),
             stmt_origin: Vec::new(),
-            lits: HashMap::new(),
+            literals: HashMap::new(),
             field_links: Vec::new(),
         };
         let mut pending_reexports: Vec<(FileId, Vec<String>)> = Vec::new();
@@ -1317,7 +1317,7 @@ impl Program {
     }
 
     fn fixpoint(&mut self) {
-        self.lits.clear();
+        self.literals.clear();
         let mut defs: HashMap<VarId, u32> = HashMap::new();
         for st in &self.stmts {
             if let GKind::Lit { dst, .. } = &st.kind {
@@ -1333,7 +1333,7 @@ impl Program {
                 && self.vars[*dst as usize].kind == VarKind::Temp
             {
                 let k = self.syms.intern(v);
-                self.lits.insert(*dst, k);
+                self.literals.insert(*dst, k);
             }
         }
         let mut rounds = 0;
@@ -1969,7 +1969,10 @@ impl Program {
                             // A dictionary's named entries: `PROVIDERS.get("smtp")` is that
                             // entry, `PROVIDERS.get(kind)` any of them, as `PROVIDERS[kind]` is.
                             if matches!(self.syms.str(*name), "get" | "pop") {
-                                let key = args.first().and_then(|a| self.lits.get(&a.var)).copied();
+                                let key = args
+                                    .first()
+                                    .and_then(|a| self.literals.get(&a.var))
+                                    .copied();
                                 for (k, fps) in self.fields_of(*recv) {
                                     if k != elem && key.is_none_or(|key| key == k) {
                                         out.extend(fps);
