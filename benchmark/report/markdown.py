@@ -229,6 +229,27 @@ def main():
         L += [f"Of {sum(pc.values()):,} sampled places that really send personal data out: both tools found {pc['both']:,}, only piiflow "
               f"{pc['piiflow_only']:,}, only Privado {pc['privado_only']:,}, and neither {pc['neither']:,}.", ""]
 
+    # Later releases, scored on the same labelled sites (recall only).
+    for tag, run in sorted((D.get("runs") or {}).items()):
+        rr = run.get("recall")
+        if not rr or not rc:
+            continue
+        hh = rr["head_to_head"]
+        version = tag.lstrip("v")
+        flows = sum(a["flows"] for a in run["applications"].values())
+        L += [f"## piiflow {version}, on the same places", "",
+              f"piiflow {version} was released after these labels were made. The places that really send personal data out "
+              "were sampled without either tool, so they measure any version; it is scored on the same "
+              f"{hh['sites']} places, run with the released binary ({run['piiflow'].get('archive', 'local build')}, "
+              "verified by its attestation).", "",
+              f"| Finds the real flows | piiflow {R['tag'].lstrip('v') if R else '0.1.0'} | piiflow {version} | Privado |",
+              "| --- | --- | --- | --- |",
+              f"| Ends there, or goes through the call there | {fmt_w(rc.get('piiflow_found'))} | {fmt_w(hh['piiflow_found'])} | {fmt_w(rc.get('privado_found'))} |",
+              f"| ...or flags the place it could not see | {fmt_w(rc.get('piiflow_flagged'))} | {fmt_w(hh['piiflow_flagged'])} | does not flag |",
+              f"| Ends there only (the rule before 2026-10-03) | {fmt_w(rc.get('piiflow_found_at_sink'))} | {fmt_w(hh['piiflow_found_at_sink'])} | {fmt_w(rc.get('privado_found_at_sink'))} |", "",
+              f"**Not yet measured for {version}: whether its flows are right.** The flows the reviewers checked were "
+              f"drawn from 0.1.0's reports; {version} reports {flows:,} flows across the twelve applications, and a sample of "
+              "them has to be labelled before its precision can be stated.", ""]
     L += ["## How to read the numbers", "",
           "- **Right when it reports a flow.** Of the flows a tool reports, the share a reviewer confirms: the data can really get from "
           "where it is read to where it is sent, and it really is personal data. High means few false alarms.",

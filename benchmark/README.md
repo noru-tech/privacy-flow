@@ -25,6 +25,7 @@ against, labelled by two reviewers, with Privado's open-source scanner run on th
 | Final labels | agreed items final, the 47 disagreements `unsure` ([labelling/finalise.py](labelling/finalise.py); PROTOCOL.md, Deviations) |
 | Scores, write-up | done: [results/scores.md](results/scores.md), [REPORT.md](REPORT.md) |
 | Zenodo DOI for the labelled corpus | not yet: needs Noru's Zenodo account |
+| piiflow 0.2.0 run | recorded with the released binary (attested, byte-identical on repeat and to a build of the tag); recall 55 % on the labelled sinks ([results/runs/v0.2.0](results/runs/v0.2.0/recall.md)); precision needs a new labelled sample |
 
 ## Reproduce
 
@@ -38,6 +39,10 @@ python3 benchmark/score.py --agreement
 python3 benchmark/labelling/finalise.py
 python3 benchmark/score.py
 python3 benchmark/overview.py && python3 benchmark/report/build.py report.html
+
+# A later release, recorded beside the protocol run (recall only; see PROTOCOL.md, Deviations)
+python3 benchmark/run.py --run v0.2.0 --binary <released piiflow> --archive <its archive> --repeat
+python3 benchmark/score.py --run v0.2.0
 ```
 
 `python3 -m unittest benchmark/test_benchmark.py` checks the sampling and statistics. Fetched

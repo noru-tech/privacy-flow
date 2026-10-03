@@ -896,6 +896,299 @@
   "tag": "v0.1.0",
   "total": 12
  },
+ "runs": {
+  "v0.2.0": {
+   "applications": {
+    "ctfd": {
+     "findings": {
+      "PF001": 31,
+      "PF002": 7,
+      "PF006": 14,
+      "PFC01": 85
+     },
+     "flows": 76,
+     "gaps": 85,
+     "peak_rss_mib": 60,
+     "wall_seconds": 0.4
+    },
+    "fastapi-template": {
+     "findings": {
+      "PFC01": 3
+     },
+     "flows": 3,
+     "gaps": 3,
+     "peak_rss_mib": 18,
+     "wall_seconds": 0.06
+    },
+    "ghost": {
+     "findings": {
+      "PF001": 44,
+      "PF002": 589,
+      "PF005": 9,
+      "PF006": 35,
+      "PFC01": 599
+     },
+     "flows": 836,
+     "gaps": 599,
+     "peak_rss_mib": 672,
+     "wall_seconds": 3.86
+    },
+    "healthchecks": {
+     "findings": {
+      "PF001": 8,
+      "PF005": 2,
+      "PFC01": 25
+     },
+     "flows": 46,
+     "gaps": 25,
+     "peak_rss_mib": 60,
+     "wall_seconds": 0.32
+    },
+    "hoppscotch": {
+     "findings": {
+      "PF001": 146,
+      "PFC01": 133
+     },
+     "flows": 193,
+     "gaps": 133,
+     "peak_rss_mib": 80,
+     "wall_seconds": 0.3
+    },
+    "open-saas": {
+     "findings": {
+      "PF001": 7,
+      "PF002": 9,
+      "PF003": 1,
+      "PF006": 1,
+      "PFC01": 32
+     },
+     "flows": 28,
+     "gaps": 32,
+     "peak_rss_mib": 36,
+     "wall_seconds": 0.11
+    },
+    "polar": {
+     "findings": {
+      "PF001": 6588,
+      "PF002": 415,
+      "PF005": 434,
+      "PF006": 1023,
+      "PFC01": 844
+     },
+     "flows": 18398,
+     "gaps": 844,
+     "peak_rss_mib": 1430,
+     "wall_seconds": 15.02
+    },
+    "private-gpt": {
+     "findings": {
+      "PF001": 1255,
+      "PF002": 4,
+      "PF005": 68,
+      "PF006": 1,
+      "PFC01": 215
+     },
+     "flows": 1368,
+     "gaps": 215,
+     "peak_rss_mib": 254,
+     "wall_seconds": 3.13
+    },
+    "redash": {
+     "findings": {
+      "PF001": 211,
+      "PF002": 3,
+      "PF005": 28,
+      "PF006": 104,
+      "PFC01": 151
+     },
+     "flows": 365,
+     "gaps": 151,
+     "peak_rss_mib": 107,
+     "wall_seconds": 0.54
+    },
+    "taxonomy": {
+     "findings": {
+      "PF002": 5,
+      "PFC01": 5
+     },
+     "flows": 9,
+     "gaps": 5,
+     "peak_rss_mib": 31,
+     "wall_seconds": 0.1
+    },
+    "umami": {
+     "findings": {
+      "PF001": 88,
+      "PF005": 4,
+      "PF006": 20,
+      "PFC01": 323
+     },
+     "flows": 137,
+     "gaps": 323,
+     "peak_rss_mib": 354,
+     "wall_seconds": 1.59
+    },
+    "vercel-chatbot": {
+     "findings": {
+      "PF001": 45,
+      "PF002": 5,
+      "PF003": 36,
+      "PF005": 2,
+      "PF006": 3,
+      "PFC01": 45
+     },
+     "flows": 109,
+     "gaps": 45,
+     "peak_rss_mib": 59,
+     "wall_seconds": 0.16
+    }
+   },
+   "piiflow": {
+    "archive": "privacy-flow-aarch64-apple-darwin.tar.xz",
+    "archive_sha256": "5d82fc02c9e6ad4696db87c62e2c67c3302db9b72007b4c8c872518d9e0c245b",
+    "binary_sha256": "85acf55d35afc95c1b450c2bf37ecba806b245d3f436898f59ec9799531a4ba5",
+    "commit": "13c158de2e17307a0cb2bc98f19169bb9ad0ee93",
+    "release_commit": "3439f152d5d9457b3cc9dd5f4c6cfa24cd993f8a",
+    "run": "v0.2.0",
+    "source_dirty": false,
+    "version": "piiflow 0.2.0"
+   },
+   "recall": {
+    "applications_without_final_labels": [
+     "polar",
+     "private-gpt"
+    ],
+    "head_to_head": {
+     "piiflow_flagged": {
+      "hi": 0.6632,
+      "k": 62,
+      "lo": 0.4799,
+      "n": 108,
+      "p": 0.5741
+     },
+     "piiflow_found": {
+      "hi": 0.637,
+      "k": 59,
+      "lo": 0.4524,
+      "n": 108,
+      "p": 0.5463
+     },
+     "piiflow_found_at_sink": {
+      "hi": 0.5657,
+      "k": 51,
+      "lo": 0.3806,
+      "n": 108,
+      "p": 0.4722
+     },
+     "privado_found": {
+      "hi": 0.2481,
+      "k": 18,
+      "lo": 0.1081,
+      "n": 108,
+      "p": 0.1667
+     },
+     "sites": 108
+    },
+    "precision": null,
+    "recall": {
+     "all": {
+      "piiflow_flagged": {
+       "hi": 0.6632,
+       "k": 62,
+       "lo": 0.4799,
+       "n": 108,
+       "p": 0.5741
+      },
+      "piiflow_found": {
+       "hi": 0.637,
+       "k": 59,
+       "lo": 0.4524,
+       "n": 108,
+       "p": 0.5463
+      },
+      "piiflow_found_at_sink": {
+       "hi": 0.5657,
+       "k": 51,
+       "lo": 0.3806,
+       "n": 108,
+       "p": 0.4722
+      },
+      "privado_found": {
+       "hi": 0.2481,
+       "k": 18,
+       "lo": 0.1081,
+       "n": 108,
+       "p": 0.1667
+      },
+      "sites": 108
+     },
+     "python": {
+      "piiflow_flagged": {
+       "hi": 0.7046,
+       "k": 20,
+       "lo": 0.3958,
+       "n": 36,
+       "p": 0.5556
+      },
+      "piiflow_found": {
+       "hi": 0.7046,
+       "k": 20,
+       "lo": 0.3958,
+       "n": 36,
+       "p": 0.5556
+      },
+      "piiflow_found_at_sink": {
+       "hi": 0.578,
+       "k": 15,
+       "lo": 0.2714,
+       "n": 36,
+       "p": 0.4167
+      },
+      "privado_found": {
+       "hi": 0.4967,
+       "k": 12,
+       "lo": 0.2021,
+       "n": 36,
+       "p": 0.3333
+      },
+      "sites": 36
+     },
+     "typescript": {
+      "piiflow_flagged": {
+       "hi": 0.6901,
+       "k": 42,
+       "lo": 0.4681,
+       "n": 72,
+       "p": 0.5833
+      },
+      "piiflow_found": {
+       "hi": 0.6517,
+       "k": 39,
+       "lo": 0.4274,
+       "n": 72,
+       "p": 0.5417
+      },
+      "piiflow_found_at_sink": {
+       "hi": 0.6125,
+       "k": 36,
+       "lo": 0.3875,
+       "n": 72,
+       "p": 0.5
+      },
+      "privado_found": {
+       "hi": 0.1701,
+       "k": 6,
+       "lo": 0.0388,
+       "n": 72,
+       "p": 0.0833
+      },
+      "sites": 72
+     }
+    },
+    "run": "v0.2.0"
+   }
+  }
+ },
  "scores": {
   "applications_without_final_labels": [
    "polar",

@@ -177,7 +177,7 @@ model: the flow through the helper is computed per argument and per field.
 | **GitHub Action** — the flows a pull request introduces, as SARIF and a job summary | [`action.yml`](action.yml), [docs](docs/github-action.md) |
 | **Conformance corpus** — programs with expected flows, and a runner any analyser can use | [`conformance/`](conformance/README.md) |
 | **Design** — how it works, and an ADR per major choice | [design](docs/design.md), [ADRs](docs/adr/README.md) |
-| **Benchmark** — piiflow 0.1.0 against Privado on real applications, labelled blind by two reviewers: on the ten labelled, 72 % of the flows piiflow reports are real (Privado 22 %), and it finds 32 % of sampled sinks that receive personal data (Privado 17 %), 40 % counting the places it flags | [report](benchmark/REPORT.md) · [scores](benchmark/results/scores.md) · [method](docs/benchmark.md) |
+| **Benchmark** — piiflow 0.1.0 against Privado on real applications, labelled blind by two reviewers: on the ten labelled, 72 % of the flows piiflow reports are real (Privado 22 %), and it finds 32 % of sampled sinks that receive personal data (Privado 17 %), 40 % counting the places it flags; piiflow 0.2.0 finds 55 % of the same sinks (its precision is not measured yet) | [report](benchmark/REPORT.md) · [scores](benchmark/results/scores.md) · [method](docs/benchmark.md) |
 
 <!-- speed:start -->
 
