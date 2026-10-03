@@ -15,16 +15,17 @@ Measured on the ten applications both tools completed and both reviewers labelle
 | Question | piiflow | Privado |
 | --- | --- | --- |
 | Right when it reports a flow | **72 %** (65 %–79 %, 127 checked) | **22 %** (2 %–41 %, 103 checked) |
-| Finds the real flows | **31 %** (23 %–40 %, 108 checked) | **14 %** (9 %–22 %, 108 checked) |
-| Finds them, or flags the place it could not see | **38 %** (29 %–47 %, 108 checked) | does not flag |
+| Finds the real flows | **32 %** (24 %–42 %, 108 checked) | **17 %** (11 %–25 %, 108 checked) |
+| Finds them, or flags the place it could not see | **40 %** (31 %–49 %, 108 checked) | does not flag |
+| Finds them, counting only a flow that ends there (the rule before 2026-10-03) | **31 %** (23 %–40 %, 108 checked) | **14 %** (9 %–22 %, 108 checked) |
 | Right, counting only its findings (not its “maybe personal” reports) | **65 %** (53 %–77 %, 71 checked) | no such split |
 
-Of 108 sampled places that really send personal data out: both tools found 9, only piiflow 24, only Privado 6, and neither 69.
+Of 108 sampled places that really send personal data out: both tools found 10, only piiflow 25, only Privado 8, and neither 65.
 
 ## How to read the numbers
 
 - **Right when it reports a flow.** Of the flows a tool reports, the share a reviewer confirms: the data can really get from where it is read to where it is sent, and it really is personal data. High means few false alarms.
-- **Finds the real flows.** Of the places that really send personal data out, the share where the tool reports a flow. The places are a random sample of every call that looks like logging, an API or an SDK, checked by hand. High means little is missed.
+- **Finds the real flows.** Of the places that really send personal data out, the share where the tool reports a flow that ends there, or that goes into the call there and on to where the data leaves (a call to the application's own `send_email` helper). The places are a random sample of every call that looks like logging, an API or an SDK, checked by hand. High means little is missed.
 - **Flags what it cannot see.** piiflow also reports places where its analysis stopped (an unknown library, a dynamic call). A real flow behind such a place is not found, but it is not hidden either: someone is told to look. Privado reports nothing comparable.
 - **The range after each number.** Every number comes from a sample, so it has a 95 % confidence range: the true value is very likely inside it. When the two tools' ranges overlap, the difference may be chance.
 

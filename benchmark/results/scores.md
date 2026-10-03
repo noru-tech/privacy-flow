@@ -6,10 +6,13 @@
 | --- | --- | --- |
 | Of the flows a tool reports, how many are real? | 72 % [65–79 %] (n=127) | 22 % [2–41 %] (n=103) |
 | ...counting only piiflow's findings (not its maybe-personal ones) | 65 % [53–77 %] (n=71) | |
-| Of the sinks that really receive personal data, how many does it find? | 31 % [23–40 %] (n=108) | 14 % [9–22 %] (n=108) |
-| ...or flags as a place it could not see | 38 % [29–47 %] (n=108) | |
+| Of the sinks that really receive personal data, how many does it find? | 32 % [24–42 %] (n=108) | 17 % [11–25 %] (n=108) |
+| ...or flags as a place it could not see | 40 % [31–49 %] (n=108) | |
+| ...counting only a flow's sink on the line (the original rule) | 31 % [23–40 %] (n=108) | 14 % [9–22 %] (n=108) |
 
-Of 108 sampled sinks that receive personal data: both tools found 9, only piiflow 24, only Privado 6, neither 69.
+A sink is found when a flow ends on its line or enters a call on its line that leads to a sink (PROTOCOL.md, Deviations, 2026-10-03).
+
+Of 108 sampled sinks that receive personal data: both tools found 10, only piiflow 25, only Privado 8, neither 65.
 
 ## Detail
 
@@ -36,9 +39,9 @@ Proportions with 95 % Wilson intervals; see PROTOCOL.md.
 
 | Scope | piiflow found | piiflow found or flagged | Privado found |
 | --- | --- | --- | --- |
-| all | 31 % [23–40 %] (n=108) | 38 % [29–47 %] (n=108) | 14 % [9–22 %] (n=108) |
-| typescript | 28 % [19–39 %] (n=72) | 36 % [26–48 %] (n=72) | 7 % [3–15 %] (n=72) |
-| python | 36 % [22–52 %] (n=36) | 42 % [27–58 %] (n=36) | 28 % [16–44 %] (n=36) |
+| all | 32 % [24–42 %] (n=108) | 40 % [31–49 %] (n=108) | 17 % [11–25 %] (n=108) |
+| typescript | 28 % [19–39 %] (n=72) | 36 % [26–48 %] (n=72) | 8 % [4–17 %] (n=72) |
+| python | 42 % [27–58 %] (n=36) | 47 % [32–63 %] (n=36) | 33 % [20–50 %] (n=36) |
 
 Coverage gaps that hide a real flow: 29 % [21–39 %] (n=89).
 

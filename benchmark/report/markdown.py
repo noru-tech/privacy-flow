@@ -222,6 +222,7 @@ def main():
     L += [f"| Right when it reports a flow | {fmt_w(pr.get('piiflow'))} | {fmt_w(pr.get('privado'))} |",
           f"| Finds the real flows | {fmt_w(rc.get('piiflow_found'))} | {fmt_w(rc.get('privado_found'))} |",
           f"| Finds them, or flags the place it could not see | {fmt_w(rc.get('piiflow_flagged'))} | does not flag |",
+          f"| Finds them, counting only a flow that ends there (the rule before 2026-10-03) | {fmt_w(rc.get('piiflow_found_at_sink'))} | {fmt_w(rc.get('privado_found_at_sink'))} |",
           f"| Right, counting only its findings (not its “maybe personal” reports) | {fmt_w(pr.get('piiflow_raised'))} | no such split |", ""]
     if rc:
         pc = rc["paired"]
@@ -231,7 +232,8 @@ def main():
     L += ["## How to read the numbers", "",
           "- **Right when it reports a flow.** Of the flows a tool reports, the share a reviewer confirms: the data can really get from "
           "where it is read to where it is sent, and it really is personal data. High means few false alarms.",
-          "- **Finds the real flows.** Of the places that really send personal data out, the share where the tool reports a flow. The "
+          "- **Finds the real flows.** Of the places that really send personal data out, the share where the tool reports a flow that ends there, "
+          "or that goes into the call there and on to where the data leaves (a call to the application's own `send_email` helper). The "
           "places are a random sample of every call that looks like logging, an API or an SDK, checked by hand. High means little is missed.",
           "- **Flags what it cannot see.** piiflow also reports places where its analysis stopped (an unknown library, a dynamic call). A "
           "real flow behind such a place is not found, but it is not hidden either: someone is told to look. Privado reports nothing comparable.",

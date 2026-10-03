@@ -59,8 +59,12 @@ and the [corpus](../benchmark/corpus.json), pinned by commit.
 | --- | --- | --- |
 | Flows reported that are real | 72 % (65–79 %, n = 127) | 22 % (2–41 %, n = 103) |
 | ...counting only piiflow's findings, not its maybe-personal reports | 65 % (53–77 %, n = 71) | |
-| Sampled sinks receiving personal data that it finds | 31 % (23–40 %, n = 108) | 14 % (9–22 %, n = 108) |
-| ...or flags as a coverage gap | 38 % (29–47 %, n = 108) | |
+| Sampled sinks receiving personal data that it finds | 32 % (24–42 %, n = 108) | 17 % (11–25 %, n = 108) |
+| ...or flags as a coverage gap | 40 % (31–49 %, n = 108) | |
+| ...counting only a flow that ends there (the original rule) | 31 % (23–40 %, n = 108) | 14 % (9–22 %, n = 108) |
+
+A sink counts as found when a flow ends on its line or goes into the call on its line and on to a
+sink (PROTOCOL.md, Deviations, 2026-10-03).
 
 Polar and PrivateGPT were not labelled by both reviewers and are not scored; items the reviewers
 disagreed on (47) are left out and counted (PROTOCOL.md, Deviations, 2026-10-03). What follows is

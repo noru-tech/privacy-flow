@@ -106,6 +106,8 @@ def score(args, corpus):
     # sampled report, and (piiflow found, piiflow flagged, Privado found) per personal sink site.
     h2h_reports = {"piiflow": [], "piiflow_raised": [], "privado": []}
     h2h_sites = []
+    # The same sites counted by the original rule (a flow's sink on the line), for comparison.
+    recall_at_sink, h2h_at_sink = [], []
     for entry in apps(corpus):
         app = entry["name"]
         labels = load_labels(args.labels / "final", app)
@@ -122,8 +124,14 @@ def score(args, corpus):
         sinks = {s["id"]: s for s in doc["sinks"]}
         pf_sink_lines = {(sinks[f["sink"]]["location"]["path"], sinks[f["sink"]]["location"]["line"]) for f in doc["flows"]}
         pf_gap_lines = {(l["path"], l.get("line")) for g in doc["coverage"]["gaps"] for l in g["locations"]}
+        # A flow that enters a call of the project's own code on the site's line, and goes on to
+        # a sink, finds that site too (PROTOCOL.md, Deviations, 2026-10-03): `sendmail(user.email)`
+        # where the sink is inside `sendmail`.
+        pf_through_lines = {(h["path"], h["line"]) for f in doc["flows"] for h in f["path"][1:-1]
+                            if h["kind"] == "call" and (h.get("note") or "").startswith("into ")}
         pv_path = HERE / "results/privado" / f"{app}.jsonl"
         pv_sink_lines = set()
+        pv_through_lines = set()
         pv_ran = pv_path.exists()
         if pv_ran:
             have_privado = True
@@ -131,6 +139,9 @@ def score(args, corpus):
                 r = json.loads(line)
                 if "hops" in r:
                     pv_sink_lines.add((r["hops"][-1]["path"], r["hops"][-1]["line"]))
+                    # Privado's hops have no kinds: any hop between source and sink counts, the
+                    # more lenient reading of the same rule.
+                    pv_through_lines.update((h["path"], h["line"]) for h in r["hops"][1:-1])
         for item_id, k in key["items"].items():
             it, lab = items[item_id], labels.get(item_id) or {}
             if it["kind"] == "flow":
@@ -177,11 +188,16 @@ def score(args, corpus):
                 if v != "yes":
                     continue
                 at = (it["path"], it["line"])
-                found = at in pf_sink_lines
+                at_sink = at in pf_sink_lines
+                found = at_sink or at in pf_through_lines
+                pv_at_sink = at in pv_sink_lines
+                pv_found = pv_at_sink or at in pv_through_lines
                 # Privado's recall counts only applications it completed (None elsewhere).
-                recall_obs.append((entry["language"], found, found or at in pf_gap_lines, (at in pv_sink_lines) if pv_ran else None))
+                recall_obs.append((entry["language"], found, found or at in pf_gap_lines, pv_found if pv_ran else None))
+                recall_at_sink.append((entry["language"], at_sink, pv_at_sink if pv_ran else None))
                 if pv_ran:
-                    h2h_sites.append((found, found or at in pf_gap_lines, at in pv_sink_lines))
+                    h2h_sites.append((found, found or at in pf_gap_lines, pv_found))
+                    h2h_at_sink.append((at_sink, pv_at_sink))
 
     both_apps = sorted(a for a in populations if (HERE / "results/privado" / f"{a}.jsonl").exists())
 
@@ -237,6 +253,9 @@ def score(args, corpus):
                 "piiflow_found": wilson(sum(f for f, _, _ in h2h_sites), n_sites),
                 "piiflow_flagged": wilson(sum(g for _, g, _ in h2h_sites), n_sites),
                 "privado_found": wilson(sum(p for _, _, p in h2h_sites), n_sites),
+                # The original rule: only a flow's sink on the site's line.
+                "piiflow_found_at_sink": wilson(sum(f for f, _ in h2h_at_sink), n_sites),
+                "privado_found_at_sink": wilson(sum(p for _, p in h2h_at_sink), n_sites),
                 "paired": {
                     "both": sum(1 for f, _, p in h2h_sites if f and p),
                     "piiflow_only": sum(1 for f, _, p in h2h_sites if f and not p),
@@ -268,6 +287,10 @@ def score(args, corpus):
                 "python": [o for o in recall_obs if o[0] == "python"],
             }.items()
         },
+        "recall_at_sink": {
+            "piiflow_found": wilson(sum(f for _, f, _ in recall_at_sink), len(recall_at_sink)),
+            "privado_found": wilson(sum(1 for *_, p in recall_at_sink if p), sum(1 for *_, p in recall_at_sink if p is not None)) if have_privado else None,
+        },
         "unsure_excluded": unsure,
         "reviewer_added_sites": added,
         "applications_without_final_labels": unlabelled,
@@ -298,7 +321,10 @@ def markdown(r):
                   f"| Of the flows a tool reports, how many are real? | {fmt(pr['piiflow'])} | {fmt(pr['privado'])} |",
                   f"| ...counting only piiflow's findings (not its maybe-personal ones) | {fmt(pr['piiflow_raised'])} | |",
                   f"| Of the sinks that really receive personal data, how many does it find? | {fmt(rc['piiflow_found'])} | {fmt(rc['privado_found'])} |",
-                  f"| ...or flags as a place it could not see | {fmt(rc['piiflow_flagged'])} | |", "",
+                  f"| ...or flags as a place it could not see | {fmt(rc['piiflow_flagged'])} | |",
+                  f"| ...counting only a flow's sink on the line (the original rule) | {fmt(rc['piiflow_found_at_sink'])} | {fmt(rc['privado_found_at_sink'])} |", "",
+                  "A sink is found when a flow ends on its line or enters a call on its line that leads to a sink "
+                  "(PROTOCOL.md, Deviations, 2026-10-03).", "",
                   f"Of {rc['sites']} sampled sinks that receive personal data: both tools found {pc['both']}, only piiflow {pc['piiflow_only']}, "
                   f"only Privado {pc['privado_only']}, neither {pc['neither']}.", ""]
     lines += ["## Detail", "", "Proportions with 95 % Wilson intervals; see PROTOCOL.md.", "",
