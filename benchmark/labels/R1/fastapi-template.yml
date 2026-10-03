@@ -1,156 +1,154 @@
-# Labels for fastapi-template. Fill every field; see benchmark/PROTOCOL.md §3. Do not open
-# benchmark/sheets/key/ until both reviewers are done.
+# Labels for fastapi-template, imported from the labelling app. See benchmark/PROTOCOL.md §3.
 items:
   F02ca0d10e0:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "tp"
+    category_ok: "yes"
+    citation: "app/utils.py:57"
+    note: "python-emails SMTPResponse.__repr__ includes status_text. An SMTP rejection can echo the submitted sender address in that response text, which is then logged; success does not necessarily expose it."
   Fcfe5ff2827:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "tp"
+    category_ok: "yes"
+    citation: "app/utils.py:57"
+    note: "The recipient email is sent via SMTP. A recipient-rejection status text can include that email, and SMTPResponse.__repr__ includes status_text in the logged response."
   F3ff7c42c7b:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "fp_path"
+    category_ok: "yes"
+    citation: "app/utils.py:56"
+    note: "SMTP_PASSWORD authenticates the SMTP connection. The delivery response does not copy that password into the logged status."
   Fc7f8e43d59:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "tp"
+    category_ok: "yes"
+    citation: "app/utils.py:57"
+    note: "The user email is the SMTP recipient. Recipient rejection can echo the address in SMTPResponse status_text, retained by its representation in this delivery-result log."
   F8e3f505683:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "tp"
+    category_ok: "yes"
+    citation: "app/utils.py:57"
+    note: "The submitted recipient address reaches SMTP delivery; rejection status text can repeat that address and is included in the logged SMTPResponse representation."
   G95cd40ff78:
-    hides_flow:     # yes | no | unsure
-    citation:       # file:line of the sink reached, if yes
-    note:
+    hides_flow: "no"
+    citation:
+    note: "sqlmodel_update applies fields to the local model. The route then commits the database record and returns its own response; neither is a qualifying sink, and no email/log is invoked in this update handler."
   Gee8feddfd4:
-    hides_flow:     # yes | no | unsure
-    citation:       # file:line of the sink reached, if yes
-    note:
+    hides_flow: "no"
+    citation:
+    note: "model_validate constructs the local Item with owner ID. The handler only writes it to the database and returns the application response; no qualifying sink follows."
   G6fd9570fde:
-    hides_flow:     # yes | no | unsure
-    citation:       # file:line of the sink reached, if yes
-    note:
+    hides_flow: "yes"
+    citation: "app/utils.py:56"
+    note: "Message.send transmits the recipient/sender addresses and rendered email body to the SMTP provider, authenticating with configured SMTP credentials."
   Gb75c5cb6e9:
-    hides_flow:     # yes | no | unsure
-    citation:       # file:line of the sink reached, if yes
-    note:
+    hides_flow: "no"
+    citation:
+    note: "pwdlib verifies the password locally and returns a boolean plus optional replacement hash. Authentication/update callers use this for database changes or the application response; the plaintext is not forwarded to a log or external service by this call."
   G1e83dbfb46:
-    hides_flow:     # yes | no | unsure
-    citation:       # file:line of the sink reached, if yes
-    note:
+    hides_flow: "no"
+    citation:
+    note: "User.model_validate constructs a database model; create_user stores and returns it. The create-user route sends email using the original user_in fields, not the model_validate result; no qualifying onward sink is established through this opaque call."
   Gbfb7edca9c:
-    hides_flow:     # yes | no | unsure
-    citation:       # file:line of the sink reached, if yes
-    note:
+    hides_flow: "no"
+    citation:
+    note: "sqlmodel_update assigns fields to the in-memory Item. The handler commits the database change and returns its own response without log, network, or third-party output."
   Gc30ba26960:
-    hides_flow:     # yes | no | unsure
-    citation:       # file:line of the sink reached, if yes
-    note:
+    hides_flow: "no"
+    citation:
+    note: "The registration handler validates user_in, stores the user through crud.create_user and returns its own response. This signup path does not invoke email delivery or a logging sink."
   G1a7bdf52b9:
-    hides_flow:     # yes | no | unsure
-    citation:       # file:line of the sink reached, if yes
-    note:
+    hides_flow: "no"
+    citation:
+    note: "pwdlib hashes locally. The returned password hash is retained in database user records for verification; this function does not log or transmit it to an external service."
   G6822496555:
-    hides_flow:     # yes | no | unsure
-    citation:       # file:line of the sink reached, if yes
-    note:
+    hides_flow: "no"
+    citation:
+    note: "Alembic context.configure configures migration execution or SQL rendering. The offline URL selects the database dialect; online configuration receives an existing database connection. No personal credential value is logged or sent to a qualifying sink through configure."
   Sb3e3c493f1:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "no"
+    personal:
+    categories: []
+    source:
+    note: "SQLModel database-session lookup, not an outbound HTTP GET. Database operations are excluded sinks."
   Sc33a758ca8:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "no"
+    personal:
+    categories: []
+    source:
+    note: "SQLModel session.get reads the User database row; this is not an HTTP client call or qualifying sink."
   S836bc5c9af:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "no"
+    personal:
+    categories: []
+    source:
+    note: "SQLModel session.delete deletes a database record; it is not an HTTP DELETE request."
   Scd1769a2e8:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "no"
+    personal:
+    categories: []
+    source:
+    note: "Reads a User row through the SQLModel database session, not an HTTP client."
   S79cc25e49d:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "no"
+    personal:
+    categories: []
+    source:
+    note: "Resolves the token subject using a SQLModel database query. session.get is not outbound HTTP here."
   S3bbfe40233:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "no"
+    personal:
+    categories: []
+    source:
+    note: "SQLModel database-session lookup of the item; not outbound HTTP."
   S28b8b24daf:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "yes"
+    personal: "yes"
+    categories: ["user.contact.email"]
+    source: "app/api/routes/login.py:68"
+    note: "An SMTP rejection response can include the recipient email in status_text. The SMTPResponse representation includes that text, which this logger emits."
   Sfa2fffeb9b:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "no"
+    personal:
+    categories: []
+    source:
+    note: "SQLModel session.get retrieves a database user row; not an HTTP request."
   S26f3ec1f78:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "no"
+    personal:
+    categories: []
+    source:
+    note: "Database lookup through SQLModel Session, not outbound HTTP."
   Se2c8e210ba:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "yes"
+    personal: "no"
+    categories: []
+    source:
+    note: "Only a fixed startup-status literal is logged."
   S4f0dd6de37:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "yes"
+    personal: "yes"
+    categories: ["user.contact.email", "user.authorization.password"]
+    source: "app/api/routes/users.py:70"
+    note: "Account-creation email carries the recipient email and submitted account password in the rendered body. Message.send delivers this through the configured SMTP provider."
   S7c397a7399:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "no"
+    personal:
+    categories: []
+    source:
+    note: "Deletes the current user through the SQLModel database session. Database writes are excluded sinks."
   Sd07a1e18b8:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "no"
+    personal:
+    categories: []
+    source:
+    note: "SQLModel database-row deletion, not an outbound HTTP DELETE."
   S79ed5f67f8:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "yes"
+    personal: "no"
+    categories: []
+    source:
+    note: "Logs only the fixed initial-data completion message, with no personal argument."
   S4e82fbcbfb:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
-# Sinks you found while labelling that are not items above (reported separately):
-added_sites: []    # - {path: ..., line: ..., categories: [...], source: file:line}
+    is_sink: "yes"
+    personal: "no"
+    categories: []
+    source:
+    note: "The warning includes only an environment variable name and the known placeholder changethis, not a real secret or personal value."
+added_sites: []

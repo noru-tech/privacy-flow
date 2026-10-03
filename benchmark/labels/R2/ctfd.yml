@@ -1,400 +1,398 @@
-# Labels for ctfd. Fill every field; see benchmark/PROTOCOL.md §3. Do not open
-# benchmark/sheets/key/ until both reviewers are done.
+# Labels for ctfd, imported from the labelling app. See benchmark/PROTOCOL.md §3.
 items:
   F53e74a8b69:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "tp"
+    category_ok: "yes"
+    citation: "CTFd/utils/logging/__init__.py:19"
+    note: "The account name is passed as a formatting argument to log, merged into props, and emitted by logger.info in the submission record."
   F0032111aae:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "fp_path"
+    category_ok: "no"
+    citation: "CTFd/auth.py:104"
+    note: "The source email used later in the confirmation template does not flow backward into the preceding log, which formats user.name and IP. The source is contact email, not public user content."
   F95c14a86d9:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "tp"
+    category_ok: "yes"
+    citation: "CTFd/utils/logging/__init__.py:19"
+    note: "The request form includes the submitted challenge answer, which is placed into the TOO FAST submission log with account identity. The form-to-log dataflow preserves user content."
   Fb10ce1a94d:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "fp_path"
+    category_ok: "yes"
+    citation: "CTFd/utils/updates/__init__.py:52"
+    note: "Users.query.count returns an aggregate count and does not read password values. The final check[\"resource\"].get is also a local JSON dictionary lookup, not outbound HTTP."
   Ff52bb2ffdf:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "fp_path"
+    category_ok: "yes"
+    citation: "CTFd/utils/updates/__init__.py:50"
+    note: "Challenges.query.count sends only the number of challenges, not the related user ratings or their public content. Counting rows does not serialize the ratings relationship."
   F886fee9d53:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "tp"
+    category_ok: "yes"
+    citation: "CTFd/utils/logging/__init__.py:19"
+    note: "The account name is included as name in the TOO FAST log template and emitted by the shared logger."
   F485c2b45b8:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "tp"
+    category_ok: "yes"
+    citation: "CTFd/utils/logging/__init__.py:19"
+    note: "The known account name is formatted into the invalid-password audit message and written by logger.info."
   Fb2b8574bc2:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "fp_path"
+    category_ok: "no"
+    citation: "CTFd/auth.py:486"
+    note: "The source read at500 occurs in the invalid-password branch, while486 logs a successful login in the mutually exclusive branch. This source occurrence cannot reach that earlier sink. The value is an account name, not public-content text."
   Ff47b580425:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "fp_path"
+    category_ok: "yes"
+    citation: "CTFd/utils/updates/__init__.py:53"
+    note: "Teams.query.count returns the number of teams, not their email column values. Only the aggregate count reaches the version-check request."
   Fce902e2dda:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "tp"
+    category_ok: "yes"
+    citation: "CTFd/utils/logging/__init__.py:19"
+    note: "The account name is directly included in the successful password-reset audit log through props formatting."
   Fba5e838dff:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "fp_path"
+    category_ok: "yes"
+    citation: "CTFd/utils/updates/__init__.py:52"
+    note: "Users.query.count produces a total, not individual language values. The final dictionary .get is also not an outbound request sink."
   F01f818e44b:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "tp"
+    category_ok: "yes"
+    citation: "CTFd/utils/logging/__init__.py:19"
+    note: "get_ip returns the request remote address and the log helper interpolates it into templates containing {ip}, including login and registration logs."
   Fbba516b125:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "tp"
+    category_ok: "no"
+    citation: "CTFd/utils/email/providers/mailgun.py:26"
+    note: "When key is mailfrom_addr, the configured sender email is formatted and sent to Mailgun in the from field. The flow is real, but the value is contact email rather than public-content text."
   F1d65cfbc89:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "fp_not_personal"
+    category_ok:
+    citation: "CTFd/utils/updates/__init__.py:52"
+    note: "The source is only the aggregate number of users, not user content or identities. Additionally, the final .get is a local JSON lookup rather than an HTTP sink."
   Fa292c9d451:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "fp_path"
+    category_ok: "yes"
+    citation: "CTFd/api/v1/challenges.py:860"
+    note: "Loading the User row does not propagate its language field into name, account_id, challenge_id, or kpm. The TOO FAST log receives those fields and submission, not user.language."
   F9c323cc019:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "tp"
+    category_ok: "yes"
+    citation: "CTFd/utils/logging/__init__.py:19"
+    note: "The user account name is explicitly passed into the PARTIAL submission log template and emitted by logger.info."
   F9a3a75514c:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "fp_path"
+    category_ok: "yes"
+    citation: "CTFd/auth.py:500"
+    note: "The log argument is user.name, not user.email. Distinct ORM columns do not flow into each other merely because both belong to the same loaded User row."
   Fd380aa2b5d:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "tp"
+    category_ok: "yes"
+    citation: "CTFd/utils/logging/__init__.py:19"
+    note: "The request remote address is returned by get_ip and interpolated into audit templates containing {ip}, then logged."
   F28096e54b5:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "fp_not_personal"
+    category_ok:
+    citation: "CTFd/utils/exports/__init__.py:304"
+    note: "Callers pass import phase strings, database-table archive member names, plugin names, and progress counts. They do not print imported row values or user identities through this status value."
   F5b0334ebb4:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "tp"
+    category_ok: "yes"
+    citation: "CTFd/auth.py:573"
+    note: "The request authorization code is inserted into the token-exchange form and sent with client credentials in the outbound POST."
   F7baa37368c:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "fp_path"
+    category_ok: "yes"
+    citation: "CTFd/api/v1/challenges.py:886"
+    note: "account_id and challenge_id are independent filter arguments. The account ID is not copied into challenge_id; the PARTIAL log uses user.name, submission, challenge_id, and kpm, not this account_id value."
   F78fcf563b7:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "fp_path"
+    category_ok: "yes"
+    citation: "CTFd/utils/updates/__init__.py:52"
+    note: "Counting Users does not evaluate or serialize each account_id property. Only the aggregate count enters the version-check request."
   F7ca754c02f:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "fp_path"
+    category_ok: "no"
+    citation: "CTFd/auth.py:179"
+    note: "The forgot-password email source at221 does not flow backward into the reset-completion log at176, and that log reads user.name rather than email. The source is contact email, not public-content text."
   F06faa956f6:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "fp_not_personal"
+    category_ok:
+    citation: "CTFd/utils/updates/__init__.py:49"
+    note: "dialect.name is the database-engine type, such as mysql or sqlite. It is operational software metadata and contains no person-identifying value."
   F0c72c0af57:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "tp"
+    category_ok: "yes"
+    citation: "CTFd/utils/logging/__init__.py:19"
+    note: "For username login, the submitted name selects the matching User.name and the same identifying name is emitted in the successful-login record. The email-login branch resolves to the linked account name."
   F577ddc3ef6:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "fp_path"
+    category_ok: "yes"
+    citation: "CTFd/auth.py:179"
+    note: "The reset-completion log reads user.name, not user.email. The later forgot-password call does not route email backward into the other branch or convert email into name."
   F39be92769f:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "fp_not_personal"
+    category_ok:
+    citation: "CTFd/auth.py:579"
+    note: "In this path, the config value is the OAuth API endpoint URL, an infrastructure setting. The personal access token comes from a separate source and does not make the endpoint itself personal."
   F7346fc45ad:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "tp"
+    category_ok: "yes"
+    citation: "CTFd/utils/logging/__init__.py:19"
+    note: "The new user email is passed explicitly into the registration log template and emitted by logger.info."
   F0b4a536038:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "fp_not_personal"
+    category_ok:
+    citation: "CTFd/utils/config/__init__.py:12"
+    note: "The specific config value is the CTF event/site name, used with a timestamp to name the export file. This identifies the event, not a participant or personal account."
   F88276d5e71:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "fp_not_personal"
+    category_ok:
+    citation: "CTFd/auth.py:558"
+    note: "The source value used on this path is the OAuth token endpoint URL, an infrastructure configuration. The authorization code and client secret in the POST body are separate sources."
   F770a46096a:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "tp"
+    category_ok: "yes"
+    citation: "CTFd/utils/logging/__init__.py:19"
+    note: "The request route IP selected after trusted-proxy filtering is returned and interpolated into {ip} audit log templates."
   F8d35e51469:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "tp"
+    category_ok: "yes"
+    citation: "CTFd/utils/logging/__init__.py:19"
+    note: "The selected untrusted/client IP from the request route is returned by get_ip and logged in audit templates containing {ip}; the IP-address category is correct."
   F0bda6b13f1:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "tp"
+    category_ok: "yes"
+    citation: "CTFd/utils/logging/__init__.py:19"
+    note: "The JSON request includes submission content. The TOO FAST branch reads that content from request_data and logs it with account identity through the shared formatting helper."
   F6c8632dd8d:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "tp"
+    category_ok: "yes"
+    citation: "CTFd/cli/__init__.py:37"
+    note: "The CLI accepts an arbitrary configuration key and prints its stored value. Public site-description/content settings can contain personal user-authored text; email and credential configuration values are also printable through this same path."
   F63fab98302:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "fp_not_personal"
+    category_ok:
+    citation: "CTFd/auth.py:579"
+    note: "The selected config is the OAuth API endpoint, an infrastructure URL rather than public personal content. Token/user data involved in the request are separate sources."
   G2759212b6a:
-    hides_flow:     # yes | no | unsure
-    citation:       # file:line of the sink reached, if yes
-    note:
+    hides_flow: "no"
+    citation:
+    note: "csv.writer.writerow serializes rows into the generated CSV export for send_file, an own-app download response. It does not itself log, contact an external service, or write browser storage."
   G0687171104:
-    hides_flow:     # yes | no | unsure
-    citation:       # file:line of the sink reached, if yes
-    note:
+    hides_flow: "yes"
+    citation: "CTFd/utils/uploads/uploaders.py:228"
+    note: "With the S3 uploader, delete forwards f.location as the object Key to boto3 delete_object. Stored uploaded filenames can retain personal identifying names despite filename sanitization, and the key reaches the external object-storage service."
   G9aecfc4d2b:
-    hides_flow:     # yes | no | unsure
-    citation:       # file:line of the sink reached, if yes
-    note:
+    hides_flow: "no"
+    citation:
+    note: "builtins.all only evaluates truthiness of prerequisite IDs and returns a boolean for validation. It does not transmit or log the input values; the error is a fixed validation message."
   Gbc8cb3fa19:
-    hides_flow:     # yes | no | unsure
-    citation:       # file:line of the sink reached, if yes
-    note:
+    hides_flow: "yes"
+    citation: "CTFd/utils/uploads/uploaders.py:271"
+    note: "When S3 storage is selected, uploader.open passes the configured logo filename as the object key to download_file. The original uploaded filename can contain identifying content and is transmitted in the object-storage request."
   Gf2386e0f55:
-    hides_flow:     # yes | no | unsure
-    citation:       # file:line of the sink reached, if yes
-    note:
+    hides_flow: "no"
+    citation:
+    note: "UserSchema.load validates/deserializes the imported row into a User, then this function adds/commits it to the database. Errors are returned to the caller; no email, logging, or external forwarding is performed here."
   G9fc19ffc4f:
-    hides_flow:     # yes | no | unsure
-    citation:       # file:line of the sink reached, if yes
-    note:
+    hides_flow: "no"
+    citation:
+    note: "cache.add stores an expiring server-side submission lock keyed by account/challenge. This is application cache/database state, excluded as a sink; it is not browser storage or a log."
   Ga0671d3712:
-    hides_flow:     # yes | no | unsure
-    citation:       # file:line of the sink reached, if yes
-    note:
+    hides_flow: "yes"
+    citation: "CTFd/utils/email/providers/smtp.py:63"
+    note: "SMTP.send_message serializes and transmits the email to the configured mail server, including recipient/sender addresses and message content. Both shown branches perform that delivery."
   Gb8345982a1:
-    hides_flow:     # yes | no | unsure
-    citation:       # file:line of the sink reached, if yes
-    note:
+    hides_flow: "yes"
+    citation: "CTFd/utils/uploads/uploaders.py:223"
+    note: "For S3 storage, download constructs a signed object URL containing the uploaded filename/key and redirects the browser to it. Following that redirect transmits the identifying filename to the external S3 endpoint; the filesystem branch stays local."
   Ga04e2681e8:
-    hides_flow:     # yes | no | unsure
-    citation:       # file:line of the sink reached, if yes
-    note:
+    hides_flow: "no"
+    citation:
+    note: "WTForms StringField constructs a local form field with label/description/validators for own-app rendering. It does not send this metadata to an external service, log it, or persist it in browser storage."
   Gded8ee57b6:
-    hides_flow:     # yes | no | unsure
-    citation:       # file:line of the sink reached, if yes
-    note:
+    hides_flow: "no"
+    citation:
+    note: "Pillow textbbox computes local text dimensions. The surrounding renderer draws a local image and returns it via send_from_directory as an own-app response; it does not post the image or text to a social platform."
   Sfaf944f7b7:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "yes"
+    personal: "no"
+    categories: []
+    source:
+    note: "Only the fixed progress literal GENERATING CHALLENGES is printed; generated records and user data are not included."
   S29f457776e:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "no"
+    personal:
+    categories: []
+    source:
+    note: "Flask session.get reads a session dictionary value; it is not an HTTP client call or a browser-storage write."
   S5b27053627:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "yes"
+    personal: "yes"
+    categories: ["user.contact.email", "user"]
+    source: "CTFd/api/v1/users.py:535"
+    note: "sendmail sends the stored user email and administrator-authored message text through the configured SMTP/Mailgun provider."
   S1cda8db2e0:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "yes"
+    personal: "yes"
+    categories: ["user.contact.email", "user"]
+    source: "CTFd/utils/email/mailgun.py:4"
+    note: "This compatibility wrapper forwards recipient address, subject, and text to MailgunEmailProvider.sendmail, which posts them to Mailgun. The deprecation print does not replace the delivery."
   S5fc0046c24:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "yes"
+    personal: "yes"
+    categories: ["user.contact.email", "user"]
+    source: "CTFd/utils/email/__init__.py:124"
+    note: "User-creation email is sent to addr with personalized template text through the configured external mail provider."
   Sc899190a30:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "no"
+    personal:
+    categories: []
+    source:
+    note: "Flask session.get reads the current session ID to test authentication. It is not an outbound HTTP call."
   S9141c489a0:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "yes"
+    personal: "yes"
+    categories: ["user.contact.email", "user"]
+    source: "CTFd/utils/email/smtp.py:4"
+    note: "The compatibility wrapper forwards address, subject, and text to the SMTP provider, which sends the email to the configured mail server."
   S3f3407c179:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "yes"
+    personal: "no"
+    categories: []
+    source:
+    note: "The printed deprecation warning is a fixed literal; view fields and page content are not interpolated."
   S1582fcb80e:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "no"
+    personal:
+    categories: []
+    source:
+    note: "This reads a Flask session dictionary field and does not issue an HTTP request or store data in the browser."
   S5b7b11e5f4:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "yes"
+    personal: "no"
+    categories: []
+    source:
+    note: "Only a fixed migration/deprecation instruction is printed; no export contents or user information are included."
   Se6bdb421a8:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "yes"
+    personal: "no"
+    categories: []
+    source:
+    note: "The log is a fixed deprecation message. Neither the password argument nor its hash is printed."
   S376666ca12:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "yes"
+    personal: "no"
+    categories: []
+    source:
+    note: "This fixed schema deprecation warning contains no topic text, fields, or user data."
   Sc39cf93546:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "yes"
+    personal: "no"
+    categories: []
+    source:
+    note: "The value is the import job start timestamp, an operational timing value without participant identity or imported personal row content."
   Sf60ac558d4:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "no"
+    personal:
+    categories: []
+    source:
+    note: "SQLAlchemy session.delete removes a database record. It is not an HTTP request and database persistence is excluded as a sink."
   S6ada957bd2:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "yes"
+    personal: "no"
+    categories: []
+    source:
+    note: "The message prints the database server host only, an infrastructure endpoint, not the connection username/password or a user address."
   S80e7f9392d:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "yes"
+    personal: "no"
+    categories: []
+    source:
+    note: "Only fixed deprecation text is printed. Token values and selected field contents are not included."
   Sb29b7dcad8:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "no"
+    personal:
+    categories: []
+    source:
+    note: "The call is a Flask session lookup for a CSRF nonce, not an outbound HTTP request or storage write."
   Sbfb40f4ca7:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "no"
+    personal:
+    categories: []
+    source:
+    note: "This property accessor reads the Flask session nonce; no network request or sink operation occurs."
   S08e30d71b7:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "yes"
+    personal: "yes"
+    categories: ["user"]
+    source: "CTFd/utils/uploads/uploaders.py:164"
+    note: "S3 upload_fileobj sends the supplied file contents and filename to object storage. Uploaded files can contain personal user content, and filename sanitization does not remove that content."
   Sb58bfd2214:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "yes"
+    personal: "yes"
+    categories: ["user.contact.email", "user.credentials", "user"]
+    source: "CTFd/utils/email/providers/mailgun.py:11"
+    note: "The Mailgun request transmits recipient/sender email addresses, message content, and the API authentication key."
   S45f176ceb0:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "yes"
+    personal: "no"
+    categories: []
+    source:
+    note: "Only the database host is printed as infrastructure readiness information; credentials and user records are not included."
   Sf798219b7b:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "yes"
+    personal: "no"
+    categories: []
+    source:
+    note: "A fixed safe-mode status string is printed, with no dynamic or personal data."
   S7f841c30e7:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "yes"
+    personal: "no"
+    categories: []
+    source:
+    note: "The message is a fixed progress literal and does not include rating/review contents or user identities."
   S8a61755d46:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "no"
+    personal:
+    categories: []
+    source:
+    note: "This SQLAlchemy database deletion is not an outbound HTTP call or an included sink."
   S156ae605eb:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "no"
+    personal:
+    categories: []
+    source:
+    note: "session.delete removes the team database row; it does not issue an HTTP request. Database writes are excluded under the guide."
   S3b4b67fd71:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "no"
+    personal:
+    categories: []
+    source:
+    note: "Although the row contains a credential, this operation deletes it in the application database and is not an outbound HTTP or other included sink."
   S9805b3ab5d:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "no"
+    personal:
+    categories: []
+    source:
+    note: "This line deletes file metadata from the database. Any S3 call occurs separately in uploader.delete at90, not in this SQLAlchemy session operation."
   S19bdafa5e7:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "no"
+    personal:
+    categories: []
+    source:
+    note: "The call schedules an ORM database deletion of the award and is not an HTTP client request or included sink."
   Sfc77176e98:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "yes"
+    personal: "no"
+    categories: []
+    source:
+    note: "This specific print emits only a fixed retry message. The exception printed on the preceding line is a separate call site."
   S6dfe3a77e0:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
-# Sinks you found while labelling that are not items above (reported separately):
-added_sites: []    # - {path: ..., line: ..., categories: [...], source: file:line}
+    is_sink: "no"
+    personal:
+    categories: []
+    source:
+    note: "Flask session.get reads the existing session authentication hash for local validation; it is not an outbound HTTP request."
+added_sites: []

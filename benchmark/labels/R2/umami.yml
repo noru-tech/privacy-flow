@@ -1,325 +1,323 @@
-# Labels for umami. Fill every field; see benchmark/PROTOCOL.md §3. Do not open
-# benchmark/sheets/key/ until both reviewers are done.
+# Labels for umami, imported from the labelling app. See benchmark/PROTOCOL.md §3.
 items:
   Fbd8306469d:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "fp_not_personal"
+    category_ok:
+    citation: "scripts/build-geo.js:64"
+    note: "The logged value is the basename/path of a downloaded public geo database, derived from its download URL. This build asset filename is not personal data."
   Fe3ba7f56c9:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "fp_path"
+    category_ok: "no"
+    citation: "scripts/seed/index.ts:251"
+    note: "Sequential batch-insert statements do not transfer session language into eventData. The final log prints only aggregate counts, and seed sessions are synthetic."
   Fe6f22a6cab:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "fp_not_personal"
+    category_ok:
+    citation: "packages/mcp/src/stdio.ts:41"
+    note: "The propagated value is an API instance base URL configuration. Authentication token/apiKey are separate fields; the shown base URL does not identify a person."
   F5caf9d688f:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "tp"
+    category_ok: "yes"
+    citation: "src/lib/fetch.ts:24"
+    note: "The URL-selected user locale/language preference is interpolated into the outgoing locale-message request path."
   F15333ec96b:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "fp_path"
+    category_ok: "no"
+    citation: "src/app/api/send/route.ts:113"
+    note: "headers.get reads an inbound header, not outbound HTTP. The source line is also a Zod schema definition rather than an actual language value."
   F48b34c2ce4:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "fp_path"
+    category_ok: "no"
+    citation: "scripts/seed/index.ts:65"
+    note: "The log receives only array length and insertion count, not session.language or session contents. Seed sessions are synthetic rather than identifiable users."
   F6ba3e462db:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "fp_path"
+    category_ok: "no"
+    citation: "scripts/seed/index.ts:248"
+    note: "Only the count of synthetic sessions is logged; no language value or session record is passed to console.log."
   F09f5f9b4f4:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "fp_not_personal"
+    category_ok:
+    citation: "src/openapi/source-analysis.ts:330"
+    note: "This source builds static OpenAPI field schemas from literal names. The output concerns operation keys and source paths, not values collected from users."
   Ff83961b778:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "fp_not_personal"
+    category_ok:
+    citation: "packages/mcp/src/lib/tool.ts:83"
+    note: "The specified field is the static tool definition name. It reaches the log but does not identify a person; identity fields in the same object are separate sources."
   F73348e4e5f:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "fp_path"
+    category_ok: "no"
+    citation: "scripts/test-api.ts:215"
+    note: "The teardown condition does not supply profile/port to this earlier log. Printed values are test-stack configuration, not a password; the claimed source category is unsupported."
   F565a17b7d7:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "fp_not_personal"
+    category_ok:
+    citation: "scripts/check-missing-messages.js:74"
+    note: "fname means localization filename, not a person’s first name. The file name and count of extra translation keys are logged."
   F3f75ccbc00:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "tp"
+    category_ok: "yes"
+    citation: "src/lib/fetch.ts:24"
+    note: "The user’s selected interface language is sent in the locale-message request path."
   F9210ee09d2:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "fp_path"
+    category_ok: "no"
+    citation: "scripts/generate-api-client.ts:309"
+    note: "Object.keys(files) extracts fixed keys types.ts/operations.ts rather than operation contents. The logged generated-file name is static build metadata, not personal data."
   F38d5c5e893:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "tp"
+    category_ok: "yes"
+    citation: "packages/mcp/src/lib/logger.ts:23"
+    note: "McpLogEvent includes userId/clientId/requestId and the info implementation serializes the whole event into stderr."
   F4359223ef6:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "fp_not_personal"
+    category_ok:
+    citation: "scripts/check-missing-messages.js:104"
+    note: "fname is a locale-file name; the sink prints a total of missing translation keys. Neither is a person’s first name or other personal data."
   F33624292b3:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "tp"
+    category_ok: "yes"
+    citation: "scripts/seed/index.ts:323"
+    note: "An existing admin user’s database ID is fetched and interpolated directly into console output. The guide includes database user IDs."
   F96e16630e2:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "tp"
+    category_ok: "yes"
+    citation: "src/lib/fetch.ts:24"
+    note: "The user’s 2FA token or backup code is serialized into the verification POST body; partialToken is also sent in Authorization. These are personal credentials."
   F165a7b8020:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "fp_path"
+    category_ok: "yes"
+    citation: "src/queries/prisma/user.ts:264"
+    note: "Prisma client.user.delete is a database mutation, explicitly outside the guide’s sink set; it is not an outbound HTTP API call."
   F4a4fd578f2:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "fp_path"
+    category_ok: "no"
+    citation: "src/app/mcp/route.ts:35"
+    note: "This client explicitly uses createInProcessFetch, not the default global fetch wrapper shown as sink. Host URL routing metadata is also not personal data."
   F777ce5e011:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "tp"
+    category_ok: "yes"
+    citation: "src/tracker/index.ts:398"
+    note: "DOM event attributes can hold user-specific values. The tracker copies them into eventData and serializes that data in the outbound analytics payload."
   G61b1d47984:
-    hides_flow:     # yes | no | unsure
-    citation:       # file:line of the sink reached, if yes
-    note:
+    hides_flow: "no"
+    citation:
+    note: "MenuTrigger composes local menu/button UI state. Passing values through rendered menu children is not itself network, logging, LLM, third-party or browser-storage output."
   G1777ee71f5:
-    hides_flow:     # yes | no | unsure
-    citation:       # file:line of the sink reached, if yes
-    note:
+    hides_flow: "no"
+    citation:
+    note: "Prisma findUnique performs a database lookup, which is not a qualifying sink. This wrapper simply returns the record."
   Gae99f260f9:
-    hides_flow:     # yes | no | unsure
-    citation:       # file:line of the sink reached, if yes
-    note:
+    hides_flow: "no"
+    citation:
+    note: "Prisma revenue.create persists a database record. Database writes are excluded by the guide; no onward qualifying sink is shown through this call."
   Gb08c3d9a02:
-    hides_flow:     # yes | no | unsure
-    citation:       # file:line of the sink reached, if yes
-    note:
+    hides_flow: "no"
+    citation:
+    note: "These setValue calls update board entity/type or display/share booleans in form state. BoardCloneForm later submits entityId, but it identifies a website/link/pixel resource rather than a person; no personal value is established at these setter sites."
   G1fbb5304eb:
-    hides_flow:     # yes | no | unsure
-    citation:       # file:line of the sink reached, if yes
-    note:
+    hides_flow: "no"
+    citation:
+    note: "Prisma raw SQL is a database query. The guide excludes database operations; execution of this call does not by itself establish onward personal-data output to a qualifying sink."
   G591596b101:
-    hides_flow:     # yes | no | unsure
-    citation:       # file:line of the sink reached, if yes
-    note:
+    hides_flow: "yes"
+    citation: "src/lib/fetch.ts:24"
+    note: "LookupField user-entered value also passes through handleSearch/setSearch (lines 52-64), debounced searchValue, and useWebsiteValuesQuery (lines 32-38). That search text is sent to the API and may contain personal user content."
   G48dd96451e:
-    hides_flow:     # yes | no | unsure
-    citation:       # file:line of the sink reached, if yes
-    note:
+    hides_flow: "yes"
+    citation: "packages/api-client/src/http.ts:230"
+    note: "The API client operation sends propertyParams through sendRequest/fetch in the stdio remote-client configuration. Params include user-supplied filters and event name, which may carry personal search/content values."
   Gfc398a3983:
-    hides_flow:     # yes | no | unsure
-    citation:       # file:line of the sink reached, if yes
-    note:
+    hides_flow: "no"
+    citation:
+    note: "findFirst performs a database lookup for the website’s share record. Database operations are outside the guide’s sinks."
   Gc6430f38f2:
-    hides_flow:     # yes | no | unsure
-    citation:       # file:line of the sink reached, if yes
-    note:
+    hides_flow: "no"
+    citation:
+    note: "Annotation create is a database write, explicitly excluded from sink classification."
   G31048a89c9:
-    hides_flow:     # yes | no | unsure
-    citation:       # file:line of the sink reached, if yes
-    note:
+    hides_flow: "no"
+    citation:
+    note: "TypeScript isNumericLiteral inspects an AST node kind and returns a boolean. It neither transmits nor persists source-code values."
   S1ac321a498:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "yes"
+    personal: "yes"
+    categories: ["user"]
+    source: "src/tracker/index.ts:283"
+    note: "Explicit test identity values are synthetic, but identify merges the actual browser getPayload (tracker:455), including page/locale/referrer context, into its outbound analytics request."
   S610efac5ef:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "yes"
+    personal: "yes"
+    categories: ["user"]
+    source: "src/queries/sql/events/saveEvent.ts:13"
+    note: "saveEvent’s Kafka branch sends analytics records containing session/visit/distinct IDs, location, language and visited URLs to the broker; batching preserves those fields."
   S913c574dcd:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "yes"
+    personal: "no"
+    categories: []
+    source:
+    note: "Logs a configured tracker endpoint string, operational routing configuration rather than personal user data."
   Sd282c9071f:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "yes"
+    personal: "no"
+    categories: []
+    source:
+    note: "Prints static command-line help text for a sample-data generator; no personal values are supplied."
   Sc4082cff57:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "yes"
+    personal: "yes"
+    categories: ["user"]
+    source: "src/tracker/index.ts:283"
+    note: "Event parameters are synthetic, but track merges getPayload containing actual browser page/locale/referrer context before sending analytics (tracker:436)."
   S0b54397f51:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "yes"
+    personal: "no"
+    categories: []
+    source:
+    note: "This call logs a fixed introductory warning, without any user data."
   S6726b273c9:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "yes"
+    personal: "yes"
+    categories: ["user.credentials"]
+    source: "src/components/hooks/queries/useTwoFactorVerifyMutation.ts:15"
+    note: "Shared HTTP helper sends user API request data; a concrete source is the 2FA token/backup code and bearer partialToken in verification requests."
   Sc38e55842f:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "no"
+    personal:
+    categories: []
+    source:
+    note: "Redis get is a database/cache read, not an outbound HTTP call or another qualifying sink."
   Sf8f25a22ec:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "yes"
+    personal: "no"
+    categories: []
+    source:
+    note: "This is a fixed incompatible-options error message with no personal interpolation."
   S15ff9748b4:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "yes"
+    personal: "no"
+    categories: []
+    source:
+    note: "Server-side test readiness probe sends only the configured heartbeat URL, with no user credentials or content."
   S2c86634e2a:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "yes"
+    personal: "no"
+    categories: []
+    source:
+    note: "Logs a fixed OpenAPI coverage error; no personal data arguments."
   Sf162870213:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "yes"
+    personal: "yes"
+    categories: ["user"]
+    source: "src/tracker/index.ts:283"
+    note: "track merges actual browser page/referrer/language context into the synthetic test event before transmitting it."
   S1980e5188b:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "yes"
+    personal: "no"
+    categories: []
+    source:
+    note: "Browser storage writes a UI navigation-collapse boolean only, without personal content or an identifier."
   S03464b55a1:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "yes"
+    personal: "yes"
+    categories: ["user"]
+    source: "src/tracker/index.ts:283"
+    note: "The test revenue fields are synthetic, but track also sends current browser page/referrer/language through getPayload."
   Se349aec0f0:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "no"
+    personal:
+    categories: []
+    source:
+    note: "Redis cache lookup is a database operation, not outbound HTTP or another qualifying sink."
   Sf86ea857b2:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "yes"
+    personal: "yes"
+    categories: ["user"]
+    source: "scripts/test-api.ts:214"
+    note: "Unrecognized command-line text from process.argv is echoed verbatim. A supplied argument can contain personal user content or a mistakenly entered credential."
   Sfc9b2811e6:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "yes"
+    personal: "yes"
+    categories: ["user"]
+    source: "scripts/test-api.ts:241"
+    note: "Entire Docker service logs are re-emitted without filtering. Application/database log records can include user identifiers or request/error content, so this forwarding log preserves personal data when present."
   S6c0e788e6f:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "yes"
+    personal: "no"
+    categories: []
+    source:
+    note: "Logs the configured server port and fixed troubleshooting text; port configuration is not personal data."
   Sca0c7a4370:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "yes"
+    personal: "no"
+    categories: []
+    source:
+    note: "Prints API operation keys and source-code paths discovered from the repository, not runtime user values."
   S9e0af506ed:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "yes"
+    personal: "yes"
+    categories: ["user.credentials"]
+    source: "src/app/login/LoginForm.tsx:26"
+    note: "The login response partial authentication token is stored in sessionStorage for the 2FA continuation."
   S35510561ed:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "yes"
+    personal: "no"
+    categories: []
+    source:
+    note: "Generated filename is one of fixed code output names; the stale-file message contains no runtime user data."
   S88f1f818a3:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "yes"
+    personal: "yes"
+    categories: ["user"]
+    source: "src/tracker/index.ts:283"
+    note: "The analytics tracker adds actual browser context to these synthetic revenue event fields, including page/referrer/language."
   S4a8671e6a5:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "yes"
+    personal: "no"
+    categories: []
+    source:
+    note: "Fixed build-skip notification, without personal values."
   S5daf83401e:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "yes"
+    personal: "yes"
+    categories: ["user.credentials"]
+    source: "packages/api-client/src/client.ts:58"
+    note: "API-client requests carry buildAuthHeaders(options), including the user token/API key, along with supplied API query/body data."
   S8249812922:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "no"
+    personal:
+    categories: []
+    source:
+    note: "Redis get is a database/cache lookup, not a qualifying outbound HTTP sink."
   Se99ec35e49:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "yes"
+    personal: "yes"
+    categories: ["user"]
+    source: "src/tracker/index.ts:283"
+    note: "Callback props originate in getPayload. Although URL/referrer are replaced with constants, other browser context such as language and identity remains in the spread and is transmitted."
   S288c9f07de:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "no"
+    personal:
+    categories: []
+    source:
+    note: "The call reads an authentication cache entry from Redis; database/cache operations are outside the sink definition."
   S61c83a92f2:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "yes"
+    personal: "no"
+    categories: []
+    source:
+    note: "Only a fixed production-environment prohibition message is logged."
   S925e27366f:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "no"
+    personal:
+    categories: []
+    source:
+    note: "Redis fetch is a cache lookup/population wrapper around a database session read, not an HTTP fetch. Database/cache operations are excluded."
   S622aeda698:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
-# Sinks you found while labelling that are not items above (reported separately):
-added_sites: []    # - {path: ..., line: ..., categories: [...], source: file:line}
+    is_sink: "yes"
+    personal: "no"
+    categories: []
+    source:
+    note: "Version-check request includes only the installed application version, not personal content or a person identifier."
+added_sites: []

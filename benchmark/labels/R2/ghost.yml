@@ -1,480 +1,478 @@
-# Labels for ghost. Fill every field; see benchmark/PROTOCOL.md §3. Do not open
-# benchmark/sheets/key/ until both reviewers are done.
+# Labels for ghost, imported from the labelling app. See benchmark/PROTOCOL.md §3.
 items:
   Fb62028c329:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "fp_path"
+    category_ok: "yes"
+    citation: "core/server/services/members/members-api/repositories/member-repository.js:1883"
+    note: "Bookshelf relation.fetch is a database load; it does not invoke the unrelated HTTP fetch adapter in request-external.js. The displayed sequence also confuses adjacent statements with value propagation."
   Fde18044217:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "fp_not_personal"
+    category_ok:
+    citation: "scripts/seed-multi-sub-scenarios.js:61"
+    note: "SCENARIOS defines synthetic multisub-*@verify.test addresses for local migration tests. These are not real people’s email addresses."
   Fa6b0e37c44:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "fp_not_personal"
+    category_ok:
+    citation: "scripts/seed-multi-sub-scenarios.js:148"
+    note: "The exact source is a fixed synthetic verify.test seed address, not a real person’s contact detail."
   Fd8db16eb90:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "tp"
+    category_ok: "yes"
+    citation: "core/server/adapters/storage/S3Storage.ts:315"
+    note: "Configured AWS sessionToken is retained by S3Client and included in authenticated AWS requests, including AbortMultipartUpload. It does not flow through the object key, but an equivalent SDK credential path exists."
   F491058e7b5:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "fp_path"
+    category_ok: "no"
+    citation: "scripts/seed-multi-sub-scenarios.js:334"
+    note: "The sink prints scenario.name, not the email field. Both values are synthetic test fixtures, so the source is not actual personal email either."
   F704cf53dd5:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "fp_not_personal"
+    category_ok:
+    citation: "core/server/adapters/route-settings/utils.ts:16"
+    note: "name is the basename of a route-settings configuration file. Adding a backup timestamp and sending its key to S3 does not make it personal data."
   F16d4dce9b8:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "fp_not_personal"
+    category_ok:
+    citation: "core/server/services/custom-redirects/utils.ts:5"
+    note: "The source name is a redirects configuration file basename, not a person’s name. Its timestamped backup key is operational metadata."
   Fb1536f18b0:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "tp"
+    category_ok: "yes"
+    citation: "core/server/services/stripe/stripe-api.js:410"
+    note: "Member email is passed through createCustomer options to Stripe customers.create."
   F3302bcf70e:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "fp_path"
+    category_ok: "yes"
+    citation: "core/server/services/members/members-api/repositories/product-repository.js:123"
+    note: "Bookshelf relation.fetch is incorrectly linked to the unrelated Tinybird fetch function. It loads a database product and does not send the offer field to Tinybird."
   F08ff0cf82e:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "fp_not_personal"
+    category_ok:
+    citation: "core/frontend/src/admin-auth/message-handler.js:1"
+    note: "The tracked source is the admin API base URL derived from the auth-frame location, an application routing value. Comment/post IDs and cookies in the eventual request are separate sources."
   F605487a351:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "tp"
+    category_ok: "yes"
+    citation: "core/server/adapters/storage/S3Storage.ts:275"
+    note: "S3Client retains sessionToken and sends it as an authentication token with UploadPart requests. This credential path is valid even though it does not propagate via the file key."
   Fd691cd21d0:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "tp"
+    category_ok: "yes"
+    citation: "core/server/services/stripe/stripe-api.js:841"
+    note: "Customer email is directly sent to Stripe checkout setup as customer_email."
   F1b1a37eae1:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "fp_not_personal"
+    category_ok:
+    citation: "scripts/seed-multi-sub-scenarios.js:148"
+    note: "The logged address is a hard-coded synthetic verify.test seed fixture, not real personal email."
   F539ecc034c:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "fp_path"
+    category_ok: "yes"
+    citation: "core/server/services/members/members-api/repositories/product-repository.js:123"
+    note: "The ORM relation fetch is not Tinybird.fetch. The value never follows this name-based jump from database model loading to outbound statistics HTTP."
   F953b93613d:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "tp"
+    category_ok: "yes"
+    citation: "core/server/adapters/storage/S3Storage.ts:275"
+    note: "User-uploaded file naming/content reaches AWS multipart upload. The derived object key preserves user file naming and chunks carry the file content."
   F47d8e7965e:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "tp"
+    category_ok: "yes"
+    citation: "core/server/services/machine-payments/stripe/payment-recorder.ts:81"
+    note: "Payment reference is embedded in the Stripe idempotency key and identifies the recorded payment transaction."
   Fbfbdc5eeab:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "fp_path"
+    category_ok: "no"
+    citation: "core/server/services/automations/database-automations-repository.ts:445"
+    note: "Knex update of an email count is incorrectly connected to product-repository.update, then ORM fetch to Tinybird.fetch. These are unrelated methods. trackClicks is a configuration boolean, not observed user behavior."
   F3ea7e787e8:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "tp"
+    category_ok: "yes"
+    citation: "core/server/services/activitypub/activity-pub-service.ts:101"
+    note: "Owner email is the JWT sub claim. Signing encodes rather than removes the email; the resulting bearer token is sent in the ActivityPub request."
   Fb394b781ee:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "fp_path"
+    category_ok: "yes"
+    citation: "core/server/services/stripe/stripe-api.js:1122"
+    note: "Stripe subscriptions.update does not call the unrelated local product-repository.update. Later ORM fetch/Tinybird.fetch links are also false; paymentMethod reaches Stripe, not this Tinybird sink."
   Fa20fd25fd5:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "fp_path"
+    category_ok: "yes"
+    citation: "core/server/services/auth/passwordreset.js:154"
+    note: "updatedUser.save is the User ORM persistence method, not LinkClickRepository.save; the claimed cross-service chain and later unrelated fetch dispatch do not propagate this user ID to Tinybird."
   F6ad545ff5b:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "fp_path"
+    category_ok: "yes"
+    citation: "core/server/services/auth/passwordreset.js:45"
+    note: "The password-derived reset token returned by this promise callback does not enter the unrelated author-role callback or product repository. Promise then and ORM get/fetch name matches do not establish a path to Tinybird."
   F5c10704406:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "fp_path"
+    category_ok: "no"
+    citation: "core/server/services/automations/database-automations-repository.ts:445"
+    note: "Knex update persists a counter and is not product-repository.update; later ORM fetch is not Tinybird fetch. The originating trackClicks boolean is configuration, not a recorded user behavior."
   Fe60a48f368:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "tp"
+    category_ok: "yes"
+    citation: "core/server/adapters/storage/S3Storage.ts:299"
+    note: "The S3 client retains configured temporary session credentials and uses them to authenticate CompleteMultipartUpload. This equivalent credential path reaches the SDK sink, although sessionToken does not become the object key."
   Fa9910ec3e5:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "fp_not_personal"
+    category_ok:
+    citation: "core/server/web/api/middleware/upload.js:81"
+    note: "Only the numeric Content-Length is extracted from req and included as observedBytes in the size-limit exception. Upload byte count and fixed limit metadata do not identify a person or contain the uploaded content."
   Fa202ec96df:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "fp_path"
+    category_ok: "yes"
+    citation: "core/server/services/auth/passwordreset.js:154"
+    note: "User ORM save does not dispatch to LinkClickRepository.save. The subsequent unrelated map/get/product/fetch functions therefore do not carry this user ID to Tinybird."
   F4bfa31ea78:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "tp"
+    category_ok: "yes"
+    citation: "core/frontend/src/ghost-stats/browser-service.js:98"
+    note: "Browser navigation/referral data is sent with page_hit telemetry. privacy.ts masks selected object keys but does not mask utm_source or the URL browsing context, so this user behavior reaches fetch."
   Febbf9631b1:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "fp_path"
+    category_ok: "yes"
+    citation: "core/server/services/stripe/stripe-api.js:1122"
+    note: "Stripe subscriptions.update is an SDK method, not the local product repository update. The payment method is sent to Stripe, but this claimed chain to Tinybird POST is a false dispatch connection."
   Fa8e81d8ff4:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "fp_path"
+    category_ok: "yes"
+    citation: "core/server/services/auth/passwordreset.js:45"
+    note: "The returned reset-email object is not passed into the unrelated role lookup callback in user.js. Name-based then/get/fetch jumps do not propagate this email to Tinybird."
   F05d81b17df:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "tp"
+    category_ok: "yes"
+    citation: "core/frontend/src/ghost-stats/browser-service.js:98"
+    note: "getLocationInfo infers the visitor country from browser timezone. That country is included as location in page-hit telemetry; the masking list does not remove location. It is coarse inferred country data, not precise location."
   Ff9a40d94f7:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "fp_path"
+    category_ok: "yes"
+    citation: "core/server/services/members/members-api/repositories/member-repository.js:1883"
+    note: "The relation fetch loads Stripe subscription rows from the database; it is not request-external.fetch. The offer-redemption event does not follow this displayed path into outbound HTTP."
   Fabf4e84708:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "fp_path"
+    category_ok: "no"
+    citation: "scripts/seed-multi-sub-scenarios.js:336"
+    note: "This log prints the resolved subscription ID, not scenario.email. The source email is also a synthetic verify.test seed fixture rather than a real contact address."
   Fc467525ff3:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "tp"
+    category_ok: "yes"
+    citation: "core/frontend/src/admin-auth/message-handler.js:33"
+    note: "The comment identifier is validated but unchanged, then included in the PUT URL. It references a user-authored comment and thus remains a personal-content record identifier."
   Fbc266fffdf:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "fp_path"
+    category_ok: "yes"
+    citation: "core/server/services/offers/offer-bookshelf-repository.js:254"
+    note: "Bookshelf model r.get reads the offer_id attribute; it does not call product-repository.get. The later relation.fetch to Tinybird.fetch jump is likewise invalid."
   F84c47af4f5:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "fp_path"
+    category_ok: "no"
+    citation: "core/server/services/jobs-service/register-job-handlers.ts:155"
+    note: "jobsService.handle registers a job handler and does not invoke the CLI generate-data handle method. emailId is a message/job record ID, not an email contact address; the sink prints database table dependencies."
   F346555683f:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "tp"
+    category_ok: "yes"
+    citation: "core/server/services/stripe/stripe-api.js:749"
+    note: "Metadata originates in checkout request body (router-controller.js:761) and receives attribution information before passing through getDonationPaymentLink. User-supplied donation metadata is copied into Stripe session and invoice metadata."
   F353e8d84c0:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "fp_not_personal"
+    category_ok:
+    citation: "scripts/seed-multi-sub-scenarios.js:61"
+    note: "SCENARIOS is a hard-coded collection of fictional multisub-*@verify.test accounts for local seeding. The logged address is synthetic, not a person’s contact information."
   F54a3b9691f:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "tp"
+    category_ok: "yes"
+    citation: "core/server/adapters/storage/S3Storage.ts:299"
+    note: "S3Client retains sessionToken in its credentials and authenticates CompleteMultipartUpload using it. The equivalent authentication path reaches the sink, although the token does not become the file key."
   F7dcd5080f0:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "fp_not_personal"
+    category_ok:
+    citation: "core/server/data/tinybird/scripts/docker-analytics-manager.js:713"
+    note: "The logged value is only the aggregate number of generated events successfully sent. The source status is randomly selected synthetic session data, and no individual status or identifier appears in this count log."
   F7cddefd04c:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "fp_path"
+    category_ok: "yes"
+    citation: "core/server/services/stripe/stripe-api.js:1122"
+    note: "Stripe subscriptions.update sends paymentMethod to Stripe, not to the local product update method. Unrelated get/fetch method matches do not create a path from that value to Tinybird GET."
   F746cfe7edf:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "tp"
+    category_ok: "yes"
+    citation: "core/server/adapters/storage/S3Storage.ts:254"
+    note: "The configured AWS session token is retained in S3Client credentials and used to authenticate CreateMultipartUpload. This equivalent authentication path is valid independently of the displayed filename steps."
   Fe586e11c24:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "tp"
+    category_ok: "yes"
+    citation: "core/server/adapters/storage/S3Storage.ts:254"
+    note: "User-uploaded file naming is preserved in the derived S3 object key and sent in CreateMultipartUpload. File names can contain user-provided personal content; normalization does not anonymize them."
   F97c5481b6f:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "fp_path"
+    category_ok: "no"
+    citation: "scripts/seed-multi-sub-scenarios.js:336"
+    note: "The sink logs actual subscription_id (or no resolved sub), not the email. The source is explicitly the synthetic multisub-una@verify.test seed address, so it is not real personal contact data."
   Fad12ae1ef5:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "fp_not_personal"
+    category_ok:
+    citation: "core/server/web/api/middleware/upload.js:81"
+    note: "The only request field read by this path is Content-Length, converted to numeric observedBytes. It does not extract or propagate req.ip; size-limit telemetry is not an IP address or other personal value."
   Fef9cd356b7:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "tp"
+    category_ok: "yes"
+    citation: "core/server/adapters/storage/S3Storage.ts:315"
+    note: "Configured sessionToken remains in the S3Client and authenticates AbortMultipartUpload on failure. An equivalent client-credential path reaches this SDK sink, even though the token is unrelated to key construction."
   F0cdcc668dc:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "fp_path"
+    category_ok: "no"
+    citation: "scripts/seed-multi-sub-scenarios.js:335"
+    note: "This sink prints scenario.expected, which is null for Una, not the scenario.email value. The email itself is a synthetic local-test address."
   Fe4958f4514:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "tp"
+    category_ok: "yes"
+    citation: "core/server/adapters/storage/S3Storage.ts:223"
+    note: "AWS sessionToken is retained by S3Client and included in authenticated PutObject requests. The valid equivalent path is through client credentials, rather than through file-key construction."
   Fcf84d1ab32:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "fp_path"
+    category_ok: "yes"
+    citation: "core/server/services/auth/passwordreset.js:45"
+    note: "The reset-token promise callback does not call the author-role callback in user.js. Subsequent product get and Tinybird fetch links are unrelated method-name matches, not propagation of the returned email."
   F37e91a40db:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "fp_not_personal"
+    category_ok:
+    citation: "core/server/web/api/middleware/upload.js:81"
+    note: "Only numeric upload byte count is extracted from the request and sent as observedBytes in a fixed size-limit error. The request body, user identity and other personal fields do not travel through this path."
   F0b6318182b:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "tp"
+    category_ok: "yes"
+    citation: "core/server/services/activitypub/activity-pub-service.ts:194"
+    note: "Owner email is encoded as the signed JWT sub claim and sent in the Authorization header to the ActivityPub site endpoint. JWT signing does not remove or anonymize the email."
   F98f46ce1c0:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "tp"
+    category_ok: "yes"
+    citation: "core/server/adapters/storage/S3Storage.ts:254"
+    note: "The S3 client uses configured sessionToken to authenticate CreateMultipartUpload. This retained-credential path reaches the SDK sink even though sessionToken is not part of the object key."
   Fee06ec1256:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "fp_path"
+    category_ok: "yes"
+    citation: "core/server/services/offers/offer-bookshelf-repository.js:254"
+    note: "r.get is a model attribute read, not a call into product-repository.get. The subsequent ORM relation fetch also does not invoke Tinybird HTTP fetch, so the redemption field cannot follow this claimed path."
   Gd48004ad54:
-    hides_flow:     # yes | no | unsure
-    citation:       # file:line of the sink reached, if yes
-    note:
+    hides_flow: "no"
+    citation:
+    note: "Both call sites emit operational metrics: boot duration and fixed cache event/operation names, feature names, and elapsed time. AdapterCacheRedis._metric callers never pass cached values, keys, or user records, so no personal data is hidden here."
   G0ea7072688:
-    hides_flow:     # yes | no | unsure
-    citation:       # file:line of the sink reached, if yes
-    note:
+    hides_flow: "yes"
+    citation: "core/server/services/email-service/mailgun-email-provider.js:164"
+    note: "String slice only removes the members-only suffix; user-authored public email HTML remains, is rendered into the newsletter body, and is sent via the Mailgun provider (html enters messageData at line 117)."
   G5f47e0a608:
-    hides_flow:     # yes | no | unsure
-    citation:       # file:line of the sink reached, if yes
-    note:
+    hides_flow: "no"
+    citation:
+    note: "The event carries site-level milestone type, aggregate member/ARR count, currency and timestamps. Subscribers send milestone notifications, but the event data is organizational aggregate data, not individual member records; recipient addresses are separate sources."
   G860653aae3:
-    hides_flow:     # yes | no | unsure
-    citation:       # file:line of the sink reached, if yes
-    note:
+    hides_flow: "no"
+    citation:
+    note: "The injected fetchEvents is fetchMailgunEvents (email-analytics-service-wrapper.ts). Inputs here are polling begin/end timestamps, event-type filters, maxEvents and a batch callback; they are job configuration/cursors, not personal values. Recipient event data is fetched downstream as a separate source."
   G2a4d53a58e:
-    hides_flow:     # yes | no | unsure
-    citation:       # file:line of the sink reached, if yes
-    note:
+    hides_flow: "no"
+    citation:
+    note: "mapToOffer reconstructs an existing commercial offer: discount/code/title/tier, aggregate redemption count and latest redemption time. Offer.create validates and constructs the domain object; no individual member or payment record is passed through this call."
   G3f4e106bf3:
-    hides_flow:     # yes | no | unsure
-    citation:       # file:line of the sink reached, if yes
-    note:
+    hides_flow: "no"
+    citation:
+    note: "getPrice calls Stripe prices.retrieve, but row.stripe_price_id identifies a catalog price for a tier/cadence/currency, not a person, payment method or purchase record. No personal source is hidden by this boundary."
   Ga7fc653441:
-    hides_flow:     # yes | no | unsure
-    citation:       # file:line of the sink reached, if yes
-    note:
+    hides_flow: "no"
+    citation:
+    note: "These replace calls return rewritten CSS/Markdown to inlineLexical, which serializes it back into the imported post data. Remote media importing happens before replacement; the replacement results themselves continue into in-process post construction/database storage, not a demonstrated outbound sink."
   G0bd0045cc5:
-    hides_flow:     # yes | no | unsure
-    citation:       # file:line of the sink reached, if yes
-    note:
+    hides_flow: "yes"
+    citation: "core/server/services/lib/mailgun-client.js:367"
+    note: "removeEmail calls removeBounce/removeComplaint/removeUnsubscribe. Each forwards the member email to Mailgun suppressions.destroy, so the contact address crosses the provider SDK boundary."
   G84fdd3eb1d:
-    hides_flow:     # yes | no | unsure
-    citation:       # file:line of the sink reached, if yes
-    note:
+    hides_flow: "yes"
+    citation: "core/server/services/mentions/mentions-api.js:267"
+    note: "processWebmention forwards source/target URLs into updateWebmention. It fetches the user-supplied source URL and logs source and target on creation/update; these can identify user-authored pages and contain personal URL content."
   G88377e2448:
-    hides_flow:     # yes | no | unsure
-    citation:       # file:line of the sink reached, if yes
-    note:
+    hides_flow: "no"
+    citation:
+    note: "cb is the async Handlebars helper completion callback, returning rendered theme content to the app response. The error is logged before this call; the callback result itself is not a further sink under the guide’s app-response exclusion."
   S24aba6c0bc:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "yes"
+    personal: "yes"
+    categories: ["user"]
+    source: "core/server/services/email-service/batch-sending-service.js:844"
+    note: "Sentry receives original errors from newsletter sending/rendering and member DB work. Errors from processing member addresses or authored post content can retain offending personal values; this branch does not redact the original error before capture."
   S996944eacc:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "yes"
+    personal: "yes"
+    categories: ["user"]
+    source: "core/frontend/src/admin-auth/message-handler.js:31"
+    note: "Browser fetch sends the comment record identifier and pin action in URL/body. The identifier references user-authored content; admin session authentication also accompanies same-origin requests."
   Sbf73055240:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "yes"
+    personal: "no"
+    categories: []
+    source:
+    note: "This console sink prints a fixed CLI usage example. No actual segment, member, credential or user argument is interpolated."
   S95ac8e6c06:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "yes"
+    personal: "no"
+    categories: []
+    source:
+    note: "This exact call logs only the fixed text Error fetching top content. The error object is passed to the separate following call, not this sink."
   S7fcb0a24dd:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "no"
+    personal:
+    categories: []
+    source:
+    note: "session.post sends a local Node inspector protocol command (Debugger.disable), not an outbound HTTP request or personal-data sink."
   S3019cf54a5:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "yes"
+    personal: "no"
+    categories: []
+    source:
+    note: "The call logs a fixed event name/message and tierId identifying the product tier. It includes no gift ID, buyer, recipient, email or individual purchase record."
   S155f9d2104:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "yes"
+    personal: "yes"
+    categories: ["user.contact.email", "user"]
+    source: "core/server/services/comments/comments-service-emails.js:247"
+    note: "The mailer transmits comment notification/report emails. message contains recipient address plus rendered subject/body with comment-related user content; sendMail copies it directly into msg."
   S2bfa6259ef:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "yes"
+    personal: "yes"
+    categories: ["user"]
+    source: "core/server/services/themes/validate.js:154"
+    note: "getThemeValidationError copies uploaded theme name/path and GScan error/warning details into errorDetails. These diagnostics can preserve user-authored filenames or offending theme content and are logged without personal-value redaction."
   S96250c77a0:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "yes"
+    personal: "yes"
+    categories: ["user.authorization.credentials"]
+    source: "core/server/services/verification/verification-webhook-service.ts:45"
+    note: "The HTTP request carries a configured-secret-derived X-Ghost-Signature authentication value (signed-webhook.ts), and the original webhook URL may contain endpoint credentials. Payload counts/site metadata themselves are organizational, not individual records."
   S2d8a8ade99:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "yes"
+    personal: "yes"
+    categories: ["user.contact.email", "user"]
+    source: "core/server/services/member-welcome-emails/service.js:557"
+    note: "The bulk mailer sends the member recipient address as the key of recipient data, together with personalized welcome-email HTML/text and optional unsubscribe link."
   S641284a5e4:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "yes"
+    personal: "no"
+    categories: []
+    source:
+    note: "This catch reports validation failures while reconstructing an existing catalog offer. Inputs are offer/tier configuration and aggregate redemption statistics; Offer.create emits validation errors without individual member data."
   S75f0ce2a6e:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "yes"
+    personal: "yes"
+    categories: ["user.authorization.credentials"]
+    source: "core/server/services/tinybird-sync/sync-table-to-tinybird.ts:106"
+    note: "The outbound Tinybird synchronization request explicitly sends the trafficAnalyticsAuth bearer credential in its Authorization header, in addition to NDJSON table rows."
   S0d86d7c2bf:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "yes"
+    personal: "yes"
+    categories: ["user"]
+    source: "core/server/services/webhooks/webhook-trigger.js:167"
+    note: "The complete configured webhook URL is interpolated into the log without sanitization. User-provided endpoint paths/query strings can include personal identifiers or secret webhook tokens."
   S0664a2198b:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "yes"
+    personal: "yes"
+    categories: ["user"]
+    source: "core/server/services/recommendations/service/recommendation-service.ts:92"
+    note: "The recommendation URL is logged in full along with the metadata/save error. Recommended personal publication URLs and user-supplied URL components can identify people; the call does not redact them."
   S9e71dbf1de:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "yes"
+    personal: "yes"
+    categories: ["user.contact.email", "user"]
+    source: "core/server/services/email-service/email-service.js:553"
+    note: "The sending service delivers rendered post/newsletter content to supplied example-member email addresses. Preview/test sending still transmits the actual requested recipient address and authored content."
   S8ff729bbe2:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "yes"
+    personal: "unsure"
+    categories: []
+    source:
+    note: "Sentry is a real sink. Explicit extra data is only one of four fixed llms routes. Rendering processes authored posts, but I cannot establish whether a reachable exception retains their personal contents rather than generic diagnostics, so personal reachability remains uncertain."
   Sd42ec041b4:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "yes"
+    personal: "yes"
+    categories: ["user"]
+    source: "core/frontend/src/admin-auth/message-handler.js:47"
+    note: "The request transmits a user-comment record ID and query options, along with same-origin admin session credentials. Validation preserves the identifier."
   S8ef71b3fdf:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "yes"
+    personal: "no"
+    categories: []
+    source:
+    note: "This catch covers acquiring a newsletter-send status lock before member retrieval/rendering. Inputs are the email campaign row ID and fixed status strings; no recipient addresses, member records or message content are supplied to this operation."
   S11757e1d84:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "no"
+    personal:
+    categories: []
+    source:
+    note: "Redis get is a cache/database read for the namespace invalidation key, not outbound HTTP or a guide-defined personal-data sink."
   Sfd7dde9af5:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "yes"
+    personal: "yes"
+    categories: ["user"]
+    source: "core/server/data/importer/handlers/image.js:44"
+    note: "The original imported file name is interpolated into the warning. User-chosen filenames can contain names or other personal content, and failed image validation does not sanitize that name."
   S1c66c68ef4:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "yes"
+    personal: "no"
+    categories: []
+    source:
+    note: "Only a fixed diagnostic string is logged. Neither the Tinybird response rows nor any user data are included in this call."
   Sd0395abd27:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "yes"
+    personal: "no"
+    categories: []
+    source:
+    note: "The catch only surrounds identity-token verification. TokenService returns claims on success, but failures use JWT validation/scope errors; it does not attach the identity token or email subject to those errors. The explicit scope error is fixed text."
   S082823380a:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "no"
+    personal:
+    categories: []
+    source:
+    note: "This is a TypeScript method signature inside a type definition, not an executed fetch call. Type declarations transmit no data."
   S048f1eba87:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "yes"
+    personal: "yes"
+    categories: ["user"]
+    source: "core/server/services/mentions/mention-sending-service.js:229"
+    note: "The webmention sender transmits source and target URLs to the discovered external endpoint. URLs of user-authored posts and referenced personal pages can identify authors or carry personal URL components."
   S4b2c60a1d8:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "yes"
+    personal: "no"
+    categories: []
+    source:
+    note: "The log includes only Stripe event type and API-version identifiers, not event customer/payment payloads or personal identifiers."
   Se95ad50324:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "yes"
+    personal: "no"
+    categories: []
+    source:
+    note: "This call prints only the fixed build progress message Copying patches, with no interpolated data."
   Scab12b3dc9:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "yes"
+    personal: "yes"
+    categories: ["user.contact.email", "user"]
+    source: "core/server/services/staff/staff-service-emails.js:71"
+    note: "The mail-sending wrapper transmits staff recipient addresses and a rendered new-member signup notification, including the member-related template content."
   S59bbd2f552:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "yes"
+    personal: "yes"
+    categories: ["user.contact.email", "user"]
+    source: "core/server/api/endpoints/mail.js:18"
+    note: "GhostMailer sends the API-supplied mail message, including recipient addresses and user-authored message content, through the configured mail transport."
   S1785b31031:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "yes"
+    personal: "yes"
+    categories: ["user.authorization.credentials"]
+    source: "core/server/data/tinybird/scripts/docker-analytics-manager.js:537"
+    note: "Even though generated analytics events are synthetic, the fetch sends the configured Tinybird bearer token as an actual authentication credential."
   S4126e6d57a:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
-# Sinks you found while labelling that are not items above (reported separately):
-added_sites: []    # - {path: ..., line: ..., categories: [...], source: file:line}
+    is_sink: "yes"
+    personal: "yes"
+    categories: ["user"]
+    source: "core/server/lib/request-external.js:242"
+    note: "This is the implementation of a real fetch-compatible HTTP sink wrapper. It forwards input URL, headers and body to the Got client at line 256, so personal request payloads and credentials supplied by application callers are transmitted."
+added_sites: []

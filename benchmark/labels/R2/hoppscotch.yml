@@ -1,290 +1,288 @@
-# Labels for hoppscotch. Fill every field; see benchmark/PROTOCOL.md §3. Do not open
-# benchmark/sheets/key/ until both reviewers are done.
+# Labels for hoppscotch, imported from the labelling app. See benchmark/PROTOCOL.md §3.
 items:
   F0d499450eb:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "fp_path"
+    category_ok: "no"
+    citation: "src/pubsub/pubsub.service.ts:21"
+    note: "PubSubService constructs graphql-subscriptions LocalPubSub. asyncIterableIterator is an in-process subscription mechanism, not HTTP; resulting GraphQL responses are excluded sinks. The source is user.uid, not email."
   F20648bd815:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "fp_path"
+    category_ok: "yes"
+    citation: "src/pubsub/pubsub.service.ts:25"
+    note: "The environment owner UID is personal, but LocalPubSub.publish only emits an in-process GraphQL event. It is not an outbound HTTP sink; application subscription responses are excluded by the guide."
   F6fccbc33a3:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "fp_not_personal"
+    category_ok:
+    citation: "src/infra-config/helper.ts:541"
+    note: "Only configured SSO provider names are joined into the log. Provider configuration values and credentials merely determine whether a provider is enabled; their contents are not included."
   Fe6deaf6099:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "fp_not_personal"
+    category_ok:
+    citation: "src/infra-config/helper.ts:541"
+    note: "The final value is a list of SSO provider names, not decrypted secrets. The displayed decrypt early-return branch returns only missing/empty data, and credential values are not interpolated into this provider-status message."
   Fbc7090612c:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "fp_path"
+    category_ok: "no"
+    citation: "src/mock-server/mock-request.guard.ts:67"
+    note: "Express request.get reads an incoming header; it is not outbound HTTP. The source is an isSubdomainAccess boolean flag, not email, and it is not propagated into the x-api-key value."
   Fe869f326f2:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "tp"
+    category_ok: "yes"
+    citation: "src/mailer/mailer.service.ts:77"
+    note: "inviteeEmail is passed unchanged as the recipient to the Nest mailer sendMail call."
   Fc37707437b:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "fp_not_personal"
+    category_ok:
+    citation: "src/infra-config/infra-config.service.ts:755"
+    note: "The failure log prints only the configuration key name. Configuration values, including onboarding recovery token or secrets, are not interpolated."
   F8ddadeb8af:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "fp_not_personal"
+    category_ok:
+    citation: "src/infra-config/infra-config.service.ts:755"
+    note: "name is an InfraConfigEnum configuration key. The sink logs the key name, not the potentially sensitive value being updated."
   Fe80cc5f0cc:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "fp_not_personal"
+    category_ok:
+    citation: "src/infra-config/infra-config.service.ts:755"
+    note: "Bulk configuration validation selects only each key name for the failure message. Personal/secret configuration values are not logged by this sink."
   F8ca0de2f6c:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "fp_not_personal"
+    category_ok:
+    citation: "src/infra-config/infra-config.service.ts:755"
+    note: "Although the resolver accepts configuration values, the final log prints only the enum key name selected during validation. No value content reaches the log."
   Fc1b74f7a7c:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "fp_not_personal"
+    category_ok:
+    citation: "src/utils.ts:76"
+    note: "The claimed source is the diagnostic trace label name, not the separately logged val. No application caller supplying a personal trace name was found; the parameter’s name alone does not make it personal data."
   F46269e31a8:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "fp_path"
+    category_ok: "no"
+    citation: "src/mock-server/mock-request.guard.ts:98"
+    note: "request.get reads the incoming Host header, not outbound HTTP. The later isSubdomainAccess assignment does not flow backward to this read and is a boolean routing flag, not email."
   F70f333fe5e:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "fp_path"
+    category_ok: "yes"
+    citation: "src/pubsub/pubsub.service.ts:25"
+    note: "The invitation email reaches LocalPubSub, but this is in-process event publication for GraphQL subscriptions, not outbound HTTP or another qualifying sink."
   G0b4b6c4f4b:
-    hides_flow:     # yes | no | unsure
-    citation:       # file:line of the sink reached, if yes
-    note:
+    hides_flow: "no"
+    citation:
+    note: "These are Prisma database updates, including encrypted configuration persistence and provider-list updates. Database writes are excluded sinks; the update boundary itself does not forward the values to an external service or log."
   Gd83a2b20a6:
-    hides_flow:     # yes | no | unsure
-    citation:       # file:line of the sink reached, if yes
-    note:
+    hides_flow: "no"
+    citation:
+    note: "prisma.user.delete uses the UID as a database deletion predicate. This is a database operation, not a log, external service, HTTP or browser-storage sink."
   Gde6b09dcfc:
-    hides_flow:     # yes | no | unsure
-    citation:       # file:line of the sink reached, if yes
-    note:
+    hides_flow: "unsure"
+    citation:
+    note: "E.right preserves its value in a success wrapper. The displayed token/admin sites return to authentication or API responses, which are not sinks. The grouped boundary covers 207 sources, and I cannot establish all downstream consumers or a specific additional sink from the displayed sites."
   Gf1fb165a20:
-    hides_flow:     # yes | no | unsure
-    citation:       # file:line of the sink reached, if yes
-    note:
+    hides_flow: "no"
+    citation:
+    note: "The actual instance is graphql-subscriptions LocalPubSub, constructed at pubsub.service.ts:17. It publishes in-process events for the application’s GraphQL subscriptions; those local events and own-app responses are excluded sinks."
   Gb15f302f90:
-    hides_flow:     # yes | no | unsure
-    citation:       # file:line of the sink reached, if yes
-    note:
+    hides_flow: "no"
+    citation:
+    note: "Prisma createMany persists infrastructure configuration rows in the database. It does not send them to a third-party SDK, HTTP endpoint, log or browser storage; database persistence is excluded."
   G9de8868a20:
-    hides_flow:     # yes | no | unsure
-    citation:       # file:line of the sink reached, if yes
-    note:
+    hides_flow: "no"
+    citation:
+    note: "This is a Prisma database lookup using the published-document slug/version key. The query reads app data and does not itself forward the supplied values to a qualifying sink."
   G5fef956159:
-    hides_flow:     # yes | no | unsure
-    citation:       # file:line of the sink reached, if yes
-    note:
+    hides_flow: "no"
+    citation:
+    note: "fp-ts isLeft only checks the Either discriminant and returns a boolean. It does not forward the personal payload. The displayed consumers use it for control flow before returning their own API responses."
   G3149d68a92:
-    hides_flow:     # yes | no | unsure
-    citation:       # file:line of the sink reached, if yes
-    note:
+    hides_flow: "no"
+    citation:
+    note: "Prisma userRequest.update saves the request record to the app database. The request contents are data being persisted here, not executed as an outbound HTTP request."
   G42629e4c15:
-    hides_flow:     # yes | no | unsure
-    citation:       # file:line of the sink reached, if yes
-    note:
+    hides_flow: "no"
+    citation:
+    note: "These Prisma findMany calls use collection IDs to retrieve child collections from the app database. They are internal query operations, not outbound execution of requests or external telemetry."
   G8f2328f2e7:
-    hides_flow:     # yes | no | unsure
-    citation:       # file:line of the sink reached, if yes
-    note:
+    hides_flow: "yes"
+    citation: "node_modules/passport-oauth2/lib/strategy.js:175"
+    note: "In the supported PKCE flow, ctx is the restored code verifier. Passport OAuth2 loaded callback assigns string ok to params.code_verifier (strategy.js:172) and passes it to getOAuthAccessToken for the provider token request. Reference: github.com/jaredhanson/passport-oauth2/blob/master/lib/strategy.js."
   Sdb4361ae1d:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "no"
+    personal:
+    categories: []
+    source:
+    note: "This publishes a local GraphQL subscription event through LocalPubSub. In-process events and application responses are excluded sinks."
   S9880d6773e:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "yes"
+    personal: "yes"
+    categories: ["user"]
+    source: "src/mock-server/mock-server.service.ts:1143"
+    note: "The error arises while parsing user-saved example request/response data, including headers and bodies. Parse exceptions can retain offending input fragments; logging the original error can expose personal example content or credentials."
   S5172bf5dcf:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "yes"
+    personal: "yes"
+    categories: ["user"]
+    source: "src/team-collection/team-collection.service.ts:483"
+    note: "Collection creation passes user-supplied title/data into Prisma. The original database/validation error is wrapped in ConflictException and logged; Prisma diagnostics can include offending invocation values containing personal collection content."
   Sd40730df7e:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "no"
+    personal:
+    categories: []
+    source:
+    note: "LocalPubSub publishes an in-process GraphQL collection-update event. It is not an external messaging sink under the guide."
   S558aac4871:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "yes"
+    personal: "yes"
+    categories: ["user.contact.email", "user"]
+    source: "src/mailer/mailer.service.ts:56"
+    note: "The original mail transport/template error is logged. Mailer failures can retain rejected recipient addresses and template context containing personal invitation/authentication content."
   S91203934cf:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "yes"
+    personal: "no"
+    categories: []
+    source:
+    note: "This logs child-process spawn errors for fixed caddy/node commands and fixed arguments. It is separate from stderr forwarding and does not receive application user payloads or environment secrets."
   S145f84629d:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "no"
+    personal:
+    categories: []
+    source:
+    note: "The actual pubsub implementation is LocalPubSub, emitting in-process updates for the application’s GraphQL subscriptions. It is not an external messaging sink."
   Sc24e6cde8f:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "no"
+    personal:
+    categories: []
+    source:
+    note: "This is an in-process LocalPubSub member-update event, with GraphQL app subscribers. Local events/app responses are excluded sinks."
   S0c4944db40:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "no"
+    personal:
+    categories: []
+    source:
+    note: "Collection reorder information is emitted through LocalPubSub within the application. This is not a qualifying external sink."
   S6e26d6ba13:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "yes"
+    personal: "yes"
+    categories: ["user.unique_id"]
+    source: "src/user-collection/user-collection.service.ts:660"
+    note: "Move operations query/lock collections using the owner userID and collection IDs. Original Prisma/database errors can retain query/invocation identifiers, and this catch logs them without redaction."
   Se4665689dc:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "no"
+    personal:
+    categories: []
+    source:
+    note: "LocalPubSub emits an internal collection-deleted event for app subscriptions. It is not an external sink."
   Sf4b52b22e7:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "yes"
+    personal: "yes"
+    categories: ["user"]
+    source: "src/mock-server/mock-server.service.ts:477"
+    note: "Mock-server creation processes the authenticated user and user-supplied server input. Non-unique-constraint Prisma errors are logged intact and can include owner identifiers or offending configuration values."
   S894e55a2f6:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "no"
+    personal:
+    categories: []
+    source:
+    note: "This publishes an internal LocalPubSub history-deletion event with a boolean payload. It is not external messaging."
   S264706e286:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "yes"
+    personal: "no"
+    categories: []
+    source:
+    note: "The logged environment setting is the application listen-port configuration. It is operational configuration, with no user identity or personal record source."
   Se965f7e256:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "yes"
+    personal: "yes"
+    categories: ["user.contact.email", "user"]
+    source: "src/mailer/mailer.service.ts:53"
+    note: "When SMTP is enabled the mailer sends recipient addresses and rendered template variables, including application invitation/authentication content, through the mail provider."
   S322dec9839:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "no"
+    personal:
+    categories: []
+    source:
+    note: "The saved request is published as an in-process LocalPubSub update for GraphQL clients. It is not executed or sent to an external request destination here."
   S1a487bbc91:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "no"
+    personal:
+    categories: []
+    source:
+    note: "LocalPubSub emits a user-settings creation event inside the application. The guide excludes these local events and own-app subscription responses."
   S66207426c3:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "no"
+    personal:
+    categories: []
+    source:
+    note: "This is local GraphQL event publication for a moved collection. LocalPubSub does not make an outbound service call."
   Sc13e41db91:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "no"
+    personal:
+    categories: []
+    source:
+    note: "LocalPubSub publishes a saved-request creation event to the application’s subscriptions. This neither executes the saved request nor qualifies as an external sink."
   S067ea980e1:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "yes"
+    personal: "no"
+    categories: []
+    source:
+    note: "This console call logs only the fixed initialization message."
   S34725d765d:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "yes"
+    personal: "no"
+    categories: []
+    source:
+    note: "The logged value is the build-time GraphQL schema output path derived from __dirname/configuration. No application user record or personal payload supplies this destination."
   S08194f63b9:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "yes"
+    personal: "no"
+    categories: []
+    source:
+    note: "Only the numeric listen port and OS error code are logged. These are operational diagnostics without personal data."
   S629bf4a395:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "yes"
+    personal: "yes"
+    categories: ["user.device.ip_address", "user"]
+    source: "src/mock-server/mock-server-logging.interceptor.ts:102"
+    note: "The failed request-log operation receives IP address, user agent and request details. Original persistence/validation errors can retain these invocation values and are printed intact by this catch."
   Se8d5606258:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "yes"
+    personal: "no"
+    categories: []
+    source:
+    note: "The console message contains only the infrastructure configuration enum key name. Sensitive configuration values are deliberately absent."
   Sf58d00a5e7:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "no"
+    personal:
+    categories: []
+    source:
+    note: "The member-added event is sent only through in-process LocalPubSub for app GraphQL subscriptions, which are excluded sinks."
   Sf954fad804:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "no"
+    personal:
+    categories: []
+    source:
+    note: "This is an internal LocalPubSub collection-update notification, not a third-party messaging or HTTP sink."
   S3fd58d4890:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "yes"
+    personal: "yes"
+    categories: ["user.unique_id"]
+    source: "src/posthog/posthog.service.ts:41"
+    note: "capture forwards the configured persistent ANALYTICS_USER_ID as PostHog distinctId with a weekly sh_instance event. Counts are aggregate, but the analytics identifier remains linkable across reports."
   S7fec279bc8:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "no"
+    personal:
+    categories: []
+    source:
+    note: "LocalPubSub publishes a collection-sort event within the application; it is not an external messaging sink."
   Sae2958da86:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "no"
+    personal:
+    categories: []
+    source:
+    note: "Team collection ordering is emitted as an in-process LocalPubSub event for app subscribers. This is excluded from sinks."
   S29e5756155:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
-# Sinks you found while labelling that are not items above (reported separately):
-added_sites: []    # - {path: ..., line: ..., categories: [...], source: file:line}
+    is_sink: "no"
+    personal:
+    categories: []
+    source:
+    note: "The environment update is a local GraphQL subscription event via LocalPubSub. No external messaging service is invoked."
+added_sites: []
