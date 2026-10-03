@@ -7,6 +7,15 @@ All notable changes to this project are documented here. The format is based on
 ## [Unreleased]
 
 ### Added
+- Email, messaging and push sinks: Python `smtplib`, Flask-Mail, fastapi-mail, `emails`, Apprise,
+  Resend, Mailjet, Brevo, Mailchimp Transactional, Vonage, python-telegram-bot, Amazon SNS,
+  Firebase Cloud Messaging, Expo and Web Push; JavaScript `@nestjs-modules/mailer`, Wasp's
+  `emailSender`, `@tryghost/nodemailer`, Amazon SNS, MailerSend, Mailchimp Transactional, Brevo,
+  Mailjet, Vonage, Telegram (node-telegram-bot-api, Telegraf), Firebase Cloud Messaging, Expo,
+  Web Push, Novu, Knock, Customer.io and Loops. Fixtures `py/messaging` and `ts/messaging`.
+- Sinks take `receiver: true` when the object a method is called on is sent with it, and the
+  message builders of the standard library's `email` package, Flask-Mail, `emails` and Apprise
+  put their arguments into the message.
 - Inheritance (ADR 0011): methods, constructors and fields inherited from local base classes,
   `super.m()` and `super().m()`, and members of external base classes
   (`class Analytics extends PostHog`) resolve. A call on a value typed with a base class (a
@@ -31,6 +40,9 @@ All notable changes to this project are documented here. The format is based on
   same object (ADR 0007).
 
 ### Fixed
+- A Django `EmailMessage` (or `EmailMultiAlternatives`) built with personal data and sent with
+  `send()` reported nothing: the data is in the message, and `send()` takes no arguments. On
+  Healthchecks, 86 flows of addresses, names and phone numbers into its outgoing mail were missed.
 - Every `new Map()` (and `Set`, `WeakMap`, `WeakSet`) was one container for provenance, so a
   value cached in a Map, such as a Prisma client, also resolved as whatever any other Map held.
   Database query filters then reached query results. On documenso, findings go from 757 to 549.
