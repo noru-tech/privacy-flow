@@ -112,13 +112,16 @@ fn check_fails_on_the_threshold_and_honours_dispositions_by_date() {
         .assert()
         .code(1);
 
-    // Record a disposition on the finding, as a human would: only the disposition changes.
+    // Record a disposition on the findings (the email address and the user ID sent to PostHog),
+    // as a human would: only the dispositions change.
     let mut doc: serde_json::Value =
         serde_json::from_str(&std::fs::read_to_string(&path).unwrap()).unwrap();
-    doc["findings"][0]["disposition"] = serde_json::json!({
-        "status": "accepted", "owner": "privacy@example.com", "decided_at": "2026-09-01",
-        "expires_at": "2026-09-30", "rationale": "DPA in signature; tracked in LEG-91", "remediated_at": null
-    });
+    for finding in doc["findings"].as_array_mut().unwrap() {
+        finding["disposition"] = serde_json::json!({
+            "status": "accepted", "owner": "privacy@example.com", "decided_at": "2026-09-01",
+            "expires_at": "2026-09-30", "rationale": "DPA in signature; tracked in LEG-91", "remediated_at": null
+        });
+    }
     std::fs::write(&path, serde_json::to_string_pretty(&doc).unwrap()).unwrap();
     piiflow().arg("validate").arg(&path).assert().code(0);
     // A non-open disposition needs an explicit date: the machine clock is never read.

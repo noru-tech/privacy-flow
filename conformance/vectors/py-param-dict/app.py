@@ -1,7 +1,7 @@
 def show(box):
-    print(box["owner"]["id"])
+    print(box["owner"]["plan"])
     print(box["owner"])
 
 
 def f(user):
-    show({"owner": {"id": user.id, "address": user.email}})
+    show({"owner": {"plan": user.plan, "address": user.email}})

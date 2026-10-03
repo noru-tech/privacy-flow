@@ -1,4 +1,4 @@
 def f(user):
-    d = {"id": user.id, "email": user.email}
-    print(d["id"])
+    d = {"plan": user.plan, "email": user.email}
+    print(d["plan"])
     print(d["email"])

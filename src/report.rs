@@ -13,7 +13,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::canonical;
 use crate::catalogue::{Catalogue, SinkClass};
-use crate::classify::{Classifier, UNKNOWN};
+use crate::classify::{Classifier, UNKNOWN, covers};
 use crate::config::{Config, ProcessorDecl, Severity, SystemDecl};
 use crate::engine::{Reach, Step, Target};
 use crate::facts::{Facts, GapKind, HitKind, Host, StaticGap};
@@ -516,6 +516,7 @@ pub fn build(p: &Program, f: &Facts, reaches: &[Reach], ctx: &Context) -> Result
             // Request input of unknown category narrowed by a classified field read on its way:
             // `request.form["api_key"]` is credentials, not "unknown", once the field is named.
             let narrowed = s.category == UNKNOWN
+                && s.kind == crate::facts::SeedKind::Request
                 && group.iter().any(|&o| {
                     let other = &raw_flows[o];
                     f.seeds[other.seed as usize].category != UNKNOWN
@@ -1080,7 +1081,10 @@ pub fn derive(doc: &mut Document, classifier: &Classifier) -> Result<()> {
             src.text, src.location.path, src.location.line
         );
         let at = format!("{}:{}", snk.location.path, snk.location.line);
-        if snk.class == SinkClass::Log && !credential {
+        // Logging a pseudonymous identifier instead of contact data is the recommended practice:
+        // the flow is reported, PF001 does not fire on it.
+        let identifier = covers("user.unique_id.pseudonymous", cat);
+        if snk.class == SinkClass::Log && !credential && !identifier {
             fire(
                 "PF001",
                 format!("{what} reaches a log sink ({}) at {at}", snk.catalogue_id),

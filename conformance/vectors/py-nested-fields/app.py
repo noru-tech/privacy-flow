@@ -1,4 +1,4 @@
 def f(user):
-    d = {"a": {"id": user.id, "inner": {"email": user.email}}}
-    print(d["a"]["id"])
+    d = {"a": {"plan": user.plan, "inner": {"email": user.email}}}
+    print(d["a"]["plan"])
     print(d["a"]["inner"])

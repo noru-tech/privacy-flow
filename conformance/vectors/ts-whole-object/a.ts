@@ -1,4 +1,4 @@
 export function f(user) {
-  const o = { id: user.id, contact: user.email };
+  const o = { plan: user.plan, contact: user.email };
   console.log(o);
 }

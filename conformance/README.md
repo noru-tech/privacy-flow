@@ -25,7 +25,9 @@ outcome:
 
 - **Sources** are reads of fields the classification table names exactly (`email`,
   `phone_number`, `password`), with their Fideslang category, plus request input of category
-  `unknown`. No vector depends on names the table only marks as maybe-personal.
+  `unknown`. No vector depends on names the table only marks as maybe-personal, or on whether an
+  identifier (`user.id`) is personal data: where a vector needs a field beside a personal one
+  that is not personal, it is `plan`.
 - **Sinks** are `console.*`, `print` and Python `logging`.
 - A flow is identified by its source location, its sink location and its category, compared by
   path and line: `(source path, source line, sink path, sink line, category)`.

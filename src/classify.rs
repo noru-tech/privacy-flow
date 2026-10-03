@@ -59,6 +59,8 @@ pub struct Classifier {
 }
 
 struct ContextRule {
+    id: String,
+    category: Option<String>,
     names: HashSet<String>,
     objects: Vec<crate::glob::Glob>,
     siblings: HashSet<String>,
@@ -66,6 +68,9 @@ struct ContextRule {
 
 impl ContextRule {
     fn holds(&self, ctx: &Place) -> bool {
+        if self.objects.is_empty() && self.siblings.is_empty() {
+            return true;
+        }
         ctx.object.is_some_and(|o| {
             keys(o)
                 .iter()
@@ -160,7 +165,13 @@ impl Classifier {
             .map(|g| crate::glob::Glob::new(g, crate::glob::Mode::Path))
             .collect::<Result<Vec<_>>>()
             .with_context(|| format!("contextual entry {:?}", def.id))?;
+        if let Some(c) = &def.category {
+            self.check_category(c)
+                .with_context(|| format!("contextual entry {:?}", def.id))?;
+        }
         self.contextual.push(ContextRule {
+            id: def.id.clone(),
+            category: def.category.clone(),
             names: def.names.iter().flat_map(|n| keys(n)).collect(),
             objects,
             siblings: def.siblings.iter().flat_map(|n| keys(n)).collect(),
@@ -234,10 +245,23 @@ impl Classifier {
         {
             return out;
         }
+        // Names the catalogue adds (identifiers), where their context holds.
+        for r in &self.contextual {
+            if let Some(category) = &r.category
+                && ks.iter().any(|k| r.names.contains(k))
+                && r.holds(ctx)
+            {
+                return vec![Classified {
+                    category: category.clone(),
+                    needs_review: false,
+                    by: format!("catalogue:{}", r.id),
+                }];
+            }
+        }
         if ks.iter().any(|k| {
             self.contextual
                 .iter()
-                .any(|r| r.names.contains(k) && !r.holds(ctx))
+                .any(|r| r.category.is_none() && r.names.contains(k) && !r.holds(ctx))
         }) {
             return out;
         }
@@ -303,6 +327,7 @@ mod tests {
         c.add_contextual(&crate::catalogue::ContextualDef {
             id: "address-state".into(),
             description: None,
+            category: None,
             names: vec!["state".into()],
             objects: vec!["*address*".into()],
             siblings: vec!["city".into()],
