@@ -1,0 +1,5 @@
+{
+  "description": "A method a subclass inherits from its base class prints its argument.",
+  "language": "python",
+  "status": "required"
+}

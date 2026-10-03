@@ -345,7 +345,6 @@ Time +20–40%: each formal-site field is summarised as a parameter.
 
 **Next.** Summarise formal-site parameters only for the tokens their function reads.
 
-
 ## 2026-10-03 — Email, messaging and push sinks
 
 **Why.** Scoring the imported partial labels (R1, ten applications; provenance unconfirmed, so
@@ -368,3 +367,34 @@ site labels: found 33 → 36 of 114; one site lost (fastapi-template logs the re
 **Next.** Most remaining messaging misses are wrappers reached through dynamic dispatch
 (`self.transport.notify`, `this.mailer.send`, inherited `send`): inheritance and methods on typed
 fields, not catalogue.
+
+## 2026-10-03 — Inheritance (ADR 0011)
+
+**Done.** Classes record their bases; lookup walks the lineage (methods, constructors, external
+bases); `super` is the bases; fields flow from a class to its subclasses; a call on a typed value
+dispatches to every override, a call on `this` does not and is a gap where it is overridden;
+properties and getters give what they return. Ten required vectors and one known limitation,
+fixtures `ts/inheritance` and `py/inheritance`, CI break `inheritance`.
+
+**Measured** (against `36c2ea4`). `dynamic_call` gaps: Polar 227 → 64, PrivateGPT 73 → 30,
+Healthchecks 24 → 6, CTFd 17 → 3. Flows: Redash 242 → 307, PrivateGPT 761 → 2,462 (mostly a
+misclassified `context.state` reaching every chat interceptor), Polar 10,472 → 11,518. Time
+unchanged. Dispatching on `this` as well, tried first, took Redash to 4,741 flows of one query
+runner's credentials reaching the others' logs.
+
+**Next.** Analyse inherited methods per subclass, so template methods resolve; TypeScript
+interfaces to their implementing classes; `state` in the classification table.
+
+## 2026-10-03 — TypeScript interfaces (ADR 0012)
+
+**Done.** Interfaces are classes with no members, bound and exported by name; `implements` and
+interface `extends` make subtypes for dispatch, never for lookup. A call through an interface
+does not explain its external targets (open world); a method no implementation defines is a
+plain value's method. Vector `ts-interface-dispatch`, fixtures `ts/interfaces` and
+`ts/interface-open-world`.
+
+**Measured** (against the inheritance build). The six TypeScript applications: flows unchanged;
+Ghost gaps 609 → 612, three calls on an external scheduler adapter that a local wrapper had
+hidden. The corpus injects by class or untyped JavaScript, so it has little of this pattern.
+
+**Next.** Analyse inherited methods per subclass, so template methods resolve.

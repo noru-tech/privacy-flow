@@ -1,0 +1,5 @@
+{
+  "description": "A call on a field typed with a base class reaches a subclass's override.",
+  "language": "javascript",
+  "status": "required"
+}

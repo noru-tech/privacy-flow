@@ -88,6 +88,7 @@ impl<'s> Builder<'s> {
             bound_self: false,
             ret_annot: None,
             decorators: Vec::new(),
+            is_property: false,
             pos: Pos { line: 1, column: 1 },
             is_module: true,
         });
@@ -315,6 +316,7 @@ impl<'s> Builder<'s> {
             bound_self: false,
             ret_annot: None,
             decorators: Vec::new(),
+            is_property: false,
             pos,
             is_module: false,
         });
@@ -367,6 +369,9 @@ impl<'s> Builder<'s> {
             this,
             ctor_this: None,
             methods: Vec::new(),
+            bases: Vec::new(),
+            implements: Vec::new(),
+            is_interface: false,
             pos,
         });
         // `this` is an instance of the class, so `this.method()` resolves.

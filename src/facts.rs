@@ -421,6 +421,7 @@ impl<'a, 'p> Builder<'a, 'p> {
     // ------------------------------------------------------------------ statements
 
     fn statements(&mut self) {
+        self.field_links();
         for i in 0..self.p.stmts.len() {
             let stmt = i as u32;
             let s = self.p.stmts[i].clone();
@@ -485,6 +486,28 @@ impl<'a, 'p> Builder<'a, 'p> {
                     dst, callee, args, ..
                 } => self.call(stmt, *dst, callee, args, lang),
                 _ => {}
+            }
+        }
+    }
+
+    /// What a class stores in a field flows to the same field of its subclasses, cited where
+    /// the subclass reads (or else writes) the field.
+    fn field_links(&mut self) {
+        let mut site: HashMap<VarId, u32> = HashMap::new();
+        for (i, s) in self.p.stmts.iter().enumerate() {
+            match s.kind {
+                GKind::ThisLoad { var, .. } => {
+                    site.insert(var, i as u32);
+                }
+                GKind::ThisStore { var, .. } => {
+                    site.entry(var).or_insert(i as u32);
+                }
+                _ => {}
+            }
+        }
+        for (from, to) in self.p.field_links.clone() {
+            if let Some(&stmt) = site.get(&to) {
+                self.edge(from, to, EdgeKind::Copy, stmt);
             }
         }
     }
@@ -663,11 +686,17 @@ impl<'a, 'p> Builder<'a, 'p> {
         // catalogue knows. Only an unexplained call is a coverage gap; the other possible
         // targets of an explained call are not (`remember()` returns both a cache entry and
         // the Prisma client it holds).
-        let mut explained = !t.funcs.is_empty() || !t.classes.is_empty();
+        // A receiver typed with an interface is open: the local implementations it reaches do not
+        // explain a target in an external module (an adapter loaded at run time, `require()()`).
+        // Paths through built-in containers (`Map().get()`) are where the value was kept, not
+        // what it is, and still are.
+        let local = !t.funcs.is_empty() || !t.classes.is_empty();
+        let mut explained = (!t.funcs.is_empty() && !t.open_world) || !t.classes.is_empty();
         let mut unknown = Vec::new();
         for path in &apis {
             if self.api_call(stmt, dst, path, args, recv, lang)
                 || self.name_heuristic_sink(stmt, path, args, lang)
+                || (t.open_world && local && is_container_path(path, lang))
             {
                 explained = true;
             } else if let Some(r) = recv.filter(|_| is_runtime_global(path, lang)) {
@@ -714,6 +743,23 @@ impl<'a, 'p> Builder<'a, 'p> {
         if let Some((r, name)) = t.plain_method {
             let name = self.p.syms.str(name).to_string();
             self.plain_method(stmt, dst, r, &name, args, lang);
+        }
+        if t.overridden > 0 {
+            // `this.run(x)` in a base class: the overrides in subclasses are not followed.
+            let detail = format!(
+                "{} (overridden in {} subclass{})",
+                callee_text(&self.p.stmts[stmt as usize].text),
+                t.overridden,
+                if t.overridden == 1 { "" } else { "es" }
+            );
+            self.hit(
+                stmt,
+                HitKind::Gap {
+                    kind: GapKind::DynamicCall,
+                    detail,
+                },
+                Self::arg_vars(args),
+            );
         }
     }
 
@@ -1646,6 +1692,16 @@ impl<'a, 'p> Builder<'a, 'p> {
 /// `globalThis.cache`): no module, so it is a run-time object of the program's own.
 fn is_runtime_global(path: &str, lang: &str) -> bool {
     lang == "javascript" && !path.contains(':')
+}
+
+/// A path through a built-in container (`Map().get()`, `Array.from()`): the value was kept
+/// there, which says nothing of what it is.
+fn is_container_path(path: &str, lang: &str) -> bool {
+    const CONTAINERS: &[&str] = &[
+        "Map", "Set", "WeakMap", "WeakSet", "Array", "Object", "Promise",
+    ];
+    is_runtime_global(path, lang)
+        && CONTAINERS.contains(&path.split(['.', '(']).next().unwrap_or(path))
 }
 
 /// The module a specifier belongs to: `@scope/pkg/sub` → `@scope/pkg`, `pkg/sub` → `pkg`,

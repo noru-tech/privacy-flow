@@ -1,0 +1,5 @@
+{
+  "description": "A call on a field typed with an interface reaches the class that implements it, in another file.",
+  "language": "javascript",
+  "status": "required"
+}

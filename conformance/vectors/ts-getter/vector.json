@@ -1,0 +1,5 @@
+{
+  "description": "A getter's declared return type says what reading it gives.",
+  "language": "javascript",
+  "status": "required"
+}

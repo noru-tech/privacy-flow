@@ -849,6 +849,16 @@ impl<'s> Py<'s> {
                 return self.b.load(node, obj, Some(key));
             }
         }
+        // `super()` (or `super(C, self)`) in a method: the base classes.
+        if let (Some(f), Some(&class)) = (func, self.b.class_stack.last())
+            && f.kind() == "identifier"
+            && self.text(f) == "super"
+            && self.b.lookup("super").is_none()
+        {
+            let dst = self.b.temp(self.b.pos(node));
+            self.b.emit(node, StmtKind::Super { dst, class });
+            return dst;
+        }
         let (callee, method) = match func {
             Some(f) if f.kind() == "attribute" => {
                 let recv = f.child_by_field_name("object").map(|o| self.expr(o));
@@ -983,6 +993,10 @@ impl<'s> Py<'s> {
         };
         let f = self.b.begin_function(display, node, class);
         self.b.ir.funcs[f as usize].decorators = decorators.iter().map(|(v, _)| *v).collect();
+        self.b.ir.funcs[f as usize].is_property = class.is_some()
+            && decorators.iter().any(|(_, t)| {
+                t == "property" || t == "cached_property" || t.ends_with(".cached_property")
+            });
         let outer_ctor = self.b.ctor_this.take();
         let is_ctor = name == "__init__" && !is_static;
         if let (true, Some(c)) = (is_ctor, class) {
@@ -1204,12 +1218,18 @@ impl<'s> Py<'s> {
             .child_by_field_name("name")
             .map(|n| self.text(n).to_string())
             .unwrap_or_default();
+        // Base classes, in order; `metaclass=...` and other keywords are not bases.
+        let mut bases = Vec::new();
         if let Some(sup) = node.child_by_field_name("superclasses") {
             for c in named_children(sup) {
-                self.expr(c);
+                let v = self.expr(c);
+                if c.kind() != "keyword_argument" {
+                    bases.push(v);
+                }
             }
         }
         let c = self.b.new_class(&name, node);
+        self.b.ir.classes[c as usize].bases = bases;
         let pos = self.b.pos(node);
         let var = match self.b.lookup(&name) {
             Some(v) => v,

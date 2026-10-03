@@ -1,0 +1,5 @@
+{
+  "description": "A call on a value typed with a base class reaches a subclass's override.",
+  "language": "python",
+  "status": "required"
+}
