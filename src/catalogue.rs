@@ -133,6 +133,9 @@ pub struct SinkDef {
     pub args: ArgSel,
     #[serde(default)]
     pub keywords: Vec<String>,
+    /// The receiver carries data out too: `send()` on a message object built from the data.
+    #[serde(default)]
+    pub receiver: bool,
     #[serde(default)]
     pub host: Option<HostSpec>,
     #[serde(default)]

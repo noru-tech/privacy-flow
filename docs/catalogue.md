@@ -56,8 +56,14 @@ of segments, `**.` also matches none (`posthog-js:**.capture` matches `posthog-j
   methods: []                   # … and method names, for receivers of unknown origin
   args: all                     # or a list of positional indices
   keywords: []                  # Python keyword arguments to include when args is a list
+  receiver: false               # the receiver is sent too (a message object's `send()`)
   host: { arg: 0, keyword: url, field: url, base_url: false }   # outbound HTTP only
 ```
+
+With `receiver: true` the object the method is called on carries data out as well as the
+arguments: `EmailMessage(subject, body, to=[user.email]).send()` sends what the message was built
+with, though `send()` itself takes nothing. Builder methods that put data into such an object
+(`msg.set_content(text)`, `notifier.add(url)`) are `args_to_receiver` propagators.
 
 `host` says where an HTTP call's URL is: a positional `arg`, a Python `keyword`, or a `field` of an
 options object. A literal URL (or a template or concatenation starting with one, followed through

@@ -121,6 +121,11 @@ Request input is a source only in frameworks whose request objects are modelled
 - **Sinks are the catalogue's** ([`catalogue/sinks.yml`](catalogue/sinks.yml)). An SDK it does
   not list is a gap, not a sink. Loggers injected without a type are recognised by receiver name
   (`logger`, `log`) and marked `heuristic`.
+- **Mail without a named provider.** SMTP clients (`smtplib`, Nodemailer, Django's and Flask's
+  mail, the NestJS mailer) send to whatever server is configured at run time, so their flows name
+  no processor and no rule fires on them; they are reported as flows and egress facts.
+- **A sink's result carries nothing.** **Silent:** a send call's response that echoes the
+  recipient (an SMTP rejection that names the address) is not personal data when it is logged.
 - **Outbound HTTP:** a host is known when the URL is a literal, a template or concatenation that
   starts with one, or a constant holding one; a client's base URL (axios instances, `httpx.Client`)
   is never followed, so calls on such clients have a dynamic host.
