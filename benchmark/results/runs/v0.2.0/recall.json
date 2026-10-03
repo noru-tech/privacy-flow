@@ -1,0 +1,134 @@
+{
+  "applications_without_final_labels": [
+    "polar",
+    "private-gpt"
+  ],
+  "head_to_head": {
+    "piiflow_flagged": {
+      "hi": 0.6632,
+      "k": 62,
+      "lo": 0.4799,
+      "n": 108,
+      "p": 0.5741
+    },
+    "piiflow_found": {
+      "hi": 0.637,
+      "k": 59,
+      "lo": 0.4524,
+      "n": 108,
+      "p": 0.5463
+    },
+    "piiflow_found_at_sink": {
+      "hi": 0.5657,
+      "k": 51,
+      "lo": 0.3806,
+      "n": 108,
+      "p": 0.4722
+    },
+    "privado_found": {
+      "hi": 0.2481,
+      "k": 18,
+      "lo": 0.1081,
+      "n": 108,
+      "p": 0.1667
+    },
+    "sites": 108
+  },
+  "precision": null,
+  "recall": {
+    "all": {
+      "piiflow_flagged": {
+        "hi": 0.6632,
+        "k": 62,
+        "lo": 0.4799,
+        "n": 108,
+        "p": 0.5741
+      },
+      "piiflow_found": {
+        "hi": 0.637,
+        "k": 59,
+        "lo": 0.4524,
+        "n": 108,
+        "p": 0.5463
+      },
+      "piiflow_found_at_sink": {
+        "hi": 0.5657,
+        "k": 51,
+        "lo": 0.3806,
+        "n": 108,
+        "p": 0.4722
+      },
+      "privado_found": {
+        "hi": 0.2481,
+        "k": 18,
+        "lo": 0.1081,
+        "n": 108,
+        "p": 0.1667
+      },
+      "sites": 108
+    },
+    "python": {
+      "piiflow_flagged": {
+        "hi": 0.7046,
+        "k": 20,
+        "lo": 0.3958,
+        "n": 36,
+        "p": 0.5556
+      },
+      "piiflow_found": {
+        "hi": 0.7046,
+        "k": 20,
+        "lo": 0.3958,
+        "n": 36,
+        "p": 0.5556
+      },
+      "piiflow_found_at_sink": {
+        "hi": 0.578,
+        "k": 15,
+        "lo": 0.2714,
+        "n": 36,
+        "p": 0.4167
+      },
+      "privado_found": {
+        "hi": 0.4967,
+        "k": 12,
+        "lo": 0.2021,
+        "n": 36,
+        "p": 0.3333
+      },
+      "sites": 36
+    },
+    "typescript": {
+      "piiflow_flagged": {
+        "hi": 0.6901,
+        "k": 42,
+        "lo": 0.4681,
+        "n": 72,
+        "p": 0.5833
+      },
+      "piiflow_found": {
+        "hi": 0.6517,
+        "k": 39,
+        "lo": 0.4274,
+        "n": 72,
+        "p": 0.5417
+      },
+      "piiflow_found_at_sink": {
+        "hi": 0.6125,
+        "k": 36,
+        "lo": 0.3875,
+        "n": 72,
+        "p": 0.5
+      },
+      "privado_found": {
+        "hi": 0.1701,
+        "k": 6,
+        "lo": 0.0388,
+        "n": 72,
+        "p": 0.0833
+      },
+      "sites": 72
+    }
+  },
+  "run": "v0.2.0"
+}

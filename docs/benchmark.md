@@ -66,6 +66,11 @@ and the [corpus](../benchmark/corpus.json), pinned by commit.
 A sink counts as found when a flow ends on its line or goes into the call on its line and on to a
 sink (PROTOCOL.md, Deviations, 2026-10-03).
 
+**piiflow 0.2.0**, recorded with its released binary on the same labelled sinks
+([`benchmark/results/runs/v0.2.0/recall.md`](../benchmark/results/runs/v0.2.0/recall.md)): finds
+55 % (45–64 %), 57 % counting coverage gaps, 47 % by the original
+rule. Its precision needs a sample of its own flows, not yet labelled.
+
 Polar and PrivateGPT were not labelled by both reviewers and are not scored; items the reviewers
 disagreed on (47) are left out and counted (PROTOCOL.md, Deviations, 2026-10-03). What follows is
 what `piiflow` reported on all twelve, unlabelled (commit `9a78b08`;

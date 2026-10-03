@@ -348,9 +348,93 @@ def markdown(r):
     return "\n".join(lines)
 
 
+def site_lines(doc):
+    """(sink lines, lines a flow enters a call of the application on, gap lines) of a document."""
+    sinks = {s["id"]: s for s in doc["sinks"]}
+    at_sink = {(sinks[f["sink"]]["location"]["path"], sinks[f["sink"]]["location"]["line"]) for f in doc["flows"]}
+    through = {(h["path"], h["line"]) for f in doc["flows"] for h in f["path"][1:-1]
+               if h["kind"] == "call" and (h.get("note") or "").startswith("into ")}
+    gaps = {(l["path"], l.get("line")) for g in doc["coverage"]["gaps"] for l in g["locations"]}
+    return at_sink, through, gaps
+
+
+def score_run(args, corpus):
+    """Recall of a later run (`run.py --run NAME`) on the protocol's labelled sink sites.
+
+    The sites were sampled without either tool, so they measure any version. The flow and gap
+    samples were drawn from the protocol run's reports and say nothing about a later version's,
+    so a later run has no precision until a sample of its own flows is labelled.
+    """
+    cache = pathlib.Path(args.cache) / "runs" / args.run
+    if not cache.is_dir():
+        sys.exit(f"no documents for {args.run} in {cache}; run benchmark/run.py --run {args.run}")
+    obs, unlabelled = [], []
+    for entry in apps(corpus):
+        app = entry["name"]
+        labels = load_labels(args.labels / "final", app)
+        if labels is None:
+            unlabelled.append(app)
+            continue
+        labels = labels[0]
+        key = json.loads((HERE / "sheets/key" / f"{app}.json").read_text())
+        items = {json.loads(l)["id"]: json.loads(l) for l in (HERE / "sheets" / f"{app}.items.jsonl").read_text().splitlines()}
+        at_sink, through, gaps = site_lines(json.loads((cache / app / "flows.json").read_text()))
+        pv_path = HERE / "results/privado" / f"{app}.jsonl"
+        pv_sink, pv_through = set(), set()
+        if pv_path.exists():
+            for line in pv_path.read_text().splitlines():
+                r = json.loads(line)
+                if "hops" in r:
+                    pv_sink.add((r["hops"][-1]["path"], r["hops"][-1]["line"]))
+                    pv_through.update((h["path"], h["line"]) for h in r["hops"][1:-1])
+        for item_id in key["items"]:
+            it, lab = items[item_id], labels.get(item_id) or {}
+            if it["kind"] != "site" or norm(lab.get("is_sink")) != "yes" or norm(lab.get("personal")) != "yes":
+                continue
+            at = (it["path"], it["line"])
+            found = at in at_sink or at in through
+            obs.append({"app": app, "language": entry["language"], "at_sink": at in at_sink, "found": found,
+                        "flagged": found or at in gaps,
+                        "privado": (at in pv_sink or at in pv_through) if pv_path.exists() else None})
+    def rates(xs):
+        pv = [x for x in xs if x["privado"] is not None]
+        return {"sites": len(xs),
+                "piiflow_found": wilson(sum(x["found"] for x in xs), len(xs)),
+                "piiflow_flagged": wilson(sum(x["flagged"] for x in xs), len(xs)),
+                "piiflow_found_at_sink": wilson(sum(x["at_sink"] for x in xs), len(xs)),
+                "privado_found": wilson(sum(x["privado"] for x in pv), len(pv)) if pv else None}
+    shared = [x for x in obs if x["privado"] is not None]
+    result = {
+        "run": args.run,
+        "recall": {"all": rates(obs),
+                   "typescript": rates([x for x in obs if x["language"] == "typescript"]),
+                   "python": rates([x for x in obs if x["language"] == "python"])},
+        "head_to_head": rates(shared),
+        "precision": None,
+        "applications_without_final_labels": unlabelled,
+    }
+    out = HERE / "results" / "runs" / args.run
+    out.mkdir(parents=True, exist_ok=True)
+    (out / "recall.json").write_text(json.dumps(result, indent=2, sort_keys=True) + "\n")
+    lines = [f"# Recall of piiflow {args.run} on the labelled sink sites", "",
+             "The protocol's sampled sink sites, labelled for 0.1.0, scored against this run's documents. "
+             "Precision needs a sample of this run's own flows, not yet labelled.", "",
+             "| Scope | sites | piiflow found | found or flagged | found, sink on the line only | Privado found |",
+             "| --- | --- | --- | --- | --- | --- |"]
+    for scope, r in list(result["recall"].items()) + [("head to head", result["head_to_head"])]:
+        lines.append(f"| {scope} | {r['sites']} | {fmt(r['piiflow_found'])} | {fmt(r['piiflow_flagged'])} | "
+                     f"{fmt(r['piiflow_found_at_sink'])} | {fmt(r['privado_found'])} |")
+    if unlabelled:
+        lines += ["", f"Not scored (not labelled by both reviewers): {', '.join(unlabelled)}."]
+    (out / "recall.md").write_text("\n".join(lines) + "\n")
+    print("\n".join(lines))
+    return result
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--agreement", action="store_true")
+    ap.add_argument("--run", help="score the recall of a later run recorded by run.py --run")
     ap.add_argument("--labels", type=pathlib.Path, default=HERE / "labels")
     ap.add_argument("--cache", default=str(ROOT / ".benchmark-cache"))
     ap.add_argument("--out", type=pathlib.Path, default=HERE / "results", help="where scores.json and scores.md go")
@@ -358,6 +442,8 @@ def main():
     corpus = json.loads((HERE / "corpus.json").read_text())
     if args.agreement:
         agreement(args, corpus)
+    elif args.run:
+        score_run(args, corpus)
     else:
         score(args, corpus)
 

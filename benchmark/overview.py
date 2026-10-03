@@ -137,13 +137,22 @@ def main():
                    # The benchmarked commit and the tag have the same analysis code.
                    "analysis_identical": git("diff", "--quiet", run_commit, rc["release"], "--", "src", "catalogue", "Cargo.lock").returncode == 0,
                    "archive": rc["archive"], "identical": rc["identical"], "total": rc["total"]}
+    # Later runs (run.py --run vX.Y.Z), with their recall on the labelled sites once scored.
+    runs = {}
+    for d in sorted((HERE / "results/runs").glob("v*")) if (HERE / "results/runs").is_dir() else []:
+        summary = json.loads((d / "summary.json").read_text())
+        recall = json.loads((d / "recall.json").read_text()) if (d / "recall.json").exists() else None
+        runs[d.name] = {"piiflow": summary["piiflow"], "recall": recall,
+                        "applications": {a["name"]: {k: a[k] for k in ("flows", "gaps", "findings", "wall_seconds", "peak_rss_mib")}
+                                         for a in summary["applications"]}}
     scores = HERE / "results/scores.json"
     out = {"generated_from": {"piiflow_commit": json.loads((HERE / "results/summary.json").read_text())["piiflow"]["commit"]},
            "applications": apps,
            # The released binary re-run on the corpus (results/release-check.json), if checked.
            "release": release,
            # The labelled results, once score.py has run on final labels; absent until then.
-           "scores": json.loads(scores.read_text()) if scores.exists() else None}
+           "scores": json.loads(scores.read_text()) if scores.exists() else None,
+           "runs": runs}
     (HERE / "results/overview.json").write_text(json.dumps(out, indent=1, sort_keys=True) + "\n")
     tot = lambda f: sum(f(a) for a in apps)
     print(f"{len(apps)} applications, {tot(lambda a: a['lines']):,} lines; piiflow {tot(lambda a: a['piiflow']['flows']):,} flows, "

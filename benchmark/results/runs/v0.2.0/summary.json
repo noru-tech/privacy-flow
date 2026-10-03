@@ -1,0 +1,506 @@
+{
+  "applications": [
+    {
+      "by_severity": {
+        "high": 5,
+        "info": 55,
+        "medium": 31,
+        "warning": 45
+      },
+      "commit": "c2f8235e1f3ea903ad8b7f61447c4f74164b5c58",
+      "document_sha256": "909616f9318acf16c78ee98d405ba8c972c957ea5dceb4304ad5dfa546e9660a",
+      "exit_code": 4,
+      "files": 146,
+      "findings": {
+        "PF001": 45,
+        "PF002": 5,
+        "PF003": 36,
+        "PF005": 2,
+        "PF006": 3,
+        "PFC01": 45
+      },
+      "flows": 109,
+      "gaps": 45,
+      "languages": [
+        {
+          "files": 2,
+          "language": "javascript",
+          "lines": 474
+        },
+        {
+          "files": 144,
+          "language": "typescript",
+          "lines": 19972
+        }
+      ],
+      "name": "vercel-chatbot",
+      "peak_rss_mib": 59,
+      "processors": [
+        "api.open-meteo.com",
+        "geocoding-api.open-meteo.com"
+      ],
+      "repository": "vercel/chatbot",
+      "scope": ".",
+      "sinks": 38,
+      "sources": 333,
+      "wall_seconds": 0.16
+    },
+    {
+      "by_severity": {
+        "info": 112,
+        "warning": 323
+      },
+      "commit": "ec0ff50388c264ed8ce46f00967e92f7e71476ae",
+      "document_sha256": "579308d9a883520340def1fffd9318267754d787f854232401926d09b3c8e548",
+      "exit_code": 4,
+      "files": 1087,
+      "findings": {
+        "PF001": 88,
+        "PF005": 4,
+        "PF006": 20,
+        "PFC01": 323
+      },
+      "flows": 137,
+      "gaps": 323,
+      "languages": [
+        {
+          "files": 18,
+          "language": "javascript",
+          "lines": 1424
+        },
+        {
+          "files": 1069,
+          "language": "typescript",
+          "lines": 105941
+        }
+      ],
+      "name": "umami",
+      "peak_rss_mib": 354,
+      "processors": [],
+      "repository": "umami-software/umami",
+      "scope": ".",
+      "sinks": 87,
+      "sources": 2765,
+      "wall_seconds": 1.59
+    },
+    {
+      "by_severity": {
+        "high": 3,
+        "info": 2,
+        "warning": 5
+      },
+      "commit": "298a8857c7128a0d121e7f699dfd729f23b3966d",
+      "document_sha256": "ac39fe5a409567cd07d2a0c0b52c2cfb01bf0edaebf04e8c04c28f828f9ad7c6",
+      "exit_code": 4,
+      "files": 129,
+      "findings": {
+        "PF002": 5,
+        "PFC01": 5
+      },
+      "flows": 9,
+      "gaps": 5,
+      "languages": [
+        {
+          "files": 6,
+          "language": "javascript",
+          "lines": 360
+        },
+        {
+          "files": 123,
+          "language": "typescript",
+          "lines": 7428
+        }
+      ],
+      "name": "taxonomy",
+      "peak_rss_mib": 31,
+      "processors": [
+        "Postmark",
+        "Stripe"
+      ],
+      "repository": "shadcn-ui/taxonomy",
+      "scope": ".",
+      "sinks": 11,
+      "sources": 285,
+      "wall_seconds": 0.1
+    },
+    {
+      "by_severity": {
+        "high": 9,
+        "info": 8,
+        "medium": 1,
+        "warning": 32
+      },
+      "commit": "88b221e274d87c148bcb4cdd3db12cbb1b6b997e",
+      "document_sha256": "4bb42e4bc7e49e5d70b13496d5757e3a13c041925b6bb297a24a18ae7299c77a",
+      "exit_code": 4,
+      "files": 145,
+      "findings": {
+        "PF001": 7,
+        "PF002": 9,
+        "PF003": 1,
+        "PF006": 1,
+        "PFC01": 32
+      },
+      "flows": 28,
+      "gaps": 32,
+      "languages": [
+        {
+          "files": 145,
+          "language": "typescript",
+          "lines": 10774
+        }
+      ],
+      "name": "open-saas",
+      "peak_rss_mib": 36,
+      "processors": [
+        "Amazon S3",
+        "OpenAI",
+        "Polar",
+        "Stripe"
+      ],
+      "repository": "wasp-lang/open-saas",
+      "scope": "template/app",
+      "sinks": 47,
+      "sources": 179,
+      "wall_seconds": 0.11
+    },
+    {
+      "by_severity": {
+        "high": 202,
+        "info": 469,
+        "medium": 3,
+        "warning": 602
+      },
+      "commit": "f869a2d1aa8f7d89b0e8b9240d933332f8ae516d",
+      "document_sha256": "469835910e6b8414ceeb6fe2443ad7abe41556b721be36e7d5011e3b0476afa2",
+      "exit_code": 4,
+      "files": 1319,
+      "findings": {
+        "PF001": 44,
+        "PF002": 589,
+        "PF005": 9,
+        "PF006": 35,
+        "PFC01": 599
+      },
+      "flows": 836,
+      "gaps": 599,
+      "languages": [
+        {
+          "files": 923,
+          "language": "javascript",
+          "lines": 115271
+        },
+        {
+          "files": 396,
+          "language": "typescript",
+          "lines": 44758
+        }
+      ],
+      "name": "ghost",
+      "peak_rss_mib": 672,
+      "processors": [
+        "Amazon S3",
+        "Mailgun",
+        "Sentry",
+        "Stripe"
+      ],
+      "repository": "TryGhost/Ghost",
+      "scope": "ghost/core",
+      "sinks": 220,
+      "sources": 3435,
+      "wall_seconds": 3.86
+    },
+    {
+      "by_severity": {
+        "info": 146,
+        "warning": 133
+      },
+      "commit": "63273f8e599e73f0fb38c0739314e8d46b6bc83d",
+      "document_sha256": "6afc1d8ca200728b251b9fe2d0ad734e880f10d78a6c419fa0577375ef568282",
+      "exit_code": 4,
+      "files": 193,
+      "findings": {
+        "PF001": 146,
+        "PFC01": 133
+      },
+      "flows": 193,
+      "gaps": 133,
+      "languages": [
+        {
+          "files": 3,
+          "language": "javascript",
+          "lines": 160
+        },
+        {
+          "files": 190,
+          "language": "typescript",
+          "lines": 27216
+        }
+      ],
+      "name": "hoppscotch",
+      "peak_rss_mib": 80,
+      "processors": [],
+      "repository": "hoppscotch/hoppscotch",
+      "scope": "packages/hoppscotch-backend",
+      "sinks": 87,
+      "sources": 814,
+      "wall_seconds": 0.3
+    },
+    {
+      "by_severity": {
+        "high": 2,
+        "info": 8,
+        "warning": 25
+      },
+      "commit": "69aac3a437890c66eab363a9e871927e9550e3b2",
+      "document_sha256": "866e396c963d1ed8a83e401e299aa28dbeec1fc1a737d0c5975d33cdf6b747fa",
+      "exit_code": 4,
+      "files": 234,
+      "findings": {
+        "PF001": 8,
+        "PF005": 2,
+        "PFC01": 25
+      },
+      "flows": 46,
+      "gaps": 25,
+      "languages": [
+        {
+          "files": 7,
+          "language": "javascript",
+          "lines": 163
+        },
+        {
+          "files": 227,
+          "language": "python",
+          "lines": 16947
+        }
+      ],
+      "name": "healthchecks",
+      "peak_rss_mib": 60,
+      "processors": [],
+      "repository": "healthchecks/healthchecks",
+      "scope": ".",
+      "sinks": 37,
+      "sources": 2057,
+      "wall_seconds": 0.32
+    },
+    {
+      "by_severity": {
+        "high": 25,
+        "info": 227,
+        "medium": 47,
+        "warning": 198
+      },
+      "commit": "28c836154b5b643e87bbc354957f2ce25dc4ebca",
+      "document_sha256": "2e65750992db037b1bf8d982ba584e5a821a4b2764de5f102421b13545547f79",
+      "exit_code": 4,
+      "files": 171,
+      "findings": {
+        "PF001": 211,
+        "PF002": 3,
+        "PF005": 28,
+        "PF006": 104,
+        "PFC01": 151
+      },
+      "flows": 365,
+      "gaps": 151,
+      "languages": [
+        {
+          "files": 2,
+          "language": "javascript",
+          "lines": 340
+        },
+        {
+          "files": 169,
+          "language": "python",
+          "lines": 27464
+        }
+      ],
+      "name": "redash",
+      "peak_rss_mib": 107,
+      "processors": [
+        "version.redash.io",
+        "www.googleapis.com"
+      ],
+      "repository": "getredash/redash",
+      "scope": ".",
+      "sinks": 357,
+      "sources": 863,
+      "wall_seconds": 0.54
+    },
+    {
+      "by_severity": {
+        "high": 4,
+        "info": 27,
+        "medium": 10,
+        "warning": 96
+      },
+      "commit": "ea0ae40cb0abab16e21562c509cce64632394815",
+      "document_sha256": "dc614c7310984514a640af6fc56e6fc7f55b55ba36c82aabfa6c4024c3731b52",
+      "exit_code": 4,
+      "files": 193,
+      "findings": {
+        "PF001": 31,
+        "PF002": 7,
+        "PF006": 14,
+        "PFC01": 85
+      },
+      "flows": 76,
+      "gaps": 85,
+      "languages": [
+        {
+          "files": 7,
+          "language": "javascript",
+          "lines": 100
+        },
+        {
+          "files": 186,
+          "language": "python",
+          "lines": 23388
+        }
+      ],
+      "name": "ctfd",
+      "peak_rss_mib": 60,
+      "processors": [
+        "Amazon S3",
+        "versioning.ctfd.io"
+      ],
+      "repository": "CTFd/CTFd",
+      "scope": ".",
+      "sinks": 81,
+      "sources": 625,
+      "wall_seconds": 0.4
+    },
+    {
+      "by_severity": {
+        "warning": 3
+      },
+      "commit": "cb740b656d7a0a6c5e12c7bf8e50343ec94ee9c7",
+      "document_sha256": "33660406a77432b510dc6bd0cd379f508cfd695b07bccb2f787fc8a9693fcc89",
+      "exit_code": 4,
+      "files": 25,
+      "findings": {
+        "PFC01": 3
+      },
+      "flows": 3,
+      "gaps": 3,
+      "languages": [
+        {
+          "files": 25,
+          "language": "python",
+          "lines": 1520
+        }
+      ],
+      "name": "fastapi-template",
+      "peak_rss_mib": 18,
+      "processors": [],
+      "repository": "fastapi/full-stack-fastapi-template",
+      "scope": "backend",
+      "sinks": 4,
+      "sources": 131,
+      "wall_seconds": 0.06
+    },
+    {
+      "by_severity": {
+        "high": 751,
+        "info": 4096,
+        "medium": 2863,
+        "warning": 1594
+      },
+      "commit": "15d3568132b4995e508648c538c59a98ce1d33ed",
+      "document_sha256": "e1f27f3d3611e7d4a15f15472b14e8c9f320d87a0afab317a557b9257f828ee7",
+      "exit_code": 4,
+      "files": 1234,
+      "findings": {
+        "PF001": 6588,
+        "PF002": 415,
+        "PF005": 434,
+        "PF006": 1023,
+        "PFC01": 844
+      },
+      "flows": 18398,
+      "gaps": 844,
+      "languages": [
+        {
+          "files": 3,
+          "language": "javascript",
+          "lines": 168
+        },
+        {
+          "files": 1159,
+          "language": "python",
+          "lines": 215532
+        },
+        {
+          "files": 72,
+          "language": "typescript",
+          "lines": 7047
+        }
+      ],
+      "name": "polar",
+      "peak_rss_mib": 1430,
+      "processors": [
+        "Expo",
+        "Sentry"
+      ],
+      "repository": "polarsource/polar",
+      "scope": "server",
+      "sinks": 1104,
+      "sources": 14250,
+      "wall_seconds": 15.02
+    },
+    {
+      "by_severity": {
+        "high": 42,
+        "info": 1236,
+        "medium": 50,
+        "warning": 215
+      },
+      "commit": "01ac43d72bc4c0b7565994197fe23476539059a7",
+      "document_sha256": "862c479f183612633ea14be58a081cfc759da4334c62600409806a4e70b74d96",
+      "exit_code": 4,
+      "files": 688,
+      "findings": {
+        "PF001": 1255,
+        "PF002": 4,
+        "PF005": 68,
+        "PF006": 1,
+        "PFC01": 215
+      },
+      "flows": 1368,
+      "gaps": 215,
+      "languages": [
+        {
+          "files": 688,
+          "language": "python",
+          "lines": 96645
+        }
+      ],
+      "name": "private-gpt",
+      "peak_rss_mib": 254,
+      "processors": [
+        "Amazon S3",
+        "api.search.brave.com"
+      ],
+      "repository": "zylon-ai/private-gpt",
+      "scope": ".",
+      "sinks": 780,
+      "sources": 2152,
+      "wall_seconds": 3.13
+    }
+  ],
+  "machine": {
+    "machine": "arm64",
+    "system": "Darwin"
+  },
+  "piiflow": {
+    "archive": "privacy-flow-aarch64-apple-darwin.tar.xz",
+    "archive_sha256": "5d82fc02c9e6ad4696db87c62e2c67c3302db9b72007b4c8c872518d9e0c245b",
+    "binary_sha256": "85acf55d35afc95c1b450c2bf37ecba806b245d3f436898f59ec9799531a4ba5",
+    "commit": "13c158de2e17307a0cb2bc98f19169bb9ad0ee93",
+    "release_commit": "3439f152d5d9457b3cc9dd5f4c6cfa24cd993f8a",
+    "run": "v0.2.0",
+    "source_dirty": false,
+    "version": "piiflow 0.2.0"
+  }
+}

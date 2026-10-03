@@ -546,3 +546,19 @@ kinds.
 14 % → 17 %, piiflow found or flagged 38 % → 40 %. Most of the wrapper sites are found through
 by later code (eight against R1's labels on main + #22, which takes 51 → 59 of 114); they will
 show in the next recorded run.
+
+## 2026-10-03 — v0.2.0 released; its benchmark run recorded
+
+`v0.2.0` was tagged at `3439f15` (#24, merged by auto-merge once CI passed). The release workflow
+built the four archives, published the Homebrew formula and the crate (trusted publishing), and
+Zenodo archives the GitHub release. Verified as a user would: `gh attestation verify` on the
+aarch64 macOS archive passes with the release workflow at the tag as signer (source commit
+`3439f15`), the archive's digest is an attested subject, the checksum matches, and the binary
+reports `piiflow 0.2.0`. The `.sha256` files end in a blank line, so `shasum -c` prints a
+formatting warning after its `OK`; 0.1.1's did not.
+
+The benchmark run for 0.2.0 is recorded beside the protocol run (`run.py --run v0.2.0`, with the
+released binary): byte-identical on repeat and to a local build of the tag. On the labelled
+sinks of the ten applications: found 55 % (45–64 %), 57 % counting gaps, 47 % by the original
+rule; 0.1.0 32 %, Privado 17 %. 21,568 flows across the twelve applications; precision needs a
+new sample of them, labelled. Ghost 4.0 s, Polar 15.2 s, PrivateGPT 3.1 s.

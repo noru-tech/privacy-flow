@@ -22,6 +22,18 @@ Measured on the ten applications both tools completed and both reviewers labelle
 
 Of 108 sampled places that really send personal data out: both tools found 10, only piiflow 25, only Privado 8, and neither 65.
 
+## piiflow 0.2.0, on the same places
+
+piiflow 0.2.0 was released after these labels were made. The places that really send personal data out were sampled without either tool, so they measure any version; it is scored on the same 108 places, run with the released binary (privacy-flow-aarch64-apple-darwin.tar.xz, verified by its attestation).
+
+| Finds the real flows | piiflow 0.1.0 | piiflow 0.2.0 | Privado |
+| --- | --- | --- | --- |
+| Ends there, or goes through the call there | **32 %** (24 %–42 %, 108 checked) | **55 %** (45 %–64 %, 108 checked) | **17 %** (11 %–25 %, 108 checked) |
+| ...or flags the place it could not see | **40 %** (31 %–49 %, 108 checked) | **57 %** (48 %–66 %, 108 checked) | does not flag |
+| Ends there only (the rule before 2026-10-03) | **31 %** (23 %–40 %, 108 checked) | **47 %** (38 %–57 %, 108 checked) | **14 %** (9 %–22 %, 108 checked) |
+
+**Not yet measured for 0.2.0: whether its flows are right.** The flows the reviewers checked were drawn from 0.1.0's reports; 0.2.0 reports 21,568 flows across the twelve applications, and a sample of them has to be labelled before its precision can be stated.
+
 ## How to read the numbers
 
 - **Right when it reports a flow.** Of the flows a tool reports, the share a reviewer confirms: the data can really get from where it is read to where it is sent, and it really is personal data. High means few false alarms.

@@ -208,4 +208,12 @@ on the same commits and scopes. Every judgement call is written down here before
   change was made after the labels were seen. Both counts are reported (`recall_at_sink` and the
   `*_at_sink` head-to-head fields): on the ten applications, `piiflow` 31 % → 32 %,
   Privado 14 % → 17 %; `piiflow` found or flagged 40 %.
+- **2026-10-03, later releases are recorded beside the protocol run.** §2 measures improvements
+  made after the labels are final as a separate run against the same applications. Each release
+  is run with its published binary, verified against its attestation, by `run.py --run vX.Y.Z`
+  (documents and summary under `runs/vX.Y.Z/`, the protocol run untouched) and scored by
+  `score.py --run vX.Y.Z` for recall only: the sampled sink sites do not depend on either tool,
+  while the flow and gap samples were drawn from the protocol run's reports and say nothing about
+  a later version's precision. A later release's precision needs a sample of its own flows,
+  labelled as in §5 to §7.
 
