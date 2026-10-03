@@ -1,0 +1,249 @@
+# Final labels for open-saas, from R1 and R2 by benchmark/labelling/finalise.py: 48 items both
+# answered the same way, 6 they did not (unsure, not settled by discussion). See PROTOCOL.md.
+items:
+  F1c2773cd5b:
+    category_ok: 'yes'
+    citation: src/file-upload/fileUploading.ts:20
+    verdict: tp
+  F36dab93c64:
+    category_ok: null
+    citation: src/analytics/providers/googleAnalyticsUtils.ts:120
+    verdict: fp_not_personal
+  F38edefaf95:
+    category_ok: 'yes'
+    citation: src/payment/lemonSqueezy/webhook.ts:240
+    verdict: tp
+  F774ae82f13:
+    category_ok: 'yes'
+    citation: src/payment/stripe/checkoutUtils.ts:37
+    verdict: tp
+  F8626d9ebcb:
+    category_ok: null
+    citation: src/analytics/providers/googleAnalyticsUtils.ts:118
+    verdict: fp_not_personal
+  Fa124dd6e4b:
+    category_ok: null
+    citation: src/analytics/providers/plausibleAnalyticsUtils.ts:95
+    verdict: fp_not_personal
+  Fa5f4a1f4ad:
+    category_ok: 'yes'
+    citation: src/payment/lemonSqueezy/webhook.ts:219
+    verdict: tp
+  Fbd302cd807:
+    category_ok: 'yes'
+    citation: src/payment/lemonSqueezy/webhook.ts:137
+    verdict: tp
+  Fc45b0dc3c1:
+    category_ok: null
+    citation: src/analytics/providers/plausibleAnalyticsUtils.ts:48
+    verdict: fp_not_personal
+  Fcf20899655:
+    category_ok: 'yes'
+    citation: src/payment/lemonSqueezy/webhook.ts:167
+    verdict: tp
+  Fddeb166dd4:
+    category_ok: 'yes'
+    citation: src/payment/lemonSqueezy/webhook.ts:137
+    verdict: tp
+  Fe2649b8f66:
+    category_ok: null
+    citation: src/payment/stripe/checkoutUtils.ts:51
+    verdict: fp_not_personal
+  Fe2d2f5614e:
+    note: R1 and R2 disagree; not settled by discussion
+    verdict: unsure
+  Fe8af4ecd10:
+    category_ok: 'yes'
+    citation: src/payment/lemonSqueezy/webhook.ts:197
+    verdict: tp
+  G12fe5b11ab:
+    citation: null
+    hides_flow: 'no'
+  G1c4e063d3c:
+    citation: null
+    hides_flow: 'no'
+  G25c1db458f:
+    citation: src/demo-ai-app/DemoAppPage.tsx:305
+    hides_flow: 'yes'
+  G57bb115c39:
+    citation: src/file-upload/FileUploadPage.tsx:107
+    hides_flow: 'yes'
+  Ga6005f8ee3:
+    citation: null
+    hides_flow: 'no'
+  Gafca9d444b:
+    citation: null
+    hides_flow: 'no'
+  Gc41e5ec101:
+    citation: null
+    hides_flow: 'no'
+  Gd64bb5c3f9:
+    citation: src/payment/stripe/webhook.ts:172
+    hides_flow: 'yes'
+  Gf16f82cd99:
+    citation: src/admin/dashboards/users/UsersTable.tsx:35
+    hides_flow: 'yes'
+  Gfadc9cfde8:
+    citation: src/payment/stripe/checkoutUtils.ts:37
+    hides_flow: 'yes'
+  S128fb02b54:
+    is_sink: unsure
+    note: R1 and R2 disagree; not settled by discussion
+    personal: unsure
+  S131fd8759a:
+    categories: []
+    is_sink: 'yes'
+    personal: 'no'
+    source: null
+  S24bf77b6bd:
+    categories: []
+    is_sink: 'yes'
+    personal: 'no'
+    source: null
+  S2939c8dba2:
+    categories: []
+    is_sink: 'yes'
+    personal: 'no'
+    source: null
+  S2adc3bf590:
+    categories:
+    - user.unique_id
+    is_sink: 'yes'
+    personal: 'yes'
+    source: src/payment/polar/paymentProcessor.ts:60
+  S2c856a9063:
+    categories: []
+    is_sink: 'yes'
+    personal: 'no'
+    source: null
+  S3652a0de30:
+    categories:
+    - user.unique_id
+    is_sink: 'yes'
+    personal: 'yes'
+    source: src/payment/lemonSqueezy/webhook.ts:145
+  S4626f60736:
+    categories: []
+    is_sink: 'yes'
+    personal: 'no'
+    source: null
+  S52161d67dd:
+    is_sink: unsure
+    note: R1 and R2 disagree; not settled by discussion
+    personal: unsure
+  S5e0bce726f:
+    categories: []
+    is_sink: 'yes'
+    personal: 'no'
+    source: null
+  S6eb473dd59:
+    categories:
+    - user.unique_id
+    is_sink: 'yes'
+    personal: 'yes'
+    source: src/payment/lemonSqueezy/webhook.ts:206
+  S75bde1aeaf:
+    categories:
+    - user
+    is_sink: 'yes'
+    personal: 'yes'
+    source: src/payment/stripe/webhook.ts:88
+  S764226a7e5:
+    categories: []
+    is_sink: 'yes'
+    personal: 'no'
+    source: null
+  S7f0ea018e2:
+    categories:
+    - user
+    is_sink: 'yes'
+    personal: 'yes'
+    source: src/payment/polar/webhook.ts:71
+  S8594e14251:
+    categories:
+    - user.unique_id
+    is_sink: 'yes'
+    personal: 'yes'
+    source: src/payment/stripe/checkoutUtils.ts:34
+  S99890a4053:
+    categories:
+    - user
+    is_sink: 'yes'
+    personal: 'yes'
+    source: src/file-upload/FileUploadPage.tsx:105
+  Sa6b591d946:
+    categories: []
+    is_sink: 'yes'
+    personal: 'no'
+    source: null
+  Sa88e16f1f6:
+    categories: []
+    is_sink: 'yes'
+    personal: 'no'
+    source: null
+  Sb302b41f06:
+    categories:
+    - user.unique_id
+    is_sink: 'yes'
+    personal: 'yes'
+    source: src/payment/lemonSqueezy/webhook.ts:27
+  Sbc32597c49:
+    categories:
+    - user
+    is_sink: 'yes'
+    personal: 'yes'
+    source: src/file-upload/s3Utils.ts:65
+  Sbf40735114:
+    categories:
+    - user.contact.email
+    is_sink: 'yes'
+    personal: 'yes'
+    source: src/payment/stripe/webhook.ts:173
+  Sc431211cab:
+    categories:
+    - user.unique_id
+    is_sink: 'yes'
+    personal: 'yes'
+    source: src/payment/user.ts:18
+  Sc5a7f793c0:
+    is_sink: unsure
+    note: R1 and R2 disagree; not settled by discussion
+    personal: unsure
+  Scb27821285:
+    categories:
+    - user.contact.email
+    - user.unique_id
+    is_sink: 'yes'
+    personal: 'yes'
+    source: src/payment/polar/checkoutUtils.ts:23
+  Scb6d48056d:
+    is_sink: unsure
+    note: R1 and R2 disagree; not settled by discussion
+    personal: unsure
+  Sea1400e641:
+    categories:
+    - user.contact.email
+    is_sink: 'yes'
+    personal: 'yes'
+    source: src/payment/stripe/checkoutUtils.ts:19
+  Seb64f136a8:
+    categories:
+    - user
+    is_sink: 'yes'
+    personal: 'yes'
+    source: src/file-upload/s3Utils.ts:73
+  See00e7004f:
+    categories:
+    - user
+    is_sink: 'yes'
+    personal: 'yes'
+    source: src/demo-ai-app/operations.ts:245
+  Seed2ae69e5:
+    categories: []
+    is_sink: 'yes'
+    personal: 'no'
+    source: null
+  Sf05047325e:
+    is_sink: unsure
+    note: R1 and R2 disagree; not settled by discussion
+    personal: unsure

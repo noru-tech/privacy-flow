@@ -1,0 +1,311 @@
+# Final labels for vercel-chatbot, from R1 and R2 by benchmark/labelling/finalise.py: 64 items both
+# answered the same way, 5 they did not (unsure, not settled by discussion). See PROTOCOL.md.
+items:
+  F00765a09a4:
+    category_ok: 'yes'
+    citation: artifacts/sheet/server.ts:11
+    verdict: tp
+  F0788ee468e:
+    category_ok: null
+    citation: hooks/use-artifact.ts:7
+    verdict: fp_not_personal
+  F15855b29ad:
+    category_ok: 'no'
+    citation: components/ai-elements/code-block.tsx:231
+    verdict: fp_path
+  F1b1c52374d:
+    category_ok: 'yes'
+    citation: app/(chat)/api/chat/route.ts:269
+    verdict: tp
+  F39855b94c4:
+    note: R1 and R2 disagree; not settled by discussion
+    verdict: unsure
+  F3a61cbe3ff:
+    category_ok: 'yes'
+    citation: artifacts/code/server.ts:40
+    verdict: tp
+  F4a9efc9328:
+    category_ok: 'yes'
+    citation: artifacts/code/server.ts:18
+    verdict: tp
+  F4f063c55ff:
+    category_ok: null
+    citation: lib/ai/tools/get-weather.ts:46
+    verdict: fp_not_personal
+  F52debfc765:
+    category_ok: 'no'
+    citation: app/(chat)/api/chat/route.ts:269
+    verdict: tp
+  F53c41f1855:
+    category_ok: 'yes'
+    citation: artifacts/text/server.ts:35
+    verdict: tp
+  F5ea581f181:
+    category_ok: null
+    citation: lib/ai/tools/get-weather.ts:24
+    verdict: fp_not_personal
+  F5ec7d659f0:
+    category_ok: 'yes'
+    citation: app/(chat)/api/chat/route.ts:269
+    verdict: tp
+  F5fed2924bb:
+    category_ok: 'yes'
+    citation: artifacts/text/server.ts:11
+    verdict: tp
+  F636b5f9e4c:
+    category_ok: 'yes'
+    citation: app/(chat)/actions.ts:28
+    verdict: tp
+  F6869f2dbd4:
+    category_ok: 'yes'
+    citation: lib/ai/tools/get-weather.ts:58
+    verdict: tp
+  F68972357b7:
+    category_ok: 'yes'
+    citation: app/(chat)/api/chat/route.ts:427
+    verdict: fp_path
+  F68b7802299:
+    category_ok: 'yes'
+    citation: components/chat/artifact.tsx:175
+    verdict: tp
+  F767a102305:
+    category_ok: 'yes'
+    citation: app/(chat)/api/chat/route.ts:442
+    verdict: tp
+  F7c3493297d:
+    category_ok: null
+    citation: hooks/use-artifact.ts:7
+    verdict: fp_not_personal
+  F8094cf0a4a:
+    category_ok: 'yes'
+    citation: lib/ai/tools/get-weather.ts:8
+    verdict: tp
+  F8f021047e2:
+    category_ok: 'no'
+    citation: app/(chat)/api/chat/route.ts:269
+    verdict: tp
+  F8f6b468121:
+    category_ok: 'yes'
+    citation: artifacts/sheet/server.ts:33
+    verdict: tp
+  F92d5b85a2a:
+    category_ok: null
+    citation: app/(chat)/api/chat/route.ts:97
+    verdict: fp_not_personal
+  F9b65c7e090:
+    category_ok: 'yes'
+    citation: lib/ai/tools/get-weather.ts:58
+    verdict: tp
+  Fd17001ddc1:
+    category_ok: 'yes'
+    citation: app/(chat)/api/chat/route.ts:132
+    verdict: fp_path
+  Fe2c509e798:
+    category_ok: null
+    citation: lib/ai/tools/get-weather.ts:46
+    verdict: fp_not_personal
+  Fec448cf880:
+    category_ok: null
+    citation: lib/ai/tools/get-weather.ts:25
+    verdict: fp_not_personal
+  Fefd17f31ee:
+    note: R1 and R2 disagree; not settled by discussion
+    verdict: unsure
+  Ff900708f83:
+    category_ok: 'yes'
+    citation: app/(chat)/api/history/route.ts:29
+    verdict: fp_path
+  G5874ee5d06:
+    citation: null
+    hides_flow: 'no'
+  G75d6e81419:
+    citation: null
+    hides_flow: 'no'
+  G7c88d70628:
+    citation: null
+    hides_flow: 'no'
+  G85b4e86ba7:
+    citation: null
+    hides_flow: 'no'
+  Ga842ef5499:
+    citation: null
+    hides_flow: 'no'
+  Gaf9f2ffb93:
+    citation: null
+    hides_flow: 'no'
+  Gb19bbf6ff0:
+    citation: null
+    hides_flow: 'no'
+  Gb4655cb961:
+    citation: app/(auth)/actions.ts:28
+    hides_flow: 'yes'
+  Gf5c9ef0aae:
+    citation: null
+    hides_flow: 'no'
+  Gfb373c6eff:
+    citation: null
+    hides_flow: 'no'
+  S02becd21ff:
+    categories: []
+    is_sink: 'yes'
+    personal: 'no'
+    source: null
+  S03775b871e:
+    categories:
+    - user
+    is_sink: 'yes'
+    personal: 'yes'
+    source: app/(chat)/api/chat/route.ts:74
+  S122c716e98:
+    categories: []
+    is_sink: 'no'
+    personal: null
+    source: null
+  S1355612411:
+    categories:
+    - user
+    is_sink: 'yes'
+    personal: 'yes'
+    source: lib/utils.ts:29
+  S2484834470:
+    categories: []
+    is_sink: 'yes'
+    personal: 'no'
+    source: null
+  S395bc84909:
+    categories: []
+    is_sink: 'yes'
+    personal: 'no'
+    source: null
+  S41f177cad9:
+    categories:
+    - user.unique_id
+    is_sink: 'yes'
+    personal: 'yes'
+    source: app/(chat)/api/chat/route.ts:427
+  S45eb24bf7c:
+    categories: []
+    is_sink: 'no'
+    personal: null
+    source: null
+  S4826326742:
+    categories: []
+    is_sink: 'no'
+    personal: null
+    source: null
+  S5553e20dbb:
+    is_sink: unsure
+    note: R1 and R2 disagree; not settled by discussion
+    personal: unsure
+  S5a73e272e5:
+    categories: []
+    is_sink: 'no'
+    personal: null
+    source: null
+  S5e826ec487:
+    categories:
+    - user.credentials
+    is_sink: 'yes'
+    personal: 'yes'
+    source: app/(auth)/auth.ts:44
+  S6d8455c028:
+    categories:
+    - user
+    is_sink: 'yes'
+    personal: 'yes'
+    source: lib/ai/tools/get-weather.ts:40
+  S6f98d5b9c2:
+    categories:
+    - user
+    is_sink: 'yes'
+    personal: 'yes'
+    source: artifacts/text/server.ts:32
+  S80f53245fd:
+    categories:
+    - user
+    is_sink: 'yes'
+    personal: 'yes'
+    source: artifacts/sheet/server.ts:30
+  S830416df2d:
+    categories:
+    - user.credentials
+    is_sink: 'yes'
+    personal: 'yes'
+    source: app/(auth)/auth.ts:44
+  Sa18b0e8908:
+    is_sink: unsure
+    note: R1 and R2 disagree; not settled by discussion
+    personal: unsure
+  Saa10cdcf7b:
+    categories: []
+    is_sink: 'no'
+    personal: null
+    source: null
+  Sb57cff36e4:
+    categories:
+    - user.credentials
+    is_sink: 'yes'
+    personal: 'yes'
+    source: app/(auth)/auth.ts:44
+  Sc1fb910ae7:
+    categories:
+    - user
+    is_sink: 'yes'
+    personal: 'yes'
+    source: components/chat/multimodal-input.tsx:272
+  Scbb2b5da75:
+    categories:
+    - user
+    is_sink: 'yes'
+    personal: 'yes'
+    source: artifacts/text/server.ts:8
+  Sd24af33e6e:
+    categories:
+    - user
+    is_sink: 'yes'
+    personal: 'yes'
+    source: app/(chat)/actions.ts:24
+  Sd4ac2c6686:
+    categories:
+    - user.unique_id
+    is_sink: 'yes'
+    personal: 'yes'
+    source: components/chat/multimodal-input.tsx:196
+  Sd9aaa027da:
+    categories:
+    - user
+    is_sink: 'yes'
+    personal: 'yes'
+    source: app/(chat)/api/chat/route.ts:74
+  Se1924b6812:
+    categories:
+    - user.unique_id
+    is_sink: 'yes'
+    personal: 'yes'
+    source: lib/utils.ts:16
+  Se65a514844:
+    categories:
+    - user.unique_id
+    is_sink: 'yes'
+    personal: 'yes'
+    source: components/chat/message-actions.tsx:51
+  Seae5f5b5e4:
+    categories: []
+    is_sink: 'yes'
+    personal: 'no'
+    source: null
+  Sf2e58b2e63:
+    is_sink: unsure
+    note: R1 and R2 disagree; not settled by discussion
+    personal: unsure
+  Sf4f9ce0bf7:
+    categories:
+    - user
+    is_sink: 'yes'
+    personal: 'yes'
+    source: components/chat/artifact.tsx:179
+  Sf63835ba0e:
+    categories: []
+    is_sink: 'yes'
+    personal: 'no'
+    source: null

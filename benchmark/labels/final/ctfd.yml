@@ -1,0 +1,330 @@
+# Final labels for ctfd, from R1 and R2 by benchmark/labelling/finalise.py: 69 items both
+# answered the same way, 6 they did not (unsure, not settled by discussion). See PROTOCOL.md.
+items:
+  F0032111aae:
+    category_ok: 'no'
+    citation: CTFd/auth.py:104
+    verdict: fp_path
+  F01f818e44b:
+    category_ok: 'yes'
+    citation: CTFd/utils/logging/__init__.py:19
+    verdict: tp
+  F06faa956f6:
+    category_ok: null
+    citation: CTFd/utils/updates/__init__.py:49
+    verdict: fp_not_personal
+  F0b4a536038:
+    category_ok: null
+    citation: CTFd/utils/config/__init__.py:12
+    verdict: fp_not_personal
+  F0bda6b13f1:
+    category_ok: 'yes'
+    citation: CTFd/utils/logging/__init__.py:19
+    verdict: tp
+  F0c72c0af57:
+    category_ok: 'yes'
+    citation: CTFd/utils/logging/__init__.py:19
+    verdict: tp
+  F1d65cfbc89:
+    note: R1 and R2 disagree; not settled by discussion
+    verdict: unsure
+  F28096e54b5:
+    note: R1 and R2 disagree; not settled by discussion
+    verdict: unsure
+  F39be92769f:
+    category_ok: null
+    citation: CTFd/auth.py:579
+    verdict: fp_not_personal
+  F485c2b45b8:
+    category_ok: 'yes'
+    citation: CTFd/utils/logging/__init__.py:19
+    verdict: tp
+  F53e74a8b69:
+    category_ok: 'yes'
+    citation: CTFd/utils/logging/__init__.py:19
+    verdict: tp
+  F577ddc3ef6:
+    category_ok: 'yes'
+    citation: CTFd/auth.py:179
+    verdict: fp_path
+  F5b0334ebb4:
+    category_ok: 'yes'
+    citation: CTFd/auth.py:573
+    verdict: tp
+  F63fab98302:
+    category_ok: null
+    citation: CTFd/auth.py:579
+    verdict: fp_not_personal
+  F6c8632dd8d:
+    note: R1 and R2 disagree; not settled by discussion
+    verdict: unsure
+  F7346fc45ad:
+    category_ok: 'yes'
+    citation: CTFd/utils/logging/__init__.py:19
+    verdict: tp
+  F770a46096a:
+    category_ok: 'yes'
+    citation: CTFd/utils/logging/__init__.py:19
+    verdict: tp
+  F78fcf563b7:
+    category_ok: 'yes'
+    citation: CTFd/utils/updates/__init__.py:52
+    verdict: fp_path
+  F7baa37368c:
+    category_ok: 'yes'
+    citation: CTFd/api/v1/challenges.py:886
+    verdict: fp_path
+  F7ca754c02f:
+    category_ok: 'no'
+    citation: CTFd/auth.py:179
+    verdict: fp_path
+  F88276d5e71:
+    note: R1 and R2 disagree; not settled by discussion
+    verdict: unsure
+  F886fee9d53:
+    category_ok: 'yes'
+    citation: CTFd/utils/logging/__init__.py:19
+    verdict: tp
+  F8d35e51469:
+    category_ok: 'yes'
+    citation: CTFd/utils/logging/__init__.py:19
+    verdict: tp
+  F95c14a86d9:
+    category_ok: 'yes'
+    citation: CTFd/utils/logging/__init__.py:19
+    verdict: tp
+  F9a3a75514c:
+    category_ok: 'yes'
+    citation: CTFd/auth.py:500
+    verdict: fp_path
+  F9c323cc019:
+    category_ok: 'yes'
+    citation: CTFd/utils/logging/__init__.py:19
+    verdict: tp
+  Fa292c9d451:
+    category_ok: 'yes'
+    citation: CTFd/api/v1/challenges.py:860
+    verdict: fp_path
+  Fb10ce1a94d:
+    category_ok: 'yes'
+    citation: CTFd/utils/updates/__init__.py:52
+    verdict: fp_path
+  Fb2b8574bc2:
+    note: R1 and R2 disagree; not settled by discussion
+    verdict: unsure
+  Fba5e838dff:
+    category_ok: 'yes'
+    citation: CTFd/utils/updates/__init__.py:52
+    verdict: fp_path
+  Fbba516b125:
+    category_ok: 'no'
+    citation: CTFd/utils/email/providers/mailgun.py:26
+    verdict: tp
+  Fce902e2dda:
+    category_ok: 'yes'
+    citation: CTFd/utils/logging/__init__.py:19
+    verdict: tp
+  Fd380aa2b5d:
+    category_ok: 'yes'
+    citation: CTFd/utils/logging/__init__.py:19
+    verdict: tp
+  Ff47b580425:
+    category_ok: 'yes'
+    citation: CTFd/utils/updates/__init__.py:53
+    verdict: fp_path
+  Ff52bb2ffdf:
+    category_ok: 'yes'
+    citation: CTFd/utils/updates/__init__.py:50
+    verdict: fp_path
+  G0687171104:
+    citation: CTFd/utils/uploads/uploaders.py:228
+    hides_flow: 'yes'
+  G2759212b6a:
+    citation: null
+    hides_flow: 'no'
+  G9aecfc4d2b:
+    citation: null
+    hides_flow: 'no'
+  G9fc19ffc4f:
+    citation: null
+    hides_flow: 'no'
+  Ga04e2681e8:
+    citation: null
+    hides_flow: 'no'
+  Ga0671d3712:
+    citation: CTFd/utils/email/providers/smtp.py:63
+    hides_flow: 'yes'
+  Gb8345982a1:
+    hides_flow: unsure
+    note: R1 and R2 disagree; not settled by discussion
+  Gbc8cb3fa19:
+    citation: CTFd/utils/uploads/uploaders.py:271
+    hides_flow: 'yes'
+  Gded8ee57b6:
+    citation: null
+    hides_flow: 'no'
+  Gf2386e0f55:
+    citation: null
+    hides_flow: 'no'
+  S08e30d71b7:
+    categories:
+    - user
+    is_sink: 'yes'
+    personal: 'yes'
+    source: CTFd/utils/uploads/uploaders.py:164
+  S156ae605eb:
+    categories: []
+    is_sink: 'no'
+    personal: null
+    source: null
+  S1582fcb80e:
+    categories: []
+    is_sink: 'no'
+    personal: null
+    source: null
+  S19bdafa5e7:
+    categories: []
+    is_sink: 'no'
+    personal: null
+    source: null
+  S1cda8db2e0:
+    categories:
+    - user.contact.email
+    - user
+    is_sink: 'yes'
+    personal: 'yes'
+    source: CTFd/utils/email/mailgun.py:4
+  S29f457776e:
+    categories: []
+    is_sink: 'no'
+    personal: null
+    source: null
+  S376666ca12:
+    categories: []
+    is_sink: 'yes'
+    personal: 'no'
+    source: null
+  S3b4b67fd71:
+    categories: []
+    is_sink: 'no'
+    personal: null
+    source: null
+  S3f3407c179:
+    categories: []
+    is_sink: 'yes'
+    personal: 'no'
+    source: null
+  S45f176ceb0:
+    categories: []
+    is_sink: 'yes'
+    personal: 'no'
+    source: null
+  S5b27053627:
+    categories:
+    - user.contact.email
+    - user
+    is_sink: 'yes'
+    personal: 'yes'
+    source: CTFd/api/v1/users.py:535
+  S5b7b11e5f4:
+    categories: []
+    is_sink: 'yes'
+    personal: 'no'
+    source: null
+  S5fc0046c24:
+    categories:
+    - user.contact.email
+    - user
+    is_sink: 'yes'
+    personal: 'yes'
+    source: CTFd/utils/email/__init__.py:124
+  S6ada957bd2:
+    categories: []
+    is_sink: 'yes'
+    personal: 'no'
+    source: null
+  S6dfe3a77e0:
+    categories: []
+    is_sink: 'no'
+    personal: null
+    source: null
+  S7f841c30e7:
+    categories: []
+    is_sink: 'yes'
+    personal: 'no'
+    source: null
+  S80e7f9392d:
+    categories: []
+    is_sink: 'yes'
+    personal: 'no'
+    source: null
+  S8a61755d46:
+    categories: []
+    is_sink: 'no'
+    personal: null
+    source: null
+  S9141c489a0:
+    categories:
+    - user.contact.email
+    - user
+    is_sink: 'yes'
+    personal: 'yes'
+    source: CTFd/utils/email/smtp.py:4
+  S9805b3ab5d:
+    categories: []
+    is_sink: 'no'
+    personal: null
+    source: null
+  Sb29b7dcad8:
+    categories: []
+    is_sink: 'no'
+    personal: null
+    source: null
+  Sb58bfd2214:
+    categories:
+    - user.contact.email
+    - user.authorization.credentials
+    - user
+    is_sink: 'yes'
+    personal: 'yes'
+    source: CTFd/utils/email/providers/mailgun.py:24
+  Sbfb40f4ca7:
+    categories: []
+    is_sink: 'no'
+    personal: null
+    source: null
+  Sc39cf93546:
+    categories: []
+    is_sink: 'yes'
+    personal: 'no'
+    source: null
+  Sc899190a30:
+    categories: []
+    is_sink: 'no'
+    personal: null
+    source: null
+  Se6bdb421a8:
+    categories: []
+    is_sink: 'yes'
+    personal: 'no'
+    source: null
+  Sf60ac558d4:
+    categories: []
+    is_sink: 'no'
+    personal: null
+    source: null
+  Sf798219b7b:
+    categories: []
+    is_sink: 'yes'
+    personal: 'no'
+    source: null
+  Sfaf944f7b7:
+    categories: []
+    is_sink: 'yes'
+    personal: 'no'
+    source: null
+  Sfc77176e98:
+    categories: []
+    is_sink: 'yes'
+    personal: 'no'
+    source: null

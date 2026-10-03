@@ -1,0 +1,243 @@
+# Final labels for hoppscotch, from R1 and R2 by benchmark/labelling/finalise.py: 48 items both
+# answered the same way, 5 they did not (unsure, not settled by discussion). See PROTOCOL.md.
+items:
+  F0d499450eb:
+    category_ok: 'no'
+    citation: src/pubsub/pubsub.service.ts:21
+    verdict: fp_path
+  F20648bd815:
+    category_ok: 'yes'
+    citation: src/pubsub/pubsub.service.ts:25
+    verdict: fp_path
+  F46269e31a8:
+    category_ok: 'no'
+    citation: src/mock-server/mock-request.guard.ts:98
+    verdict: fp_path
+  F6fccbc33a3:
+    category_ok: null
+    citation: src/infra-config/helper.ts:541
+    verdict: fp_not_personal
+  F70f333fe5e:
+    category_ok: 'yes'
+    citation: src/pubsub/pubsub.service.ts:25
+    verdict: fp_path
+  F8ca0de2f6c:
+    category_ok: null
+    citation: src/infra-config/infra-config.service.ts:755
+    verdict: fp_not_personal
+  F8ddadeb8af:
+    category_ok: null
+    citation: src/infra-config/infra-config.service.ts:755
+    verdict: fp_not_personal
+  Fbc7090612c:
+    category_ok: 'no'
+    citation: src/mock-server/mock-request.guard.ts:67
+    verdict: fp_path
+  Fc1b74f7a7c:
+    note: R1 and R2 disagree; not settled by discussion
+    verdict: unsure
+  Fc37707437b:
+    category_ok: null
+    citation: src/infra-config/infra-config.service.ts:755
+    verdict: fp_not_personal
+  Fe6deaf6099:
+    category_ok: null
+    citation: src/infra-config/helper.ts:521
+    verdict: fp_not_personal
+  Fe80cc5f0cc:
+    category_ok: null
+    citation: src/infra-config/infra-config.service.ts:755
+    verdict: fp_not_personal
+  Fe869f326f2:
+    category_ok: 'yes'
+    citation: src/mailer/mailer.service.ts:77
+    verdict: tp
+  G0b4b6c4f4b:
+    citation: null
+    hides_flow: 'no'
+  G3149d68a92:
+    citation: null
+    hides_flow: 'no'
+  G42629e4c15:
+    citation: null
+    hides_flow: 'no'
+  G5fef956159:
+    citation: null
+    hides_flow: 'no'
+  G8f2328f2e7:
+    hides_flow: unsure
+    note: R1 and R2 disagree; not settled by discussion
+  G9de8868a20:
+    citation: null
+    hides_flow: 'no'
+  Gb15f302f90:
+    citation: null
+    hides_flow: 'no'
+  Gd83a2b20a6:
+    citation: null
+    hides_flow: 'no'
+  Gde6b09dcfc:
+    hides_flow: unsure
+    note: R1 and R2 disagree; not settled by discussion
+  Gf1fb165a20:
+    citation: null
+    hides_flow: 'no'
+  S067ea980e1:
+    categories: []
+    is_sink: 'yes'
+    personal: 'no'
+    source: null
+  S08194f63b9:
+    categories: []
+    is_sink: 'yes'
+    personal: 'no'
+    source: null
+  S0c4944db40:
+    categories: []
+    is_sink: 'no'
+    personal: null
+    source: null
+  S145f84629d:
+    categories: []
+    is_sink: 'no'
+    personal: null
+    source: null
+  S1a487bbc91:
+    categories: []
+    is_sink: 'no'
+    personal: null
+    source: null
+  S264706e286:
+    categories: []
+    is_sink: 'yes'
+    personal: 'no'
+    source: null
+  S29e5756155:
+    categories: []
+    is_sink: 'no'
+    personal: null
+    source: null
+  S322dec9839:
+    categories: []
+    is_sink: 'no'
+    personal: null
+    source: null
+  S34725d765d:
+    is_sink: unsure
+    note: R1 and R2 disagree; not settled by discussion
+    personal: unsure
+  S3fd58d4890:
+    categories:
+    - user.unique_id
+    - user.behavior
+    is_sink: 'yes'
+    personal: 'yes'
+    source: src/posthog/posthog.service.ts:41
+  S5172bf5dcf:
+    categories:
+    - user
+    is_sink: 'yes'
+    personal: 'yes'
+    source: src/team-collection/team-collection.service.ts:486
+  S558aac4871:
+    categories:
+    - user.contact.email
+    is_sink: 'yes'
+    personal: 'yes'
+    source: src/mailer/mailer.service.ts:52
+  S629bf4a395:
+    is_sink: unsure
+    note: R1 and R2 disagree; not settled by discussion
+    personal: unsure
+  S66207426c3:
+    categories: []
+    is_sink: 'no'
+    personal: null
+    source: null
+  S6e26d6ba13:
+    categories:
+    - user.unique_id
+    is_sink: 'yes'
+    personal: 'yes'
+    source: src/user-collection/user-collection.service.ts:659
+  S7fec279bc8:
+    categories: []
+    is_sink: 'no'
+    personal: null
+    source: null
+  S894e55a2f6:
+    categories: []
+    is_sink: 'no'
+    personal: null
+    source: null
+  S91203934cf:
+    categories: []
+    is_sink: 'yes'
+    personal: 'no'
+    source: null
+  S9880d6773e:
+    categories:
+    - user
+    is_sink: 'yes'
+    personal: 'yes'
+    source: src/mock-server/mock-server.service.ts:1120
+  Sae2958da86:
+    categories: []
+    is_sink: 'no'
+    personal: null
+    source: null
+  Sc13e41db91:
+    categories: []
+    is_sink: 'no'
+    personal: null
+    source: null
+  Sc24e6cde8f:
+    categories: []
+    is_sink: 'no'
+    personal: null
+    source: null
+  Sd40730df7e:
+    categories: []
+    is_sink: 'no'
+    personal: null
+    source: null
+  Sdb4361ae1d:
+    categories: []
+    is_sink: 'no'
+    personal: null
+    source: null
+  Se4665689dc:
+    categories: []
+    is_sink: 'no'
+    personal: null
+    source: null
+  Se8d5606258:
+    categories: []
+    is_sink: 'yes'
+    personal: 'no'
+    source: null
+  Se965f7e256:
+    categories:
+    - user.contact.email
+    - user.name
+    - user.authorization.credentials
+    is_sink: 'yes'
+    personal: 'yes'
+    source: src/mailer/mailer.service.ts:46
+  Sf4b52b22e7:
+    categories:
+    - user.unique_id
+    - user
+    is_sink: 'yes'
+    personal: 'yes'
+    source: src/mock-server/mock-server.service.ts:445
+  Sf58d00a5e7:
+    categories: []
+    is_sink: 'no'
+    personal: null
+    source: null
+  Sf954fad804:
+    categories: []
+    is_sink: 'no'
+    personal: null
+    source: null

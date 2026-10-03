@@ -437,3 +437,18 @@ breakdown type, `billing_address.state`; dropped: `order.tax_breakdown[0]["state
 query parameter is now reported as request input instead of being narrowed into an address.
 
 **Next.** Propose the table change in noru-grc-engineering.
+
+## 2026-10-03 — M6: labelled results published
+
+**Done.** Final labels from R1 and R2 for the ten applications both labelled in full
+(`benchmark/labelling/finalise.py`): agreed items final, the 47 disagreements `unsure`, left out
+and counted; Polar and PrivateGPT unscored. `score.py` counts unsure sites and skips unlabelled
+applications. Deviation recorded; PROVENANCE.md records the owner's decision to publish.
+
+**Results** (piiflow 0.1.0, ten applications, head to head with Privado): flows reported that
+are real 72 % (65–79 %) against 22 % (2–41 %); sampled personal-data sinks found 31 % (23–40 %)
+against 14 % (9–22 %), 38 % counting coverage gaps; gaps that hide a real flow 29 %. κ before
+finalising 0.875 (flows), 0.875 (gaps), 0.897 (sites).
+
+**Next.** Zenodo deposit of the labelled corpus (needs Noru's account); a recorded run of the
+next release against the same site labels for recall, with a fresh precision sample.

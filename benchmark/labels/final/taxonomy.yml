@@ -1,0 +1,88 @@
+# Final labels for taxonomy, from R1 and R2 by benchmark/labelling/finalise.py: 18 items both
+# answered the same way, 0 they did not (unsure, not settled by discussion). See PROTOCOL.md.
+items:
+  Fa79a1e665a:
+    category_ok: 'yes'
+    citation: app/api/users/stripe/route.ts:35
+    verdict: tp
+  Fad064dfccc:
+    category_ok: 'yes'
+    citation: lib/auth.ts:48
+    verdict: tp
+  Fed114e472c:
+    category_ok: null
+    citation: lib/auth.ts:54
+    verdict: fp_not_personal
+  G0ac1abc072:
+    citation: null
+    hides_flow: 'no'
+  G621ec46dda:
+    citation: null
+    hides_flow: 'no'
+  G845f70234d:
+    citation: null
+    hides_flow: 'no'
+  Gb04d04dc37:
+    citation: components/editor.tsx:91
+    hides_flow: 'yes'
+  Gfa2b94959e:
+    citation: components/editor.tsx:91
+    hides_flow: 'yes'
+  S0109b8cdd0:
+    categories: []
+    is_sink: 'yes'
+    personal: 'no'
+    source: null
+  S0bf6a42d53:
+    categories:
+    - user.credentials
+    is_sink: 'yes'
+    personal: 'yes'
+    source: lib/auth.ts:31
+  S0f7de0ffd6:
+    categories:
+    - user.name
+    - user.unique_id
+    is_sink: 'yes'
+    personal: 'yes'
+    source: components/user-name-form.tsx:46
+  S25cec2828a:
+    categories:
+    - user
+    is_sink: 'yes'
+    personal: 'yes'
+    source: components/editor.tsx:86
+  S3c9d5782ac:
+    categories:
+    - user.unique_id
+    is_sink: 'yes'
+    personal: 'yes'
+    source: app/api/users/stripe/route.ts:26
+  S40759d1463:
+    categories:
+    - user.credentials
+    is_sink: 'yes'
+    personal: 'yes'
+    source: lib/auth.ts:31
+  S57a4228f39:
+    categories:
+    - user.contact.email
+    is_sink: 'yes'
+    personal: 'yes'
+    source: app/api/users/stripe/route.ts:41
+  Scdb9867199:
+    categories: []
+    is_sink: 'yes'
+    personal: 'no'
+    source: null
+  Sd8cc372f16:
+    categories: []
+    is_sink: 'yes'
+    personal: 'no'
+    source: null
+  Se3f0a25417:
+    categories:
+    - user.unique_id
+    is_sink: 'yes'
+    personal: 'yes'
+    source: components/post-operations.tsx:28
