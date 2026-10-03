@@ -91,6 +91,9 @@ pub struct FuncIr {
     pub name: String,
     pub params: Vec<Param>,
     pub ret: Var,
+    /// What the function throws (raises) and does not catch itself: a return slot whose exit at
+    /// each call site is that call's catch parameter, or the caller's own throw slot.
+    pub throw: Var,
     pub parent: Option<FuncIdx>,
     pub class: Option<ClassIdx>,
     /// Python method whose first parameter is the instance (`self`); call arguments start at 1.
@@ -270,6 +273,20 @@ pub enum StmtKind {
     TypeRef {
         dst: Var,
         ty: Var,
+    },
+    /// `throw src` / `raise src`: the value goes to the innermost enclosing catch parameter
+    /// (`dst`), or to the function's throw slot.
+    Throw {
+        dst: Var,
+        src: Var,
+    },
+    /// A call inside a `try` body: its error may carry its arguments (`srcs`) to the catch
+    /// parameter `dst`. `call` is the call statement. The analysis applies it only to calls into
+    /// libraries; the project's own functions throw through their throw slots.
+    Echo {
+        dst: Var,
+        srcs: Vec<Var>,
+        call: u32,
     },
     /// `dst` is `super` in a method of `class`: the base classes, for calling their methods and
     /// constructors (`super.send(x)`, `super().__init__(x)`, `super(x)`). Only provenance reads it.

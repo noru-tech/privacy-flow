@@ -844,6 +844,8 @@ fn hops(p: &Program, f: &Facts, cat: &Catalogue, seed: u32, hit: u32, steps: &[S
                     GKind::Concat { .. } => "concat",
                     GKind::Call { .. } => "call",
                     GKind::Return { .. } => "return",
+                    GKind::Throw { .. } => "throw",
+                    GKind::Echo { .. } => "error",
                     _ => "step",
                 };
                 let mut hop = stmt_hop(*stmt, kind, None);
@@ -1040,6 +1042,8 @@ pub fn derive(doc: &mut Document, classifier: &Classifier) -> Result<()> {
             );
         };
         let cat = fl.category.as_str();
+        // Through the error of a library call that was given the data: it may echo it, or not.
+        let echoed = fl.path.iter().any(|h| h.kind == "error");
         let credential = Classifier::is_credential(cat);
         let special = classifier.is_special(cat);
         let external = snk.class.is_external() && !is_first_party(snk);
@@ -1050,7 +1054,7 @@ pub fn derive(doc: &mut Document, classifier: &Classifier) -> Result<()> {
             if !s.enabled {
                 return;
             }
-            let severity = if src.needs_review {
+            let severity = if src.needs_review || echoed {
                 s.severity.min(Severity::Info)
             } else {
                 s.severity
@@ -1066,7 +1070,7 @@ pub fn derive(doc: &mut Document, classifier: &Classifier) -> Result<()> {
                 gap: None,
                 categories: vec![fl.category.clone()],
                 processor: proc,
-                needs_review: src.needs_review || snk.heuristic || cat == UNKNOWN,
+                needs_review: src.needs_review || snk.heuristic || cat == UNKNOWN || echoed,
                 heuristic: snk.heuristic,
                 location: Some(snk.location.clone()),
             });

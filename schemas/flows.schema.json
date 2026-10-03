@@ -170,7 +170,7 @@
               "additionalProperties": false,
               "required": ["kind", "path", "line", "column", "text", "field", "note"],
               "properties": {
-                "kind": { "enum": ["source", "assign", "read", "write", "concat", "call", "return", "step", "sink"] },
+                "kind": { "enum": ["source", "assign", "read", "write", "concat", "call", "return", "throw", "error", "step", "sink"] },
                 "path": { "type": "string" },
                 "line": { "type": "integer", "minimum": 1 },
                 "column": { "type": "integer", "minimum": 1 },

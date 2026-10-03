@@ -95,8 +95,10 @@ Request input is a source only in frameworks whose request objects are modelled
   without `implements`, object literals typed with an interface, and object type aliases are not
   implementations; a call on such a value stays a gap when personal data reaches it. Reading a property or getter gives what it
   returns; setters are field writes.
-- **Exceptions:** a value thrown is not connected to the `catch` parameter. **Silent:**
-  `try { throw new Error(email) } catch (e) { log(e) }` is missed.
+- **Exceptions** ([ADR 0014](docs/adr/0014-exceptions.md)): a value thrown reaches the catch
+  parameter, across calls; the error of a library call inside a `try` may carry its arguments,
+  reported for review. Exception types are not distinguished (any `except` catches anything
+  raised in its `try`), `finally` blocks are not followed, and a bare re-raise (`raise`) is not.
 - **Libraries:** a call into a module the catalogue does not know is assumed to pass its arguments
   to its result, and personal data reaching it is an `unresolved_callee` gap. **Silent:** callbacks
   receive no data from the arguments of whatever later invokes them through an event system
