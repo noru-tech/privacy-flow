@@ -7,6 +7,13 @@ All notable changes to this project are documented here. The format is based on
 ## [Unreleased]
 
 ### Added
+- Exceptions (ADR 0014): a value thrown reaches the `catch`/`except` parameter, across calls and
+  out of callbacks handed to libraries, and the error of a library call inside a `try` may carry
+  the call's arguments (hop kind `error`, reported at `info` for review). Hop kinds `throw` and
+  `error` are new in the flow facts.
+- Registries: `PROVIDERS.get(kind)` on a dictionary literal is any of its entries (as
+  `PROVIDERS[kind]` already was), and `PROVIDERS.get("smtp")` that entry, so a provider class
+  picked from a table resolves. On CTFd, every email to its SMTP and Mailgun providers.
 - Email, messaging and push sinks: Python `smtplib`, Flask-Mail, fastapi-mail, `emails`, Apprise,
   Resend, Mailjet, Brevo, Mailchimp Transactional, Vonage, python-telegram-bot, Amazon SNS,
   Firebase Cloud Messaging, Expo and Web Push; JavaScript `@nestjs-modules/mailer`, Wasp's

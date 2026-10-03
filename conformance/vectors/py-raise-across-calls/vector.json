@@ -1,0 +1,5 @@
+{
+  "description": "An exception raised two calls down, uncaught in between, reaches the except clause.",
+  "language": "python",
+  "status": "required"
+}

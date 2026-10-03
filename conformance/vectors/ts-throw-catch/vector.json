@@ -1,0 +1,5 @@
+{
+  "description": "A value thrown in a try block reaches the catch parameter, which is logged.",
+  "language": "javascript",
+  "status": "required"
+}

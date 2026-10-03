@@ -98,6 +98,7 @@ pub struct GFunc {
     pub name: String,
     pub params: Vec<GParam>,
     pub ret: VarId,
+    pub throw: VarId,
     pub parent: Option<FuncId>,
     pub class: Option<ClassId>,
     pub bound_self: bool,
@@ -213,6 +214,15 @@ pub enum GKind {
     Super {
         dst: VarId,
         class: ClassId,
+    },
+    Throw {
+        dst: VarId,
+        src: VarId,
+    },
+    Echo {
+        dst: VarId,
+        srcs: Vec<VarId>,
+        call: u32,
     },
     Elements {
         dst: VarId,
@@ -343,6 +353,8 @@ pub struct Program {
     method_of: Vec<Option<FuncId>>,
     /// A copied statement's original, for identities and citations.
     pub stmt_origin: Vec<u32>,
+    /// Temporaries that hold one string literal: the key of `registry.get("smtp")`.
+    lits: HashMap<VarId, Sym>,
     /// (ancestor's `this.f`, a subclass's `this.f`): what a base class stores in a field, its
     /// subclasses read (a base constructor sets `self.channel`, a subclass method reads it).
     /// Not the other way, or every subclass would see what its siblings store.
@@ -450,6 +462,7 @@ impl Program {
             complete_dispatch: HashSet::new(),
             method_of: Vec::new(),
             stmt_origin: Vec::new(),
+            lits: HashMap::new(),
             field_links: Vec::new(),
         };
         let mut pending_reexports: Vec<(FileId, Vec<String>)> = Vec::new();
@@ -459,6 +472,7 @@ impl Program {
             let fo = p.funcs.len() as u32;
             let co = p.classes.len() as u32;
             let io = p.imports.len() as u32;
+            let so = p.stmts.len() as u32;
             for v in &f.vars {
                 p.vars.push(GVar {
                     name: v.name.clone(),
@@ -484,6 +498,7 @@ impl Program {
                         })
                         .collect(),
                     ret: func.ret + vo,
+                    throw: func.throw + vo,
                     parent: func.parent.map(|x| x + fo),
                     class: func.class.map(|x| x + co),
                     bound_self: func.bound_self,
@@ -585,6 +600,15 @@ impl Program {
                     StmtKind::TypeRef { dst, ty } => GKind::TypeRef {
                         dst: dst + vo,
                         ty: ty + vo,
+                    },
+                    StmtKind::Throw { dst, src } => GKind::Throw {
+                        dst: dst + vo,
+                        src: src + vo,
+                    },
+                    StmtKind::Echo { dst, srcs, call } => GKind::Echo {
+                        dst: dst + vo,
+                        srcs: srcs.iter().map(|v| v + vo).collect(),
+                        call: call + so,
                     },
                     StmtKind::Super { dst, class } => GKind::Super {
                         dst: dst + vo,
@@ -1293,6 +1317,25 @@ impl Program {
     }
 
     fn fixpoint(&mut self) {
+        self.lits.clear();
+        let mut defs: HashMap<VarId, u32> = HashMap::new();
+        for st in &self.stmts {
+            if let GKind::Lit { dst, .. } = &st.kind {
+                *defs.entry(*dst).or_default() += 1;
+            }
+        }
+        for st in &self.stmts {
+            if let GKind::Lit {
+                dst,
+                value: Some(v),
+            } = &st.kind
+                && defs[dst] == 1
+                && self.vars[*dst as usize].kind == VarKind::Temp
+            {
+                let k = self.syms.intern(v);
+                self.lits.insert(*dst, k);
+            }
+        }
         let mut rounds = 0;
         loop {
             rounds += 1;
@@ -1543,6 +1586,7 @@ impl Program {
                 q.var = mv(q.var);
             }
             g.ret = mv(g.ret);
+            g.throw = mv(g.throw);
             g.decorators = g.decorators.iter().map(|&d| mv(d)).collect();
             g.parent = g.parent.map(|p| *fmap.get(&p).unwrap_or(&p));
             if f == m {
@@ -1558,8 +1602,10 @@ impl Program {
             .map(|(v, t)| (mv(*v), t.clone()))
             .collect();
         self.annots.extend(annots);
+        let mut smap: HashMap<u32, u32> = HashMap::new();
         for f in &funcs {
             for &i in stmts_of.get(f).into_iter().flatten() {
+                smap.insert(i as u32, self.stmts.len() as u32);
                 let st = self.stmts[i].clone();
                 let kind = match st.kind {
                     GKind::ThisLoad {
@@ -1589,6 +1635,16 @@ impl Program {
                         var: self.class_field_var(to, field, var),
                     },
                     k => map_kind(k, &mv, &|f| *fmap.get(&f).unwrap_or(&f)),
+                };
+                // An echo names its call, which is copied too (a statement of the same function,
+                // earlier in order).
+                let kind = match kind {
+                    GKind::Echo { dst, srcs, call } => GKind::Echo {
+                        dst,
+                        srcs,
+                        call: *smap.get(&call).unwrap_or(&call),
+                    },
+                    k => k,
                 };
                 self.stmts.push(GStmt {
                     func: fmap[&st.func],
@@ -1756,7 +1812,7 @@ impl Program {
     fn step_kind(&mut self, i: usize, kind: &GKind) -> bool {
         let file = self.stmts[i].file;
         match *kind {
-            GKind::Copy { dst, src } => {
+            GKind::Copy { dst, src } | GKind::Throw { dst, src } => {
                 let ps = self.prov[src as usize].clone();
                 let mut changed = self.set(dst, &ps);
                 for (k, ps) in self.fields_of(src) {
@@ -1910,6 +1966,16 @@ impl Program {
                             let (ps, c) = self.elements(*recv, *dst_ref);
                             out.extend(ps);
                             changed |= c;
+                            // A dictionary's named entries: `PROVIDERS.get("smtp")` is that
+                            // entry, `PROVIDERS.get(kind)` any of them, as `PROVIDERS[kind]` is.
+                            if matches!(self.syms.str(*name), "get" | "pop") {
+                                let key = args.first().and_then(|a| self.lits.get(&a.var)).copied();
+                                for (k, fps) in self.fields_of(*recv) {
+                                    if k != elem && key.is_none_or(|key| key == k) {
+                                        out.extend(fps);
+                                    }
+                                }
+                            }
                         }
                         // A view of the same elements: iterating it iterates the container.
                         "values" | "entries" => {
@@ -2264,6 +2330,15 @@ fn map_kind(k: GKind, v: &impl Fn(VarId) -> VarId, f: &impl Fn(FuncId) -> FuncId
             ty: v(ty),
         },
         GKind::Super { dst, class } => GKind::Super { dst: v(dst), class },
+        GKind::Throw { dst, src } => GKind::Throw {
+            dst: v(dst),
+            src: v(src),
+        },
+        GKind::Echo { dst, srcs, call } => GKind::Echo {
+            dst: v(dst),
+            srcs: srcs.into_iter().map(v).collect(),
+            call,
+        },
         GKind::Elements { dst, coll } => GKind::Elements {
             dst: v(dst),
             coll: v(coll),

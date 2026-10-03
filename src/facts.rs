@@ -318,6 +318,28 @@ pub fn build(p: &mut Program, inp: &Inputs) -> Facts {
         b.f.slot_of[e.slot as usize] = Some(e.func);
         b.f.exits[e.slot as usize].push((e.site, e.to));
     }
+    // What a function throws exits at each call site to that call's catch parameter, or, outside
+    // a `try`, to the caller's own throw slot.
+    let mut catch_of: HashMap<u32, VarId> = HashMap::new();
+    for st in &b.p.stmts {
+        if let GKind::Echo { dst, call, .. } = st.kind {
+            catch_of.insert(call, dst);
+        }
+    }
+    for (g, func) in b.p.funcs.iter().enumerate() {
+        b.f.slot_of[func.throw as usize] = Some(g as FuncId);
+        b.f.exits[func.throw as usize] = b.f.callers[g]
+            .iter()
+            .map(|&site| {
+                let stmt = b.f.sites[site as usize].stmt;
+                let to = catch_of
+                    .get(&stmt)
+                    .copied()
+                    .unwrap_or_else(|| b.p.funcs[b.p.stmts[stmt as usize].func as usize].throw);
+                (site, to)
+            })
+            .collect();
+    }
     for (i, h) in b.f.hits.iter().enumerate() {
         for &a in &h.args {
             if !b.f.hit_args[a as usize].contains(&(i as u32)) {
@@ -437,7 +459,31 @@ impl<'a, 'p> Builder<'a, 'p> {
             let s = self.p.stmts[i].clone();
             let lang = self.lang(s.file);
             match &s.kind {
-                GKind::Copy { dst, src } => self.edge(*src, *dst, EdgeKind::Copy, stmt),
+                GKind::Copy { dst, src } | GKind::Throw { dst, src } => {
+                    self.edge(*src, *dst, EdgeKind::Copy, stmt)
+                }
+                GKind::Echo { dst, srcs, call } => {
+                    if self.echoes(*call, lang) {
+                        for &v in srcs {
+                            self.edge(v, *dst, EdgeKind::Collapse, stmt);
+                        }
+                    }
+                    // A callback handed to a library (`prisma.$transaction(async tx => ...)`)
+                    // throws through the library call.
+                    if self.p.calls.get(call).is_some_and(|t| t.funcs.is_empty()) {
+                        let callbacks: Vec<VarId> = srcs
+                            .iter()
+                            .flat_map(|&v| self.p.prov[v as usize].iter())
+                            .filter_map(|p| match p {
+                                Prov::Func(f) => Some(self.p.funcs[*f as usize].throw),
+                                _ => None,
+                            })
+                            .collect();
+                        for t in callbacks {
+                            self.edge(t, *dst, EdgeKind::Copy, stmt);
+                        }
+                    }
+                }
                 GKind::Load {
                     dst,
                     obj,
@@ -520,6 +566,22 @@ impl<'a, 'p> Builder<'a, 'p> {
                 self.edge(from, to, EdgeKind::Copy, stmt);
             }
         }
+    }
+
+    /// Whether a call's error may carry its arguments: a call into a library (an API path that
+    /// is not a language built-in), or one the analysis cannot resolve. The project's own
+    /// functions throw what they throw, through their throw slots.
+    fn echoes(&self, call: u32, lang: &str) -> bool {
+        let Some(t) = self.p.calls.get(&call) else {
+            return false;
+        };
+        let library = t.apis.iter().any(|&s| {
+            let path = self.p.syms.str(s);
+            !(is_runtime_global(path, lang) || path.starts_with("builtins."))
+        });
+        library
+            || !t.unresolved.is_empty()
+            || (t.funcs.is_empty() && t.classes.is_empty() && t.dynamic)
     }
 
     fn field_read(&mut self, stmt: u32, obj: VarId, dst: VarId, name: &str) {

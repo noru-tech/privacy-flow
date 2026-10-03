@@ -276,16 +276,33 @@ impl<'s> Py<'s> {
                 }
             }
             "try_statement" => {
+                // What the body raises, and the errors of the library calls in it, reach the
+                // `except ... as e` names.
+                let has_except = named_children(node)
+                    .iter()
+                    .any(|c| matches!(c.kind(), "except_clause" | "except_group_clause"));
+                let catch = has_except.then(|| self.b.temp(self.b.pos(node)));
                 for c in named_children(node) {
                     match c.kind() {
-                        "block" => self.stmts(c),
+                        "block" => {
+                            if let Some(v) = catch {
+                                self.b.catches.push(v);
+                            }
+                            self.stmts(c);
+                            if catch.is_some() {
+                                self.b.catches.pop();
+                            }
+                        }
                         "except_clause" | "except_group_clause" => {
                             for e in named_children(c) {
                                 match e.kind() {
                                     "block" => self.stmts(e),
                                     "as_pattern" => {
                                         if let Some(a) = e.child_by_field_name("alias") {
-                                            let v = self.b.lit(e, None);
+                                            let v = match catch {
+                                                Some(v) => v,
+                                                None => self.b.lit(e, None),
+                                            };
                                             self.assign_to(a, v);
                                         }
                                     }
@@ -369,8 +386,16 @@ impl<'s> Py<'s> {
             | "break_statement"
             | "continue_statement"
             | "comment" => {}
-            "raise_statement" | "assert_statement" | "delete_statement" | "print_statement"
-            | "exec_statement" => {
+            "raise_statement" => {
+                // `raise E(...)` (and `raise E(...) from cause`): the exception is thrown.
+                for (i, c) in named_children(node).into_iter().enumerate() {
+                    let v = self.expr(c);
+                    if i == 0 {
+                        self.b.throw(node, v);
+                    }
+                }
+            }
+            "assert_statement" | "delete_statement" | "print_statement" | "exec_statement" => {
                 for c in named_children(node) {
                     self.expr(c);
                 }
@@ -939,6 +964,7 @@ impl<'s> Py<'s> {
             }
         }
         let dst = self.b.temp(self.b.pos(node));
+        let argv: Vec<Var> = args.iter().map(|a| a.var).collect();
         self.b.emit(
             node,
             StmtKind::Call {
@@ -948,6 +974,7 @@ impl<'s> Py<'s> {
                 is_new: false,
             },
         );
+        self.b.echo(node, &argv);
         // `request.form.get("email")`, `data.get("email")`: a named entry read.
         if let (Some((recv, name)), Some(key)) = (method, first_literal)
             && matches!(name.as_str(), "get" | "getlist" | "pop" | "setdefault")

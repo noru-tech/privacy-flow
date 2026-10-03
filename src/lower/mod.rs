@@ -48,6 +48,10 @@ pub struct Builder<'s> {
     field_vars: HashMap<(ClassIdx, String), Var>,
     /// The constructor being lowered and its own `this`.
     pub ctor_this: Option<(ClassIdx, Var)>,
+    /// Catch parameters of the `try` bodies being lowered in the current function, innermost
+    /// last; and those of enclosing functions, set aside while a nested one is lowered.
+    pub catches: Vec<Var>,
+    saved_catches: Vec<Vec<Var>>,
 }
 
 const TEXT_MAX: usize = 80;
@@ -76,13 +80,17 @@ impl<'s> Builder<'s> {
             globals: HashMap::new(),
             field_vars: HashMap::new(),
             ctor_this: None,
+            catches: Vec::new(),
+            saved_catches: Vec::new(),
         };
         // Function 0 is the module: it owns top-level statements and module-level bindings.
         let ret = b.raw_var("<return>", VarKind::Ret, 0, Pos { line: 1, column: 1 });
+        let throw = b.raw_var("<throw>", VarKind::Temp, 0, Pos { line: 1, column: 1 });
         b.ir.funcs.push(FuncIr {
             name: "<module>".into(),
             params: Vec::new(),
             ret,
+            throw,
             parent: None,
             class: None,
             bound_self: false,
@@ -307,10 +315,13 @@ impl<'s> Builder<'s> {
         let idx = self.ir.funcs.len() as FuncIdx;
         let pos = self.pos(node);
         let ret = self.raw_var("<return>", VarKind::Ret, idx, pos);
+        let throw = self.raw_var("<throw>", VarKind::Temp, idx, pos);
+        self.saved_catches.push(std::mem::take(&mut self.catches));
         self.ir.funcs.push(FuncIr {
             name,
             params: Vec::new(),
             ret,
+            throw,
             parent: Some(self.func),
             class,
             bound_self: false,
@@ -330,6 +341,7 @@ impl<'s> Builder<'s> {
     }
 
     pub fn end_function(&mut self, idx: FuncIdx) {
+        self.catches = self.saved_catches.pop().unwrap_or_default();
         self.scopes.pop();
         self.func = self.ir.funcs[idx as usize].parent.unwrap_or(0);
     }
@@ -358,6 +370,30 @@ impl<'s> Builder<'s> {
 
     pub fn ret_var(&self) -> Var {
         self.ir.funcs[self.func as usize].ret
+    }
+
+    /// `throw src`: to the innermost catch parameter, or the function's throw slot.
+    pub fn throw(&mut self, node: Node, src: Var) {
+        let dst = match self.catches.last() {
+            Some(&c) => c,
+            None => self.ir.funcs[self.func as usize].throw,
+        };
+        self.emit(node, StmtKind::Throw { dst, src });
+    }
+
+    /// After a call inside a `try` body: its error may carry its arguments to the catch.
+    pub fn echo(&mut self, node: Node, args: &[Var]) {
+        if let Some(&dst) = self.catches.last() {
+            let call = (self.ir.stmts.len() - 1) as u32;
+            self.emit(
+                node,
+                StmtKind::Echo {
+                    dst,
+                    srcs: args.to_vec(),
+                    call,
+                },
+            );
+        }
     }
 
     pub fn new_class(&mut self, name: &str, node: Node) -> ClassIdx {

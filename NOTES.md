@@ -437,3 +437,25 @@ breakdown type, `billing_address.state`; dropped: `order.tax_breakdown[0]["state
 query parameter is now reported as request input instead of being narrowed into an address.
 
 **Next.** Propose the table change in noru-grc-engineering.
+
+## 2026-10-03 — Exceptions (ADR 0014) and registries
+
+**Why.** Re-scoring the R1 site labels against main + #17 (36 of 114 found): the largest groups
+of misses were wrapper calls (about 18) and caught errors logged or sent to Sentry (about 16).
+Most wrapper misses were real; CTFd's came from a provider class picked from a dictionary with
+`.get(kind)`, which lost what the entries were. The owner chose to report library-error echoes,
+for review.
+
+**Done.** Dictionary `.get`/`.pop` reads named entries. Functions have a throw slot (a return
+slot whose exits are catch parameters or the caller's throw slot); `throw`/`raise` go to the
+innermost catch; library calls in a `try` echo their arguments to the catch (hop `error`,
+`info` and needs-review); callbacks handed to libraries throw through the call. Vectors
+`ts-throw-catch`, `py-raise-across-calls`; fixtures `ts/exceptions`, `py/exceptions`.
+
+**Measured.** Registries: CTFd 41 → 73 flows. Exceptions: flows through throws Polar 187,
+PrivateGPT 79, Ghost 11, Redash 5; through echoes Polar 510, PrivateGPT 251, Hoppscotch 139,
+Umami 78 (mostly `unknown`). R1 sites found 36 → 39. The remaining error-logging misses carry
+identifiers or unmodelled request input, which no source names.
+
+**Next.** Identifiers (user and customer IDs) as sources, which the remaining misses in both
+groups need; then a new recorded benchmark run.

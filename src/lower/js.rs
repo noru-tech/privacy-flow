@@ -238,14 +238,23 @@ impl<'s> Js<'s> {
                 }
             }
             "try_statement" => {
+                // What the body throws, and the errors of the library calls in it, reach the
+                // catch parameter.
+                let handler = node.child_by_field_name("handler");
+                let catch = handler.map(|h| self.b.temp(self.b.pos(h)));
+                if let Some(c) = catch {
+                    self.b.catches.push(c);
+                }
                 if let Some(body) = node.child_by_field_name("body") {
                     self.stmt(body);
                 }
-                if let Some(h) = node.child_by_field_name("handler") {
+                if catch.is_some() {
+                    self.b.catches.pop();
+                }
+                if let (Some(h), Some(c)) = (handler, catch) {
                     self.b.push_block();
                     if let Some(p) = h.child_by_field_name("parameter") {
-                        let v = self.b.lit(p, None);
-                        self.bind(p, v, Some(false));
+                        self.bind(p, c, Some(false));
                     }
                     if let Some(body) = h.child_by_field_name("body") {
                         self.stmt(body);
@@ -285,7 +294,8 @@ impl<'s> Js<'s> {
             }
             "throw_statement" => {
                 if let Some(e) = node.named_child(0) {
-                    self.expr(e);
+                    let v = self.expr(e);
+                    self.b.throw(node, v);
                 }
             }
             "empty_statement" | "break_statement" | "continue_statement" | "debugger_statement"
@@ -603,6 +613,7 @@ impl<'s> Js<'s> {
                     None => Vec::new(),
                 };
                 let dst = self.b.temp(self.b.pos(node));
+                let argv: Vec<Var> = args.iter().map(|a| a.var).collect();
                 self.b.emit(
                     node,
                     StmtKind::Call {
@@ -612,6 +623,7 @@ impl<'s> Js<'s> {
                         is_new: true,
                     },
                 );
+                self.b.echo(node, &argv);
                 dst
             }
             "await_expression" | "spread_element" | "yield_expression" => match node.named_child(0)
@@ -1144,6 +1156,7 @@ impl<'s> Js<'s> {
                 .map(|s| unquote(self.text(s))),
             _ => None,
         };
+        let argv: Vec<Var> = args.iter().map(|a| a.var).collect();
         self.b.emit(
             node,
             StmtKind::Call {
@@ -1153,6 +1166,7 @@ impl<'s> Js<'s> {
                 is_new: false,
             },
         );
+        self.b.echo(node, &argv);
         if let (Some((recv, _)), Some(key)) = (method, literal_key) {
             self.b.emit(
                 node,
