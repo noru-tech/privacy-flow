@@ -173,6 +173,5 @@ Request input is a source only in frameworks whose request objects are modelled
   expression; a disposition on a changed finding is reported as dropped by the next `scan`.
 - **Outputs contain code excerpts** (at most 80 characters per hop), which can include whatever the
   code contains, such as a hard-coded address in a comment.
-- **Not yet done:** the labelled real-world benchmark with two reviewers, the comparison with
-  Privado, and the Zenodo DOI (milestone M6, [benchmark](docs/benchmark.md)); the review of the
-  control mapping.
+- **Not yet done:** the labels for Polar and PrivateGPT and the Zenodo DOI of the labelled
+  benchmark (milestone M6, [benchmark](benchmark/README.md)); the review of the control mapping.

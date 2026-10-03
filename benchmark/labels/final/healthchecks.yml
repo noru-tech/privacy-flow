@@ -1,0 +1,282 @@
+# Final labels for healthchecks, from R1 and R2 by benchmark/labelling/finalise.py: 55 items both
+# answered the same way, 5 they did not (unsure, not settled by discussion). See PROTOCOL.md.
+items:
+  F24b245fd78:
+    category_ok: 'yes'
+    citation: hc/accounts/views.py:168
+    verdict: fp_path
+  F3a3e7403a5:
+    category_ok: 'yes'
+    citation: hc/accounts/forms.py:100
+    verdict: fp_path
+  F484bfb24dc:
+    category_ok: 'yes'
+    citation: hc/lib/curl.py:152
+    verdict: tp
+  F6079aba359:
+    category_ok: 'no'
+    citation: hc/accounts/views.py:335
+    verdict: fp_path
+  F7b3c8281f2:
+    category_ok: 'yes'
+    citation: hc/accounts/views.py:583
+    verdict: fp_path
+  F7bfc09c413:
+    category_ok: 'yes'
+    citation: hc/integrations/signal/transport.py:101
+    verdict: tp
+  F7d882baf02:
+    category_ok: 'no'
+    citation: hc/accounts/views.py:224
+    verdict: fp_path
+  F927047a33d:
+    category_ok: 'yes'
+    citation: hc/api/models.py:569
+    verdict: fp_path
+  Fa4c292e7d6:
+    category_ok: 'no'
+    citation: hc/lib/s3.py:109
+    verdict: tp
+  Fc20bc833e1:
+    category_ok: null
+    citation: hc/lib/s3.py:95
+    verdict: fp_not_personal
+  Fc6c7c77afe:
+    category_ok: 'no'
+    citation: hc/accounts/views.py:610
+    verdict: fp_path
+  Fc71a8a55ce:
+    category_ok: 'no'
+    citation: hc/accounts/views.py:731
+    verdict: fp_path
+  Fc9c7ac9554:
+    category_ok: 'no'
+    citation: hc/accounts/views.py:350
+    verdict: fp_path
+  Fcc7c25159d:
+    category_ok: 'yes'
+    citation: hc/accounts/forms.py:101
+    verdict: fp_path
+  Fd46fb27f3e:
+    category_ok: 'yes'
+    citation: hc/accounts/forms.py:101
+    verdict: fp_path
+  Fd7b7223bad:
+    category_ok: 'yes'
+    citation: hc/lib/curl.py:152
+    verdict: tp
+  Fe0bd1adc88:
+    category_ok: 'yes'
+    citation: hc/accounts/forms.py:100
+    verdict: fp_path
+  Feccd116b13:
+    category_ok: 'yes'
+    citation: hc/integrations/signal/transport.py:101
+    verdict: tp
+  Fed76dc8936:
+    category_ok: null
+    citation: hc/front/management/commands/render_docs.py:37
+    verdict: fp_not_personal
+  Ff83558e831:
+    category_ok: 'no'
+    citation: hc/accounts/views.py:335
+    verdict: fp_path
+  G43d0154397:
+    hides_flow: unsure
+    note: R1 and R2 disagree; not settled by discussion
+  G5dfc6813dd:
+    hides_flow: unsure
+    note: R1 and R2 disagree; not settled by discussion
+  G8e891abbb6:
+    citation: hc/api/transports.py:168
+    hides_flow: 'yes'
+  Ga062e2acfa:
+    citation: null
+    hides_flow: 'no'
+  Ga55ed16e10:
+    citation: null
+    hides_flow: 'no'
+  Gb2051b0a72:
+    citation: null
+    hides_flow: 'no'
+  Gb8d169b4a1:
+    citation: null
+    hides_flow: 'no'
+  Gcbd836ccb3:
+    citation: hc/integrations/signal/transport.py:101
+    hides_flow: 'yes'
+  Gd5eaaab0b6:
+    citation: null
+    hides_flow: 'no'
+  Gd8fc502392:
+    citation: null
+    hides_flow: 'no'
+  S171386f1cc:
+    categories: []
+    is_sink: 'no'
+    personal: null
+    source: null
+  S256f971729:
+    categories:
+    - user.unique_id
+    - user.authorization.credentials
+    is_sink: 'yes'
+    personal: 'yes'
+    source: hc/integrations/telegram/views.py:82
+  S2d0aed1ed5:
+    categories:
+    - user.unique_id
+    - user.authorization.credentials
+    is_sink: 'yes'
+    personal: 'yes'
+    source: hc/lib/s3.py:84
+  S316ff137da:
+    categories: []
+    is_sink: 'no'
+    personal: null
+    source: null
+  S32f459c679:
+    categories:
+    - user.contact.email
+    is_sink: 'yes'
+    personal: 'yes'
+    source: hc/settings.py:76
+  S3e2fe6b183:
+    categories:
+    - user.contact.phone_number
+    is_sink: 'yes'
+    personal: 'yes'
+    source: hc/integrations/signal/views.py:119
+  S41084e83f6:
+    categories: []
+    is_sink: 'no'
+    personal: null
+    source: null
+  S49651e1ed7:
+    categories:
+    - user.unique_id
+    - user.authorization.credentials
+    is_sink: 'yes'
+    personal: 'yes'
+    source: hc/lib/s3.py:120
+  S4ed1368476:
+    is_sink: unsure
+    note: R1 and R2 disagree; not settled by discussion
+    personal: unsure
+  S4f759778a1:
+    categories:
+    - user.contact.phone_number
+    - user.authorization.credentials
+    - user
+    is_sink: 'yes'
+    personal: 'yes'
+    source: hc/integrations/call/transport.py:60
+  S58e022bc4d:
+    categories:
+    - user.authorization.credentials
+    - user
+    is_sink: 'yes'
+    personal: 'yes'
+    source: hc/accounts/views.py:736
+  S61d5caab30:
+    categories: []
+    is_sink: 'yes'
+    personal: 'no'
+    source: null
+  S66e51b7b02:
+    is_sink: unsure
+    note: R1 and R2 disagree; not settled by discussion
+    personal: unsure
+  S66ee716cef:
+    categories: []
+    is_sink: 'no'
+    personal: null
+    source: null
+  S72acc5f864:
+    categories: []
+    is_sink: 'no'
+    personal: null
+    source: null
+  S7a7fe6e3da:
+    categories:
+    - user.contact.phone_number
+    - user
+    is_sink: 'yes'
+    personal: 'yes'
+    source: hc/integrations/signal/transport.py:179
+  S80c5fcd60f:
+    is_sink: unsure
+    note: R1 and R2 disagree; not settled by discussion
+    personal: unsure
+  S85a047478f:
+    categories: []
+    is_sink: 'no'
+    personal: null
+    source: null
+  S865485e44e:
+    categories: []
+    is_sink: 'no'
+    personal: null
+    source: null
+  S91465ac24c:
+    categories: []
+    is_sink: 'no'
+    personal: null
+    source: null
+  S9d3be3779e:
+    categories: []
+    is_sink: 'no'
+    personal: null
+    source: null
+  Sba1b02e1ec:
+    categories: []
+    is_sink: 'yes'
+    personal: 'no'
+    source: null
+  Sbbb27f2965:
+    categories: []
+    is_sink: 'yes'
+    personal: 'no'
+    source: null
+  Sc95cf4edff:
+    categories: []
+    is_sink: 'no'
+    personal: null
+    source: null
+  Se01be9390d:
+    categories:
+    - user.contact.email
+    - user.authorization.credentials
+    is_sink: 'yes'
+    personal: 'yes'
+    source: hc/integrations/signal/transport.py:181
+  Se7446b6eaf:
+    categories: []
+    is_sink: 'no'
+    personal: null
+    source: null
+  Sf4dad6e949:
+    categories: []
+    is_sink: 'no'
+    personal: null
+    source: null
+  Sf65e4976fd:
+    categories:
+    - user.authorization.credentials
+    is_sink: 'yes'
+    personal: 'yes'
+    source: hc/integrations/trello/views.py:80
+  Sf813980de2:
+    categories:
+    - user.authorization.credentials
+    - user
+    is_sink: 'yes'
+    personal: 'yes'
+    source: hc/integrations/apprise/transport.py:28
+  Sfc6daced2c:
+    categories:
+    - user.unique_id
+    - user
+    is_sink: 'yes'
+    personal: 'yes'
+    source: hc/integrations/telegram/transport.py:91

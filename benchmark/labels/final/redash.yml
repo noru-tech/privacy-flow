@@ -1,0 +1,443 @@
+# Final labels for redash, from R1 and R2 by benchmark/labelling/finalise.py: 93 items both
+# answered the same way, 7 they did not (unsure, not settled by discussion). See PROTOCOL.md.
+items:
+  F0930128c14:
+    note: R1 and R2 disagree; not settled by discussion
+    verdict: unsure
+  F09b5f15c84:
+    category_ok: 'yes'
+    citation: redash/query_runner/rockset.py:41
+    verdict: tp
+  F0b0f4e7edb:
+    category_ok: 'yes'
+    citation: redash/tasks/queries/execution.py:44
+    verdict: fp_path
+  F0c79c03366:
+    category_ok: null
+    citation: redash/serializers/__init__.py:192
+    verdict: fp_not_personal
+  F0fdf96df3e:
+    category_ok: 'no'
+    citation: redash/tasks/general.py:24
+    verdict: fp_path
+  F0fea990d98:
+    note: R1 and R2 disagree; not settled by discussion
+    verdict: unsure
+  F131ba0e68f:
+    category_ok: 'yes'
+    citation: redash/destinations/discord.py:58
+    verdict: tp
+  F138d8797a2:
+    category_ok: 'yes'
+    citation: redash/tasks/general.py:78
+    verdict: fp_path
+  F1965003ec3:
+    category_ok: 'yes'
+    citation: redash/cli/users.py:279
+    verdict: tp
+  F1c44febe84:
+    category_ok: 'yes'
+    citation: redash/handlers/authentication.py:38
+    verdict: tp
+  F1d0ade62a1:
+    category_ok: 'yes'
+    citation: redash/query_runner/mongodb.py:146
+    verdict: fp_path
+  F1e66fbf407:
+    category_ok: 'yes'
+    citation: redash/query_runner/pinot.py:125
+    verdict: fp_path
+  F235485372f:
+    category_ok: 'yes'
+    citation: redash/destinations/webhook.py:43
+    verdict: tp
+  F261e32944a:
+    category_ok: 'yes'
+    citation: redash/authentication/google_oauth.py:34
+    verdict: tp
+  F2a38814d4a:
+    category_ok: 'yes'
+    citation: redash/tasks/queries/execution.py:234
+    verdict: fp_path
+  F2d9860b9ac:
+    category_ok: 'yes'
+    citation: redash/tasks/queries/execution.py:220
+    verdict: fp_path
+  F2e90ece664:
+    category_ok: 'yes'
+    citation: redash/cli/users.py:272
+    verdict: tp
+  F363256f38b:
+    category_ok: 'yes'
+    citation: redash/destinations/mattermost.py:47
+    verdict: tp
+  F3a0772ffe1:
+    category_ok: 'yes'
+    citation: redash/tasks/queries/execution.py:44
+    verdict: fp_path
+  F4324ee582d:
+    category_ok: 'yes'
+    citation: redash/tasks/general.py:78
+    verdict: fp_path
+  F4a9b6ba7ed:
+    category_ok: 'yes'
+    citation: redash/query_runner/kylin.py:85
+    verdict: tp
+  F4beb2f801f:
+    category_ok: 'yes'
+    citation: redash/tasks/general.py:78
+    verdict: fp_path
+  F4e0407d34a:
+    category_ok: 'yes'
+    citation: redash/query_runner/pinot.py:71
+    verdict: tp
+  F57565f01a2:
+    category_ok: 'yes'
+    citation: redash/destinations/datadog.py:85
+    verdict: tp
+  F5ac2e5bb7f:
+    category_ok: 'yes'
+    citation: redash/query_runner/pinot.py:132
+    verdict: tp
+  F5b1a8aeb2c:
+    category_ok: 'yes'
+    citation: redash/models/__init__.py:1485
+    verdict: fp_path
+  F65f0d24c99:
+    category_ok: 'yes'
+    citation: redash/tasks/queries/execution.py:277
+    verdict: tp
+  F6925b353bf:
+    category_ok: 'yes'
+    citation: redash/query_runner/couchbase.py:143
+    verdict: tp
+  F6d5018a62c:
+    category_ok: 'yes'
+    citation: redash/tasks/general.py:78
+    verdict: fp_path
+  F6d570deca1:
+    category_ok: 'yes'
+    citation: redash/tasks/queries/execution.py:220
+    verdict: fp_path
+  F7a35527339:
+    category_ok: 'yes'
+    citation: redash/query_runner/athena.py:208
+    verdict: fp_path
+  F82b5f0d2ad:
+    category_ok: 'yes'
+    citation: redash/tasks/general.py:78
+    verdict: fp_path
+  F8733dc8ec6:
+    category_ok: 'yes'
+    citation: redash/tasks/general.py:78
+    verdict: fp_path
+  F87bea00728:
+    category_ok: 'yes'
+    citation: redash/tasks/general.py:78
+    verdict: fp_path
+  F881a0e830d:
+    category_ok: 'yes'
+    citation: redash/tasks/general.py:78
+    verdict: fp_path
+  F8ba69a2c1c:
+    category_ok: 'yes'
+    citation: redash/tasks/general.py:78
+    verdict: fp_path
+  F94adf9c148:
+    category_ok: 'yes'
+    citation: redash/cli/users.py:146
+    verdict: tp
+  Fa93b96b6bc:
+    note: R1 and R2 disagree; not settled by discussion
+    verdict: unsure
+  Fa983fc627a:
+    category_ok: 'yes'
+    citation: redash/tasks/general.py:51
+    verdict: tp
+  Fa994e44821:
+    note: R1 and R2 disagree; not settled by discussion
+    verdict: unsure
+  Fabd1af3a72:
+    category_ok: 'yes'
+    citation: redash/query_runner/axibase_tsd.py:179
+    verdict: tp
+  Fae8913ac38:
+    note: R1 and R2 disagree; not settled by discussion
+    verdict: unsure
+  Fb45d7905f8:
+    category_ok: 'yes'
+    citation: redash/tasks/general.py:78
+    verdict: fp_path
+  Fb8abc698f5:
+    category_ok: 'yes'
+    citation: redash/cli/users.py:320
+    verdict: tp
+  Fc9f51bc7ba:
+    category_ok: 'yes'
+    citation: redash/query_runner/sparql_endpoint.py:118
+    verdict: fp_path
+  Fca4c2403d1:
+    category_ok: 'yes'
+    citation: redash/tasks/general.py:26
+    verdict: tp
+  Fcd0a78f78f:
+    category_ok: 'yes'
+    citation: redash/cli/users.py:313
+    verdict: tp
+  Fcdecc54cb9:
+    category_ok: 'yes'
+    citation: redash/authentication/account.py:41
+    verdict: fp_path
+  Fd79ca465ec:
+    note: R1 and R2 disagree; not settled by discussion
+    verdict: unsure
+  Fdba0e9bf0e:
+    category_ok: 'yes'
+    citation: redash/destinations/chatwork.py:35
+    verdict: fp_path
+  Fdee65aeda2:
+    category_ok: 'yes'
+    citation: redash/cli/data_sources.py:162
+    verdict: fp_path
+  Fe463de6de2:
+    category_ok: null
+    citation: redash/tasks/queries/execution.py:276
+    verdict: fp_not_personal
+  Fe66b5eeb85:
+    category_ok: 'yes'
+    citation: redash/authentication/__init__.py:285
+    verdict: tp
+  Fe8e1414c96:
+    category_ok: 'yes'
+    citation: redash/destinations/webex.py:197
+    verdict: fp_path
+  Fea0537474f:
+    category_ok: 'yes'
+    citation: redash/query_runner/pinot.py:125
+    verdict: fp_path
+  Fefa2774847:
+    category_ok: 'yes'
+    citation: redash/destinations/slack.py:53
+    verdict: tp
+  Ff150c06fe7:
+    category_ok: 'yes'
+    citation: redash/query_runner/clickhouse.py:188
+    verdict: fp_path
+  Ff46076d333:
+    category_ok: 'no'
+    citation: redash/query_runner/clickhouse.py:188
+    verdict: fp_path
+  Ff6d81d2277:
+    category_ok: 'yes'
+    citation: redash/handlers/authentication.py:49
+    verdict: tp
+  Ffa90334fc2:
+    category_ok: 'yes'
+    citation: redash/tasks/general.py:78
+    verdict: fp_path
+  G271aab43a6:
+    citation: null
+    hides_flow: 'no'
+  G2d635714f6:
+    citation: redash/query_runner/trino.py:201
+    hides_flow: 'yes'
+  G6d100a16a4:
+    citation: redash/query_runner/databend.py:77
+    hides_flow: 'yes'
+  Ga2d2bfca71:
+    citation: null
+    hides_flow: 'no'
+  Gd5f2b4231d:
+    citation: redash/destinations/chatwork.py:56
+    hides_flow: 'yes'
+  Ge16247b7bb:
+    citation: redash/query_runner/d1.py:74
+    hides_flow: 'yes'
+  Ge389ae2101:
+    citation: redash/query_runner/trino.py:216
+    hides_flow: 'yes'
+  Gf376e25acd:
+    citation: redash/tasks/general.py:26
+    hides_flow: 'yes'
+  Gf640120faa:
+    citation: redash/query_runner/athena.py:207
+    hides_flow: 'yes'
+  Gfe5f6032a5:
+    citation: null
+    hides_flow: 'no'
+  S048f8cd785:
+    categories:
+    - user.authorization.credentials
+    is_sink: 'yes'
+    personal: 'yes'
+    source: redash/query_runner/yandex_metrica.py:131
+  S074593af24:
+    categories:
+    - user.unique_id
+    is_sink: 'yes'
+    personal: 'yes'
+    source: redash/metrics/request.py:28
+  S0e5798f0f3:
+    categories: []
+    is_sink: 'no'
+    personal: null
+    source: null
+  S0f85ab5893:
+    categories:
+    - user.authorization.credentials
+    is_sink: 'yes'
+    personal: 'yes'
+    source: redash/query_runner/prometheus.py:88
+  S11b57fda76:
+    categories: []
+    is_sink: 'no'
+    personal: null
+    source: null
+  S14ecdc149b:
+    categories:
+    - user.authorization.password
+    - user.authorization.credentials
+    is_sink: 'yes'
+    personal: 'yes'
+    source: redash/query_runner/kylin.py:109
+  S1685cd80cf:
+    categories: []
+    is_sink: 'yes'
+    personal: 'no'
+    source: null
+  S17cc7be737:
+    categories:
+    - user.authorization.password
+    - user.authorization.credentials
+    is_sink: 'yes'
+    personal: 'yes'
+    source: redash/query_runner/pinot.py:68
+  S1bf25f6a84:
+    is_sink: unsure
+    note: R1 and R2 disagree; not settled by discussion
+    personal: unsure
+  S1dea9e97f7:
+    categories: []
+    is_sink: 'yes'
+    personal: 'no'
+    source: null
+  S20789159de:
+    categories: []
+    is_sink: 'yes'
+    personal: 'no'
+    source: null
+  S47581207db:
+    categories:
+    - user.contact.email
+    - user
+    is_sink: 'yes'
+    personal: 'yes'
+    source: redash/models/__init__.py:1482
+  S4be319bf79:
+    categories: []
+    is_sink: 'yes'
+    personal: 'no'
+    source: null
+  S64335092a1:
+    categories:
+    - user.authorization.credentials
+    - user.contact.email
+    - user
+    is_sink: 'yes'
+    personal: 'yes'
+    source: redash/destinations/webex.py:194
+  S6821d422e4:
+    categories: []
+    is_sink: 'no'
+    personal: null
+    source: null
+  S73ecf3a35d:
+    categories:
+    - user.authorization.credentials
+    is_sink: 'yes'
+    personal: 'yes'
+    source: redash/query_runner/graphite.py:72
+  S7df2f9e690:
+    categories:
+    - user.unique_id
+    - user
+    is_sink: 'yes'
+    personal: 'yes'
+    source: redash/tasks/queries/maintenance.py:93
+  S82e04e1124:
+    categories:
+    - user.authorization.credentials
+    is_sink: 'yes'
+    personal: 'yes'
+    source: redash/query_runner/yandex_disk.py:92
+  S9269a8c499:
+    categories:
+    - user.authorization.password
+    - user.authorization.credentials
+    is_sink: 'yes'
+    personal: 'yes'
+    source: redash/query_runner/elasticsearch.py:99
+  S9a54519182:
+    categories: []
+    is_sink: 'no'
+    personal: null
+    source: null
+  S9cc62a4771:
+    categories: []
+    is_sink: 'yes'
+    personal: 'no'
+    source: null
+  S9e8c246f07:
+    categories: []
+    is_sink: 'yes'
+    personal: 'no'
+    source: null
+  Sc96a9bcfbc:
+    categories:
+    - user.authorization.credentials
+    - user
+    is_sink: 'yes'
+    personal: 'yes'
+    source: redash/query_runner/__init__.py:412
+  Scd1e39e689:
+    categories: []
+    is_sink: 'yes'
+    personal: 'no'
+    source: null
+  Sd7963f5793:
+    categories: []
+    is_sink: 'yes'
+    personal: 'no'
+    source: null
+  Sd8ee47722d:
+    categories:
+    - user
+    is_sink: 'yes'
+    personal: 'yes'
+    source: redash/query_runner/yandex_disk.py:145
+  Sdfc59dc02b:
+    categories:
+    - user.contact.email
+    is_sink: 'yes'
+    personal: 'yes'
+    source: redash/cli/users.py:55
+  Se4b77b57df:
+    categories:
+    - user.authorization.credentials
+    is_sink: 'yes'
+    personal: 'yes'
+    source: redash/handlers/authentication.py:49
+  Se7f91cc15e:
+    categories:
+    - user.authorization.password
+    - user.authorization.credentials
+    - user
+    is_sink: 'yes'
+    personal: 'yes'
+    source: redash/destinations/webhook.py:42
+  Seba047ac98:
+    categories:
+    - user.contact.email
+    is_sink: 'yes'
+    personal: 'yes'
+    source: redash/cli/__init__.py:80

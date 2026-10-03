@@ -21,8 +21,10 @@ against, labelled by two reviewers, with Privado's open-source scanner run on th
 | `piiflow` run recorded | done: commit `9a78b08`, byte-identical on repeat |
 | Privado run | done for 11 of 12; `polar` exceeds a standard runner's memory even with swap (recorded as a failure); `redash` finished on a later attempt |
 | Sheets drawn | done: 776 items per reviewer (337 blinded flows, 114 gaps, 325 sites) |
-| Labelling by R1 and R2 | not started; the labelling desk is live |
-| Scores, write-up, Zenodo DOI | after labelling |
+| Labelling by R1 and R2 | done for 10 of 12 applications (Polar and PrivateGPT not labelled by both); imported 2026-10-03, see [labels/PROVENANCE.md](labels/PROVENANCE.md) |
+| Final labels | agreed items final, the 47 disagreements `unsure` ([labelling/finalise.py](labelling/finalise.py); PROTOCOL.md, Deviations) |
+| Scores, write-up | done: [results/scores.md](results/scores.md), [REPORT.md](REPORT.md) |
+| Zenodo DOI for the labelled corpus | not yet: needs Noru's Zenodo account |
 
 ## Reproduce
 
@@ -33,6 +35,7 @@ python3 benchmark/run.py --repeat       # byte-identical digests on every run an
 python3 benchmark/candidates.py
 python3 benchmark/sheets.py             # needs benchmark/results/privado/*.jsonl
 python3 benchmark/score.py --agreement
+python3 benchmark/labelling/finalise.py
 python3 benchmark/score.py
 python3 benchmark/overview.py && python3 benchmark/report/build.py report.html
 ```

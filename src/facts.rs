@@ -1817,11 +1817,16 @@ fn receiver_ident(text: &str) -> Option<String> {
     while let Some(rest) = t.strip_suffix(']') {
         t = &rest[..rest.rfind('[')?];
     }
-    let start = t
-        .rfind(|c: char| !(c.is_alphanumeric() || c == '_'))
-        .map_or(0, |i| i + 1);
-    let ident = &t[start..];
-    (!ident.is_empty()).then(|| ident.to_string())
+    // The trailing identifier, by characters: the one before it may be multi-byte (`…`).
+    let ident: String = t
+        .chars()
+        .rev()
+        .take_while(|c| c.is_alphanumeric() || *c == '_')
+        .collect::<Vec<char>>()
+        .into_iter()
+        .rev()
+        .collect();
+    (!ident.is_empty()).then_some(ident)
 }
 
 fn is_runtime_global(path: &str, lang: &str) -> bool {
@@ -1951,6 +1956,20 @@ mod tests {
         assert_eq!(host_of("https://api.exa", false), Host::Dynamic);
         assert_eq!(host_of("/api/users", true), Host::Relative);
         assert_eq!(host_of("", false), Host::Dynamic);
+    }
+
+    #[test]
+    fn receiver_idents() {
+        assert_eq!(receiver_ident("address.state").as_deref(), Some("address"));
+        assert_eq!(
+            receiver_ident("order.tax_breakdown[0][\"state\"]").as_deref(),
+            Some("tax_breakdown")
+        );
+        // A multi-byte character before the identifier (truncated text ends in `…`).
+        assert_eq!(receiver_ident("…café.state").as_deref(), Some("café"));
+        assert_eq!(receiver_ident("x…é.id").as_deref(), Some("é"));
+        assert_eq!(receiver_ident("…[0].id"), None);
+        assert_eq!(receiver_ident("state"), None);
     }
 
     #[test]
