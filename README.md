@@ -152,8 +152,8 @@ model: the flow through the helper is computed per argument and per field.
   Django, and fields from an existing Fides data map. Categories are
   [Fideslang](https://github.com/ethyca/fideslang) keys.
 - **Sinks** are logs (console, pino, winston, Python logging, structlog …), error tracking
-  (Sentry), product analytics (Segment, Mixpanel, PostHog, Amplitude), email and messaging
-  (SendGrid, Postmark, Twilio, Nodemailer, Slack …), LLM providers (OpenAI, Anthropic, Gemini,
+  (Sentry), product analytics (Segment, Mixpanel, PostHog, Amplitude), email, SMS, chat and push
+  (SMTP, Nodemailer, Django and Flask mail, SendGrid, Postmark, Twilio, Slack, Firebase …), LLM providers (OpenAI, Anthropic, Gemini,
   Mistral, LangChain, the Vercel AI SDK), outbound HTTP (`fetch`, axios, `requests`, `httpx` …,
   with the host when it is a literal), browser storage, and other processors (Stripe, S3 …). Each
   names the processor that receives the data.

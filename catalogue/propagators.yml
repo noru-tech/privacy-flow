@@ -61,6 +61,14 @@ propagators:
     methods: [map, forEach, filter, find, findLast, findIndex, some, every, flatMap, sort, then]
     flow: receiver_to_callback
 
+  - id: js.message-builders
+    language: javascript
+    description: >-
+      Message builders of the messaging SDKs: each setter puts its argument into the message,
+      which a messaging sink then sends. Other calls into these SDKs stay gaps.
+    calls: ["mailersend:{EmailParams,Recipient,Sender,SMSParams,Attachment}", "mailersend:{EmailParams,SMSParams}()**"]
+    flow: args_to_receiver
+
   - id: js.databases
     language: javascript
     description: >-
@@ -136,6 +144,32 @@ propagators:
       - "{sqlalchemy,sqlmodel,peewee,tortoise,pymongo,motor,redis,psycopg,psycopg2,asyncpg,aiosqlite,sqlite3,django.db,mongoengine,databases,prisma}.**"
     receivers: [db, db_session, session, dbsession, sess, conn, connection, cursor, cur, tx, transaction, uow]
     flow: none
+
+  - id: py.message-builders
+    language: python
+    description: >-
+      Methods that put content, recipients or service URLs into a message or notifier object,
+      which a messaging sink then sends as a whole.
+    calls:
+      - "email.**.{set_content,add_alternative,add_related,add_attachment,attach,set_payload,add_header,replace_header}"
+      - "flask_mail.Message{,()}.{attach,add_recipient}"
+      - "emails.**.{attach,set_mail_to,set_html,set_text}"
+      - "apprise.Apprise{,()}.add"
+    flow: args_to_receiver
+
+  - id: py.messaging-models
+    language: python
+    description: >-
+      Message objects of the messaging SDKs, which carry what they are built with; sending them
+      is in sinks.yml. Other calls into these SDKs stay gaps.
+    calls:
+      - "flask_mail.{Message,Attachment}"
+      - "fastapi_mail.MessageSchema"
+      - "emails.{html,Message,message.Message,message.html}"
+      - "exponent_server_sdk.PushMessage"
+      - "firebase_admin.messaging.{Message,MulticastMessage,Notification,AndroidConfig,APNSConfig,WebpushConfig}"
+      - "{sib_api_v3_sdk,brevo_python}.{SendSmtpEmail,SendSmtpEmailTo,SendSmtpEmailSender,SendTransacSms}"
+    flow: args_to_result
 
   - id: py.internal-modules
     language: python

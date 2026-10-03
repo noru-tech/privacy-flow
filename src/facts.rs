@@ -833,7 +833,10 @@ impl<'a, 'p> Builder<'a, 'p> {
             if sink.def.language != lang || !sink.calls.iter().any(|g| g.is_match(path)) {
                 continue;
             }
-            let selected = Self::select_args(&sink.def.args, &sink.def.keywords, args);
+            let mut selected = Self::select_args(&sink.def.args, &sink.def.keywords, args);
+            if sink.def.receiver {
+                selected.extend(recv);
+            }
             let host = match (&sink.def.class, &sink.def.host) {
                 (SinkClass::Http, Some(h)) => self.host(h, args),
                 (SinkClass::Http, None) => Host::Dynamic,
