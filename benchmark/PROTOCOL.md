@@ -57,7 +57,8 @@ messaging, analytics, error tracking, LLM and storage APIs (`log`, `info`, `warn
 sink they meet while labelling that the enumeration missed (`added_by_reviewer: true`); added
 sites are reported separately so the sampled estimate stays unbiased.
 
-A tool **finds** a site when it reports a flow whose sink is on that line. `piiflow` **flags** a
+A tool **finds** a site when it reports a flow whose sink is on that line (amended 2026-10-03: or
+a flow that enters the call on that line and goes on to a sink; see Deviations). `piiflow` **flags** a
 site when it either finds it or reports a coverage gap located on that line (the PFC01 promise:
 not seen, but not claimed clean).
 
@@ -149,7 +150,8 @@ on the same commits and scopes. Every judgement call is written down here before
   `storages` are not sinks for either tool and are dropped (and counted). Categories go through
   the crosswalk in `privado/crosswalk.json` (Privado data element → Fideslang), one line each,
   reviewed before the run.
-- **Matching for recall** is by sink line only, the same rule as for `piiflow`.
+- **Matching for recall** is by sink line only, the same rule as for `piiflow` (amended
+  2026-10-03 for both tools: a flow through the call on the line counts too; see Deviations).
 - **Timing** is not compared: the image is amd64-only and runs on a different machine.
 
 ## Deviations
@@ -195,3 +197,15 @@ on the same commits and scopes. Every judgement call is written down here before
   among the `unsure` labels (it was skipped), and skips an application without final labels
   instead of stopping. Agreement before finalising: κ 0.875 (flows, n = 250), 0.875 (gaps,
   n = 94), 0.897 (sites, n = 265).
+- **2026-10-03, a sink found through the call on its line.** §4 counted a sampled sink site as
+  found only when a reported flow's sink is on that line. Sites are enumerated by syntax, so many
+  are calls to the application's own wrappers (`sendmail(user.email, …)`, `this.mailer.send(…)`)
+  whose library call is inside the wrapper; reviewers labelled such calls sinks, and a tool that
+  follows the data into the wrapper reports the flow at the library call, not on the labelled
+  line. A site now also counts as found when a reported flow enters a call on that line and goes
+  on to a sink: for `piiflow`, a `call` hop into a function on the line; for Privado, whose hops
+  have no kinds, any hop between source and sink on the line, the more lenient reading. The
+  change was made after the labels were seen. Both counts are reported (`recall_at_sink` and the
+  `*_at_sink` head-to-head fields): on the ten applications, `piiflow` 31 % → 32 %,
+  Privado 14 % → 17 %; `piiflow` found or flagged 40 %.
+

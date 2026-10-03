@@ -532,3 +532,17 @@ Healthchecks loses one medium finding whose source was a phone *record*
 
 **Next.** Precision of long chains (Ghost); then the logger. Kafka and signal-cli stay out:
 queues and daemons on the system's own infrastructure are not sinks.
+
+## 2026-10-03 — Recall counts a sink found through the call on its line
+
+**Decision** (owner). A sampled sink site is found when a flow ends on its line or enters the call
+on its line and goes on to a sink: sites are enumerated by syntax, so many are calls to an
+application's own wrapper (`sendmail(...)`) whose library call is inside it. Recorded as a
+protocol deviation, made after the labels were seen; the original count is reported beside the
+new one. Privado gets the more lenient reading (any hop on the line), since its hops have no
+kinds.
+
+**Effect on the published v0.1.0 scores** (ten applications): piiflow 31 % → 32 %, Privado
+14 % → 17 %, piiflow found or flagged 38 % → 40 %. Most of the wrapper sites are found through
+by later code (eight against R1's labels on main + #22, which takes 51 → 59 of 114); they will
+show in the next recorded run.
