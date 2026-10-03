@@ -1,100 +1,98 @@
-# Labels for taxonomy. Fill every field; see benchmark/PROTOCOL.md §3. Do not open
-# benchmark/sheets/key/ until both reviewers are done.
+# Labels for taxonomy, imported from the labelling app. See benchmark/PROTOCOL.md §3.
 items:
   Fad064dfccc:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
+    verdict: "tp"
+    category_ok: "yes"
+    citation: "lib/auth.ts:48"
     note:
   Fa79a1e665a:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
+    verdict: "tp"
+    category_ok: "yes"
+    citation: "app/api/users/stripe/route.ts:35"
     note:
   Fed114e472c:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "fp_not_personal"
+    category_ok:
+    citation: "lib/auth.ts:54"
+    note: "siteConfig.name is the application product name, not a person’s name or other personal value."
   Gfa2b94959e:
-    hides_flow:     # yes | no | unsure
-    citation:       # file:line of the sink reached, if yes
-    note:
+    hides_flow: "yes"
+    citation: "components/editor.tsx:91"
+    note: "TextareaAutosize preserves post.title in the registered title field. On submit data.title is serialized into the PATCH body and sent by fetch in onSubmit."
   G621ec46dda:
-    hides_flow:     # yes | no | unsure
-    citation:       # file:line of the sink reached, if yes
-    note:
+    hides_flow: "no"
+    citation:
+    note: "Renders a local icon with CSS classes/props; no logging, external request, or storage destination is involved."
   G845f70234d:
-    hides_flow:     # yes | no | unsure
-    citation:       # file:line of the sink reached, if yes
-    note:
+    hides_flow: "no"
+    citation:
+    note: "Toast listener publishes in-memory UI state to local React subscribers. Toasts and in-process events are excluded sinks."
   Gb04d04dc37:
-    hides_flow:     # yes | no | unsure
-    citation:       # file:line of the sink reached, if yes
-    note:
+    hides_flow: "yes"
+    citation: "components/editor.tsx:91"
+    note: "EditorJS receives post body.content; ref.current.save returns the edited blocks, serialized as content in the onSubmit PATCH fetch."
   G0ac1abc072:
-    hides_flow:     # yes | no | unsure
-    citation:       # file:line of the sink reached, if yes
-    note:
+    hides_flow: "no"
+    citation:
+    note: "ImageResponse generates the application’s own image response; own responses are explicitly excluded sinks."
   Se3f0a25417:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "yes"
+    personal: "yes"
+    categories: ["user.unique_id"]
+    source: "components/post-operations.tsx:28"
+    note: "The user-associated post identifier is sent in the deletion URL; authenticated browser request also carries session credentials."
   S57a4228f39:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "yes"
+    personal: "yes"
+    categories: ["user.contact.email"]
+    source: "app/api/users/stripe/route.ts:41"
+    note: "session.user.email is supplied as customer_email to Stripe."
   S0bf6a42d53:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "yes"
+    personal: "yes"
+    categories: ["user.credentials"]
+    source: "lib/auth.ts:31"
+    note: "Same-origin browser fetch includes the signed-in user’s NextAuth session cookie by default; it authenticates the Stripe session request."
   S25cec2828a:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "yes"
+    personal: "yes"
+    categories: ["user"]
+    source: "components/editor.tsx:86"
+    note: "Submitted user title and saved EditorJS content blocks are serialized in the PATCH body."
   S0109b8cdd0:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "yes"
+    personal: "no"
+    categories: []
+    source:
+    note: "Loads a fixed bundled font asset; no user data is sent."
   S40759d1463:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "yes"
+    personal: "yes"
+    categories: ["user.credentials"]
+    source: "lib/auth.ts:31"
+    note: "Authenticated same-origin creation request includes the NextAuth session cookie automatically, even if the initial post fields are defaults."
   Scdb9867199:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "yes"
+    personal: "no"
+    categories: []
+    source:
+    note: "Server-side public repository stars request uses a constant URL and no application user input."
   Sd8cc372f16:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "yes"
+    personal: "no"
+    categories: []
+    source:
+    note: "Constant bundled font asset URL contains no personal input."
   S0f7de0ffd6:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "yes"
+    personal: "yes"
+    categories: ["user.name", "user.unique_id"]
+    source: "components/user-name-form.tsx:46"
+    note: "Submits user name form data and identifies the user in request URL."
   S3c9d5782ac:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
-# Sinks you found while labelling that are not items above (reported separately):
-added_sites: []    # - {path: ..., line: ..., categories: [...], source: file:line}
+    is_sink: "yes"
+    personal: "yes"
+    categories: ["user.unique_id"]
+    source: "app/api/users/stripe/route.ts:26"
+    note: "The user’s Stripe customer identifier is sent to the payment provider."
+added_sites: []

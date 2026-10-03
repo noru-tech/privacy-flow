@@ -1,430 +1,428 @@
-# Labels for polar. Fill every field; see benchmark/PROTOCOL.md §3. Do not open
-# benchmark/sheets/key/ until both reviewers are done.
+# Labels for polar, imported from the labelling app. See benchmark/PROTOCOL.md §3.
 items:
   Fa29837b8be:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "tp"
+    category_ok: "yes"
+    citation: "polar/customer_portal/endpoints/oauth_accounts.py:195"
+    note: "In the member-authenticated branch, member.customer_id selects the customer whose ID is logged when the OAuth token request raises RequestError. The update detour is unnecessary to this direct identifier flow."
   F0c7c883abc:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "fp_path"
+    category_ok: "yes"
+    citation: "polar/order/service.py:3175"
+    note: "handle_payment_failure returns from the first-attempt branch; it cannot then enter the consecutive-attempt branch at 3177. That branch revokes rather than requests a billing cycle, so the displayed cycle-log route is not supported either."
   F113bfc24a1:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "fp_path"
+    category_ok: "yes"
+    citation: "polar/benefit/strategies/discord/service.py:153"
+    note: "Discord revocation builds its URL from grant_properties guild_id/role_id/granted_account_id. The member email is not serialized into this request; passing a member to scope lookup does not propagate its email into unrelated grant properties."
   F2d7a435198:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "fp_path"
+    category_ok: "yes"
+    citation: "polar/integrations/stripe/payment.py:115"
+    note: "Tax country is payment-intent metadata, but this path later selects checkout_id, loads a different checkout record, and sends its ID to Sentry. No propagation from tax_country into checkout_id or the captured exception is established."
   F25ac8efbe4:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "fp_path"
+    category_ok: "no"
+    citation: "scripts/reject_denied_orgs_stripe_accounts.py:197"
+    note: "The log reads org.slug and stripe_id from the tuple; it never reads a country field. The shown source is a list of organizations/accounts, not an address-country value."
   F63add1fa9f:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "fp_path"
+    category_ok: "yes"
+    citation: "polar/integrations/stripe/payment.py:115"
+    note: "Payment metadata tax_state is not checkout_id. The later database lookup and Sentry checkout-ID extra do not establish propagation of the state address field, even though Stripe receives it at an earlier different sink."
   F8b41b5d436:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "fp_path"
+    category_ok: "yes"
+    citation: "polar/merchant_migration/adapters/stripe.py:184"
+    note: "The API key authenticates StripeClient. Retrieved subscription records and period timestamps do not contain that key, and the terminal warning logs seat/customer/member IDs rather than credentials. Client-input taint does not transfer to every returned resource field."
   F952146731a:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "fp_path"
+    category_ok: "yes"
+    citation: "polar/worker/_enqueue.py:85"
+    note: "The terminal debug call logs actor and delay only, not job args/kwargs or stored OAuth credentials. Earlier class-level/member-ID conflations also do not carry refresh_token into the seat ID."
   Fa8cb07ae62:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "fp_path"
+    category_ok: "yes"
+    citation: "polar/benefit/strategies/slack_shared_channel/service.py:227"
+    note: "Slack archive receives channel ID from grant properties and bot token, not the resolved member email. Scope selection does not serialize the member record into this request."
   F400f0ef5f8:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "fp_path"
+    category_ok: "yes"
+    citation: "polar/order/service.py:1611"
+    note: "Order returned from payment-failure/void handling at 1611 cannot flow backward into repository creation at 1555 or the earlier balance-credit branch at 1580. The displayed later event ID is also not a copy of order.created_at."
   F48bdd24685:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "tp"
+    category_ok: "yes"
+    citation: "polar/integrations/slack/client.py:39"
+    note: "The callback authorization code is forwarded through complete_install to the Slack OAuth token-exchange form body. It is an authentication credential covered by user."
   F123d2d5fef:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "fp_path"
+    category_ok: "yes"
+    citation: "polar/benefit/strategies/discord/service.py:153"
+    note: "Role revocation reads guild/role/granted-account IDs and uses the bot client. It does not send the member OAuth access/refresh credential. Updating an OAuth-account field does not taint unrelated new Member construction or grant-property IDs."
   Fbd2d786f80:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "fp_not_personal"
+    category_ok:
+    citation:
+    note: "The selected source is the exception class name (error_type), an operational type label rather than personal data. Separate error text is not the stated source."
   Fe384e193b1:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "tp"
+    category_ok: "yes"
+    citation: "polar/tax/calculation/numeral.py:240"
+    note: "Customer billing state is normalized into address_province, nested under customer.address, and posted to Numeral tax calculations."
   F93a13da52f:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "fp_path"
+    category_ok: "no"
+    citation: "polar/integrations/slack/service.py:97"
+    note: "display_name is an integration label, not a person name, and is not client_secret. Credential validation sends the secret/client ID; the displayed route incorrectly transfers taint between different fields and backward from the update."
   F75f57d25f4:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "fp_path"
+    category_ok: "yes"
+    citation: "polar/integrations/stripe/service.py:411"
+    note: "The logger selects customer and usage from setup-intent params, not metadata.tax_country. Country reaches Stripe in metadata but not this stated log call."
   F93b726b5b4:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "fp_path"
+    category_ok: "yes"
+    citation: "polar/sentry.py:97"
+    note: "Authentication resolves a subject, but Sentry receives user.posthog_distinct_id. The access-token credential is a separate AuthSubject field and is not copied into that analytics identifier."
   F38fd555ac8:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "fp_not_personal"
+    category_ok:
+    citation:
+    note: "scope[\"state\"][\"async_session\"] is an ASGI state container holding a database session, not a postal state/address. Also a Member subject does not pass the is_user branch shown at the sink."
   F3889453dcb:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "fp_path"
+    category_ok: "yes"
+    citation: "polar/order/service.py:1611"
+    note: "The returned order from failure handling is produced after the earlier trigger_payment call at 1597. It cannot flow backward to that earlier payment attempt or its action-required log."
   Fe1144b62ad:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "fp_path"
+    category_ok: "yes"
+    citation: "polar/benefit/strategies/discord/service.py:155"
+    note: "Discord member removal sends the grant’s stored Discord account ID, not the member email. Lookup by member scope does not convert its email field into granted_account_id."
   F7cebbc1ef3:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "fp_path"
+    category_ok: "yes"
+    citation: "polar/order/service.py:3169"
+    note: "R2 continuation: meter-cycle dunning returns immediately at 3169 and never enters the consecutive-dunning cancellation branch at 3177. The claimed path joins mutually exclusive branches; the void-order return cannot reach tax calculation."
   Fbd8c63e4ac:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "fp_not_personal"
+    category_ok: "no"
+    citation: "polar/backoffice/organizations_v2/endpoints.py:5015"
+    note: "The logged form field is a payment-method domain name for an organization, not an individual identifier or personal contact field. The request object itself is not logged."
   F098f0fd100:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "fp_path"
+    category_ok: "yes"
+    citation: "polar/order/amounts.py:69"
+    note: "The propagated tax_processor is the provider enum returned separately from the calculation result, not the address or city passed to Stripe. Later seat-ID logging does not receive this source city."
   F425d6a406d:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "fp_not_personal"
+    category_ok: "no"
+    citation: "polar/middlewares.py:61"
+    note: "The selected request headers describe the Polar client build/runtime/update, and those software metadata values become Sentry tags. No email field or individual identifier is propagated along the shown path."
   Fd7ab69562c:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "tp"
+    category_ok: "yes"
+    citation: "polar/tax/calculation/__init__.py:151"
+    note: "Full sink logs calculation_id=processor_id as well as processor enums. order.tax_calculation_processor_id is passed at order/service.py:2305, so the customer order-associated tax-calculation identifier reaches the log through an equivalent field path."
   Fa170691e85:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "fp_path"
+    category_ok: "no"
+    citation: "polar/sentry.py:94"
+    note: "The selected member-session branch produces a Member subject, which cannot satisfy the is_user guard before this sink. Also scope.state.async_session is a database-session handle, not a postal state value; it is not copied into user.id."
   Fd00827c3e3:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "fp_path"
+    category_ok: "yes"
+    citation: "polar/order/service.py:3169"
+    note: "The meter-cycle failure handler returns at 3169; its void result does not enter the mutually exclusive first-dunning branch at 3175. That branch supplies the subscription used for the proposed seat-revocation log, so the shown source return has no supported route to it."
   Fb68e16c4d5:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "fp_path"
+    category_ok: "yes"
+    citation: "polar/benefit/grant/service.py:307"
+    note: "The benefit-revoked log selects benefit/customer/grant identifiers, not the member OAuth-account mapping or refresh token. Storing a refresh token on one Member does not copy it into a newly constructed Member or an unrelated grant.id."
   F576751cc22:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "fp_path"
+    category_ok: "yes"
+    citation: "polar/member/service.py:490"
+    note: "The sink logs customer.id and colliding_member.id, not the OAuth account or its credentials. Mutating an existing customer OAuth mapping does not flow into a new checkout Customer construction or its identity fields."
   F1a322df709:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "fp_path"
+    category_ok: "no"
+    citation: "polar/worker/_enqueue.py:85"
+    note: "The debug log emits only actor and delay, excluding email recipients, template props and token data held in args/kwargs. The stated source token_type is also a token-kind enum rather than the credential token itself."
   F486dff6f5c:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "fp_path"
+    category_ok: "yes"
+    citation: "polar/order/amounts.py:69"
+    note: "The selected tuple component is the tax-provider enum, not the supplied address. Neither that enum nor the address state becomes order.id/subscription.id in the terminal log; the proposed path conflates independent fields and return values."
   F689d84765c:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "fp_path"
+    category_ok: "yes"
+    citation: "polar/worker/_enqueue.py:85"
+    note: "The enqueue debug message includes only the actor name and delay, not job kwargs, member identifiers or OAuth refresh tokens. The earlier mapping-to-Member-class step also does not transfer an existing token into a newly created member identity."
   F066ad915d0:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
+    verdict:
+    category_ok:
+    citation:
     note:
   F61fc83bc0d:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
+    verdict:
+    category_ok:
+    citation:
     note:
   F161a1a0643:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
+    verdict:
+    category_ok:
+    citation:
     note:
   F35f15a8610:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
+    verdict:
+    category_ok:
+    citation:
     note:
   F3e21152eca:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
+    verdict:
+    category_ok:
+    citation:
     note:
   F020eb381fe:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
+    verdict:
+    category_ok:
+    citation:
     note:
   F7bf544178a:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
+    verdict:
+    category_ok:
+    citation:
     note:
   Fbbb52fcaa4:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
+    verdict:
+    category_ok:
+    citation:
     note:
   F3c28d92a2b:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
+    verdict:
+    category_ok:
+    citation:
     note:
   G6ae74c1d47:
-    hides_flow:     # yes | no | unsure
-    citation:       # file:line of the sink reached, if yes
+    hides_flow:
+    citation:
     note:
   Gc9bef40dc1:
-    hides_flow:     # yes | no | unsure
-    citation:       # file:line of the sink reached, if yes
+    hides_flow:
+    citation:
     note:
   G2750f03ef8:
-    hides_flow:     # yes | no | unsure
-    citation:       # file:line of the sink reached, if yes
+    hides_flow:
+    citation:
     note:
   Gc4e673f60a:
-    hides_flow:     # yes | no | unsure
-    citation:       # file:line of the sink reached, if yes
+    hides_flow:
+    citation:
     note:
   G9a96ff874a:
-    hides_flow:     # yes | no | unsure
-    citation:       # file:line of the sink reached, if yes
+    hides_flow:
+    citation:
     note:
   G6b3fab93f6:
-    hides_flow:     # yes | no | unsure
-    citation:       # file:line of the sink reached, if yes
+    hides_flow:
+    citation:
     note:
   G19d0937ac0:
-    hides_flow:     # yes | no | unsure
-    citation:       # file:line of the sink reached, if yes
+    hides_flow:
+    citation:
     note:
   G3684bce3e7:
-    hides_flow:     # yes | no | unsure
-    citation:       # file:line of the sink reached, if yes
+    hides_flow:
+    citation:
     note:
   G69a09df9ba:
-    hides_flow:     # yes | no | unsure
-    citation:       # file:line of the sink reached, if yes
+    hides_flow:
+    citation:
     note:
   G46d148f777:
-    hides_flow:     # yes | no | unsure
-    citation:       # file:line of the sink reached, if yes
+    hides_flow:
+    citation:
     note:
   S40a5be226f:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
+    is_sink:
+    personal:
+    categories: []
+    source:
     note:
   Sa295ebd732:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
+    is_sink:
+    personal:
+    categories: []
+    source:
     note:
   See92d755ef:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
+    is_sink:
+    personal:
+    categories: []
+    source:
     note:
   S9a27bc3511:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
+    is_sink:
+    personal:
+    categories: []
+    source:
     note:
   S80542bccb0:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
+    is_sink:
+    personal:
+    categories: []
+    source:
     note:
   S65f1224916:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
+    is_sink:
+    personal:
+    categories: []
+    source:
     note:
   S07176564e5:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
+    is_sink:
+    personal:
+    categories: []
+    source:
     note:
   Sba65110014:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
+    is_sink:
+    personal:
+    categories: []
+    source:
     note:
   Se593b6b8c9:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
+    is_sink:
+    personal:
+    categories: []
+    source:
     note:
   Sc7a172e859:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
+    is_sink:
+    personal:
+    categories: []
+    source:
     note:
   S1a914fed7d:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
+    is_sink:
+    personal:
+    categories: []
+    source:
     note:
   Sac9c773b08:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
+    is_sink:
+    personal:
+    categories: []
+    source:
     note:
   Sa7c1c8020b:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
+    is_sink:
+    personal:
+    categories: []
+    source:
     note:
   S5b386b9004:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
+    is_sink:
+    personal:
+    categories: []
+    source:
     note:
   S850593340e:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
+    is_sink:
+    personal:
+    categories: []
+    source:
     note:
   Sb652b7da81:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
+    is_sink:
+    personal:
+    categories: []
+    source:
     note:
   S76fc29727f:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
+    is_sink:
+    personal:
+    categories: []
+    source:
     note:
   Sdfd8ca54de:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
+    is_sink:
+    personal:
+    categories: []
+    source:
     note:
   S88fc3d5fba:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
+    is_sink:
+    personal:
+    categories: []
+    source:
     note:
   Sc2b9026ffe:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
+    is_sink:
+    personal:
+    categories: []
+    source:
     note:
   S993fb0955d:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
+    is_sink:
+    personal:
+    categories: []
+    source:
     note:
   S1262e7c52e:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
+    is_sink:
+    personal:
+    categories: []
+    source:
     note:
   S20383fa83c:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
+    is_sink:
+    personal:
+    categories: []
+    source:
     note:
   S982d14b08d:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
+    is_sink:
+    personal:
+    categories: []
+    source:
     note:
   Sc7423b86e7:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
+    is_sink:
+    personal:
+    categories: []
+    source:
     note:
   Sff5006f05a:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
+    is_sink:
+    personal:
+    categories: []
+    source:
     note:
   Sd8247fc6d9:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
+    is_sink:
+    personal:
+    categories: []
+    source:
     note:
   S9368ab3bc3:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
+    is_sink:
+    personal:
+    categories: []
+    source:
     note:
   S45aaf6c19d:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
+    is_sink:
+    personal:
+    categories: []
+    source:
     note:
   S45b666f327:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
+    is_sink:
+    personal:
+    categories: []
+    source:
     note:
-# Sinks you found while labelling that are not items above (reported separately):
-added_sites: []    # - {path: ..., line: ..., categories: [...], source: file:line}
+added_sites: []

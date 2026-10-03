@@ -1,295 +1,293 @@
-# Labels for open-saas. Fill every field; see benchmark/PROTOCOL.md §3. Do not open
-# benchmark/sheets/key/ until both reviewers are done.
+# Labels for open-saas, imported from the labelling app. See benchmark/PROTOCOL.md §3.
 items:
   Fe8af4ecd10:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "tp"
+    category_ok: "yes"
+    citation: "src/payment/lemonSqueezy/webhook.ts:197"
+    note: "Webhook customer_id is converted to a string and logged as the subscriber identifier."
   Fcf20899655:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "tp"
+    category_ok: "yes"
+    citation: "src/payment/lemonSqueezy/webhook.ts:167"
+    note: "Subscription customer identifier is printed directly in the creation log."
   Fddeb166dd4:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "tp"
+    category_ok: "yes"
+    citation: "src/payment/lemonSqueezy/webhook.ts:137"
+    note: "The order number is logged together with customer ID, identifying a purchase by that user."
   Fc45b0dc3c1:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "fp_not_personal"
+    category_ok:
+    citation: "src/analytics/providers/plausibleAnalyticsUtils.ts:48"
+    note: "The source is an aggregate total page-view count. It reaches the daily statistics log but does not identify an individual."
   Fa124dd6e4b:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "fp_not_personal"
+    category_ok:
+    citation: "src/analytics/providers/plausibleAnalyticsUtils.ts:95"
+    note: "Daily aggregate page-view totals are logged; the count contains no individual identity or event details."
   Fbd302cd807:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "tp"
+    category_ok: "yes"
+    citation: "src/payment/lemonSqueezy/webhook.ts:137"
+    note: "The webhook customer identifier is stringified and logged alongside the order number."
   F8626d9ebcb:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "fp_not_personal"
+    category_ok:
+    citation: "src/analytics/providers/googleAnalyticsUtils.ts:118"
+    note: "Aggregate daily view totals, parsed into numbers, are logged without individual event or identity data."
   F38edefaf95:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "tp"
+    category_ok: "yes"
+    citation: "src/payment/lemonSqueezy/webhook.ts:240"
+    note: "Customer ID is directly logged on subscription expiration."
   Fe2649b8f66:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "fp_not_personal"
+    category_ok:
+    citation: "src/payment/stripe/checkoutUtils.ts:51"
+    note: "The field value is the literal configuration option \"auto\", controlling address update behavior. It is not an address value."
   F36dab93c64:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "fp_not_personal"
+    category_ok:
+    citation: "src/analytics/providers/googleAnalyticsUtils.ts:120"
+    note: "The source is an aggregate daily view count, not personal user information."
   F1c2773cd5b:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "tp"
+    category_ok: "yes"
+    citation: "src/file-upload/fileUploading.ts:20"
+    note: "The selected user file is passed to getFileUploadFormData and uploaded to S3; its filename and content travel in multipart data, an equivalent path even if the displayed URL-return chain is imprecise."
   Fe2d2f5614e:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "tp"
+    category_ok: "yes"
+    citation: "src/payment/stripe/paymentProcessor.ts:70"
+    note: "The query selects the stored paymentProcessorUserId, returns it at user.ts:18, and passes it to Stripe as customer. The selection flag identifies the field being read; the transmitted value is the customer identifier."
   Fa5f4a1f4ad:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "tp"
+    category_ok: "yes"
+    citation: "src/payment/lemonSqueezy/webhook.ts:219"
+    note: "Webhook customer ID is directly logged with subscription cancellation status."
   F774ae82f13:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "tp"
+    category_ok: "yes"
+    citation: "src/payment/stripe/checkoutUtils.ts:37"
+    note: "The supplied Stripe customer ID reaches checkout.sessions.create as customer."
   Gf16f82cd99:
-    hides_flow:     # yes | no | unsure
-    citation:       # file:line of the sink reached, if yes
-    note:
+    hides_flow: "yes"
+    citation: "src/admin/dashboards/users/UsersTable.tsx:35"
+    note: "Wasp client operation serializes this user ID and admin flag in an HTTP RPC to the server. The opaque generated client call is the network boundary."
   Gfadc9cfde8:
-    hides_flow:     # yes | no | unsure
-    citation:       # file:line of the sink reached, if yes
-    note:
+    hides_flow: "yes"
+    citation: "src/payment/stripe/checkoutUtils.ts:37"
+    note: "The Stripe payment-processor implementation resolves/creates a customer using user identity/email, then sends its customer ID to checkout.sessions.create."
   Gafca9d444b:
-    hides_flow:     # yes | no | unsure
-    citation:       # file:line of the sink reached, if yes
-    note:
+    hides_flow: "no"
+    citation:
+    note: "These menu links render/navigation-target application routes. The supplied item labels/paths do not establish personal values being sent to a qualifying sink."
   G25c1db458f:
-    hides_flow:     # yes | no | unsure
-    citation:       # file:line of the sink reached, if yes
-    note:
+    hides_flow: "yes"
+    citation: "src/demo-ai-app/DemoAppPage.tsx:305"
+    note: "Wasp generated client updateTask sends task ID and the user-entered task time to the server in an HTTP operation request."
   Gd64bb5c3f9:
-    hides_flow:     # yes | no | unsure
-    citation:       # file:line of the sink reached, if yes
-    note:
+    hides_flow: "yes"
+    citation: "src/payment/stripe/webhook.ts:172"
+    note: "Wasp emailSender sends the customer email address and cancellation email to the configured email provider."
   G12fe5b11ab:
-    hides_flow:     # yes | no | unsure
-    citation:       # file:line of the sink reached, if yes
-    note:
+    hides_flow: "no"
+    citation:
+    note: "DailyStats.update is a database mutation. Its values are aggregate daily metrics; the later console.table likewise contains aggregate statistics rather than individual personal records."
   Ga6005f8ee3:
-    hides_flow:     # yes | no | unsure
-    citation:       # file:line of the sink reached, if yes
-    note:
+    hides_flow: "no"
+    citation:
+    note: "Task.create persists a database record; the guide explicitly excludes database writes. No qualifying onward sink is established by this call."
   Gc41e5ec101:
-    hides_flow:     # yes | no | unsure
-    citation:       # file:line of the sink reached, if yes
-    note:
+    hides_flow: "no"
+    citation:
+    note: "In-process listeners update toast UI state; toasts and in-process events are excluded sinks."
   G1c4e063d3c:
-    hides_flow:     # yes | no | unsure
-    citation:       # file:line of the sink reached, if yes
-    note:
+    hides_flow: "no"
+    citation:
+    note: "Database create stores aggregate daily metrics. Neither the database write nor the aggregate data constitutes a personal-data sink flow here."
   G57bb115c39:
-    hides_flow:     # yes | no | unsure
-    citation:       # file:line of the sink reached, if yes
-    note:
+    hides_flow: "yes"
+    citation: "src/file-upload/FileUploadPage.tsx:107"
+    note: "Generated Wasp client operation sends the user-selected filename and file type over HTTP to obtain an upload URL. Filename can contain personal user content."
   Seb64f136a8:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "yes"
+    personal: "yes"
+    categories: ["user"]
+    source: "src/file-upload/s3Utils.ts:73"
+    note: "S3 SDK sends the key of a user-uploaded file to AWS for an object existence check. The key identifies user-associated uploaded content."
   S128fb02b54:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "yes"
+    personal: "yes"
+    categories: ["user.credentials"]
+    source: "src/analytics/providers/plausibleAnalyticsUtils.ts:5"
+    note: "The outgoing request includes the configured Plausible account API key as a Bearer credential. Aggregate view metrics themselves are nonpersonal."
   S75bde1aeaf:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "yes"
+    personal: "yes"
+    categories: ["user"]
+    source: "src/payment/stripe/webhook.ts:88"
+    note: "The caught error can be a Stripe signature-verification error containing the request payload, or a downstream customer/database/provider error. Logging the whole error can retain webhook customer/purchase data."
   Sc5a7f793c0:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "yes"
+    personal: "no"
+    categories: []
+    source:
+    note: "This client catch logs checkout-operation errors and fixed local failure messages; no personal request fields are explicitly included in the logged value."
   S6eb473dd59:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "yes"
+    personal: "yes"
+    categories: ["user.unique_id"]
+    source: "src/payment/lemonSqueezy/webhook.ts:206"
+    note: "Logs the webhook customer_id as lemonSqueezyId together with cancellation status."
   S99890a4053:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "yes"
+    personal: "yes"
+    categories: ["user"]
+    source: "src/file-upload/fileUploading.ts:8"
+    note: "The user-selected file is converted to multipart form data and posted to S3, carrying file content and filename."
   S3652a0de30:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "yes"
+    personal: "yes"
+    categories: ["user.unique_id"]
+    source: "src/payment/lemonSqueezy/webhook.ts:145"
+    note: "The payment customer ID is logged on subscription creation."
   Sbc32597c49:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "yes"
+    personal: "yes"
+    categories: ["user"]
+    source: "src/file-upload/s3Utils.ts:65"
+    note: "The user-associated uploaded object key is transmitted to AWS in a DeleteObject request."
   S8594e14251:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "yes"
+    personal: "yes"
+    categories: ["user.unique_id"]
+    source: "src/payment/stripe/checkoutUtils.ts:34"
+    note: "Stripe receives customerId and the selected purchase line item when creating checkout."
   S764226a7e5:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "yes"
+    personal: "no"
+    categories: []
+    source:
+    note: "Logs Zod validation issue descriptions/paths and the validation error, not rawArgs. No explicit input-value echo or personal-value inclusion is present in this formatter."
   Sa88e16f1f6:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "yes"
+    personal: "no"
+    categories: []
+    source:
+    note: "Fixed status message without personal arguments."
   S4626f60736:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "yes"
+    personal: "no"
+    categories: []
+    source:
+    note: "This branch is restricted to UnhandledWebhookEventError, constructed from event.type at line 52. It logs the event type/error metadata, not the webhook customer payload."
   S2939c8dba2:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "yes"
+    personal: "no"
+    categories: []
+    source:
+    note: "Writes only a sidebar expansion UI boolean, not personal content or identity."
   Sb302b41f06:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "yes"
+    personal: "yes"
+    categories: ["user"]
+    source: "src/payment/lemonSqueezy/webhook.ts:108"
+    note: "Whole errors from processing customer/order data are logged. Database/provider errors can retain customer identifiers or payment details from the failed operation."
   S52161d67dd:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "yes"
+    personal: "no"
+    categories: []
+    source:
+    note: "The error branch logs query error metadata, not the returned signed download URL or file content. No concrete personal field is passed to this log."
   See00e7004f:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "yes"
+    personal: "yes"
+    categories: ["user"]
+    source: "src/demo-ai-app/operations.ts:245"
+    note: "The user’s task descriptions and times are assembled into the prompt sent to OpenAI for planning."
   Scb27821285:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "yes"
+    personal: "yes"
+    categories: ["user.unique_id", "user.contact.email"]
+    source: "src/payment/polar/checkoutUtils.ts:22"
+    note: "Polar receives the application user ID as externalId and their email to create the customer."
   Seed2ae69e5:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "yes"
+    personal: "no"
+    categories: []
+    source:
+    note: "The application’s useLocalStorage caller is useColorMode, storing color-theme light/dark. This is a UI mode value without personal content or identity."
   S5e0bce726f:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "yes"
+    personal: "no"
+    categories: []
+    source:
+    note: "This restricted branch logs an unsupported webhook event-type message, not customer/order payload contents."
   Sc431211cab:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "yes"
+    personal: "yes"
+    categories: ["user.unique_id"]
+    source: "src/payment/stripe/paymentProcessor.ts:60"
+    note: "Stored user payment-processor ID is fetched and sent to Stripe as customer for a portal session."
   S24bf77b6bd:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "yes"
+    personal: "no"
+    categories: []
+    source:
+    note: "The caught errors concern appending/configuring a script with a static analytics property ID. No personal user value is explicitly supplied to the log."
   S2c856a9063:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "yes"
+    personal: "no"
+    categories: []
+    source:
+    note: "This job operates on aggregate daily counts/revenue and logs calculation/query errors. No individual user field is identified in the logged arguments."
   Sf05047325e:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "yes"
+    personal: "yes"
+    categories: ["user.credentials"]
+    source: "src/analytics/providers/plausibleAnalyticsUtils.ts:5"
+    note: "The shared headers contain the Plausible account API key in Authorization and are transmitted to the analytics provider."
   Sa6b591d946:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "yes"
+    personal: "no"
+    categories: []
+    source:
+    note: "The application uses this hook only for color-theme light/dark. Read/parse errors for that UI setting do not establish a personal-data source."
   S7f0ea018e2:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "yes"
+    personal: "yes"
+    categories: ["user"]
+    source: "src/payment/polar/webhook.ts:71"
+    note: "Whole errors from processing personal customer/subscription webhook records can retain identifiers in database/provider error details, which this unrestricted error log emits."
   S131fd8759a:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "yes"
+    personal: "no"
+    categories: []
+    source:
+    note: "Only the unsupported event-type error is logged in this guarded branch; event payload/customer data is not included."
   Sbf40735114:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "yes"
+    personal: "yes"
+    categories: ["user.contact.email"]
+    source: "src/payment/stripe/webhook.ts:173"
+    note: "The configured email provider receives the subscriber email recipient for a cancellation message."
   S2adc3bf590:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "yes"
+    personal: "yes"
+    categories: ["user.unique_id"]
+    source: "src/payment/polar/paymentProcessor.ts:60"
+    note: "User’s Polar customer identifier is sent to create an authenticated customer portal session."
   Scb6d48056d:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "yes"
+    personal: "yes"
+    categories: ["user.credentials"]
+    source: "src/analytics/providers/plausibleAnalyticsUtils.ts:5"
+    note: "The request sends the configured Plausible API bearer credential in shared headers."
   Sea1400e641:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
-# Sinks you found while labelling that are not items above (reported separately):
-added_sites: []    # - {path: ..., line: ..., categories: [...], source: file:line}
+    is_sink: "yes"
+    personal: "yes"
+    categories: ["user.contact.email"]
+    source: "src/payment/stripe/checkoutUtils.ts:19"
+    note: "User email is sent to Stripe to create the customer record."
+added_sites: []

@@ -1,370 +1,368 @@
-# Labels for vercel-chatbot. Fill every field; see benchmark/PROTOCOL.md §3. Do not open
-# benchmark/sheets/key/ until both reviewers are done.
+# Labels for vercel-chatbot, imported from the labelling app. See benchmark/PROTOCOL.md §3.
 items:
   F53c41f1855:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
+    verdict: "tp"
+    category_ok: "yes"
+    citation: "artifacts/text/server.ts:35"
     note:
   F7c3493297d:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "fp_not_personal"
+    category_ok:
+    citation: "hooks/use-artifact.ts:7"
+    note: "The identified source is the static initialArtifactData object: empty content/title and documentId \"init\", not user-provided content."
   Fec448cf880:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "fp_not_personal"
+    category_ok:
+    citation: "lib/ai/tools/get-weather.ts:25"
+    note: "The source is a geocoder result for a city, not a person’s observed precise location. Public city coordinates reach the weather endpoint."
   F4f063c55ff:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "fp_not_personal"
+    category_ok:
+    citation: "lib/ai/tools/get-weather.ts:46"
+    note: "This source is the city-geocoding branch; its coordinates represent the queried city, not an observed personal precise location."
   Fe2c509e798:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "fp_not_personal"
+    category_ok:
+    citation: "lib/ai/tools/get-weather.ts:46"
+    note: "The city-geocoder coordinate source is public location information; no person’s measured location is shown."
   F4a9efc9328:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
+    verdict: "tp"
+    category_ok: "yes"
+    citation: "artifacts/code/server.ts:18"
     note:
   F5ec7d659f0:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
+    verdict: "tp"
+    category_ok: "yes"
+    citation: "app/(chat)/api/chat/route.ts:269"
     note:
   F00765a09a4:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
+    verdict: "tp"
+    category_ok: "yes"
+    citation: "artifacts/sheet/server.ts:11"
     note:
   F8f021047e2:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "tp"
+    category_ok: "no"
+    citation: "app/(chat)/api/chat/route.ts:269"
+    note: "Request geolocation is sent in system instructions. IP-derived geolocation is coarse; the shown code does not establish precise device location."
   F15855b29ad:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "fp_path"
+    category_ok: "no"
+    citation: "components/ai-elements/code-block.tsx:231"
+    note: "Promise rejection error is not the returned highlighter/cache value. Language here denotes a programming language, not a person’s language."
   F68b7802299:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
+    verdict: "tp"
+    category_ok: "yes"
+    citation: "components/chat/artifact.tsx:175"
     note:
   F92d5b85a2a:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "fp_not_personal"
+    category_ok:
+    citation: "app/(chat)/api/chat/route.ts:97"
+    note: "This path projects only the allowlisted model identifier from the request. A model name selects an implementation and does not convey the request’s personal content."
   F5fed2924bb:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
+    verdict: "tp"
+    category_ok: "yes"
+    citation: "artifacts/text/server.ts:11"
     note:
   F0788ee468e:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "fp_not_personal"
+    category_ok:
+    citation: "hooks/use-artifact.ts:7"
+    note: "The cited source contains only static defaults, including documentId \"init\", empty content and title. These are not personal values."
   F39855b94c4:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "tp"
+    category_ok: "no"
+    citation: "app/(chat)/api/chat/route.ts:269"
+    note: "Request-origin country is personal coarse geolocation, but does not establish a contact/postal address country. Equivalent string construction forwards country along with the other request hints."
   Fefd17f31ee:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "tp"
+    category_ok: "no"
+    citation: "app/(chat)/api/chat/route.ts:269"
+    note: "The request hints convey personal coarse geolocation; an IP-derived origin city is not established as a contact address city."
   F767a102305:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "tp"
+    category_ok: "yes"
+    citation: "app/(chat)/api/chat/route.ts:442"
+    note: "The request tracking identifier is copied from x-vercel-id and logged; it can correlate this user request with other request records."
   F52debfc765:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "tp"
+    category_ok: "no"
+    citation: "app/(chat)/api/chat/route.ts:269"
+    note: "IP-derived request geolocation reaches the model; precise device location is not established by this source."
   F6869f2dbd4:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "tp"
+    category_ok: "yes"
+    citation: "lib/ai/tools/get-weather.ts:58"
+    note: "Direct numeric tool input may contain the user’s precise coordinates and is interpolated in the weather-provider URL."
   F8f6b468121:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
+    verdict: "tp"
+    category_ok: "yes"
+    citation: "artifacts/sheet/server.ts:33"
     note:
   F5ea581f181:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "fp_not_personal"
+    category_ok:
+    citation: "lib/ai/tools/get-weather.ts:24"
+    note: "Geocoder output locates a queried city, not a particular person; public city latitude is forwarded to the forecast API."
   F636b5f9e4c:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
+    verdict: "tp"
+    category_ok: "yes"
+    citation: "app/(chat)/actions.ts:28"
     note:
   Fd17001ddc1:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "fp_path"
+    category_ok: "yes"
+    citation: "app/(chat)/api/chat/route.ts:132"
+    note: "The saved userId is not forwarded to generateTitleFromUserMessage, which receives only message. Later geolocation/header reads also do not carry that database identifier."
   F1b1c52374d:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
+    verdict: "tp"
+    category_ok: "yes"
+    citation: "app/(chat)/api/chat/route.ts:269"
     note:
   Ff900708f83:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "fp_path"
+    category_ok: "yes"
+    citation: "app/(chat)/api/history/route.ts:29"
+    note: "getChatsByUserId throws, but this GET handler has no catch invoking toResponse on the thrown database error. Constructing a ChatbotError does not itself execute its logging method."
   F9b65c7e090:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
+    verdict: "tp"
+    category_ok: "yes"
+    citation: "lib/ai/tools/get-weather.ts:58"
     note:
   F3a61cbe3ff:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
+    verdict: "tp"
+    category_ok: "yes"
+    citation: "artifacts/code/server.ts:40"
     note:
   F8094cf0a4a:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "tp"
+    category_ok: "yes"
+    citation: "lib/ai/tools/get-weather.ts:8"
+    note: "The city supplied through the user-facing weather tool is transmitted in the geocoder query and can be the user’s home/contact city."
   F68972357b7:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "fp_path"
+    category_ok: "yes"
+    citation: "app/(chat)/api/chat/route.ts:427"
+    note: "request.headers.get reads an inbound header; it is not outbound HTTP. The session userId also is not forwarded through the intervening message-only title call."
   Gaf9f2ffb93:
-    hides_flow:     # yes | no | unsure
-    citation:       # file:line of the sink reached, if yes
-    note:
+    hides_flow: "no"
+    citation:
+    note: "Radix Slot merges props into its child for UI composition; these button/sidebar render sites do not themselves transmit, log, or persist personal data."
   G7c88d70628:
-    hides_flow:     # yes | no | unsure
-    citation:       # file:line of the sink reached, if yes
-    note:
+    hides_flow: "no"
+    citation:
+    note: "DecorationSet.create builds in-memory editor decoration state around the document; it does not log, send, or store that document externally."
   Ga842ef5499:
-    hides_flow:     # yes | no | unsure
-    citation:       # file:line of the sink reached, if yes
-    note:
+    hides_flow: "no"
+    citation:
+    note: "This EditorView displays read-only document diff state in the local DOM; UI rendering is not an enumerated sink."
   Gf5c9ef0aae:
-    hides_flow:     # yes | no | unsure
-    citation:       # file:line of the sink reached, if yes
-    note:
+    hides_flow: "no"
+    citation:
+    note: "Tooltip.Provider supplies local UI context/timing to tooltip children, with no network, logging or browser storage sink."
   G75d6e81419:
-    hides_flow:     # yes | no | unsure
-    citation:       # file:line of the sink reached, if yes
-    note:
+    hides_flow: "no"
+    citation:
+    note: "getSuggestions forwards documentId to a database query and returns suggestions to its caller; database access and the application’s own response are excluded sinks."
   G5874ee5d06:
-    hides_flow:     # yes | no | unsure
-    citation:       # file:line of the sink reached, if yes
-    note:
+    hides_flow: "no"
+    citation:
+    note: "ProseMirror Node constructs an in-memory document node for diff rendering; construction does not transmit or persist it."
   Gfb373c6eff:
-    hides_flow:     # yes | no | unsure
-    citation:       # file:line of the sink reached, if yes
-    note:
+    hides_flow: "no"
+    citation:
+    note: "setOpenProp receives only a boolean sidebar-open state. The surrounding cookie write stores this UI toggle, not the alleged personal source value; no personal data flow through the callback is established."
   G85b4e86ba7:
-    hides_flow:     # yes | no | unsure
-    citation:       # file:line of the sink reached, if yes
-    note:
+    hides_flow: "no"
+    citation:
+    note: "Tooltip.Portal renders tooltip content in another DOM container; local UI rendering is not an enumerated sink."
   Gb19bbf6ff0:
-    hides_flow:     # yes | no | unsure
-    citation:       # file:line of the sink reached, if yes
-    note:
+    hides_flow: "no"
+    citation:
+    note: "getToken reads/decrypts the incoming session token locally. This route only tests token presence; it does not forward the decoded personal token to an external sink."
   Gb4655cb961:
-    hides_flow:     # yes | no | unsure
-    citation:       # file:line of the sink reached, if yes
-    note:
+    hides_flow: "yes"
+    citation: "app/(auth)/actions.ts:28"
+    note: "NextAuth signIn writes the authenticated session JWT cookie to browser storage. app/(auth)/auth.ts jwt callback assigns token.id from user.id; successful credential sign-in also includes user email in its session token."
   Sa18b0e8908:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "no"
+    personal:
+    categories: []
+    source:
+    note: "Pyodide stdout is intercepted by setStdout at artifacts/code/client.tsx:125 and rendered as application console output, not emitted to a logging sink. This print also contains a static warning."
   S4826326742:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "no"
+    personal:
+    categories: []
+    source:
+    note: "toast.error renders an in-app notification; the guide explicitly excludes toasts from sinks."
   S5553e20dbb:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "yes"
+    personal: "yes"
+    categories: ["user"]
+    source: "app/(chat)/actions.ts:18"
+    note: "The client-callable server action accepts an unrestricted model string and writes it directly to browser cookie storage; user-supplied content can reach it."
   Saa10cdcf7b:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "no"
+    personal:
+    categories: []
+    source:
+    note: "UI toast notification; excluded by the guide."
   Se65a514844:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "yes"
+    personal: "yes"
+    categories: ["user.unique_id"]
+    source: "components/chat/message-actions.tsx:51"
+    note: "The vote request transmits the user-associated chat identifier and message vote."
   S6d8455c028:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "yes"
+    personal: "yes"
+    categories: ["user"]
+    source: "lib/ai/tools/get-weather.ts:40"
+    note: "The user-facing tool’s city input is sent to the external geocoding provider."
   S1355612411:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "yes"
+    personal: "yes"
+    categories: ["user"]
+    source: "lib/utils.ts:29"
+    note: "hooks/use-active-chat.tsx configures DefaultChatTransport to use this fetch wrapper and sends user messages in request body; init carries that personal content."
   S6f98d5b9c2:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "yes"
+    personal: "yes"
+    categories: ["user"]
+    source: "artifacts/text/server.ts:32"
+    note: "User document content and update description are included in LLM instructions/prompt."
   S5a73e272e5:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "no"
+    personal:
+    categories: []
+    source:
+    note: "A toast is an application UI notification and is excluded as a sink."
   Scbb2b5da75:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "yes"
+    personal: "yes"
+    categories: ["user"]
+    source: "artifacts/text/server.ts:8"
+    note: "User-supplied document title/topic is used as prompt for the LLM."
   S45eb24bf7c:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "no"
+    personal:
+    categories: []
+    source:
+    note: "This is a UI toast, explicitly excluded by the guide."
   S2484834470:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "yes"
+    personal: "no"
+    categories: []
+    source:
+    note: "Fetches endpoint metadata for configured chatModels using only the catalog model ID; no user content or identifier is supplied."
   Sc1fb910ae7:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "yes"
+    personal: "yes"
+    categories: ["user"]
+    source: "components/chat/multimodal-input.tsx:272"
+    note: "User-selected file content is placed in FormData and uploaded."
   Sd24af33e6e:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "yes"
+    personal: "yes"
+    categories: ["user"]
+    source: "app/(chat)/actions.ts:24"
+    note: "User message text becomes the title-generation LLM prompt."
   Sf4f9ce0bf7:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "yes"
+    personal: "yes"
+    categories: ["user"]
+    source: "components/chat/artifact.tsx:179"
+    note: "The edited user document content is sent in the POST body."
   S03775b871e:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "yes"
+    personal: "yes"
+    categories: ["user"]
+    source: "app/(chat)/api/chat/route.ts:74"
+    note: "The chat handler catches database ChatbotErrors and calls toResponse; database error causes can include query parameters containing user messages/IDs, which are logged here."
   S02becd21ff:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "yes"
+    personal: "no"
+    categories: []
+    source:
+    note: "The migration runner logs schema-migration failures; no application user data source reaches this startup maintenance path."
   Sd9aaa027da:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "yes"
+    personal: "yes"
+    categories: ["user"]
+    source: "app/(chat)/api/chat/route.ts:74"
+    note: "Request messages are parsed, converted to modelMessages and sent to the model in streamText."
   S41f177cad9:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "yes"
+    personal: "yes"
+    categories: ["user.unique_id"]
+    source: "app/(chat)/api/chat/route.ts:427"
+    note: "Logs x-vercel-id request tracking identifier, correlatable with the user’s request."
   S122c716e98:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "no"
+    personal:
+    categories: []
+    source:
+    note: "Toast is excluded UI notification."
   Sb57cff36e4:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "yes"
+    personal: "yes"
+    categories: ["user.credentials"]
+    source: "app/(auth)/auth.ts:44"
+    note: "Although the URL is a constant model-list endpoint, same-origin browser fetch includes the authenticated session cookie by default."
   Sd4ac2c6686:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "yes"
+    personal: "yes"
+    categories: ["user.unique_id"]
+    source: "components/chat/multimodal-input.tsx:196"
+    note: "User-associated chat ID is transmitted in the deletion request URL."
   S5e826ec487:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "yes"
+    personal: "yes"
+    categories: ["user.credentials"]
+    source: "app/(auth)/auth.ts:44"
+    note: "Authenticated same-origin fetch includes the session cookie by default; the JWT carries the user identifier even though URL/body are constant."
   Sf63835ba0e:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "yes"
+    personal: "no"
+    categories: []
+    source:
+    note: "Only static message and elapsed migration duration are logged."
   S395bc84909:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "yes"
+    personal: "no"
+    categories: []
+    source:
+    note: "Constant public model-catalog request with no personal input."
   S80f53245fd:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "yes"
+    personal: "yes"
+    categories: ["user"]
+    source: "artifacts/sheet/server.ts:30"
+    note: "User sheet content and update description are sent as model instructions and prompt."
   Se1924b6812:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "yes"
+    personal: "yes"
+    categories: ["user.unique_id"]
+    source: "lib/utils.ts:16"
+    note: "hooks/use-active-chat.tsx passes /api/messages?chatId=${chatId} and /api/vote?chatId=${chatId} to this fetcher; user-associated chat IDs reach HTTP."
   Seae5f5b5e4:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "yes"
+    personal: "no"
+    categories: []
+    source:
+    note: "Logs a static missing-configuration message; it does not log the database URL or personal data."
   Sf2e58b2e63:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "no"
+    personal:
+    categories: []
+    source:
+    note: "Pyodide stdout is captured by setStdout into in-memory Console output and rendered as an image in the application; this is not a logging destination."
   S830416df2d:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
-# Sinks you found while labelling that are not items above (reported separately):
-added_sites: []    # - {path: ..., line: ..., categories: [...], source: file:line}
+    is_sink: "yes"
+    personal: "yes"
+    categories: ["user.credentials"]
+    source: "app/(auth)/auth.ts:44"
+    note: "The authenticated same-origin request includes the session cookie by default, although URL and body contain no personal fields. The session JWT carries the user identifier."
+added_sites: []

@@ -1,325 +1,323 @@
-# Labels for healthchecks. Fill every field; see benchmark/PROTOCOL.md §3. Do not open
-# benchmark/sheets/key/ until both reviewers are done.
+# Labels for healthchecks, imported from the labelling app. See benchmark/PROTOCOL.md §3.
 items:
   Fe0bd1adc88:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "fp_path"
+    category_ok: "yes"
+    citation: "hc/accounts/forms.py:100"
+    note: "cleaned_data.get is a dictionary lookup, not hc.lib.curl.get. The email is not passed as an HTTP URL through the shown name match."
   Feccd116b13:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "tp"
+    category_ok: "yes"
+    citation: "hc/integrations/signal/transport.py:101"
+    note: "Configured recipient phone number is interpolated into the failure log along with signal-cli response details."
   Fc20bc833e1:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "fp_not_personal"
+    category_ok:
+    citation: "hc/lib/s3.py:95"
+    note: "The claimed source expression is an exception class name plus a fixed function label, which is not personal. logger.exception may separately include exception details, but those are not this source value."
   Fc6c7c77afe:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "fp_path"
+    category_ok: "no"
+    citation: "hc/accounts/views.py:610"
+    note: "form.is_valid is Django form validation, not logging. The later render return cannot flow backward into that call, and the shown source is a form object for email change, not a password value."
   Fc9c7ac9554:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "fp_path"
+    category_ok: "no"
+    citation: "hc/accounts/views.py:350"
+    note: "Django form validation is not a log sink. Project name assigned after validation does not flow backward, and a project name is not an email address."
   F927047a33d:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "fp_path"
+    category_ok: "yes"
+    citation: "hc/api/models.py:569"
+    note: "remote_addr is stored in the Ping database row. S3 upload receives check code, ping number and body only; the IP does not become body or ping.n/object key."
   F484bfb24dc:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "tp"
+    category_ok: "yes"
+    citation: "hc/lib/curl.py:152"
+    note: "Basic-auth username/password is supplied to the cURL request handle and used when the same request is performed."
   Fd46fb27f3e:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "fp_path"
+    category_ok: "yes"
+    citation: "hc/accounts/forms.py:101"
+    note: "Dictionary cleaned_data.get retrieves the login password locally; it does not call hc.lib.curl.get or pass the password as an outbound URL."
   Fa4c292e7d6:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "tp"
+    category_ok: "no"
+    citation: "hc/lib/s3.py:109"
+    note: "Equivalent direct path sends the loaded Check.code and ping number as the S3 object key. Check code is a persistent user-owned monitoring/ping identifier (and ping credential), not an email address."
   Fed76dc8936:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "fp_not_personal"
+    category_ok:
+    citation: "hc/front/management/commands/render_docs.py:37"
+    note: "Bundled documentation filename basenames are build metadata, not personal data."
   Ff83558e831:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "fp_path"
+    category_ok: "no"
+    citation: "hc/accounts/views.py:335"
+    note: "is_valid is form validation, not logging. The source is the user’s timezone rather than email and is assigned only after validation."
   Fd7b7223bad:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "tp"
+    category_ok: "yes"
+    citation: "hc/lib/curl.py:152"
+    note: "The Basic-auth credential pair configures this cURL handle and is used by its outbound request."
   F6079aba359:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "fp_path"
+    category_ok: "no"
+    citation: "hc/accounts/views.py:335"
+    note: "Django is_valid does not log. The assigned field is timezone, not password, and it cannot flow backward into earlier validation."
   Fcc7c25159d:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "fp_path"
+    category_ok: "yes"
+    citation: "hc/accounts/forms.py:101"
+    note: "The local cleaned_data dictionary’s get method is unrelated to the curl.get HTTP helper. No password-to-URL propagation occurs."
   F7d882baf02:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "fp_path"
+    category_ok: "no"
+    citation: "hc/accounts/views.py:224"
+    note: "Form validation is not a log sink. Later failure-context construction cannot flow backward, and the source is a signup form rather than a password value."
   F7bfc09c413:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "tp"
+    category_ok: "yes"
+    citation: "hc/integrations/signal/transport.py:101"
+    note: "The channel phone is passed as recipient, interpolated into msg_with_extras, and logged on a Signal failure."
   F3a3e7403a5:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "fp_path"
+    category_ok: "yes"
+    citation: "hc/accounts/forms.py:100"
+    note: "cleaned_data.get is dictionary lookup, not hc.lib.curl.get. The email is not passed as this HTTP URL."
   F24b245fd78:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "fp_path"
+    category_ok: "yes"
+    citation: "hc/accounts/views.py:168"
+    note: "Form.is_valid performs validation, not logging; the later response context does not propagate backward to a log sink."
   Fc71a8a55ce:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "fp_path"
+    category_ok: "no"
+    citation: "hc/accounts/views.py:731"
+    note: "Credential display name is not an email, and form.is_valid is validation rather than a log. The assignment occurs later."
   F7b3c8281f2:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "fp_path"
+    category_ok: "yes"
+    citation: "hc/accounts/views.py:583"
+    note: "The password is personal, but form.is_valid is validation, not a logging call. The subsequent password assignment does not establish a log flow."
   G43d0154397:
-    hides_flow:     # yes | no | unsure
-    citation:       # file:line of the sink reached, if yes
-    note:
+    hides_flow: "no"
+    citation:
+    note: "PublicKeyCredentialUserEntity builds registration options in memory; CreateHelper.prepare returns options/state for the application response. This entity construction does not itself log or send to an external service."
   Gb8d169b4a1:
-    hides_flow:     # yes | no | unsure
-    citation:       # file:line of the sink reached, if yes
-    note:
+    hides_flow: "no"
+    citation:
+    note: "Django ORM filtering uses a key prefix to select candidate projects and compare credentials locally. Database queries and returned models do not establish an external sink."
   Gd5eaaab0b6:
-    hides_flow:     # yes | no | unsure
-    citation:       # file:line of the sink reached, if yes
-    note:
+    hides_flow: "no"
+    citation:
+    note: "Fido2Server validates the submitted registration locally and returns credential data, which the account view saves in its database. The verification call does not contact an external service or log the personal response."
   Gd8fc502392:
-    hides_flow:     # yes | no | unsure
-    citation:       # file:line of the sink reached, if yes
-    note:
+    hides_flow: "no"
+    citation:
+    note: "OnCalendar parses a schedule and yields local datetime values for validation or the caller’s preview response. It is a computation library with no outbound or logging sink on these paths."
   G8e891abbb6:
-    hides_flow:     # yes | no | unsure
-    citation:       # file:line of the sink reached, if yes
-    note:
+    hides_flow: "yes"
+    citation: "hc/api/transports.py:168"
+    note: "HttpTransport.post forwards data/auth through request and _request to curl.request. The Call integration includes recipient phone and credentials, which are sent to Twilio."
   Gcbd836ccb3:
-    hides_flow:     # yes | no | unsure
-    citation:       # file:line of the sink reached, if yes
-    note:
+    hides_flow: "yes"
+    citation: "hc/integrations/signal/transport.py:101"
+    note: "Pydantic returns a PhoneConf retaining value. Signal.notify reads channel.phone.value at line179, passes it as recipient, and failure handling logs that recipient at line101; Call also sends it in Twilio POST data."
   Gb2051b0a72:
-    hides_flow:     # yes | no | unsure
-    citation:       # file:line of the sink reached, if yes
-    note:
+    hides_flow: "no"
+    citation:
+    note: "Fido2Server verifies the assertion locally against stored credentials. The wrapper returns only a boolean and catches validation errors; no logging or third-party transmission is established."
   Ga55ed16e10:
-    hides_flow:     # yes | no | unsure
-    citation:       # file:line of the sink reached, if yes
-    note:
+    hides_flow: "no"
+    citation:
+    note: "Python set.issubset compares tags in memory and returns a boolean. It does not carry tag content to any external sink."
   Ga062e2acfa:
-    hides_flow:     # yes | no | unsure
-    citation:       # file:line of the sink reached, if yes
-    note:
+    hides_flow: "no"
+    citation:
+    note: "PyOTP constructs an otpauth URI locally; Segno renders a QR data URI locally for the requesting user’s setup page. No external QR service or other sink is used."
   G5dfc6813dd:
-    hides_flow:     # yes | no | unsure
-    citation:       # file:line of the sink reached, if yes
-    note:
+    hides_flow: "no"
+    citation:
+    note: "register_begin generates challenge/options and local state; CreateHelper.prepare returns them for the application’s own registration response. It performs no external request or log."
   Sbbb27f2965:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "yes"
+    personal: "no"
+    categories: []
+    source:
+    note: "Logs a bundled documentation page slug during search-index generation; these fixed documentation names are not personal data."
   S316ff137da:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "no"
+    personal:
+    categories: []
+    source:
+    note: "This apparent call is a doctest-style example inside request’s documentation string, not an executed application sink."
   S72acc5f864:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "no"
+    personal:
+    categories: []
+    source:
+    note: "A documentation example with synthetic form data, inside a Python docstring; it is not an executed application request."
   Sf813980de2:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "yes"
+    personal: "yes"
+    categories: ["user.authorization.credentials", "user"]
+    source: "hc/integrations/apprise/transport.py:28"
+    note: "Apprise sends the generated notification via the user-configured channel URL, which can include recipient identifiers and provider credentials. Check content is also rendered into title/body."
   S171386f1cc:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "no"
+    personal:
+    categories: []
+    source:
+    note: "request.session is Django’s session mapping. get retrieves a local session value; it is not the requests HTTP library."
   S49651e1ed7:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "yes"
+    personal: "yes"
+    categories: ["user.unique_id", "user.authorization.credentials"]
+    source: "hc/lib/s3.py:120"
+    note: "start_after includes the user-owned Check UUID/ping credential passed as code. Object-removal failures log that persistent identifier explicitly."
   Sba1b02e1ec:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "yes"
+    personal: "no"
+    categories: []
+    source:
+    note: "Prints the fixed literal Status OK; no personal argument reaches this call."
   S32f459c679:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "yes"
+    personal: "yes"
+    categories: ["user.contact.email"]
+    source: "hc/settings.py:76"
+    note: "Django mail_admins sends email to configured ADMINS recipients, loaded from the environment. Recipient email addresses reach the mail transport even though the body is only aggregate log count/link."
   S41084e83f6:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "no"
+    personal:
+    categories: []
+    source:
+    note: "Django messages.warning sets a user-facing flash message for the application response; it is not a logger warning call."
   S865485e44e:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "no"
+    personal:
+    categories: []
+    source:
+    note: "The request text is a usage example inside a Python docstring, not executed application code."
   Sf4dad6e949:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "no"
+    personal:
+    categories: []
+    source:
+    note: "This is Django’s user-facing flash-message framework, not an application log sink."
   S7a7fe6e3da:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "yes"
+    personal: "yes"
+    categories: ["user.contact.phone_number", "user"]
+    source: "hc/integrations/signal/transport.py:179"
+    note: "The send method delivers a Signal notification to the configured recipient phone number, including rendered check details."
   S66e51b7b02:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "yes"
+    personal: "no"
+    categories: []
+    source:
+    note: "Logs Slack webhook HTTP400 response text. The response is an error label rather than the sent notification or recipient/token; no application personal field is shown propagating into that response."
   Se01be9390d:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "yes"
+    personal: "yes"
+    categories: ["user.contact.email", "user.authorization.credentials"]
+    source: "hc/integrations/signal/transport.py:181"
+    note: "Signal rate-limit token/reply are forwarded to the administrator email notification. Configured ADMINS email recipients also reach the mail transport."
   S4f759778a1:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "yes"
+    personal: "yes"
+    categories: ["user.contact.phone_number", "user.authorization.credentials", "user"]
+    source: "hc/integrations/call/transport.py:60"
+    note: "Dispatches to configured notification transports. For example Call.notify posts the channel recipient phone and auth to Twilio; Signal sends to channel.phone.value."
   S4ed1368476:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "yes"
+    personal: "yes"
+    categories: ["user.contact.phone_number", "user"]
+    source: "hc/integrations/signal/transport.py:78"
+    note: "Unvalidated signal-cli reply bytes are logged in full on schema mismatch. Signal replies can include recipient addresses/phone identifiers and diagnostic details from the submitted notification."
   S3e2fe6b183:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "yes"
+    personal: "yes"
+    categories: ["user.contact.phone_number"]
+    source: "hc/integrations/signal/views.py:119"
+    note: "The recipient phone identifier is sent to Signal to deliver the verification/test message."
   S256f971729:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "yes"
+    personal: "yes"
+    categories: ["user.unique_id", "user.authorization.credentials"]
+    source: "hc/integrations/telegram/views.py:82"
+    note: "Telegram API message delivery receives the chat/thread identifiers and signed invitation link; these identify the recipient and authorize the integration setup."
   S80c5fcd60f:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "yes"
+    personal: "no"
+    categories: []
+    source:
+    note: "This branch logs an API error response only when installations is absent; successful installation/account data is not logged. The access token is in the outbound header, not copied into the GitHub error response."
   S66ee716cef:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "no"
+    personal:
+    categories: []
+    source:
+    note: "Django flash message returned to the current user; messages.warning is not the logging module."
   Sc95cf4edff:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "no"
+    personal:
+    categories: []
+    source:
+    note: "This request is documentation text inside a Python docstring, not an executed application call."
   Sfc6daced2c:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "yes"
+    personal: "yes"
+    categories: ["user.unique_id", "user"]
+    source: "hc/integrations/telegram/transport.py:91"
+    note: "Sends the retried notification to Telegram using migrated chat and thread IDs, with rendered check content in text."
   S91465ac24c:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "no"
+    personal:
+    categories: []
+    source:
+    note: "Synthetic Basic-auth example in request’s docstring; no application execution occurs at this line."
   S85a047478f:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "no"
+    personal:
+    categories: []
+    source:
+    note: "Documentation example in a Python docstring, not an executed outbound HTTP call."
   S2d0aed1ed5:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "yes"
+    personal: "yes"
+    categories: ["user.unique_id", "user.authorization.credentials"]
+    source: "hc/lib/s3.py:84"
+    note: "logger.exception includes the active S3 exception, beyond the nonpersonal formatted class-name message. S3 errors can include the requested object resource/key, whose prefix is the Check UUID/ping credential."
   S9d3be3779e:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "no"
+    personal:
+    categories: []
+    source:
+    note: "This is an illustrative request call inside a Python docstring, not executed application code."
   Se7446b6eaf:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "no"
+    personal:
+    categories: []
+    source:
+    note: "Django request.session.get is an in-memory/session mapping lookup, not requests.Session.get or outbound HTTP."
   S58e022bc4d:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "yes"
+    personal: "yes"
+    categories: ["user.authorization.credentials", "user"]
+    source: "hc/accounts/views.py:736"
+    note: "On WebAuthn credential verification failure, the complete cleaned form is logged, including submitted credential response and user-chosen credential name."
   S61d5caab30:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "yes"
+    personal: "no"
+    categories: []
+    source:
+    note: "Prints the basename of bundled documentation Markdown files during rendering, not user-uploaded content or a personal filesystem path."
   Sf65e4976fd:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
-# Sinks you found while labelling that are not items above (reported separately):
-added_sites: []    # - {path: ..., line: ..., categories: [...], source: file:line}
+    is_sink: "yes"
+    personal: "yes"
+    categories: ["user.authorization.credentials"]
+    source: "hc/integrations/trello/views.py:80"
+    note: "The GET wrapper sends integration credentials: Trello settings reads the submitted token and passes it in query params to curl.get at line 93, reaching this request call."
+added_sites: []

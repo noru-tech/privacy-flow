@@ -1,525 +1,523 @@
-# Labels for redash. Fill every field; see benchmark/PROTOCOL.md §3. Do not open
-# benchmark/sheets/key/ until both reviewers are done.
+# Labels for redash, imported from the labelling app. See benchmark/PROTOCOL.md §3.
 items:
   Ffa90334fc2:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "fp_path"
+    category_ok: "yes"
+    citation: "redash/tasks/general.py:78"
+    note: "DataSource.get_by_id loads a DataSource, not the User.get_by_id source in users.py. Later BigQuery-to-Axibase run_query dispatch is also incompatible; no user email follows this chain."
   F87bea00728:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "fp_path"
+    category_ok: "yes"
+    citation: "redash/tasks/general.py:78"
+    note: "The source is Query.get_by_id, whereas this caller invokes DataSource.get_by_id. Query owner IDs do not flow through this dispatch; BigQuery cannot then dispatch to the unrelated SPARQL runner either."
   F235485372f:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "tp"
+    category_ok: "yes"
+    citation: "redash/destinations/webhook.py:43"
+    note: "Admin-provided destination options are retained in ConfigurationContainer and used by the webhook transport for its URL and optional Basic-auth credentials; those credentials and user-configured destination reach requests.post."
   Fcd0a78f78f:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "tp"
+    category_ok: "yes"
+    citation: "redash/cli/users.py:313"
+    note: "Each stored user email is appended to result and serialized unchanged into the CLI console output."
   Fca4c2403d1:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "tp"
+    category_ok: "yes"
+    citation: "redash/tasks/general.py:26"
+    note: "Equivalent valid path: the event includes request.remote_addr; Event.record retains it in additional_properties, and the actual Event.to_dict at models/__init__.py:1321 includes those properties in the webhook JSON. The displayed unrelated to_dict detours are unnecessary."
   Fe8e1414c96:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "fp_path"
+    category_ok: "yes"
+    citation: "redash/destinations/webex.py:197"
+    note: "The source creates DataSource configuration. Webex consumes a separate AlertDestination configuration; sharing ConfigurationContainer.get does not transfer data-source options into Webex recipients."
   F138d8797a2:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "fp_path"
+    category_ok: "yes"
+    citation: "redash/tasks/general.py:78"
+    note: "DataSource.get_by_id does not call User.get_by_id. A loaded account password does not become data-source configuration; the later BigQuery-to-TreasureData dispatch is also invalid."
   Fea0537474f:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "fp_path"
+    category_ok: "yes"
+    citation: "redash/query_runner/pinot.py:125"
+    note: "The path passed to get_metadata_from_controller is built from table_name, not self.username. The final debug call logs only path; storing username on the runner does not taint every method argument or log."
   F2d9860b9ac:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "fp_path"
+    category_ok: "yes"
+    citation: "redash/tasks/queries/execution.py:220"
+    note: "This log receives hash, data-source ID, result size, and error, not ApiUser.id. Passing the user object into run_query does not itself return its secret key as error. The annotation path explicitly uses get_actual_user() as a safe API-user label at line 269."
   F261e32944a:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "tp"
+    category_ok: "yes"
+    citation: "redash/authentication/google_oauth.py:34"
+    note: "The OAuth access token is interpolated into the Authorization header sent to Google userinfo."
   F65f0d24c99:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "tp"
+    category_ok: "yes"
+    citation: "redash/tasks/queries/execution.py:277"
+    note: "Execution metadata is retained and its user_id field is formatted into the progress log. Normal user IDs identify accounts even though API-user secret keys are replaced by safe labels."
   Fcdecc54cb9:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "fp_path"
+    category_ok: "yes"
+    citation: "redash/authentication/account.py:41"
+    note: "serializer.loads verifies with SECRET_KEY and returns the decoded user ID, not the signing secret. The exception log includes the incoming token and decoded ID, but the source SECRET_KEY is not emitted."
   F4324ee582d:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "fp_path"
+    category_ok: "yes"
+    citation: "redash/tasks/general.py:78"
+    note: "DataSource.get_by_id is unrelated to the User.get_by_id source. No account password enters this schema-loading query, and the later switch from BigQuery to Salesforce is an impossible receiver dispatch."
   F363256f38b:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "tp"
+    category_ok: "yes"
+    citation: "redash/destinations/mattermost.py:47"
+    note: "The configured Mattermost sender username is retained in payload, JSON-encoded, and posted to the webhook. It can be an identifying display username; serialization does not remove it."
   F57565f01a2:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "tp"
+    category_ok: "yes"
+    citation: "redash/destinations/datadog.py:85"
+    note: "The user-authored alert name becomes the Datadog event title and remains in the JSON HTTP body; names can contain personal user content."
   F3a0772ffe1:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "fp_path"
+    category_ok: "yes"
+    citation: "redash/tasks/queries/execution.py:44"
+    note: "pipe.get is a Redis pipeline read of a query-job lock, not the users handler get method. Its job ID has no dataflow from this route user_id."
   F6d570deca1:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "fp_path"
+    category_ok: "yes"
+    citation: "redash/tasks/queries/execution.py:220"
+    note: "This log contains hash, data-source ID, result size, and returned error, not ApiUser.id. The token stored on the user object is not automatically returned by run_query, and _annotate_query uses the safe get_actual_user label."
   Fb8abc698f5:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "tp"
+    category_ok: "yes"
+    citation: "redash/cli/users.py:320"
+    note: "The stored user email is directly formatted into the printed CLI record."
   F6925b353bf:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "tp"
+    category_ok: "yes"
+    citation: "redash/query_runner/couchbase.py:143"
+    note: "The configured Couchbase password is passed directly as the password component of the requests Basic-auth tuple."
   F94adf9c148:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "tp"
+    category_ok: "yes"
+    citation: "redash/cli/users.py:146"
+    note: "The email argument for the new root user is directly interpolated into the console message."
   Fe463de6de2:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "fp_not_personal"
+    category_ok:
+    citation: "redash/tasks/queries/execution.py:276"
+    note: "state is an execution-phase literal such as executing_query or finished, not a geographic address state or other personal value. Other log fields do not change the identity of this source."
   Fb45d7905f8:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "fp_path"
+    category_ok: "yes"
+    citation: "redash/tasks/general.py:78"
+    note: "The caller retrieves DataSource, not User; the source email never enters this chain. BigQuery and Salesforce run_query receivers are also conflated, so this does not establish user-email delivery to Salesforce describe."
   Ff6d81d2277:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "tp"
+    category_ok: "yes"
+    citation: "redash/handlers/authentication.py:49"
+    note: "The reset-route token is forwarded to render_token_login_page and logged verbatim when signature verification fails; a malformed or tampered user reset credential still contains user-linked token data."
   F1c44febe84:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "tp"
+    category_ok: "yes"
+    citation: "redash/handlers/authentication.py:38"
+    note: "If the decoded token references a missing user, the route token is included in the exception log alongside its user ID. The credential survives the helper call unchanged."
   F5b1a8aeb2c:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "fp_path"
+    category_ok: "yes"
+    citation: "redash/destinations/webex.py:197"
+    note: "This source constructs an email destination with an addresses key and explicitly calls get_destination(\"email\"). It does not become Webex options or the to_person_emails field; the shared configuration getter is conflated across objects."
   F131ba0e68f:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "tp"
+    category_ok: "yes"
+    citation: "redash/destinations/discord.py:58"
+    note: "Destination options supplied by the admin reach the Discord webhook request. The webhook URL includes its secret delivery token, so the configured URL is credential-bearing personal data."
   Fdee65aeda2:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "fp_path"
+    category_ok: "yes"
+    citation: "redash/cli/data_sources.py:162"
+    note: "The transient email-subscription destination options are not the CLI data-source creation options. A shared ConfigurationContainer.to_json implementation does not connect these unrelated instances or executions."
   F2e90ece664:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "tp"
+    category_ok: "yes"
+    citation: "redash/cli/users.py:272"
+    note: "The invited user email argument is formatted directly into the CLI success message."
   F5ac2e5bb7f:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "tp"
+    category_ok: "yes"
+    citation: "redash/query_runner/pinot.py:132"
+    note: "The configured Pinot password is retained as self.password and supplied to HTTPBasicAuth for the controller request."
   F09b5f15c84:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "tp"
+    category_ok: "yes"
+    citation: "redash/query_runner/rockset.py:41"
+    note: "Equivalent direct Rockset path exists: BaseQueryRunner.annotate_query embeds accepted user_id metadata in the SQL comment; Rockset.run_query passes it to RocksetAPI.query and _request POST. The displayed InfluxDB detour is unnecessary."
   Fa983fc627a:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "tp"
+    category_ok: "yes"
+    citation: "redash/tasks/general.py:51"
+    note: "The setup form email is placed in admin_email and directly sent in the subscribe request JSON."
   F881a0e830d:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "fp_path"
+    category_ok: "yes"
+    citation: "redash/tasks/general.py:78"
+    note: "DataSource.get_by_id does not load the User source, and the runner dispatches are conflated. In addition, the final response.get is a dictionary lookup on parsed JSON, not an outbound HTTP sink."
   F8733dc8ec6:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "fp_path"
+    category_ok: "yes"
+    citation: "redash/tasks/general.py:78"
+    note: "The source User.get_by_id is not invoked by DataSource.get_by_id. No user email enters the schema query; the later BigQuery-to-Prometheus dispatch is also incompatible."
   F7a35527339:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "fp_path"
+    category_ok: "yes"
+    citation: "redash/query_runner/athena.py:208"
+    note: "The session token authenticates the Glue client but is not part of the returned database/table Name fields. The warning logs table_name only, not client credentials."
   Ff46076d333:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "fp_path"
+    category_ok: "no"
+    citation: "redash/query_runner/clickhouse.py:188"
+    note: "The final response.get is a local dictionary lookup of query results, not outbound HTTP. The source is a DataSource record, whose ID is not a user unique ID; the chain also mixes BigQuery and ClickHouse receivers."
   F0c79c03366:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "fp_not_personal"
+    category_ok:
+    citation: "redash/serializers/__init__.py:192"
+    note: "alert.state is the alert operational status, not a person’s address state. It is transmitted, but this source value is not personal; neighboring alert fields are separate sources."
   Fd79ca465ec:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "fp_path"
+    category_ok: "no"
+    citation: "redash/query_runner/big_query.py:343"
+    note: "BigQuery self.run_query cannot dispatch to AxibaseTSD.run_query. Axibase has its own get_schema implementation and separate connect call. The source DataSource ID is not a user unique ID, although its configuration may contain other personal credentials."
   F2a38814d4a:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "fp_path"
+    category_ok: "yes"
+    citation: "redash/tasks/queries/execution.py:208"
+    note: "Passing ApiUser as runner context does not make the secret api_key part of the returned error. Query annotation uses the safe API-user label. No explicit transformation from ApiUser.id to error is shown before track_failure logs error."
   F4e0407d34a:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "tp"
+    category_ok: "yes"
+    citation: "redash/query_runner/pinot.py:71"
+    note: "self.username is assigned from configuration and directly formatted into the query debug log."
   F4a9b6ba7ed:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "tp"
+    category_ok: "yes"
+    citation: "redash/query_runner/kylin.py:85"
+    note: "The configured Kylin password is directly supplied to Basic authentication on the outbound query request."
   F4beb2f801f:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "fp_path"
+    category_ok: "yes"
+    citation: "redash/tasks/general.py:78"
+    note: "DataSource.get_by_id does not call User.get_by_id, so the account password never enters this chain. BigQuery/Elasticsearch dispatches are mixed; collect_aggregations is also local result processing rather than a third-party send."
   F82b5f0d2ad:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "fp_path"
+    category_ok: "yes"
+    citation: "redash/tasks/general.py:78"
+    note: "DataSource.get_by_id does not invoke User.get_by_id. The user email cannot enter schema retrieval through this call, and the BigQuery-to-Pinot dispatch is incompatible."
   Fabd1af3a72:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "tp"
+    category_ok: "yes"
+    citation: "redash/query_runner/axibase_tsd.py:179"
+    note: "The password configures the ATSD connection passed into the third-party MetricsService; the service uses that authenticated connection for the immediately following metrics.list request."
   Fae8913ac38:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "tp"
+    category_ok: "yes"
+    citation: "redash/tasks/queries/maintenance.py:184"
+    note: "The admin-authored data-source name is directly logged. This freeform label can contain a person’s name or other personal content, so generic user is applicable."
   F0fdf96df3e:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "fp_path"
+    category_ok: "no"
+    citation: "redash/tasks/general.py:24"
+    note: "event.to_dict is Event.to_dict at models/__init__.py:1321, not AlertSubscription.to_dict at1465. It does not serialize this User.profile_image_url. The source is also a profile image URL, not a password."
   Fa994e44821:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "tp"
+    category_ok: "yes"
+    citation: "redash/query_runner/sparql_endpoint.py:184"
+    note: "Graph IRIs returned by the configured SPARQL dataset are inserted into the schema and printed in schema.values(). A graph IRI can identify a person or contain user-controlled identifying URI content, so it is not limited to fixed operational strings."
   F0930128c14:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "tp"
+    category_ok: "yes"
+    citation: "redash/cli/data_sources.py:84"
+    note: "The user-supplied freeform data-source name is echoed to console on lookup failure and can contain personal identifying content."
   Fa93b96b6bc:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "tp"
+    category_ok: "yes"
+    citation: "redash/tasks/queries/maintenance.py:44"
+    note: "The saved freeform data-source name is passed directly to the debug log; this user-authored label can contain identifying personal content."
   F6d5018a62c:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "fp_path"
+    category_ok: "yes"
+    citation: "redash/tasks/general.py:78"
+    note: "The Query.get_by_id source is conflated with DataSource.get_by_id. The later ClickHouse response.get is a dictionary lookup, not outbound HTTP, and does not transmit a user ID."
   Fe66b5eeb85:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "tp"
+    category_ok: "yes"
+    citation: "redash/authentication/__init__.py:285"
+    note: "Remote-user authentication passes email as both name and email; on first login, the create-user debug message logs the name parameter, which is that email address."
   Ff150c06fe7:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "fp_path"
+    category_ok: "yes"
+    citation: "redash/query_runner/clickhouse.py:188"
+    note: "The stated sink is response.get on a parsed JSON dictionary, not HTTP. Password is sent by the earlier requests.post, but does not thereby become returned rows or reach an outbound operation at this final line."
   Fc9f51bc7ba:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "fp_path"
+    category_ok: "yes"
+    citation: "redash/query_runner/sparql_endpoint.py:118"
+    note: "remove_comments strips the leading annotation through */. The user_id added as annotation is removed before query_text is sent, so this source does not reach the HTTP query parameter."
   Fefa2774847:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "tp"
+    category_ok: "yes"
+    citation: "redash/destinations/slack.py:53"
+    note: "The user-authored alert name is retained in the Slack attachment text and sent in the encoded webhook body."
   F8ba69a2c1c:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "fp_path"
+    category_ok: "yes"
+    citation: "redash/tasks/general.py:78"
+    note: "DataSource.get_by_id is not User.get_by_id, so the account email is not loaded here. The subsequent BigQuery-to-Elasticsearch dispatch also cannot occur on the same runner."
   Fdba0e9bf0e:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "fp_path"
+    category_ok: "yes"
+    citation: "redash/destinations/chatwork.py:35"
+    note: "The source creates data-source options, while Chatwork reads separately configured alert-destination options. The shared ConfigurationContainer.get method does not connect those object instances."
   F1965003ec3:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "tp"
+    category_ok: "yes"
+    citation: "redash/cli/users.py:279"
+    note: "On lookup failure, the same inviter_email argument is directly echoed to the console."
   F1d0ade62a1:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "fp_path"
+    category_ok: "yes"
+    citation: "redash/query_runner/mongodb.py:146"
+    note: "MongoDB sets should_annotate_query=False, so the metadata user_id is not inserted into its query. It cannot become the parsed result column names logged at385 via this chain."
   F0fea990d98:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "tp"
+    category_ok: "yes"
+    citation: "redash/query_runner/query_results.py:134"
+    note: "Result column names may be user-authored aliases or data-derived identifying values. fix_column_name only replaces punctuation/whitespace, retaining their content in the CREATE TABLE debug log."
   F0b0f4e7edb:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "fp_path"
+    category_ok: "yes"
+    citation: "redash/tasks/queries/execution.py:44"
+    note: "Redis pipe.get is not the users route get or Databricks route get. The user_id is not converted into a data_source_id/cache key; the final Redis read is also database/cache access excluded as a sink."
   F1e66fbf407:
-    verdict:        # tp | fp_path | fp_not_personal | unsure
-    category_ok:    # yes | no
-    citation:       # file:line (for fp_path: where the path breaks)
-    note:
+    verdict: "fp_path"
+    category_ok: "yes"
+    citation: "redash/query_runner/pinot.py:125"
+    note: "The logged path is built from a table name, not self.password. Using the password for HTTP authentication does not insert it into the path-only debug message."
   G2d635714f6:
-    hides_flow:     # yes | no | unsure
-    citation:       # file:line of the sink reached, if yes
-    note:
+    hides_flow: "yes"
+    citation: "redash/query_runner/trino.py:200"
+    note: "BasicAuthentication retains username/password and is passed as auth to the Trino SDK connection; executing its cursor sends those credentials to the configured Trino HTTP endpoint. This is authentication transmission, not merely a database row write."
   G271aab43a6:
-    hides_flow:     # yes | no | unsure
-    citation:       # file:line of the sink reached, if yes
-    note:
+    hides_flow: "no"
+    citation:
+    note: "These are SQLAlchemy searchable-query operations that filter local saved Query records using the term/user. They return database query results for the application, with no log or external-service forwarding at the boundary."
   Gf376e25acd:
-    hides_flow:     # yes | no | unsure
-    citation:       # file:line of the sink reached, if yes
-    note:
+    hides_flow: "yes"
+    citation: "redash/tasks/general.py:26"
+    note: "The loaded grantee.id is inserted into the grant_permission event. record_event forwards Event.to_dict, including additional_properties.grantee, to configured webhook URLs via requests.post."
   G6d100a16a4:
-    hides_flow:     # yes | no | unsure
-    citation:       # file:line of the sink reached, if yes
-    note:
+    hides_flow: "yes"
+    citation: "redash/query_runner/databend.py:77"
+    note: "The Databend connector receives username and password embedded in the connection URI and uses them to authenticate to the configured remote service. These credentials cross the SDK boundary even before considering query results."
   Ge389ae2101:
-    hides_flow:     # yes | no | unsure
-    citation:       # file:line of the sink reached, if yes
-    note:
+    hides_flow: "yes"
+    citation: "redash/query_runner/rockset.py:41"
+    note: "BaseQueryRunner.annotate_query retains accepted user_id metadata in a SQL comment and preserves query content. With the Rockset runner, run_query passes that annotated query through RocksetAPI.query to the outbound POST body."
   Ge16247b7bb:
-    hides_flow:     # yes | no | unsure
-    citation:       # file:line of the sink reached, if yes
-    note:
+    hides_flow: "yes"
+    citation: "redash/query_runner/d1.py:74"
+    note: "session.post is the HTTP session send to the configured Cloudflare D1 URL, transmitting headers and JSON query body; the function-valued boundary is itself an outbound request sink."
   Gfe5f6032a5:
-    hides_flow:     # yes | no | unsure
-    citation:       # file:line of the sink reached, if yes
-    note:
+    hides_flow: "no"
+    citation:
+    note: "The shown query.filter sites are ORM filtering for group permissions, group lookup, and favorite-state serialization. They perform database reads and local/own-app response construction; no external/log sink is established by these boundaries."
   Gf640120faa:
-    hides_flow:     # yes | no | unsure
-    citation:       # file:line of the sink reached, if yes
-    note:
+    hides_flow: "yes"
+    citation: "redash/query_runner/athena.py:203"
+    note: "Iterating this boto3 paginator makes authenticated AWS Glue get_tables requests. The client retains IAM access key, secret, and session token from _get_iam_credentials; pagination sends signed authentication using those credentials."
   Gd5f2b4231d:
-    hides_flow:     # yes | no | unsure
-    citation:       # file:line of the sink reached, if yes
-    note:
+    hides_flow: "yes"
+    citation: "redash/destinations/webhook.py:43"
+    note: "AlertDestination.notify dispatches to configured destination implementations; the webhook implementation serializes alert data and metadata and sends them through requests.post. This preserves personal user content/identity from the notification arguments."
   Ga2d2bfca71:
-    hides_flow:     # yes | no | unsure
-    citation:       # file:line of the sink reached, if yes
-    note:
+    hides_flow: "no"
+    citation:
+    note: "These partial-bound order_results calls sort ORM query/dashboard lists before pagination and serialization into the own-app response. Ordering does not forward personal data to an external service, log, or browser storage."
   S6821d422e4:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "no"
+    personal:
+    categories: []
+    source:
+    note: "SQLAlchemy session.delete schedules a database row deletion, not an outbound HTTP call. Database persistence is excluded by the guide."
   S1bf25f6a84:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "yes"
+    personal: "yes"
+    categories: ["user"]
+    source: "redash/cli/data_sources.py:68"
+    note: "The CLI-supplied freeform data-source name is printed on failure and can include personal identifying content."
   Sd7963f5793:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "yes"
+    personal: "no"
+    categories: []
+    source:
+    note: "This logs an AttributeError from reading a missing cursor attribute, which describes the object type/attribute name rather than credentials, query text, or result content."
   Scd1e39e689:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "yes"
+    personal: "no"
+    categories: []
+    source:
+    note: "The request body contains software version and, with consent, aggregate counts and fixed type names. usage_data does not include user IDs, email, query text, or other row-level personal values."
   Sd8ee47722d:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "yes"
+    personal: "yes"
+    categories: ["user"]
+    source: "redash/query_runner/yandex_disk.py:145"
+    note: "File-reader exceptions can include the user-selected file URL, column names, or malformed data values from the downloaded dataset. logger.exception emits the exception and traceback, so personal file content can reach this sink."
   S1685cd80cf:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "yes"
+    personal: "no"
+    categories: []
+    source:
+    note: "The log includes only a query fingerprint and query-result record ID, not the query text, result rows, user ID, or credentials. These are operational query/cache identifiers rather than person identifiers."
   S074593af24:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "yes"
+    personal: "yes"
+    categories: ["user.credentials", "user.unique_id"]
+    source: "redash/metrics/request.py:28"
+    note: "request.path includes concrete route parameters, including reset/<token> credentials and users/<user_id> account IDs, and is logged without redaction."
   S9269a8c499:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "yes"
+    personal: "yes"
+    categories: ["user.credentials"]
+    source: "redash/query_runner/elasticsearch.py:99"
+    note: "self.auth is HTTPBasicAuth constructed from configured username/password, and requests.get sends it to the Elasticsearch mappings endpoint."
   S73ecf3a35d:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "yes"
+    personal: "yes"
+    categories: ["user.credentials"]
+    source: "redash/query_runner/graphite.py:62"
+    note: "Even the connection test passes configured username/password as self.auth to the outbound HTTP request."
   Se4b77b57df:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "yes"
+    personal: "yes"
+    categories: ["user.credentials"]
+    source: "redash/handlers/authentication.py:115"
+    note: "The supplied reset/invitation token is printed verbatim on bad signature. Invalidity does not remove encoded user information or credential material from the token."
   S048f8cd785:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "yes"
+    personal: "yes"
+    categories: ["user.credentials"]
+    source: "redash/query_runner/yandex_metrica.py:131"
+    note: "The OAuth token from query arguments or saved configuration is placed directly in the Authorization header sent to Yandex Metrica."
   Se7f91cc15e:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "yes"
+    personal: "yes"
+    categories: ["user", "user.credentials"]
+    source: "redash/destinations/webhook.py:42"
+    note: "The webhook sends configured Basic-auth credentials and serialized alert/metadata containing user-authored titles and user identity."
   S14ecdc149b:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "yes"
+    personal: "yes"
+    categories: ["user.credentials"]
+    source: "redash/query_runner/kylin.py:109"
+    note: "Configured Kylin username/password reach HTTPBasicAuth on the schema request."
   S9cc62a4771:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "yes"
+    personal: "no"
+    categories: []
+    source:
+    note: "The output contains permission capability names, not a user name, group membership, credential, or person-specific value."
   S9a54519182:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "no"
+    personal:
+    categories: []
+    source:
+    note: "This is a SQLAlchemy database deletion, not an HTTP request or other included sink. The neighboring event recording is a different operation."
   S47581207db:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "yes"
+    personal: "yes"
+    categories: ["user.contact.email", "user"]
+    source: "redash/models/__init__.py:1482"
+    note: "This explicitly selects the email destination and sends alert content to self.user.email. Recipient email and user-authored notification content reach the mail transport."
   S0e5798f0f3:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "no"
+    personal:
+    categories: []
+    source:
+    note: "The apparent request token is plain text inside a logger.error message, not a function call or outbound HTTP operation."
   S7df2f9e690:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "yes"
+    personal: "yes"
+    categories: ["user"]
+    source: "redash/tasks/queries/maintenance.py:106"
+    note: "The exception retains the original enqueue traceback, whose frames can contain query text and user metadata. The configured Sentry SDK sends exception context with send_default_pii=True, and before_send does not filter RefreshQueriesError."
   Sc96a9bcfbc:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "yes"
+    personal: "yes"
+    categories: ["user.credentials"]
+    source: "redash/query_runner/__init__.py:394"
+    note: "get_response obtains configured username/password through get_auth and sends the tuple as HTTP authentication to requests_session.request."
   S4be319bf79:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "yes"
+    personal: "no"
+    categories: []
+    source:
+    note: "The warning is only a fixed literal indicating truncation; no result values, query text, or user identifiers are included."
   S64335092a1:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "yes"
+    personal: "yes"
+    categories: ["user.contact.email", "user.credentials", "user"]
+    source: "redash/destinations/webex.py:197"
+    note: "The payload includes configured toPersonEmail recipients or room IDs and alert content, and headers contain the Webex bot token. These are sent to the Webex API."
   Sdfc59dc02b:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "yes"
+    personal: "yes"
+    categories: ["user.contact.email"]
+    source: "redash/cli/users.py:55"
+    note: "The CLI email lookup argument is echoed verbatim in the not-found message."
   S9e8c246f07:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "yes"
+    personal: "no"
+    categories: []
+    source:
+    note: "The log lists organization-wide allowed email domains, not full email addresses, individual accounts, or user membership. These are organizational access configuration."
   S0f85ab5893:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "yes"
+    personal: "yes"
+    categories: ["user.credentials"]
+    source: "redash/query_runner/prometheus.py:105"
+    note: "The configured client certificate/key are decoded into files and supplied by _get_prometheus_kwargs for mutual-TLS authentication. The certificate identity and proof reach the endpoint during the HTTP connection test; the private key itself stays local."
   S17cc7be737:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "yes"
+    personal: "yes"
+    categories: ["user.credentials"]
+    source: "redash/query_runner/pinot.py:68"
+    note: "The Pinot configuration password and username are passed to HTTPBasicAuth on the outbound controller request."
   S1dea9e97f7:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "yes"
+    personal: "no"
+    categories: []
+    source:
+    note: "This lists organization ID, organization name, and slug. It does not include members, account identities, email addresses, or credentials; these fields describe the organization itself."
   S20789159de:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "yes"
+    personal: "no"
+    categories: []
+    source:
+    note: "This error message includes only the HTTP status number, not the webhook URL/token, response body, or alert content."
   S82e04e1124:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "yes"
+    personal: "yes"
+    categories: ["user.credentials"]
+    source: "redash/query_runner/yandex_disk.py:92"
+    note: "The configured or overridden OAuth token is included in the Authorization header sent to Yandex Disk."
   Seba047ac98:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
+    is_sink: "yes"
+    personal: "yes"
+    categories: ["user.contact.email"]
+    source: "redash/cli/__init__.py:78"
+    note: "The CLI-supplied email or configured default sender becomes the recipient address sent through the mail transport, even though the message body is fixed test text."
   S11b57fda76:
-    is_sink:        # yes | no
-    personal:       # yes | no | unsure (only if is_sink is yes)
-    categories: []  # Fideslang keys, if personal is yes
-    source:         # file:line of one source, if personal is yes
-    note:
-# Sinks you found while labelling that are not items above (reported separately):
-added_sites: []    # - {path: ..., line: ..., categories: [...], source: file:line}
+    is_sink: "no"
+    personal:
+    categories: []
+    source:
+    note: "SQLAlchemy session.delete removes a stored destination record; it is a database write excluded by the guide, not an outbound HTTP request."
+added_sites: []
