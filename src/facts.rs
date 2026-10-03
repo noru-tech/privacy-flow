@@ -686,11 +686,17 @@ impl<'a, 'p> Builder<'a, 'p> {
         // catalogue knows. Only an unexplained call is a coverage gap; the other possible
         // targets of an explained call are not (`remember()` returns both a cache entry and
         // the Prisma client it holds).
-        let mut explained = !t.funcs.is_empty() || !t.classes.is_empty();
+        // A receiver typed with an interface is open: the local implementations it reaches do not
+        // explain a target in an external module (an adapter loaded at run time, `require()()`).
+        // Paths through built-in containers (`Map().get()`) are where the value was kept, not
+        // what it is, and still are.
+        let local = !t.funcs.is_empty() || !t.classes.is_empty();
+        let mut explained = (!t.funcs.is_empty() && !t.open_world) || !t.classes.is_empty();
         let mut unknown = Vec::new();
         for path in &apis {
             if self.api_call(stmt, dst, path, args, recv, lang)
                 || self.name_heuristic_sink(stmt, path, args, lang)
+                || (t.open_world && local && is_container_path(path, lang))
             {
                 explained = true;
             } else if let Some(r) = recv.filter(|_| is_runtime_global(path, lang)) {
@@ -1686,6 +1692,16 @@ impl<'a, 'p> Builder<'a, 'p> {
 /// `globalThis.cache`): no module, so it is a run-time object of the program's own.
 fn is_runtime_global(path: &str, lang: &str) -> bool {
     lang == "javascript" && !path.contains(':')
+}
+
+/// A path through a built-in container (`Map().get()`, `Array.from()`): the value was kept
+/// there, which says nothing of what it is.
+fn is_container_path(path: &str, lang: &str) -> bool {
+    const CONTAINERS: &[&str] = &[
+        "Map", "Set", "WeakMap", "WeakSet", "Array", "Object", "Promise",
+    ];
+    is_runtime_global(path, lang)
+        && CONTAINERS.contains(&path.split(['.', '(']).next().unwrap_or(path))
 }
 
 /// The module a specifier belongs to: `@scope/pkg/sub` → `@scope/pkg`, `pkg/sub` → `pkg`,

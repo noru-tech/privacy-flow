@@ -384,3 +384,17 @@ runner's credentials reaching the others' logs.
 
 **Next.** Analyse inherited methods per subclass, so template methods resolve; TypeScript
 interfaces to their implementing classes; `state` in the classification table.
+
+## 2026-10-03 — TypeScript interfaces (ADR 0012)
+
+**Done.** Interfaces are classes with no members, bound and exported by name; `implements` and
+interface `extends` make subtypes for dispatch, never for lookup. A call through an interface
+does not explain its external targets (open world); a method no implementation defines is a
+plain value's method. Vector `ts-interface-dispatch`, fixtures `ts/interfaces` and
+`ts/interface-open-world`.
+
+**Measured** (against the inheritance build). The six TypeScript applications: flows unchanged;
+Ghost gaps 609 → 612, three calls on an external scheduler adapter that a local wrapper had
+hidden. The corpus injects by class or untyped JavaScript, so it has little of this pattern.
+
+**Next.** Analyse inherited methods per subclass, so template methods resolve.

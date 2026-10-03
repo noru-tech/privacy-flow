@@ -23,6 +23,9 @@ All notable changes to this project are documented here. The format is based on
   class's own method and is a `dynamic_call` gap where subclasses override it. Reading a Python
   property or a JavaScript getter gives what it returns. On Polar, `dynamic_call` gaps go from
   227 to 64; on Healthchecks, coverage gaps from 58 to 28.
+- TypeScript interfaces (ADR 0012): a call on a value typed with an interface reaches the local
+  classes that implement it, directly, through an extending interface or through a base class.
+  Interfaces are open: an external module the value may also come from stays a gap.
 - Fuzzing: cargo-fuzz targets for lowering, the whole pipeline (with a determinism check),
   configuration and data maps, run by ClusterFuzzLite on pull requests and weekly.
 

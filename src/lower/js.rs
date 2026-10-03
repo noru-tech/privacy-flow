@@ -83,7 +83,8 @@ impl<'s> Js<'s> {
             "function_declaration"
             | "generator_function_declaration"
             | "class_declaration"
-            | "abstract_class_declaration" => {
+            | "abstract_class_declaration"
+            | "interface_declaration" => {
                 if let Some(name) = c.child_by_field_name("name") {
                     let pos = self.b.pos(name);
                     self.b.declare(self.text(name), pos, false);
@@ -1326,9 +1327,13 @@ impl<'s> Js<'s> {
                 continue;
             }
             for e in named_children(h) {
+                if e.kind() == "implements_clause" {
+                    let types = self.type_list(e);
+                    self.b.ir.classes[c as usize].implements.extend(types);
+                    continue;
+                }
                 let value = match e.kind() {
                     "extends_clause" => e.child_by_field_name("value").or_else(|| e.named_child(0)),
-                    "implements_clause" => None,
                     _ => Some(e),
                 };
                 if let Some(v) = value {
@@ -1395,20 +1400,42 @@ impl<'s> Js<'s> {
         var
     }
 
+    /// An interface is a type for typed objects, and a class with no members of its own: the
+    /// classes that implement it (and the interfaces that extend it) are its subtypes, so a call
+    /// on a value typed with it reaches theirs.
     fn interface(&mut self, node: Node) {
         let Some(name) = node.child_by_field_name("name") else {
             return;
         };
+        let name = self.text(name).to_string();
         let mut fields = Vec::new();
         if let Some(body) = node.child_by_field_name("body") {
             self.collect_property_signatures(body, &mut fields);
         }
         let pos = self.b.pos(node);
         self.b.ir.types.push(TypeDecl {
-            name: self.text(name).to_string(),
+            name: name.clone(),
             fields,
             pos,
         });
+        let c = self.b.new_class(&name, node);
+        self.b.ir.classes[c as usize].is_interface = true;
+        let var = self.b.declare(&name, pos, false);
+        self.b.emit(node, StmtKind::ClassRef { dst: var, class: c });
+        for e in named_children(node) {
+            if e.kind() == "extends_type_clause" {
+                let types = self.type_list(e);
+                self.b.ir.classes[c as usize].implements.extend(types);
+            }
+        }
+    }
+
+    /// The types an `implements` or `extends` clause names that are in scope.
+    fn type_list(&mut self, clause: Node) -> Vec<Var> {
+        named_children(clause)
+            .into_iter()
+            .filter_map(|t| self.type_expr(t))
+            .collect()
     }
 
     fn type_alias(&mut self, node: Node) {
@@ -1526,7 +1553,8 @@ impl<'s> Js<'s> {
                 "function_declaration"
                 | "generator_function_declaration"
                 | "class_declaration"
-                | "abstract_class_declaration" => {
+                | "abstract_class_declaration"
+                | "interface_declaration" => {
                     if let Some(n) = decl.child_by_field_name("name") {
                         names.push(self.text(n).to_string());
                     }

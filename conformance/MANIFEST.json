@@ -254,6 +254,13 @@
       "status": "required"
     },
     {
+      "description": "A call on a field typed with an interface reaches the class that implements it, in another file.",
+      "expected_flows": 1,
+      "language": "javascript",
+      "name": "ts-interface-dispatch",
+      "status": "required"
+    },
+    {
       "description": "JSON.stringify carries every field.",
       "expected_flows": 1,
       "language": "javascript",
