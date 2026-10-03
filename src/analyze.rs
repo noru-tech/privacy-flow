@@ -97,6 +97,9 @@ pub fn load_config(tree: &Tree, explicit: Option<&Path>) -> Result<Loaded> {
 
 pub fn classifier_for(config: &Config, catalogue: &Catalogue) -> Result<Classifier> {
     let mut c = Classifier::new()?;
+    for def in &catalogue.contextual {
+        c.add_contextual(def)?;
+    }
     for src in &catalogue.sources {
         if src.def.kind == SourceKind::Field {
             for (name, cat) in &src.def.fields {

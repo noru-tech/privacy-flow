@@ -416,3 +416,24 @@ matching the same sink, a bug since v0.1. Time unchanged.
 
 **Next.** The remaining duplicates are distinct sources at one place (fields of one typed
 parameter); `state` in the classification table.
+
+## 2026-10-03 — `state` is an address's only in context
+
+**Why.** The vendored classification table maps `state` (and `province`) exactly to
+`user.contact.address.state`, though the table's own rule is that an exact name means the same
+thing in every schema. On PrivateGPT a chat engine's `context.state` made 1,295 of 2,462 flows;
+on Redash `alert.state`; on the Vercel chatbot ProseMirror's editor state reached five gaps.
+
+**Done.** `catalogue/classification.yml` keeps table names to a context: `state` and `province`
+are classified only on an object named like an address, on a type or class with other address
+fields, or beside address parameters. The table stays verbatim (it is privacy-datamap's); the
+same change should be proposed upstream, after which the entry can go. Fixture
+`py/contextual-names`.
+
+**Measured** (against `main` at #14). Address-state flows: PrivateGPT 1,295 → 0 (flows 2,462 →
+1,167, findings 2,682 → 1,371), Redash 2 → 0, Polar 621 → 507 (kept: `Address`, its tax
+breakdown type, `billing_address.state`; dropped: `order.tax_breakdown[0]["state"]`, an ASGI
+`scope["state"]`). No other category lost anywhere except Polar's OAuth callbacks, whose `state`
+query parameter is now reported as request input instead of being narrowed into an address.
+
+**Next.** Propose the table change in noru-grc-engineering.

@@ -34,6 +34,11 @@ All notable changes to this project are documented here. The format is based on
   configuration and data maps, run by ClusterFuzzLite on pull requests and weekly.
 
 ### Changed
+- `state` and `province` are classified as an address's state only in an address context: on an
+  object named like an address (`billing_address.state`), on a type or class with other address
+  fields, or beside address parameters (`catalogue/classification.yml`). Elsewhere they are
+  application state and not sources. On PrivateGPT, a chat engine's `context.state` made about
+  half of all flows.
 - Objects passed into calls keep their fields apart inside the callee, per call site:
   `show({ owner: { id, email } })` read as `input.owner.id` no longer reports the email address
   (ADR 0010).

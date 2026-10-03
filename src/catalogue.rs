@@ -14,6 +14,10 @@ use crate::glob::Glob;
 
 pub const FILES: &[(&str, &str)] = &[
     (
+        "classification.yml",
+        include_str!("../catalogue/classification.yml"),
+    ),
+    (
         "frameworks.yml",
         include_str!("../catalogue/frameworks.yml"),
     ),
@@ -312,6 +316,26 @@ struct CatalogueFile {
     frameworks: Vec<FrameworkDef>,
     #[serde(default)]
     non_propagating_fields: BTreeMap<String, Vec<String>>,
+    #[serde(default)]
+    contextual: Vec<ContextualDef>,
+}
+
+/// A name the classification table classifies whose category holds only in context
+/// (`catalogue/classification.yml`).
+#[derive(Clone, Debug, Default, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct ContextualDef {
+    pub id: String,
+    #[serde(default)]
+    pub description: Option<String>,
+    pub names: Vec<String>,
+    /// Globs over the table key of the object the name is read from.
+    #[serde(default)]
+    pub objects: Vec<String>,
+    /// Names whose presence beside it (fields of the same type, parameters of the same
+    /// function) is context enough.
+    #[serde(default)]
+    pub siblings: Vec<String>,
 }
 
 /// Where a catalogue entry came from.
@@ -362,6 +386,7 @@ pub struct Catalogue {
     pub propagators: Vec<Propagator>,
     pub frameworks: Vec<FrameworkDef>,
     pub non_propagating_fields: BTreeMap<String, BTreeSet<String>>,
+    pub contextual: Vec<ContextualDef>,
 }
 
 /// Entries a project adds in `.privacy-flow.yml`.
@@ -418,6 +443,7 @@ impl Catalogue {
             merged.sanitisers.extend(file.sanitisers);
             merged.propagators.extend(file.propagators);
             merged.frameworks.extend(file.frameworks);
+            merged.contextual.extend(file.contextual);
             for (lang, fields) in file.non_propagating_fields {
                 merged
                     .non_propagating_fields
@@ -526,6 +552,7 @@ impl Catalogue {
             propagators,
             frameworks: merged.frameworks,
             non_propagating_fields,
+            contextual: merged.contextual,
         })
     }
 
