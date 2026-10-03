@@ -126,6 +126,11 @@ Request input is a source only in frameworks whose request objects are modelled
   `info` for review. **Silent:** personal data held under a name the table does not know (`foo`)
   is not a source until it is declared under `fields`; a local variable named `email` assigned from
   an unknown call is not a source.
+- **Context-dependent names:** `state` and `province` are an address's only on an object named
+  like an address or beside other address fields
+  ([`catalogue/classification.yml`](catalogue/classification.yml)). **Silent:** an address state
+  read from an object named otherwise (`order.tax_breakdown[0]["state"]`) is not a source unless
+  the project declares `state` under `fields`.
 - **Data maps** apply by field name, and to typed objects by collection name (`User` ↔ `users`).
 - **Sinks are the catalogue's** ([`catalogue/sinks.yml`](catalogue/sinks.yml)). An SDK it does
   not list is a gap, not a sink. Loggers injected without a type are recognised by receiver name

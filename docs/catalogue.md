@@ -108,6 +108,26 @@ give categories; `typed: true` narrows an annotated parameter to its type's clas
 (FastAPI with a Pydantic body); `by_name: true` classifies by the parameter's own name;
 `skip_types` and `skip_names` leave injected dependencies alone.
 
+## Classification context (`catalogue/classification.yml`)
+
+The [classification table](../vendor/classification/classification.json) is vendored verbatim
+from privacy-datamap, and its exact names are meant to mean the same thing in every schema. A few
+do not, and this file keeps them to the context where the table's category holds:
+
+```yaml
+- id: address-state
+  names: [state, province]          # table names this entry limits
+  objects: ["*address*", "*addr"]   # globs over the object the name is read from
+  siblings: [city, postal_code, zip, country, street]   # names beside it that are context enough
+```
+
+A name in `names` is classified only when the object it is read from (`address.state`,
+`billing_address["state"]`, `this.state` in a class named `Address`) matches one of `objects`,
+or when another field of the same type, or another parameter of the same function, is one of
+`siblings`. Otherwise it is not a source: `context.state` and `def set_state(state)` are
+application state. A project that means `state` as an address everywhere says so under `fields`
+in `.privacy-flow.yml`, which always applies.
+
 ## Sanitisers (`catalogue/sanitisers.yml`)
 
 ```yaml

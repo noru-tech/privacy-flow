@@ -1,0 +1,28 @@
+# Context for the vendored classification table (vendor/classification/classification.json).
+#
+# The table maps a field name to a Fideslang category when the name means the same thing in
+# every schema it appears in. A few of its names do not: `state` is a postal address's state in
+# an `Address`, and a workflow's, a component's, a chat run's or an OAuth flow's state almost
+# everywhere else. Each entry here keeps such a name to the context where the table's category
+# holds: the name is classified when the object it is read from is named like one of `objects`
+# (`address.state`, `billing_address["state"]`, a field of a class or type named `Address`), or
+# when a name beside it (another field of the same type, another parameter of the same function)
+# is one of `siblings`. Otherwise it is not classified. Names are compared as table keys
+# (lowercased, every run of non-alphanumerics an `_`); `objects` are globs.
+#
+# A project's own `fields` in .privacy-flow.yml, and an ingested data map, still classify the
+# name everywhere. The table is shared with privacy-datamap and vendored verbatim; the same
+# change belongs upstream, after which an entry here can go.
+
+version: "0.1.0"
+
+contextual:
+  - id: address-state
+    description: >-
+      `state` and `province` are an address's only beside other address fields or on an
+      address. Elsewhere they are application state (a workflow's, a component's, a chat run's).
+    names: [state, province]
+    objects: ["*address*", "*addr", "*addr_*", "location", "*_location"]
+    siblings:
+      [city, town, locality, postal_code, postcode, post_code, zip, zip_code, zipcode, country,
+       country_code, street, street_address, address_line1, address_line_1, address1, line1, county]

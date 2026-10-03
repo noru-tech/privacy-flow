@@ -54,6 +54,35 @@ pub struct Classifier {
     extra: BTreeMap<String, Vec<(String, String)>>,
     /// Names a project's config declares not personal.
     suppressed: HashSet<String>,
+    /// Table names whose category holds only in context (`catalogue/classification.yml`).
+    contextual: Vec<ContextRule>,
+}
+
+struct ContextRule {
+    names: HashSet<String>,
+    objects: Vec<crate::glob::Glob>,
+    siblings: HashSet<String>,
+}
+
+impl ContextRule {
+    fn holds(&self, ctx: &Place) -> bool {
+        ctx.object.is_some_and(|o| {
+            keys(o)
+                .iter()
+                .any(|k| self.objects.iter().any(|g| g.is_match(k)))
+        }) || ctx
+            .siblings
+            .iter()
+            .any(|s| keys(s).iter().any(|k| self.siblings.contains(k)))
+    }
+}
+
+/// Where a name is read: the object it is read from, and the names beside it (the other fields
+/// of its type, the other parameters of its function).
+#[derive(Clone, Copy, Debug, Default)]
+pub struct Place<'a> {
+    pub object: Option<&'a str>,
+    pub siblings: &'a [String],
 }
 
 /// The table's own normalization: lowercase, every run of non-alphanumerics collapsed to `_`,
@@ -119,7 +148,24 @@ impl Classifier {
             taxonomy: taxonomy.into_iter().map(|e| e.fides_key).collect(),
             extra: BTreeMap::new(),
             suppressed: HashSet::new(),
+            contextual: Vec::new(),
         })
+    }
+
+    /// Keep table names to the context where their category holds.
+    pub fn add_contextual(&mut self, def: &crate::catalogue::ContextualDef) -> Result<()> {
+        let objects = def
+            .objects
+            .iter()
+            .map(|g| crate::glob::Glob::new(g, crate::glob::Mode::Path))
+            .collect::<Result<Vec<_>>>()
+            .with_context(|| format!("contextual entry {:?}", def.id))?;
+        self.contextual.push(ContextRule {
+            names: def.names.iter().flat_map(|n| keys(n)).collect(),
+            objects,
+            siblings: def.siblings.iter().flat_map(|n| keys(n)).collect(),
+        });
+        Ok(())
     }
 
     /// Add a field name with a category, from a catalogue or config `field` source or a data map.
@@ -157,6 +203,12 @@ impl Classifier {
     /// Every category a field name carries. Extra sources come first and are all returned; the
     /// table answers only when nothing else does.
     pub fn classify(&self, name: &str) -> Vec<Classified> {
+        self.classify_in(name, &Place::default())
+    }
+
+    /// Classify a name where it is read: a table name kept to a context
+    /// (`catalogue/classification.yml`) is classified only there.
+    pub fn classify_in(&self, name: &str, ctx: &Place) -> Vec<Classified> {
         let ks = keys(name);
         let mut out = Vec::new();
         for k in &ks {
@@ -180,6 +232,13 @@ impl Classifier {
             .iter()
             .any(|k| self.operational.contains(k) || self.suppressed.contains(k))
         {
+            return out;
+        }
+        if ks.iter().any(|k| {
+            self.contextual
+                .iter()
+                .any(|r| r.names.contains(k) && !r.holds(ctx))
+        }) {
             return out;
         }
         for k in &ks {
@@ -236,6 +295,39 @@ mod tests {
         assert_eq!(snake("firstName"), "first_name");
         assert_eq!(snake("IPAddress"), "ip_address");
         assert_eq!(keys("emailAddress"), vec!["emailaddress", "email_address"]);
+    }
+
+    #[test]
+    fn contextual_names_need_their_context() {
+        let mut c = Classifier::new().unwrap();
+        c.add_contextual(&crate::catalogue::ContextualDef {
+            id: "address-state".into(),
+            description: None,
+            names: vec!["state".into()],
+            objects: vec!["*address*".into()],
+            siblings: vec!["city".into()],
+        })
+        .unwrap();
+        assert!(c.classify("state").is_empty());
+        let on = |o| Place {
+            object: Some(o),
+            siblings: &[],
+        };
+        assert!(c.classify_in("state", &on("context")).is_empty());
+        assert_eq!(
+            c.classify_in("state", &on("billingAddress"))[0].category,
+            "user.contact.address.state"
+        );
+        let beside = ["street".to_string(), "City".to_string()];
+        let place = Place {
+            object: None,
+            siblings: &beside,
+        };
+        assert_eq!(c.classify_in("state", &place).len(), 1);
+        // A project's own `fields` classify the name everywhere.
+        c.add("state", "user.contact.address.state", "config")
+            .unwrap();
+        assert_eq!(c.classify("state").len(), 1);
     }
 
     #[test]

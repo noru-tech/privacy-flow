@@ -11,7 +11,7 @@ mod heap;
 use std::collections::{BTreeMap, BTreeSet, HashMap};
 
 use crate::catalogue::{ArgSel, Catalogue, Flow, ParamRule, SinkClass, SourceKind};
-use crate::classify::{Classifier, UNKNOWN};
+use crate::classify::{Classifier, Place, UNKNOWN};
 use crate::datamap::Datamap;
 use crate::ir::{ImportKind, NoteKind, Pos, VarKind};
 use crate::program::*;
@@ -220,6 +220,8 @@ struct Builder<'a, 'p> {
     defs: Vec<Vec<u32>>,
     seed_keys: BTreeSet<(VarId, Token, String)>,
     types_by_name: BTreeMap<String, Vec<usize>>,
+    /// Each class's `this` and constructor `this`, to its class.
+    this_class: HashMap<VarId, usize>,
     /// Named field reads, resolved against allocation sites once every edge exists.
     loads: Vec<heap::PendingLoad>,
     /// (function, formal) pairs some call binds other than one argument to one parameter
@@ -233,6 +235,13 @@ pub fn build(p: &mut Program, inp: &Inputs) -> Facts {
     let mut types_by_name: BTreeMap<String, Vec<usize>> = BTreeMap::new();
     for (i, t) in p.types.iter().enumerate() {
         types_by_name.entry(t.name.clone()).or_default().push(i);
+    }
+    let mut this_class: HashMap<VarId, usize> = HashMap::new();
+    for (i, c) in p.classes.iter().enumerate() {
+        this_class.insert(c.this, i);
+        if let Some(t) = c.ctor_this {
+            this_class.insert(t, i);
+        }
     }
     let mut b = Builder {
         p,
@@ -262,6 +271,7 @@ pub fn build(p: &mut Program, inp: &Inputs) -> Facts {
         defs: vec![Vec::new(); nvars],
         seed_keys: BTreeSet::new(),
         types_by_name,
+        this_class,
         loads: Vec::new(),
         inexact: BTreeSet::new(),
     };
@@ -515,8 +525,8 @@ impl<'a, 'p> Builder<'a, 'p> {
     fn field_read(&mut self, stmt: u32, obj: VarId, dst: VarId, name: &str) {
         // `models.User`, `Mailer.send`: a member of code, not of data. An instance (`this`) is
         // data, even though it carries its class as provenance.
-        let instance = matches!(self.p.vars[obj as usize].kind, VarKind::This)
-            || self.p.classes.iter().any(|c| c.ctor_this == Some(obj));
+        let class = self.this_class.get(&obj).copied();
+        let instance = matches!(self.p.vars[obj as usize].kind, VarKind::This) || class.is_some();
         if !instance
             && self.p.prov[obj as usize]
                 .iter()
@@ -524,7 +534,25 @@ impl<'a, 'p> Builder<'a, 'p> {
         {
             return;
         }
-        for c in self.inp.classifier.classify(name) {
+        // What the field is read from: the receiver's name, or for `this.f` the class and its
+        // other fields.
+        let (object, siblings) = match class {
+            Some(c) => {
+                let name = self.p.classes[c].name.clone();
+                let fields = self.type_fields(&name);
+                (Some(name), fields)
+            }
+            None => (
+                receiver_ident(&self.p.stmts[stmt as usize].text)
+                    .or_else(|| Some(self.p.vars[obj as usize].name.clone())),
+                Vec::new(),
+            ),
+        };
+        let place = Place {
+            object: object.as_deref(),
+            siblings: &siblings,
+        };
+        for c in self.inp.classifier.classify_in(name, &place) {
             let seed = self.stmt_seed(
                 stmt,
                 dst,
@@ -1413,7 +1441,12 @@ impl<'a, 'p> Builder<'a, 'p> {
                     narrowed = self.typed_seeds(*var, a, SeedKind::Request, &src_id);
                 }
                 if rule.by_name && !narrowed {
-                    let cs = self.inp.classifier.classify(name);
+                    let others: Vec<String> = h.params.iter().map(|p| p.1.clone()).collect();
+                    let place = Place {
+                        object: None,
+                        siblings: &others,
+                    };
+                    let cs = self.inp.classifier.classify_in(name, &place);
                     for c in &cs {
                         let s = self.param_seed(
                             *var,
@@ -1492,6 +1525,16 @@ impl<'a, 'p> Builder<'a, 'p> {
         }
     }
 
+    /// The declared fields of the types named `name`.
+    fn type_fields(&self, name: &str) -> Vec<String> {
+        self.types_by_name
+            .get(name)
+            .into_iter()
+            .flatten()
+            .flat_map(|&i| self.p.types[i].fields.iter().map(|f| f.0.clone()))
+            .collect()
+    }
+
     /// Seed the classified fields of a type on `var`. Returns true when the type is known.
     fn typed_seeds(
         &mut self,
@@ -1506,8 +1549,13 @@ impl<'a, 'p> Builder<'a, 'p> {
             for i in idx {
                 known = true;
                 let t = &self.p.types[i];
+                let names: Vec<String> = t.fields.iter().map(|f| f.0.clone()).collect();
+                let place = Place {
+                    object: Some(&t.name),
+                    siblings: &names,
+                };
                 for (fname, fpos) in &t.fields {
-                    for c in self.inp.classifier.classify(fname) {
+                    for c in self.inp.classifier.classify_in(fname, &place) {
                         fields.push((
                             fname.clone(),
                             c.category,
@@ -1585,7 +1633,16 @@ impl<'a, 'p> Builder<'a, 'p> {
                     continue;
                 }
                 let name = v.name.clone();
-                for c in self.inp.classifier.classify(&name) {
+                let others: Vec<String> = self.p.funcs[fi]
+                    .params
+                    .iter()
+                    .map(|q| q.name.clone())
+                    .collect();
+                let place = Place {
+                    object: None,
+                    siblings: &others,
+                };
+                for c in self.inp.classifier.classify_in(&name, &place) {
                     let mut s = self.param_seed(
                         var,
                         TOP,
@@ -1690,6 +1747,21 @@ impl<'a, 'p> Builder<'a, 'p> {
 
 /// An API path rooted at a JavaScript global the catalogue does not name (a declared global,
 /// `globalThis.cache`): no module, so it is a run-time object of the program's own.
+/// The name of what a field read reads from, from its text: `address` in `address.state`,
+/// `billing_address` in `order.billing_address["state"]`, `tax_breakdown` in
+/// `order.tax_breakdown[0]["state"]`.
+fn receiver_ident(text: &str) -> Option<String> {
+    let mut t = &text[..text.rfind(['.', '['])?];
+    while let Some(rest) = t.strip_suffix(']') {
+        t = &rest[..rest.rfind('[')?];
+    }
+    let start = t
+        .rfind(|c: char| !(c.is_alphanumeric() || c == '_'))
+        .map_or(0, |i| i + 1);
+    let ident = &t[start..];
+    (!ident.is_empty()).then(|| ident.to_string())
+}
+
 fn is_runtime_global(path: &str, lang: &str) -> bool {
     lang == "javascript" && !path.contains(':')
 }
