@@ -184,4 +184,14 @@ on the same commits and scopes. Every judgement call is written down here before
   added by the unchanged sampling rule; no other application's items changed. Privado's numbers
   now cover eleven applications. The earlier failures were not reproducible, so a run that a
   tool loses to memory is retried at the protocol's settings before it is recorded as a failure.
-
+- **2026-10-03, final labels without discussion.** R1's and R2's labels were imported from two
+  exports (`labels/PROVENANCE.md`). Both reviewers labelled every item of ten applications; Polar
+  (R1 none, R2 32 of 81 items) and PrivateGPT (neither) were not labelled by both, have no final
+  labels and no scores, and are left out of every number, including the head-to-head (which
+  covers ten applications instead of eleven). Disagreements were not settled by discussion (§7,
+  step 6): `labelling/finalise.py` gives an item both reviewers answered the same way that answer,
+  and marks every other item `unsure`, which §7 already leaves out of the denominators and counts
+  (47 items: 23 flows, 5 gaps, 19 sites). `score.py` now counts a site whose `is_sink` is `unsure`
+  among the `unsure` labels (it was skipped), and skips an application without final labels
+  instead of stopping. Agreement before finalising: κ 0.875 (flows, n = 250), 0.875 (gaps,
+  n = 94), 0.897 (sites, n = 265).

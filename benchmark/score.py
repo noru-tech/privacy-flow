@@ -101,6 +101,7 @@ def score(args, corpus):
     recall_obs = []                            # (language, piiflow_found, piiflow_flagged, privado_found)
     populations, unsure, added = {}, {"flow": 0, "gap": 0, "site": 0}, 0
     have_privado = False
+    unlabelled = []
     # Head to head, on the applications both tools completed: (app, stratum, real flow?) per
     # sampled report, and (piiflow found, piiflow flagged, Privado found) per personal sink site.
     h2h_reports = {"piiflow": [], "piiflow_raised": [], "privado": []}
@@ -109,7 +110,9 @@ def score(args, corpus):
         app = entry["name"]
         labels = load_labels(args.labels / "final", app)
         if labels is None:
-            sys.exit(f"{app}: no final labels in {args.labels / 'final'}")
+            # Not labelled by both reviewers: no scores for it (PROTOCOL.md, Deviations).
+            unlabelled.append(app)
+            continue
         labels, extra = labels
         added += len(extra)
         key = json.loads((HERE / "sheets/key" / f"{app}.json").read_text())
@@ -161,7 +164,11 @@ def score(args, corpus):
                     continue
                 gap_obs.append((app, v == "yes"))
             else:
-                if norm(lab.get("is_sink")) != "yes":
+                sink = norm(lab.get("is_sink"))
+                if sink == "unsure":
+                    unsure["site"] += 1
+                    continue
+                if sink != "yes":
                     continue
                 v = norm(lab.get("personal"))
                 if v in (None, "unsure"):
@@ -263,6 +270,7 @@ def score(args, corpus):
         },
         "unsure_excluded": unsure,
         "reviewer_added_sites": added,
+        "applications_without_final_labels": unlabelled,
     }
     out = args.out
     out.mkdir(parents=True, exist_ok=True)
@@ -309,6 +317,8 @@ def markdown(r):
         lines.append(f"| {scope} | {fmt(v['piiflow_found'])} | {fmt(v['piiflow_flagged'])} | {fmt(v['privado_found'])} |")
     lines += ["", f"Coverage gaps that hide a real flow: {fmt(r['gaps_hiding_a_flow'])}.", "",
               f"`unsure` labels excluded: {r['unsure_excluded']}. Sites added by reviewers: {r['reviewer_added_sites']}.", ""]
+    if r.get("applications_without_final_labels"):
+        lines += [f"Not scored (not labelled by both reviewers): {', '.join(r['applications_without_final_labels'])}.", ""]
     return "\n".join(lines)
 
 

@@ -1,0 +1,270 @@
+# Final labels for umami, from R1 and R2 by benchmark/labelling/finalise.py: 56 items both
+# answered the same way, 4 they did not (unsure, not settled by discussion). See PROTOCOL.md.
+items:
+  F09f5f9b4f4:
+    note: R1 and R2 disagree; not settled by discussion
+    verdict: unsure
+  F15333ec96b:
+    category_ok: 'no'
+    citation: src/app/api/send/route.ts:113
+    verdict: fp_path
+  F165a7b8020:
+    category_ok: 'yes'
+    citation: src/queries/prisma/user.ts:264
+    verdict: fp_path
+  F33624292b3:
+    category_ok: 'yes'
+    citation: scripts/seed/index.ts:323
+    verdict: tp
+  F38d5c5e893:
+    category_ok: 'yes'
+    citation: packages/mcp/src/lib/logger.ts:23
+    verdict: tp
+  F3f75ccbc00:
+    category_ok: 'yes'
+    citation: src/lib/fetch.ts:24
+    verdict: tp
+  F4359223ef6:
+    note: R1 and R2 disagree; not settled by discussion
+    verdict: unsure
+  F48b34c2ce4:
+    category_ok: 'no'
+    citation: scripts/seed/index.ts:65
+    verdict: fp_path
+  F4a4fd578f2:
+    category_ok: 'no'
+    citation: src/app/mcp/route.ts:35
+    verdict: fp_path
+  F565a17b7d7:
+    category_ok: null
+    citation: scripts/check-missing-messages.js:74
+    verdict: fp_not_personal
+  F5caf9d688f:
+    category_ok: 'yes'
+    citation: src/lib/fetch.ts:24
+    verdict: tp
+  F6ba3e462db:
+    category_ok: 'no'
+    citation: scripts/seed/index.ts:248
+    verdict: fp_path
+  F73348e4e5f:
+    category_ok: 'no'
+    citation: scripts/test-api.ts:215
+    verdict: fp_path
+  F777ce5e011:
+    category_ok: 'yes'
+    citation: src/tracker/index.ts:398
+    verdict: tp
+  F9210ee09d2:
+    category_ok: 'no'
+    citation: scripts/generate-api-client.ts:309
+    verdict: fp_path
+  F96e16630e2:
+    category_ok: 'yes'
+    citation: src/lib/fetch.ts:24
+    verdict: tp
+  Fbd8306469d:
+    note: R1 and R2 disagree; not settled by discussion
+    verdict: unsure
+  Fe3ba7f56c9:
+    category_ok: 'no'
+    citation: scripts/seed/index.ts:97
+    verdict: fp_path
+  Fe6f22a6cab:
+    category_ok: null
+    citation: packages/mcp/src/stdio.ts:41
+    verdict: fp_not_personal
+  Ff83961b778:
+    category_ok: null
+    citation: packages/mcp/src/lib/tool.ts:83
+    verdict: fp_not_personal
+  G1777ee71f5:
+    citation: null
+    hides_flow: 'no'
+  G1fbb5304eb:
+    citation: null
+    hides_flow: 'no'
+  G31048a89c9:
+    citation: null
+    hides_flow: 'no'
+  G48dd96451e:
+    citation: packages/api-client/src/http.ts:230
+    hides_flow: 'yes'
+  G591596b101:
+    citation: src/lib/fetch.ts:24
+    hides_flow: 'yes'
+  G61b1d47984:
+    citation: null
+    hides_flow: 'no'
+  Gae99f260f9:
+    citation: null
+    hides_flow: 'no'
+  Gb08c3d9a02:
+    citation: null
+    hides_flow: 'no'
+  Gc6430f38f2:
+    citation: null
+    hides_flow: 'no'
+  Gfc398a3983:
+    citation: null
+    hides_flow: 'no'
+  S03464b55a1:
+    categories:
+    - user
+    is_sink: 'yes'
+    personal: 'yes'
+    source: src/tracker/index.ts:283
+  S0b54397f51:
+    categories: []
+    is_sink: 'yes'
+    personal: 'no'
+    source: null
+  S15ff9748b4:
+    categories: []
+    is_sink: 'yes'
+    personal: 'no'
+    source: null
+  S1980e5188b:
+    categories: []
+    is_sink: 'yes'
+    personal: 'no'
+    source: null
+  S1ac321a498:
+    categories:
+    - user
+    is_sink: 'yes'
+    personal: 'yes'
+    source: src/tracker/index.ts:283
+  S288c9f07de:
+    categories: []
+    is_sink: 'no'
+    personal: null
+    source: null
+  S2c86634e2a:
+    categories: []
+    is_sink: 'yes'
+    personal: 'no'
+    source: null
+  S35510561ed:
+    categories: []
+    is_sink: 'yes'
+    personal: 'no'
+    source: null
+  S4a8671e6a5:
+    categories: []
+    is_sink: 'yes'
+    personal: 'no'
+    source: null
+  S5daf83401e:
+    categories:
+    - user.credentials
+    is_sink: 'yes'
+    personal: 'yes'
+    source: packages/api-client/src/client.ts:58
+  S610efac5ef:
+    categories:
+    - user
+    is_sink: 'yes'
+    personal: 'yes'
+    source: src/lib/kafka.ts:113
+  S61c83a92f2:
+    categories: []
+    is_sink: 'yes'
+    personal: 'no'
+    source: null
+  S622aeda698:
+    categories: []
+    is_sink: 'yes'
+    personal: 'no'
+    source: null
+  S6726b273c9:
+    categories:
+    - user.credentials
+    is_sink: 'yes'
+    personal: 'yes'
+    source: src/components/hooks/queries/useTwoFactorVerifyMutation.ts:15
+  S6c0e788e6f:
+    categories: []
+    is_sink: 'yes'
+    personal: 'no'
+    source: null
+  S8249812922:
+    categories: []
+    is_sink: 'no'
+    personal: null
+    source: null
+  S88f1f818a3:
+    categories:
+    - user
+    is_sink: 'yes'
+    personal: 'yes'
+    source: src/tracker/index.ts:283
+  S913c574dcd:
+    categories: []
+    is_sink: 'yes'
+    personal: 'no'
+    source: null
+  S925e27366f:
+    categories: []
+    is_sink: 'no'
+    personal: null
+    source: null
+  S9e0af506ed:
+    categories:
+    - user.credentials
+    is_sink: 'yes'
+    personal: 'yes'
+    source: src/app/login/LoginForm.tsx:26
+  Sc38e55842f:
+    categories: []
+    is_sink: 'no'
+    personal: null
+    source: null
+  Sc4082cff57:
+    categories:
+    - user
+    is_sink: 'yes'
+    personal: 'yes'
+    source: src/tracker/index.ts:283
+  Sca0c7a4370:
+    categories: []
+    is_sink: 'yes'
+    personal: 'no'
+    source: null
+  Sd282c9071f:
+    categories: []
+    is_sink: 'yes'
+    personal: 'no'
+    source: null
+  Se349aec0f0:
+    categories: []
+    is_sink: 'no'
+    personal: null
+    source: null
+  Se99ec35e49:
+    categories:
+    - user
+    is_sink: 'yes'
+    personal: 'yes'
+    source: src/tracker/index.ts:283
+  Sf162870213:
+    categories:
+    - user
+    is_sink: 'yes'
+    personal: 'yes'
+    source: src/tracker/index.ts:283
+  Sf86ea857b2:
+    is_sink: unsure
+    note: R1 and R2 disagree; not settled by discussion
+    personal: unsure
+  Sf8f25a22ec:
+    categories: []
+    is_sink: 'yes'
+    personal: 'no'
+    source: null
+  Sfc9b2811e6:
+    categories:
+    - user
+    is_sink: 'yes'
+    personal: 'yes'
+    source: scripts/test-api.ts:241

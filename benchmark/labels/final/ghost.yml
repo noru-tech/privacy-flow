@@ -1,0 +1,410 @@
+# Final labels for ghost, from R1 and R2 by benchmark/labelling/finalise.py: 88 items both
+# answered the same way, 3 they did not (unsure, not settled by discussion). See PROTOCOL.md.
+items:
+  F05d81b17df:
+    category_ok: 'yes'
+    citation: core/frontend/src/ghost-stats/browser-service.js:98
+    verdict: tp
+  F08ff0cf82e:
+    category_ok: null
+    citation: core/frontend/src/admin-auth/message-handler.js:1
+    verdict: fp_not_personal
+  F0b6318182b:
+    category_ok: 'yes'
+    citation: core/server/services/activitypub/activity-pub-service.ts:194
+    verdict: tp
+  F0cdcc668dc:
+    category_ok: 'no'
+    citation: scripts/seed-multi-sub-scenarios.js:335
+    verdict: fp_path
+  F16d4dce9b8:
+    category_ok: null
+    citation: core/server/services/custom-redirects/utils.ts:5
+    verdict: fp_not_personal
+  F1b1a37eae1:
+    category_ok: null
+    citation: scripts/seed-multi-sub-scenarios.js:148
+    verdict: fp_not_personal
+  F3302bcf70e:
+    category_ok: 'yes'
+    citation: core/server/services/members/members-api/repositories/product-repository.js:123
+    verdict: fp_path
+  F346555683f:
+    category_ok: 'yes'
+    citation: core/server/services/stripe/stripe-api.js:749
+    verdict: tp
+  F353e8d84c0:
+    category_ok: null
+    citation: scripts/seed-multi-sub-scenarios.js:62
+    verdict: fp_not_personal
+  F37e91a40db:
+    category_ok: null
+    citation: core/server/services/themes/upload-size-limit-reporter.js:22
+    verdict: fp_not_personal
+  F3ea7e787e8:
+    category_ok: 'yes'
+    citation: core/server/services/activitypub/activity-pub-service.ts:101
+    verdict: tp
+  F47d8e7965e:
+    category_ok: 'yes'
+    citation: core/server/services/machine-payments/stripe/payment-recorder.ts:81
+    verdict: tp
+  F491058e7b5:
+    category_ok: 'no'
+    citation: scripts/seed-multi-sub-scenarios.js:334
+    verdict: fp_path
+  F4bfa31ea78:
+    category_ok: 'yes'
+    citation: core/frontend/src/ghost-stats/browser-service.js:98
+    verdict: tp
+  F539ecc034c:
+    category_ok: 'yes'
+    citation: core/server/services/members/members-api/repositories/product-repository.js:123
+    verdict: fp_path
+  F54a3b9691f:
+    category_ok: 'yes'
+    citation: core/server/adapters/storage/S3Storage.ts:299
+    verdict: tp
+  F5c10704406:
+    category_ok: 'no'
+    citation: core/server/services/automations/database-automations-repository.ts:445
+    verdict: fp_path
+  F605487a351:
+    category_ok: 'yes'
+    citation: core/server/adapters/storage/S3Storage.ts:275
+    verdict: tp
+  F6ad545ff5b:
+    category_ok: 'yes'
+    citation: core/server/models/user.js:688
+    verdict: fp_path
+  F704cf53dd5:
+    category_ok: null
+    citation: core/server/adapters/route-settings/utils.ts:16
+    verdict: fp_not_personal
+  F746cfe7edf:
+    category_ok: 'yes'
+    citation: core/server/adapters/storage/S3Storage.ts:254
+    verdict: tp
+  F7cddefd04c:
+    category_ok: 'yes'
+    citation: core/server/services/stripe/stripe-api.js:1122
+    verdict: fp_path
+  F7dcd5080f0:
+    category_ok: null
+    citation: core/server/data/tinybird/scripts/docker-analytics-manager.js:721
+    verdict: fp_not_personal
+  F84c47af4f5:
+    category_ok: 'no'
+    citation: core/server/services/jobs-service/register-job-handlers.ts:155
+    verdict: fp_path
+  F953b93613d:
+    category_ok: 'yes'
+    citation: core/server/adapters/storage/S3Storage.ts:275
+    verdict: tp
+  F97c5481b6f:
+    category_ok: 'no'
+    citation: scripts/seed-multi-sub-scenarios.js:330
+    verdict: fp_path
+  F98f46ce1c0:
+    category_ok: 'yes'
+    citation: core/server/adapters/storage/S3Storage.ts:254
+    verdict: tp
+  Fa202ec96df:
+    category_ok: 'yes'
+    citation: core/server/services/auth/passwordreset.js:154
+    verdict: fp_path
+  Fa20fd25fd5:
+    category_ok: 'yes'
+    citation: core/server/services/auth/passwordreset.js:154
+    verdict: fp_path
+  Fa6b0e37c44:
+    category_ok: null
+    citation: scripts/seed-multi-sub-scenarios.js:148
+    verdict: fp_not_personal
+  Fa8e81d8ff4:
+    category_ok: 'yes'
+    citation: core/server/models/user.js:688
+    verdict: fp_path
+  Fa9910ec3e5:
+    category_ok: null
+    citation: core/server/services/themes/upload-size-limit-reporter.js:22
+    verdict: fp_not_personal
+  Fabf4e84708:
+    category_ok: 'no'
+    citation: scripts/seed-multi-sub-scenarios.js:330
+    verdict: fp_path
+  Fad12ae1ef5:
+    note: R1 and R2 disagree; not settled by discussion
+    verdict: unsure
+  Fb1536f18b0:
+    category_ok: 'yes'
+    citation: core/server/services/stripe/stripe-api.js:410
+    verdict: tp
+  Fb394b781ee:
+    category_ok: 'yes'
+    citation: core/server/services/stripe/stripe-api.js:1122
+    verdict: fp_path
+  Fb62028c329:
+    category_ok: 'yes'
+    citation: core/server/services/members/members-api/repositories/member-repository.js:1883
+    verdict: fp_path
+  Fbc266fffdf:
+    category_ok: 'yes'
+    citation: core/server/services/offers/offer-bookshelf-repository.js:254
+    verdict: fp_path
+  Fbfbdc5eeab:
+    category_ok: 'no'
+    citation: core/server/services/automations/database-automations-repository.ts:445
+    verdict: fp_path
+  Fc467525ff3:
+    category_ok: 'yes'
+    citation: core/frontend/src/admin-auth/message-handler.js:33
+    verdict: tp
+  Fcf84d1ab32:
+    category_ok: 'yes'
+    citation: core/server/models/user.js:688
+    verdict: fp_path
+  Fd691cd21d0:
+    category_ok: 'yes'
+    citation: core/server/services/stripe/stripe-api.js:841
+    verdict: tp
+  Fd8db16eb90:
+    category_ok: 'yes'
+    citation: core/server/adapters/storage/S3Storage.ts:315
+    verdict: tp
+  Fde18044217:
+    category_ok: null
+    citation: scripts/seed-multi-sub-scenarios.js:62
+    verdict: fp_not_personal
+  Fe4958f4514:
+    category_ok: 'yes'
+    citation: core/server/adapters/storage/S3Storage.ts:223
+    verdict: tp
+  Fe586e11c24:
+    category_ok: 'yes'
+    citation: core/server/adapters/storage/S3Storage.ts:254
+    verdict: tp
+  Fe60a48f368:
+    category_ok: 'yes'
+    citation: core/server/adapters/storage/S3Storage.ts:299
+    verdict: tp
+  Febbf9631b1:
+    category_ok: 'yes'
+    citation: core/server/services/stripe/stripe-api.js:1122
+    verdict: fp_path
+  Fee06ec1256:
+    category_ok: 'yes'
+    citation: core/server/services/offers/offer-bookshelf-repository.js:254
+    verdict: fp_path
+  Fef9cd356b7:
+    category_ok: 'yes'
+    citation: core/server/adapters/storage/S3Storage.ts:315
+    verdict: tp
+  Ff9a40d94f7:
+    category_ok: 'yes'
+    citation: core/server/services/members/members-api/repositories/member-repository.js:1883
+    verdict: fp_path
+  G0bd0045cc5:
+    citation: core/server/services/lib/mailgun-client.js:367
+    hides_flow: 'yes'
+  G0ea7072688:
+    citation: core/server/services/lib/mailgun-client.js:135
+    hides_flow: 'yes'
+  G2a4d53a58e:
+    citation: null
+    hides_flow: 'no'
+  G3f4e106bf3:
+    citation: null
+    hides_flow: 'no'
+  G5f47e0a608:
+    citation: null
+    hides_flow: 'no'
+  G84fdd3eb1d:
+    citation: core/server/services/mentions/mentions-api.js:267
+    hides_flow: 'yes'
+  G860653aae3:
+    citation: null
+    hides_flow: 'no'
+  G88377e2448:
+    citation: null
+    hides_flow: 'no'
+  Ga7fc653441:
+    citation: null
+    hides_flow: 'no'
+  Gd48004ad54:
+    citation: null
+    hides_flow: 'no'
+  S048f1eba87:
+    categories:
+    - user
+    is_sink: 'yes'
+    personal: 'yes'
+    source: core/server/services/mentions/mention-sending-service.js:229
+  S0664a2198b:
+    categories:
+    - user
+    is_sink: 'yes'
+    personal: 'yes'
+    source: core/server/services/recommendations/service/recommendation-service.ts:92
+  S082823380a:
+    categories: []
+    is_sink: 'no'
+    personal: null
+    source: null
+  S0d86d7c2bf:
+    categories:
+    - user.authorization.credentials
+    - user
+    is_sink: 'yes'
+    personal: 'yes'
+    source: core/server/services/webhooks/webhook-trigger.js:140
+  S11757e1d84:
+    categories: []
+    is_sink: 'no'
+    personal: null
+    source: null
+  S155f9d2104:
+    categories:
+    - user.contact.email
+    - user.name
+    - user
+    is_sink: 'yes'
+    personal: 'yes'
+    source: core/server/services/comments/comments-service-emails.js:219
+  S1785b31031:
+    categories:
+    - user.unique_id
+    - user.authorization.credentials
+    is_sink: 'yes'
+    personal: 'yes'
+    source: core/server/data/tinybird/scripts/docker-analytics-manager.js:239
+  S1c66c68ef4:
+    categories: []
+    is_sink: 'yes'
+    personal: 'no'
+    source: null
+  S24aba6c0bc:
+    categories:
+    - user
+    is_sink: 'yes'
+    personal: 'yes'
+    source: core/server/services/email-service/sending-service.js:120
+  S2bfa6259ef:
+    categories:
+    - user
+    is_sink: 'yes'
+    personal: 'yes'
+    source: core/server/services/themes/validate.js:167
+  S2d8a8ade99:
+    categories:
+    - user.contact.email
+    - user
+    is_sink: 'yes'
+    personal: 'yes'
+    source: core/server/services/member-welcome-emails/service.js:567
+  S3019cf54a5:
+    categories: []
+    is_sink: 'yes'
+    personal: 'no'
+    source: null
+  S4126e6d57a:
+    is_sink: unsure
+    note: R1 and R2 disagree; not settled by discussion
+    personal: unsure
+  S4b2c60a1d8:
+    categories: []
+    is_sink: 'yes'
+    personal: 'no'
+    source: null
+  S59bbd2f552:
+    categories:
+    - user.contact.email
+    - user
+    is_sink: 'yes'
+    personal: 'yes'
+    source: core/server/api/endpoints/mail.js:18
+  S641284a5e4:
+    categories: []
+    is_sink: 'yes'
+    personal: 'no'
+    source: null
+  S75f0ce2a6e:
+    categories:
+    - user.unique_id
+    - user.behavior
+    is_sink: 'yes'
+    personal: 'yes'
+    source: core/server/services/tinybird-sync/sync-table-to-tinybird.ts:27
+  S7fcb0a24dd:
+    categories: []
+    is_sink: 'no'
+    personal: null
+    source: null
+  S8ef71b3fdf:
+    categories: []
+    is_sink: 'yes'
+    personal: 'no'
+    source: null
+  S8ff729bbe2:
+    categories: []
+    is_sink: 'yes'
+    personal: unsure
+    source: null
+  S95ac8e6c06:
+    categories: []
+    is_sink: 'yes'
+    personal: 'no'
+    source: null
+  S96250c77a0:
+    is_sink: unsure
+    note: R1 and R2 disagree; not settled by discussion
+    personal: unsure
+  S996944eacc:
+    categories:
+    - user.unique_id
+    - user.behavior
+    is_sink: 'yes'
+    personal: 'yes'
+    source: core/frontend/src/admin-auth/message-handler.js:31
+  S9e71dbf1de:
+    categories:
+    - user.contact.email
+    - user
+    is_sink: 'yes'
+    personal: 'yes'
+    source: core/server/services/email-service/email-service.js:553
+  Sbf73055240:
+    categories: []
+    is_sink: 'yes'
+    personal: 'no'
+    source: null
+  Scab12b3dc9:
+    categories:
+    - user.contact.email
+    - user.name
+    - user.behavior
+    is_sink: 'yes'
+    personal: 'yes'
+    source: core/server/services/staff/staff-service-emails.js:37
+  Sd0395abd27:
+    categories: []
+    is_sink: 'yes'
+    personal: 'no'
+    source: null
+  Sd42ec041b4:
+    categories:
+    - user.unique_id
+    is_sink: 'yes'
+    personal: 'yes'
+    source: core/frontend/src/admin-auth/message-handler.js:47
+  Se95ad50324:
+    categories: []
+    is_sink: 'yes'
+    personal: 'no'
+    source: null
+  Sfd7dde9af5:
+    categories:
+    - user
+    is_sink: 'yes'
+    personal: 'yes'
+    source: core/server/data/importer/handlers/image.js:44
