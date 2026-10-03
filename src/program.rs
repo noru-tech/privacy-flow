@@ -33,6 +33,8 @@ const MAX_PROVS: usize = 4096;
 /// dispatches to.
 const MAX_LINEAGE: usize = 32;
 const MAX_DESCENDANTS: usize = 256;
+/// Statements copied into subclasses in all (template methods past it stay gaps).
+const MAX_COPIED_STMTS: usize = 200_000;
 
 #[derive(Default, Debug)]
 pub struct Interner {
@@ -332,6 +334,15 @@ pub struct Program {
     class_fields: Vec<BTreeMap<Sym, VarId>>,
     /// Every class's `this` and constructor `this`.
     this_vars: HashSet<VarId>,
+    /// Whether inherited template methods have been copied into their subclasses.
+    specialised: bool,
+    /// Methods whose calls on `this` reach every override: copied into every subclass that
+    /// inherits them, or copies themselves. Such a call is not a gap.
+    complete_dispatch: HashSet<FuncId>,
+    /// The method each function belongs to (itself, or the method a closure is nested in).
+    method_of: Vec<Option<FuncId>>,
+    /// A copied statement's original, for identities and citations.
+    pub stmt_origin: Vec<u32>,
     /// (ancestor's `this.f`, a subclass's `this.f`): what a base class stores in a field, its
     /// subclasses read (a base constructor sets `self.channel`, a subclass method reads it).
     /// Not the other way, or every subclass would see what its siblings store.
@@ -435,6 +446,10 @@ impl Program {
             subclasses: Vec::new(),
             class_fields: Vec::new(),
             this_vars: HashSet::new(),
+            specialised: false,
+            complete_dispatch: HashSet::new(),
+            method_of: Vec::new(),
+            stmt_origin: Vec::new(),
             field_links: Vec::new(),
         };
         let mut pending_reexports: Vec<(FileId, Vec<String>)> = Vec::new();
@@ -1268,6 +1283,16 @@ impl Program {
                 }
             }
         }
+        self.fixpoint();
+        // The hierarchy is known now: copy template methods into the subclasses that inherit
+        // them, and solve again for the copies.
+        if self.specialise() {
+            self.fixpoint();
+        }
+        self.resolve_calls();
+    }
+
+    fn fixpoint(&mut self) {
         let mut rounds = 0;
         loop {
             rounds += 1;
@@ -1283,7 +1308,297 @@ impl Program {
                 break;
             }
         }
-        self.resolve_calls();
+    }
+
+    // ------------------------------------------------------------------ per-subclass methods
+
+    /// Copy every template method (one that calls, on `this`, a method a subclass overrides, or
+    /// another template method) into each subclass that inherits it, as that subclass's own
+    /// method with that subclass's `this`. A base method has one summary for every caller; its
+    /// copy in `Child` dispatches `this.deliver()` to `Child.deliver` only, so one subclass's
+    /// data does not reach another's override. Returns true if anything was copied.
+    fn specialise(&mut self) -> bool {
+        if self.specialised {
+            return false;
+        }
+        self.specialised = true;
+        let nf = self.funcs.len();
+        let mut method_class: BTreeMap<FuncId, ClassId> = BTreeMap::new();
+        for (c, class) in self.classes.iter().enumerate() {
+            for (name, f) in &class.methods {
+                if name != "constructor" && name != "__init__" {
+                    method_class.insert(*f, c as ClassId);
+                }
+            }
+        }
+        self.method_of = (0..nf as FuncId)
+            .map(|f| {
+                let mut g = f;
+                loop {
+                    if method_class.contains_key(&g) {
+                        return Some(g);
+                    }
+                    g = self.funcs[g as usize].parent?;
+                }
+            })
+            .collect();
+        // Calls on `this` in each method (and the closures in it), by method name.
+        let mut self_calls: BTreeMap<FuncId, BTreeSet<String>> = BTreeMap::new();
+        let mut stmts_of: HashMap<FuncId, Vec<usize>> = HashMap::new();
+        for (i, st) in self.stmts.iter().enumerate() {
+            stmts_of.entry(st.func).or_default().push(i);
+            let GKind::Call {
+                callee: GCallee::Method { recv, name },
+                ..
+            } = &st.kind
+            else {
+                continue;
+            };
+            let Some(m) = self.method_of[st.func as usize] else {
+                continue;
+            };
+            if self.classes[method_class[&m] as usize].this == *recv {
+                self_calls
+                    .entry(m)
+                    .or_default()
+                    .insert(self.syms.str(*name).to_string());
+            }
+        }
+        // Template methods, to a fixpoint: a call on `this` that a subclass overrides, or that
+        // reaches another template method.
+        let mut overridden: HashMap<(ClassId, String), bool> = HashMap::new();
+        let mut templates: BTreeSet<FuncId> = BTreeSet::new();
+        loop {
+            let mut changed = false;
+            for (&m, names) in &self_calls {
+                if templates.contains(&m) {
+                    continue;
+                }
+                let c = method_class[&m];
+                let lineage = self.lineage(c);
+                let is_template = names.iter().any(|x| {
+                    let o = *overridden.entry((c, x.clone())).or_insert_with(|| {
+                        self.descendants(c)
+                            .into_iter()
+                            .any(|d| self.own_method(d, x).is_some())
+                    });
+                    o || self
+                        .find_method(&lineage, x)
+                        .is_some_and(|t| templates.contains(&t))
+                });
+                if is_template {
+                    templates.insert(m);
+                    changed = true;
+                }
+            }
+            if !changed {
+                break;
+            }
+        }
+        // Every (template, subclass that inherits exactly that method), decided before any copy
+        // changes what a subclass defines.
+        let mut jobs: BTreeMap<FuncId, Vec<ClassId>> = BTreeMap::new();
+        for &m in &templates {
+            let c = method_class[&m];
+            let name = self.classes[c as usize]
+                .methods
+                .iter()
+                .find(|(_, f)| *f == m)
+                .map(|(n, _)| n.clone())
+                .unwrap_or_default();
+            for d in self.descendants(c) {
+                if self.find_method(&self.lineage(d), &name) == Some(m) {
+                    jobs.entry(m).or_default().push(d);
+                }
+            }
+        }
+        if jobs.is_empty() {
+            self.complete_dispatch = templates.into_iter().collect();
+            return false;
+        }
+        let mut children: HashMap<FuncId, Vec<FuncId>> = HashMap::new();
+        for f in 0..nf as FuncId {
+            if let Some(p) = self.funcs[f as usize].parent {
+                children.entry(p).or_default().push(f);
+            }
+        }
+        let mut vars_of: HashMap<FuncId, Vec<VarId>> = HashMap::new();
+        for (v, gv) in self.vars.iter().enumerate() {
+            vars_of.entry(gv.func).or_default().push(v as VarId);
+        }
+        let mut keep: HashSet<VarId> = self.imports.iter().map(|i| i.var).collect();
+        for st in &self.stmts {
+            if let GKind::ThisLoad { var, .. } | GKind::ThisStore { var, .. } = st.kind {
+                keep.insert(var);
+            }
+        }
+        self.stmt_origin = (0..self.stmts.len() as u32).collect();
+        let mut budget = MAX_COPIED_STMTS;
+        let mut copied = false;
+        for (m, subclasses) in jobs {
+            let size: usize = self
+                .subtree(m, &children)
+                .iter()
+                .map(|f| stmts_of.get(f).map_or(0, Vec::len))
+                .sum();
+            if size.saturating_mul(subclasses.len()) > budget {
+                continue;
+            }
+            budget -= size * subclasses.len();
+            let c = method_class[&m];
+            let name = self.funcs[m as usize].name.clone();
+            let short = name.rsplit('.').next().unwrap_or(&name).to_string();
+            let mut copies = Vec::new();
+            for d in subclasses {
+                let f = self.copy_method(m, c, d, &children, &stmts_of, &vars_of, &keep);
+                self.classes[d as usize].methods.push((short.clone(), f));
+                copies.push(f);
+                copied = true;
+            }
+            self.complete_dispatch.insert(m);
+            self.complete_dispatch.extend(copies);
+        }
+        self.class_fields.clear();
+        copied
+    }
+
+    /// `f` and every function nested in it.
+    fn subtree(&self, f: FuncId, children: &HashMap<FuncId, Vec<FuncId>>) -> Vec<FuncId> {
+        let mut out = vec![f];
+        let mut i = 0;
+        while i < out.len() {
+            out.extend(children.get(&out[i]).into_iter().flatten().copied());
+            i += 1;
+        }
+        out
+    }
+
+    /// The variable of `this.field` in `class`, created (and stored into the class's `this`, so
+    /// the whole instance carries it) if the class has none yet.
+    fn class_field_var(&mut self, class: ClassId, field: Sym, like: VarId) -> VarId {
+        if let Some(&v) = self.class_fields[class as usize].get(&field) {
+            return v;
+        }
+        let this = self.classes[class as usize].this;
+        let v = self.vars.len() as VarId;
+        let mut gv = self.vars[like as usize].clone();
+        gv.file = self.vars[this as usize].file;
+        gv.func = self.vars[this as usize].func;
+        self.vars.push(gv);
+        self.prov.push(Vec::new());
+        self.stmts.push(GStmt {
+            file: self.classes[class as usize].file,
+            func: self.vars[this as usize].func,
+            pos: self.classes[class as usize].pos,
+            text: format!("this.{}", self.syms.str(field)),
+            kind: GKind::Store {
+                obj: this,
+                field: Some(field),
+                src: v,
+            },
+        });
+        self.stmt_origin.push(self.stmt_origin.len() as u32);
+        self.class_fields[class as usize].insert(field, v);
+        v
+    }
+
+    /// Copy method `m` of `from` (and the closures in it) as a method of `to`.
+    #[allow(clippy::too_many_arguments)]
+    fn copy_method(
+        &mut self,
+        m: FuncId,
+        from: ClassId,
+        to: ClassId,
+        children: &HashMap<FuncId, Vec<FuncId>>,
+        stmts_of: &HashMap<FuncId, Vec<usize>>,
+        vars_of: &HashMap<FuncId, Vec<VarId>>,
+        keep: &HashSet<VarId>,
+    ) -> FuncId {
+        let funcs = self.subtree(m, children);
+        let mut fmap: HashMap<FuncId, FuncId> = HashMap::new();
+        for (i, &f) in funcs.iter().enumerate() {
+            fmap.insert(f, (self.funcs.len() + i) as FuncId);
+        }
+        let mut vmap: HashMap<VarId, VarId> = HashMap::new();
+        vmap.insert(
+            self.classes[from as usize].this,
+            self.classes[to as usize].this,
+        );
+        for f in &funcs {
+            for &v in vars_of.get(f).into_iter().flatten() {
+                if keep.contains(&v) || vmap.contains_key(&v) {
+                    continue;
+                }
+                let mut gv = self.vars[v as usize].clone();
+                gv.func = fmap[&gv.func];
+                vmap.insert(v, self.vars.len() as VarId);
+                self.vars.push(gv);
+                self.prov.push(Vec::new());
+            }
+        }
+        let mv = |v: VarId| *vmap.get(&v).unwrap_or(&v);
+        for &f in &funcs {
+            let mut g = self.funcs[f as usize].clone();
+            for q in &mut g.params {
+                q.var = mv(q.var);
+            }
+            g.ret = mv(g.ret);
+            g.decorators = g.decorators.iter().map(|&d| mv(d)).collect();
+            g.parent = g.parent.map(|p| *fmap.get(&p).unwrap_or(&p));
+            if f == m {
+                g.class = Some(to);
+            }
+            self.funcs.push(g);
+            self.method_of.push(Some(fmap[&m]));
+        }
+        let annots: Vec<(VarId, String)> = self
+            .annots
+            .iter()
+            .filter(|(v, _)| vmap.contains_key(v))
+            .map(|(v, t)| (mv(*v), t.clone()))
+            .collect();
+        self.annots.extend(annots);
+        for f in &funcs {
+            for &i in stmts_of.get(f).into_iter().flatten() {
+                let st = self.stmts[i].clone();
+                let kind = match st.kind {
+                    GKind::ThisLoad {
+                        dst,
+                        obj,
+                        field,
+                        var,
+                    } if obj == self.classes[from as usize].this => {
+                        let var = self.class_field_var(to, field, var);
+                        self.this_home.insert(mv(dst), var);
+                        GKind::ThisLoad {
+                            dst: mv(dst),
+                            obj: mv(obj),
+                            field,
+                            var,
+                        }
+                    }
+                    GKind::ThisStore {
+                        obj,
+                        field,
+                        src,
+                        var,
+                    } if obj == self.classes[from as usize].this => GKind::ThisStore {
+                        obj: mv(obj),
+                        field,
+                        src: mv(src),
+                        var: self.class_field_var(to, field, var),
+                    },
+                    k => map_kind(k, &mv, &|f| *fmap.get(&f).unwrap_or(&f)),
+                };
+                self.stmts.push(GStmt {
+                    func: fmap[&st.func],
+                    kind,
+                    ..st
+                });
+                self.stmt_origin.push(i as u32);
+            }
+        }
+        fmap[&m]
     }
 
     /// Functions passed to an external API get parameters that are "what that API hands its
@@ -1758,8 +2073,15 @@ impl Program {
                     |p| matches!(p, Prov::Instance(c) if self.classes[*c as usize].is_interface),
                 );
             }
+            let complete = self
+                .method_of
+                .get(self.stmts[i].func as usize)
+                .copied()
+                .flatten()
+                .is_some_and(|m| self.complete_dispatch.contains(&m));
             if let GCallee::Method { recv, name } = &callee
                 && self.is_this(*recv)
+                && !complete
             {
                 let name = self.syms.str(*name).to_string();
                 let mut overrides = BTreeSet::new();
@@ -1872,5 +2194,101 @@ impl Program {
                 );
             }
         }
+    }
+}
+
+/// A statement with its variables and functions renamed.
+fn map_kind(k: GKind, v: &impl Fn(VarId) -> VarId, f: &impl Fn(FuncId) -> FuncId) -> GKind {
+    let args = |a: Vec<GArg>| {
+        a.into_iter()
+            .map(|a| GArg {
+                var: v(a.var),
+                kind: a.kind,
+            })
+            .collect()
+    };
+    match k {
+        GKind::Copy { dst, src } => GKind::Copy {
+            dst: v(dst),
+            src: v(src),
+        },
+        GKind::Lit { dst, value } => GKind::Lit { dst: v(dst), value },
+        GKind::Load { dst, obj, field } => GKind::Load {
+            dst: v(dst),
+            obj: v(obj),
+            field,
+        },
+        GKind::Store { obj, field, src } => GKind::Store {
+            obj: v(obj),
+            field,
+            src: v(src),
+        },
+        GKind::Concat { dst, parts } => GKind::Concat {
+            dst: v(dst),
+            parts: parts
+                .into_iter()
+                .map(|p| match p {
+                    GPart::Var(x) => GPart::Var(v(x)),
+                    lit => lit,
+                })
+                .collect(),
+        },
+        GKind::Call {
+            dst,
+            callee,
+            args: a,
+            is_new,
+        } => GKind::Call {
+            dst: v(dst),
+            callee: match callee {
+                GCallee::Value(x) => GCallee::Value(v(x)),
+                GCallee::Method { recv, name } => GCallee::Method {
+                    recv: v(recv),
+                    name,
+                },
+                GCallee::Dynamic => GCallee::Dynamic,
+            },
+            args: args(a),
+            is_new,
+        },
+        GKind::Return { src } => GKind::Return { src: v(src) },
+        GKind::FuncRef { dst, func } => GKind::FuncRef {
+            dst: v(dst),
+            func: f(func),
+        },
+        GKind::ClassRef { dst, class } => GKind::ClassRef { dst: v(dst), class },
+        GKind::Global { dst, name } => GKind::Global { dst: v(dst), name },
+        GKind::Import { import } => GKind::Import { import },
+        GKind::TypeRef { dst, ty } => GKind::TypeRef {
+            dst: v(dst),
+            ty: v(ty),
+        },
+        GKind::Super { dst, class } => GKind::Super { dst: v(dst), class },
+        GKind::Elements { dst, coll } => GKind::Elements {
+            dst: v(dst),
+            coll: v(coll),
+        },
+        GKind::ThisLoad {
+            dst,
+            obj,
+            field,
+            var,
+        } => GKind::ThisLoad {
+            dst: v(dst),
+            obj: v(obj),
+            field,
+            var,
+        },
+        GKind::ThisStore {
+            obj,
+            field,
+            src,
+            var,
+        } => GKind::ThisStore {
+            obj: v(obj),
+            field,
+            src: v(src),
+            var,
+        },
     }
 }

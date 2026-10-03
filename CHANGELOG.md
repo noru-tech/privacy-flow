@@ -23,6 +23,10 @@ All notable changes to this project are documented here. The format is based on
   class's own method and is a `dynamic_call` gap where subclasses override it. Reading a Python
   property or a JavaScript getter gives what it returns. On Polar, `dynamic_call` gaps go from
   227 to 64; on Healthchecks, coverage gaps from 58 to 28.
+- Template methods (ADR 0013): a base class method that calls, on `this`, a method subclasses
+  override is analysed per subclass, so `this.deliver()` in `Notifier.notify` reaches each
+  subclass's own `deliver` without one subclass's data reaching another's. These calls are no
+  longer `dynamic_call` gaps.
 - TypeScript interfaces (ADR 0012): a call on a value typed with an interface reaches the local
   classes that implement it, directly, through an extending interface or through a base class.
   Interfaces are open: an external module the value may also come from stays a gap.
@@ -43,6 +47,9 @@ All notable changes to this project are documented here. The format is based on
   same object (ADR 0007).
 
 ### Fixed
+- A call whose callee has two API paths that match the same sink (an aliased import and its
+  original name) made two sinks at one place, and every flow into it was reported twice. The same
+  anchor at the same place is now one source or sink. On Polar, 4,077 duplicate flows go.
 - A Django `EmailMessage` (or `EmailMultiAlternatives`) built with personal data and sent with
   `send()` reported nothing: the data is in the message, and `send()` takes no arguments. On
   Healthchecks, 86 flows of addresses, names and phone numbers into its outgoing mail were missed.

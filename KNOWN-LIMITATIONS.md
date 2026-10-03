@@ -83,9 +83,11 @@ Request input is a source only in frameworks whose request objects are modelled
   no resolvable caller, `handlers[name](x)`) are `dynamic_call` gaps when personal data is passed.
 - **Inheritance** ([ADR 0011](docs/adr/0011-inheritance.md)): inherited methods, constructors
   and fields, `super`, and members of external base classes resolve, and a call on a value typed
-  with a base class reaches every override. A call on `this`/`self` follows only the class's own
-  method: where subclasses override it (a template method), personal data passed to it is a
-  `dynamic_call` gap. **Silent:** a value a subclass stores in an inherited field is not seen by
+  with a base class reaches every override. A template method (a base method that calls, on
+  `this`, a method subclasses override) is analysed once per subclass that inherits it
+  ([ADR 0013](docs/adr/0013-per-subclass-methods.md)), so the call reaches that subclass's own
+  override; past a budget of 200,000 copied statements per scan, the call is a `dynamic_call`
+  gap. **Silent:** a value a subclass stores in an inherited field is not seen by
   base class methods. A base class built by a function call (a mixin) is not resolved.
 - **TypeScript interfaces** ([ADR 0012](docs/adr/0012-interfaces.md)): a call on a value typed
   with an interface reaches every local class that declares `implements` (directly, through an

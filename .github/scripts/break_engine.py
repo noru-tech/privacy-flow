@@ -28,6 +28,8 @@ BREAKS = {
     "call-context": ("src/facts/heap.rs", "if local_only(p, site.stmt) {", "if false {"),
     # Formal sites: no parameter holds its arguments' sites.
     "param-sites": ("src/facts/heap.rs", "if !exact(formal, binds) {", "if true {"),
+    # Per-subclass methods: template methods are not copied into their subclasses.
+    "per-subclass": ("src/program.rs", "        self.specialised = true;", "        return false;"),
     # Inheritance: no class has a local base class or implements a local interface.
     "inheritance": ("src/program.rs", "for &b in class.bases.iter().chain(&class.implements) {", "for &b in class.bases.iter().take(0) {"),
 }

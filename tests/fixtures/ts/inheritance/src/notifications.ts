@@ -14,7 +14,7 @@ class Notifier {
   }
 
   notify(entry) {
-    this.deliver(entry); // expect: PFC01
+    this.deliver(entry);
   }
 
   deliver(entry) {}

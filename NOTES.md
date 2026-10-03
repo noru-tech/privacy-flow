@@ -398,3 +398,21 @@ Ghost gaps 609 → 612, three calls on an external scheduler adapter that a loca
 hidden. The corpus injects by class or untyped JavaScript, so it has little of this pattern.
 
 **Next.** Analyse inherited methods per subclass, so template methods resolve.
+
+## 2026-10-03 — Template methods per subclass (ADR 0013)
+
+**Done.** After the provenance fixpoint, template methods (calls on `this` to an overridden
+method, or to another template) are copied into each subclass that inherits them, with the
+subclass's `this` and fields, and the fixpoint runs again. Copies share their originals' source
+and sink IDs; duplicate flows are dropped. Budget 200,000 copied statements. Vectors
+`py-template-method`, `ts-template-isolation`, `ts-virtual-dispatch` (now required); CI break
+`per-subclass`.
+
+**Measured** (against the interfaces build). No distinct flow lost on any application.
+"Overridden" gaps: Ghost, Redash and Polar 3 → 0 each. Added flows: Redash 3, PrivateGPT 115
+(base readers calling an overridden loader). Duplicate flows removed: Polar 4,397 → 320,
+Healthchecks 43 → 0, Umami 13 → 0, Ghost 20 → 7; these came from two API paths of one call
+matching the same sink, a bug since v0.1. Time unchanged.
+
+**Next.** The remaining duplicates are distinct sources at one place (fields of one typed
+parameter); `state` in the classification table.
