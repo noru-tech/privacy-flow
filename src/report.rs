@@ -1202,7 +1202,10 @@ pub fn derive(doc: &mut Document, classifier: &Classifier) -> Result<()> {
         if !snk.class.is_external() || is_first_party(snk) {
             continue;
         }
-        let processor = processor_of(snk);
+        // A declaration names the processor, also when it matched by sink ID or host and the
+        // catalogue names none (`Microsoft.Extensions.AI` leaves the provider to the program).
+        let decl = processor_declared(&doc.processors, snk);
+        let processor = decl.map(|d| d.name.clone()).or_else(|| processor_of(snk));
         let host = if processor.is_none() {
             snk.host.clone()
         } else {
@@ -1212,7 +1215,7 @@ pub fn derive(doc: &mut Document, classifier: &Classifier) -> Result<()> {
         e.0.insert(fl.category.clone());
         e.1.insert(fl.id.clone());
         if e.2.is_none() {
-            e.2 = processor_declared(&doc.processors, snk);
+            e.2 = decl;
         }
     }
     doc.egress = egress

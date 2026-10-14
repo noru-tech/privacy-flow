@@ -6,6 +6,22 @@ All notable changes to this project are documented here. The format is based on
 
 ## [Unreleased]
 
+### Changed
+
+- Fides output: egress to a destination the code does not name (a host computed at run time, a
+  model provider chosen by configuration) is a `DataFlow` with a placeholder key,
+  `unresolved_<sink class>_<file>`, per sending file, with its categories and call sites. It was
+  a closing comment, so a scan without `processors:` in `.privacy-flow.yml` wrote `egress: []`
+  for services such as eShop.
+
+### Fixed
+
+- A processor declared by sink ID or host is named by its declaration in `egress` and the Fides
+  output. A declaration matched by `sinks:` for a sink the catalogue gives no processor
+  (`Microsoft.Extensions.AI`, the Vercel AI SDK) was labelled `?`, and without a `fides_key` it
+  was left out of the Fides `egress`. A processor declared by `hosts:` is keyed by its name
+  (`acme_crm`), not the host it matched.
+
 ## [0.3.0] - 2026-10-14
 
 C# is the third language: ASP.NET Core services, Blazor components and the libraries around

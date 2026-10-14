@@ -1,0 +1,12 @@
+privacy-flow 0.3.0 · no commit · typescript 3 files · directory walk
+
+PF003  medium   pf-dd844cb32b5c8de2  src/assistant.ts:6:10
+                user.contact.email from `customer.email (customer: Customer)` (src/assistant.ts:5) reaches an LLM provider chosen at run time through a model call at src/assistant.ts:6
+PF006  warning  pf-89f7843d6371a355  src/billing/client.ts:3:9
+                user.contact.email from `user.email` (src/billing/client.ts:3) is sent over HTTP to a host computed at run time, at src/billing/client.ts:3
+PF006  warning  pf-39d87fe6bbbeff2b  src/crm/client.ts:3:9
+                user.contact.phone_number from `user.phone` (src/crm/client.ts:3) is sent over HTTP to a host computed at run time, at src/crm/client.ts:3
+
+3 flow(s) from 3 source(s) to 3 sink(s); findings: PF003 1, PF006 2
+processors reached: Anthropic
+coverage: complete
