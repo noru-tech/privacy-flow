@@ -14,13 +14,27 @@ use tree_sitter::Node;
 
 use crate::ir::*;
 
+/// What lowering a file may know of the rest of the project.
+#[derive(Default)]
+pub struct LowerCtx<'a> {
+    /// Every C# file's declarations (C# resolves names across files).
+    pub cs: Option<&'a csharp::index::CsIndex>,
+}
+
 /// Lower one file. Never fails: a file that does not parse is lowered as far as the tree goes
 /// and carries a `ParseError` note, which the coverage section reports.
 pub fn lower_file(path: &str, lang: Lang, source: &str) -> FileIr {
+    lower_file_with(path, lang, source, &LowerCtx::default())
+}
+
+pub fn lower_file_with(path: &str, lang: Lang, source: &str, ctx: &LowerCtx) -> FileIr {
     match lang {
         Lang::Javascript | Lang::Typescript => js::lower(path, lang, source),
         Lang::Python => python::lower(path, source),
-        Lang::CSharp => csharp::lower(path, source),
+        Lang::CSharp => match ctx.cs {
+            Some(ix) => csharp::lower(path, source, ix),
+            None => csharp::lower_alone(path, source),
+        },
     }
 }
 
@@ -426,6 +440,7 @@ impl<'s> Builder<'s> {
             implements_args: Vec::new(),
             more_ctor_this: Vec::new(),
             partial_key: None,
+            field_attrs: Vec::new(),
         });
         // `this` is an instance of the class, so `this.method()` resolves.
         self.instance_of(this, idx, pos);

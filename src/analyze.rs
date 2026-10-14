@@ -132,6 +132,40 @@ pub fn load_datamaps(tree: &Tree, config: &Config, listing: &Listing) -> Result<
     Ok(out)
 }
 
+/// The declaration index of the project's C# files, when it has any.
+fn csharp_index(
+    tree: &Tree,
+    supported: &[(String, crate::ir::Lang)],
+    resolver: &crate::resolve::Resolver,
+    catalogue: &Catalogue,
+) -> Option<lower::csharp::index::CsIndex> {
+    let files: Vec<&String> = supported
+        .iter()
+        .filter(|(_, l)| *l == crate::ir::Lang::CSharp)
+        .map(|(p, _)| p)
+        .collect();
+    if files.is_empty() {
+        return None;
+    }
+    let scans: Vec<lower::csharp::scan::FileScan> = files
+        .par_iter()
+        .filter_map(|path| {
+            let bytes = tree.get(path)?;
+            if bytes.len() > files::MAX_FILE_BYTES {
+                return None;
+            }
+            let text = String::from_utf8_lossy(&bytes);
+            Some(lower::csharp::scan_file(path, &text))
+        })
+        .collect();
+    let patterns = catalogue.api_patterns("csharp");
+    let (known, open) =
+        lower::csharp::index::known_from_patterns(patterns.iter().map(String::as_str));
+    Some(lower::csharp::index::CsIndex::build(
+        scans, resolver, known, open,
+    ))
+}
+
 pub struct Run {
     pub document: Document,
     pub timings: Timings,
@@ -182,6 +216,11 @@ pub fn analyze(
     let resolver = crate::resolve::Resolver::from_files(&resolver_inputs);
 
     let t0 = Instant::now();
+    // C# resolves names across files: every C# file's declarations are scanned first.
+    let cs_index = csharp_index(tree, &supported, &resolver, &catalogue);
+    let ctx = lower::LowerCtx {
+        cs: cs_index.as_ref(),
+    };
     // Read and lower in parallel; results are collected in sorted path order.
     let lowered: Vec<Result<(crate::ir::FileIr, String), (String, String)>> = supported
         .par_iter()
@@ -200,7 +239,7 @@ pub fn analyze(
             }
             let digest = crate::canonical::sha256(&bytes);
             let text = String::from_utf8_lossy(&bytes);
-            Ok((lower::lower_file(path, *lang, &text), digest))
+            Ok((lower::lower_file_with(path, *lang, &text, &ctx), digest))
         })
         .collect();
     let mut irs = Vec::new();

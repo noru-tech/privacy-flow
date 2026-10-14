@@ -17,6 +17,7 @@ version: "0.1.0"
 
 non_propagating_fields:
   javascript: [length, size, byteLength]
+  csharp: [Length, Count, LongLength, Capacity, HasValue, IsEmpty]
 
 # Methods of plain values (strings): calling one does not make the receiver a record, so a value
 # named like a personal attribute stays that attribute (`email.toLowerCase()`).
@@ -211,4 +212,46 @@ propagators:
       - "{json,copy,uuid,re,os,time,random,secrets,hashlib,hmac,base64,math,datetime,dataclasses,functools,itertools,typing}"
       - "{blockkit,slack_sdk.models,jinja2,markupsafe,tabulate,dateparser,humanize,arrow,pendulum,tenacity,backoff,cachetools,limits,schedule,apscheduler}.**"
       - "{pydantic,pydantic_settings,alembic,django,flask,fastapi,starlette,werkzeug,jinja2,marshmallow,attrs,attr,celery,rq,dramatiq,jwt,jose,passlib,bcrypt,argon2,cryptography,nacl,itsdangerous,dotenv,click,typer,rich,tqdm,numpy,pandas,yaml,toml,tomllib,orjson,ujson,msgpack,dateutil,pytz,zoneinfo,babel,email_validator,phonenumbers,validators,slugify,unidecode,bleach,markdown,uvicorn,gunicorn}.**"
+    flow: args_to_result
+
+  # ------------------------------------------------------------------ C#
+  - id: cs.stringbuilder
+    language: csharp
+    calls: ["System.Text.StringBuilder{,()}**.{Append,AppendLine,AppendFormat,AppendJoin,Insert,Replace}"]
+    flow: args_to_receiver
+
+  - id: cs.linq-callbacks
+    language: csharp
+    description: LINQ and collection methods that hand each element to a callback.
+    methods: [Select, SelectMany, Where, OrderBy, OrderByDescending, ThenBy, ThenByDescending, GroupBy, ForEach, First, FirstOrDefault, Single, SingleOrDefault, Last, LastOrDefault, TakeWhile, SkipWhile, DistinctBy, MaxBy, MinBy, Find, FindAll, ConvertAll, ToDictionary, ToLookup, Aggregate, Any, All, Count, Sum, Max, Min, Average]
+    flow: receiver_to_callback
+
+  - id: cs.collections-mutators
+    language: csharp
+    methods: [Add, AddRange, Insert, InsertRange, Enqueue, Push, TryAdd, AddOrUpdate, GetOrAdd, Prepend]
+    flow: args_to_receiver
+
+  - id: cs.callback-result
+    language: csharp
+    calls:
+      - "System.Threading.Tasks.{Task,ValueTask}.{Run,FromResult}"
+      - "Microsoft.Extensions.AI.AIFunctionFactory.Create"
+    flow: callback_result
+
+  - id: cs.data-methods
+    language: csharp
+    description: Methods of strings, collections and tasks that return (part of) their data.
+    methods: [ToLower, ToUpper, ToLowerInvariant, ToUpperInvariant, Trim, TrimStart, TrimEnd, Substring, Replace, Split, PadLeft, PadRight, Remove, Normalize, ToString, ToCharArray, ToList, ToArray, ToHashSet, ToListAsync, ToArrayAsync, AsEnumerable, AsQueryable, Distinct, Reverse, Skip, Take, Concat, Union, Append, GetValueOrDefault, GetAwaiter, GetResult, Format, Join, Clone, CopyTo, Cast, OfType, Zip, ElementAt, ElementAtOrDefault, DefaultIfEmpty]
+    flow: args_to_result
+
+  - id: cs.builtins
+    language: csharp
+    description: The base class library's value types, text, LINQ, serialization and tasks.
+    calls:
+      - "System.{String,Convert,Math,Guid,DateTime,DateTimeOffset,TimeSpan,Uri,Int32,Int64,Decimal,Double,Boolean,Enum,Nullable,BinaryData,Array,Object,Char,Byte,Version,Environment,BitConverter}{,()}**"
+      - "System.{Linq,Text,Text.Json,Text.RegularExpressions,Collections,Collections.Generic,Collections.Concurrent,Collections.Immutable,Collections.ObjectModel,Threading,Threading.Tasks,Globalization,Buffers,ComponentModel,Reflection,IO,Numerics,Security.Cryptography,Runtime}.**"
+      - "System.{Exception,ArgumentException,ArgumentNullException,ArgumentOutOfRangeException,InvalidOperationException,NotSupportedException,NotImplementedException,KeyNotFoundException,FormatException,UnauthorizedAccessException,ApplicationException}{,()}**"
+      - "Newtonsoft.Json.**"
+      - "System.Net.Http.{StringContent,ByteArrayContent,FormUrlEncodedContent,MultipartFormDataContent,StreamContent,HttpRequestMessage,HttpResponseMessage,HttpMethod,Json.JsonContent,Headers}{,()}**"
+      - "System.Net.{HttpStatusCode,IPAddress,WebUtility}{,()}**"
     flow: args_to_result

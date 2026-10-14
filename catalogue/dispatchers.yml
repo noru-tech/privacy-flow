@@ -1,0 +1,14 @@
+# Dispatchers: library calls that hand their argument to the project's own handlers.
+#
+# A mediator's `Send(command)` runs the handler registered for the command's type, and every
+# pipeline behavior around it, without the code ever calling them by name. Each entry names the
+# dispatching calls (API path globs) and the handlers they reach: methods `method` of the
+# project's classes that implement (or extend) `implements`, which receive the argument as
+# parameter `param`. With `type_arg`, a handler is reached only when the argument's type is the
+# interface's type argument at that index (or extends it); a handler that is itself generic over
+# that argument (a pipeline behavior) is reached by every call. What a handler returns is the
+# call's result. See ADR 0017.
+
+version: "0.1.0"
+
+dispatchers: []

@@ -730,3 +730,113 @@ sinks:
     class: http
     calls: ["urllib.request.urlopen"]
     host: { arg: 0, keyword: url }
+
+  # ------------------------------------------------------------------ C#: logs
+  # C# paths are namespace-qualified types and their members, generic arguments stripped: a
+  # value declared (or injected) as `ILogger<T>` is `Microsoft.Extensions.Logging.ILogger`, one
+  # constructed with `new HttpClient()` is `System.Net.Http.HttpClient()`. Extension methods are
+  # members of the type they extend. Patterns write `T{,()}` to match both.
+  - id: cs.microsoft-logging
+    language: csharp
+    class: log
+    description: >-
+      Microsoft.Extensions.Logging: `ILogger`/`ILogger<T>`, loggers from `ILoggerFactory`, the
+      `LoggerExtensions` methods and scopes. Every argument is logged; a `{@Order}` placeholder
+      destructures the whole object.
+    calls:
+      - "Microsoft.Extensions.Logging.{ILogger,ILoggerFactory,Logger,LoggerFactory}**.{Log,LogTrace,LogDebug,LogInformation,LogWarning,LogError,LogCritical,BeginScope}"
+
+  - id: cs.logger-message
+    language: csharp
+    class: log
+    description: >-
+      Methods with `[LoggerMessage]`, whose bodies a source generator writes: calling one logs
+      its arguments.
+    decorated: ["Microsoft.Extensions.Logging.LoggerMessageAttribute{,()}"]
+
+  - id: cs.console
+    language: csharp
+    class: log
+    description: The console (stdout/stderr), which log shippers usually collect.
+    calls:
+      - "System.Console.{Write,WriteLine}"
+      - "System.Console.{Out,Error}.{Write,WriteLine,WriteAsync,WriteLineAsync}"
+
+  - id: cs.diagnostics
+    language: csharp
+    class: log
+    calls:
+      - "System.Diagnostics.{Debug,Trace}.{Write,WriteLine,WriteIf,WriteLineIf,Print,Fail,TraceInformation,TraceWarning,TraceError}"
+
+  - id: cs.serilog
+    language: csharp
+    class: log
+    calls:
+      - "Serilog.{Log,ILogger,Core.Logger}{,()}**.{Write,Verbose,Debug,Information,Warning,Error,Fatal}"
+      - "Serilog.Context.LogContext.PushProperty"
+
+  - id: cs.nlog
+    language: csharp
+    class: log
+    calls: ["NLog.{Logger,ILogger,LogManager}{,()}**.{Trace,Debug,Info,Warn,Error,Fatal,Log}"]
+
+  - id: cs.log4net
+    language: csharp
+    class: log
+    calls:
+      - "log4net.{ILog,LogManager}{,()}**.{Debug,Info,Warn,Error,Fatal,DebugFormat,InfoFormat,WarnFormat,ErrorFormat,FatalFormat}"
+
+  - id: cs.activity-tags
+    language: csharp
+    class: log
+    description: OpenTelemetry spans and baggage, which tracing backends store like logs.
+    calls: ["System.Diagnostics.Activity{,()}**.{SetTag,AddTag,AddEvent,SetBaggage,AddBaggage}"]
+
+  - id: cs.duende-events
+    language: csharp
+    class: log
+    description: >-
+      Duende IdentityServer events; the default event sink writes them to `ILogger` when the
+      `Raise*Events` options are on.
+    calls: ["Duende.IdentityServer.Services.{IEventService,DefaultEventService}{,()}.RaiseAsync"]
+
+  - id: cs.logger-by-name
+    language: csharp
+    class: log
+    description: >-
+      Heuristic. A method call on a receiver named like a logger whose origin the analysis
+      cannot see. Findings from it are marked `heuristic`.
+    receivers: [logger, _logger, log, _log, Logger, Log]
+    methods: [LogTrace, LogDebug, LogInformation, LogWarning, LogError, LogCritical, Log, Information, Warning, Error, Debug, Fatal, Info, Warn, Verbose]
+
+  # ------------------------------------------------------------------ C#: outbound HTTP
+  - id: cs.httpclient
+    language: csharp
+    class: http
+    description: >-
+      `HttpClient` and the `System.Net.Http.Json` extensions. A relative URL resolves against the
+      client's `BaseAddress`, usually set where the client is registered.
+    calls:
+      - "System.Net.Http.{HttpClient,HttpMessageInvoker,IHttpClientFactory}{,()}**.{GetAsync,GetStringAsync,GetByteArrayAsync,GetStreamAsync,GetFromJsonAsync,GetFromJsonAsAsyncEnumerable,PostAsync,PostAsJsonAsync,PutAsync,PutAsJsonAsync,PatchAsync,PatchAsJsonAsync,DeleteAsync,DeleteFromJsonAsync}"
+    host: { arg: 0, base_url: true, wrappers: ["System.Uri{,()}"] }
+
+  - id: cs.httpclient.send
+    language: csharp
+    class: http
+    calls: ["System.Net.Http.{HttpClient,HttpMessageInvoker,IHttpClientFactory}{,()}**.{SendAsync,Send}"]
+    host: { arg: 0, built_arg: 1, field: RequestUri, base_url: true, wrappers: ["System.Uri{,()}"] }
+
+  - id: cs.restsharp
+    language: csharp
+    class: http
+    calls:
+      - "RestSharp.{RestClient,IRestClient}{,()}**.{Execute,ExecuteAsync,ExecuteGetAsync,ExecutePostAsync,ExecutePutAsync,PostAsync,PutAsync,PatchAsync,GetAsync,DeleteAsync,PostJsonAsync,PutJsonAsync}"
+    host: { arg: 0, base_url: true }
+
+  - id: cs.refit
+    language: csharp
+    class: http
+    description: >-
+      Refit interface methods: Refit implements them as HTTP calls to the base address given to
+      `RestService.For` or `AddRefitClient`.
+    decorated: ["Refit.{GetAttribute,PostAttribute,PutAttribute,PatchAttribute,DeleteAttribute,HeadAttribute}{,()}"]

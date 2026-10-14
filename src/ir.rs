@@ -233,6 +233,8 @@ pub struct ClassIr {
     /// For a part of a C# `partial` type: the key every part of the type shares, so the program
     /// merges them into one class.
     pub partial_key: Option<String>,
+    /// Attributes on fields and properties (C# `[Parameter]`), by member name.
+    pub field_attrs: Vec<(String, Vec<Var>)>,
 }
 
 #[derive(Clone, Debug)]

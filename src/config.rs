@@ -5,7 +5,9 @@ use std::collections::BTreeMap;
 use anyhow::{Context, Result, bail};
 use serde::{Deserialize, Serialize};
 
-use crate::catalogue::{Extensions, PropagatorDef, SanitiserDef, SinkDef, SourceDef};
+use crate::catalogue::{
+    DispatcherDef, Extensions, PropagatorDef, SanitiserDef, SinkDef, SourceDef,
+};
 use crate::classify::Classifier;
 use crate::glob::Glob;
 
@@ -134,6 +136,8 @@ pub struct Config {
     #[serde(default)]
     pub propagators: Vec<PropagatorDef>,
     #[serde(default)]
+    pub dispatchers: Vec<DispatcherDef>,
+    #[serde(default)]
     pub processors: Vec<ProcessorDecl>,
     #[serde(default)]
     pub policy: PolicyDecl,
@@ -154,6 +158,7 @@ impl Default for Config {
             sinks: Vec::new(),
             sanitisers: Vec::new(),
             propagators: Vec::new(),
+            dispatchers: Vec::new(),
             processors: Vec::new(),
             policy: PolicyDecl::default(),
         }
@@ -204,6 +209,7 @@ impl Config {
             sources: self.sources.clone(),
             sanitisers: self.sanitisers.clone(),
             propagators: self.propagators.clone(),
+            dispatchers: self.dispatchers.clone(),
         }
     }
 

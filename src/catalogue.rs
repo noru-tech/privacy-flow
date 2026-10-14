@@ -29,6 +29,10 @@ pub const FILES: &[(&str, &str)] = &[
         "sanitisers.yml",
         include_str!("../catalogue/sanitisers.yml"),
     ),
+    (
+        "dispatchers.yml",
+        include_str!("../catalogue/dispatchers.yml"),
+    ),
     ("sinks.yml", include_str!("../catalogue/sinks.yml")),
     ("sources.yml", include_str!("../catalogue/sources.yml")),
 ];
@@ -109,6 +113,13 @@ pub struct HostSpec {
     /// own origin.
     #[serde(default)]
     pub base_url: bool,
+    /// When the URL argument was built by a call (`new HttpRequestMessage(method, url)`), the
+    /// URL is that call's positional argument at this index.
+    #[serde(default)]
+    pub built_arg: Option<usize>,
+    /// Calls the URL passes through unchanged (`new Uri(url)`): their first argument is the URL.
+    #[serde(default)]
+    pub wrappers: Vec<String>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -140,6 +151,11 @@ pub struct SinkDef {
     /// The receiver carries data out too: `send()` on a message object built from the data.
     #[serde(default)]
     pub receiver: bool,
+    /// Calls to the project's own functions carrying one of these attributes (decorator API
+    /// paths): a method whose body a source generator writes (`[LoggerMessage]`), an interface
+    /// method a library implements (Refit's `[Post]`).
+    #[serde(default)]
+    pub decorated: Vec<String>,
     #[serde(default)]
     pub host: Option<HostSpec>,
     #[serde(default)]
@@ -172,6 +188,20 @@ pub struct ParamRule {
     /// Give the parameter this API-path provenance (the response object of a handler).
     #[serde(default)]
     pub provenance: Option<String>,
+    /// Parameters whose declared type is a project class extending one of these (API path
+    /// globs) are not request input (a `DbContext` subclass).
+    #[serde(default)]
+    pub skip_bases: Vec<String>,
+    /// Parameters typed with one of the project's interfaces are injected services.
+    #[serde(default)]
+    pub skip_interfaces: bool,
+    /// Parameters with one of these attributes (API path globs) are not request input.
+    #[serde(default)]
+    pub skip_attrs: Vec<String>,
+    /// Parameters with one of these attributes are a bag of request inputs: each property of
+    /// their declared type is one (`[AsParameters]`).
+    #[serde(default)]
+    pub expand_attrs: Vec<String>,
 }
 
 #[derive(Clone, Debug, Default, Serialize, Deserialize)]
@@ -188,6 +218,40 @@ pub struct ParamSpec {
     /// Per-annotation overrides (`Request` in FastAPI).
     #[serde(default)]
     pub by_type: BTreeMap<String, ParamRule>,
+    /// Per-attribute overrides (`[FromBody]`), keyed by an API path glob of the attribute; they
+    /// win over `by_type` and the skip rules.
+    #[serde(default)]
+    pub by_attr: BTreeMap<String, ParamRule>,
+}
+
+/// Which methods of a matched class are handlers.
+#[derive(Clone, Debug, Default, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct MemberFilter {
+    /// Modifiers a method must have (`public`, `override`).
+    #[serde(default)]
+    pub require: Vec<String>,
+    /// Modifiers (or `constructor`) that exclude a method.
+    #[serde(default)]
+    pub exclude: Vec<String>,
+    /// Attributes (API path globs) that exclude a method (`[NonAction]`).
+    #[serde(default)]
+    pub exclude_decorators: Vec<String>,
+}
+
+/// A `read` call whose category its literal argument decides (`FindFirst("email")`).
+#[derive(Clone, Debug, Default, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct ArgCategory {
+    /// The positional argument holding the name.
+    pub index: usize,
+    /// Names with their categories, compared after the last `/` or `.` (claim type URIs and
+    /// `ClaimTypes.Email` alike).
+    #[serde(default)]
+    pub names: BTreeMap<String, String>,
+    /// Classify other names with the classification table.
+    #[serde(default)]
+    pub classify: bool,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -202,6 +266,9 @@ pub enum SourceKind {
     Read,
     /// Field names that are personal data (extends the classification table).
     Field,
+    /// Properties with one of `decorators` (attributes) that the framework sets from request
+    /// input (Blazor's `[SupplyParameterFromForm]`, MVC's `[BindProperty]`).
+    Property,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -232,8 +299,62 @@ pub struct SourceDef {
     pub category: Option<String>,
     #[serde(default)]
     pub fields: BTreeMap<String, String>,
+    /// Handlers: methods of the project's classes that extend one of these (API path globs;
+    /// MVC controllers).
+    #[serde(default)]
+    pub bases: Vec<String>,
+    /// Handlers: methods of the project's classes with one of these attributes.
+    #[serde(default)]
+    pub class_decorators: Vec<String>,
+    /// Which methods of a class matched by `bases` or `class_decorators` (or of any class, with
+    /// `has_param_type`) are handlers.
+    #[serde(default)]
+    pub members: Option<MemberFilter>,
+    /// Handlers: methods with a parameter declared with one of these types (API path globs),
+    /// such as a gRPC service's overrides, which take a `ServerCallContext`.
+    #[serde(default)]
+    pub has_param_type: Vec<String>,
+    /// `read` calls: the category is decided by a literal argument.
+    #[serde(default)]
+    pub arg_category: Option<ArgCategory>,
     #[serde(default)]
     pub citation: Option<String>,
+}
+
+/// A call that hands its argument to the project's own handlers through a library: MediatR's
+/// `Send` reaches every `IRequestHandler<TRequest, _>.Handle` for the request's type, and every
+/// pipeline behavior's.
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct DispatcherDef {
+    pub id: String,
+    pub language: String,
+    #[serde(default)]
+    pub description: Option<String>,
+    /// API paths of the dispatching calls.
+    pub calls: Vec<String>,
+    /// The positional argument dispatched.
+    #[serde(default)]
+    pub arg: usize,
+    pub targets: Vec<DispatchTarget>,
+    #[serde(default)]
+    pub citation: Option<String>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct DispatchTarget {
+    /// Classes implementing (or extending) a type matching this API path glob.
+    pub implements: String,
+    /// Their methods with this name receive the argument.
+    pub method: String,
+    /// As this parameter.
+    #[serde(default)]
+    pub param: usize,
+    /// Only when the argument's type is (or extends) the interface's type argument at this
+    /// index; an open type parameter accepts any.
+    #[serde(default)]
+    pub type_arg: Option<usize>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -270,6 +391,9 @@ pub enum Flow {
     /// The receiver's elements flow into the first parameter of a callback argument, and the
     /// callback's return value flows to the result (`xs.map(x => ...)`).
     ReceiverToCallback,
+    /// The return value of each callback argument flows to the result, and the other arguments
+    /// do too (`Task.Run(() => ...)`, a tool function handed to a model).
+    CallbackResult,
     /// Nothing flows.
     None,
 }
@@ -303,6 +427,10 @@ pub struct FrameworkDef {
     pub supported: bool,
     #[serde(default)]
     pub note: Option<String>,
+    /// Base types and attributes (API path globs) whose use marks a class as the framework's,
+    /// where imports alone do not show it (C# global and implicit usings).
+    #[serde(default)]
+    pub types: Vec<String>,
 }
 
 #[derive(Debug, Default, Deserialize)]
@@ -319,6 +447,8 @@ struct CatalogueFile {
     propagators: Vec<PropagatorDef>,
     #[serde(default)]
     frameworks: Vec<FrameworkDef>,
+    #[serde(default)]
+    dispatchers: Vec<DispatcherDef>,
     #[serde(default)]
     non_propagating_fields: BTreeMap<String, Vec<String>>,
     #[serde(default)]
@@ -362,6 +492,7 @@ pub struct Sink {
     pub origin: Origin,
     pub calls: Vec<Glob>,
     pub assigns: Vec<Glob>,
+    pub decorated: Vec<Glob>,
 }
 
 pub struct Source {
@@ -372,6 +503,17 @@ pub struct Source {
     pub files: Vec<Glob>,
     pub reads: Vec<Glob>,
     pub calls: Vec<Glob>,
+    pub bases: Vec<Glob>,
+    pub class_decorators: Vec<Glob>,
+    pub has_param_type: Vec<Glob>,
+}
+
+pub struct Dispatcher {
+    pub def: DispatcherDef,
+    pub origin: Origin,
+    pub calls: Vec<Glob>,
+    /// One per target: the `implements` glob.
+    pub implements: Vec<Glob>,
 }
 
 pub struct Sanitiser {
@@ -396,6 +538,7 @@ pub struct Catalogue {
     pub sanitisers: Vec<Sanitiser>,
     pub propagators: Vec<Propagator>,
     pub frameworks: Vec<FrameworkDef>,
+    pub dispatchers: Vec<Dispatcher>,
     pub non_propagating_fields: BTreeMap<String, BTreeSet<String>>,
     /// Methods of plain values (strings), per language: calling one does not make the receiver
     /// a record.
@@ -410,6 +553,7 @@ pub struct Extensions {
     pub sources: Vec<SourceDef>,
     pub sanitisers: Vec<SanitiserDef>,
     pub propagators: Vec<PropagatorDef>,
+    pub dispatchers: Vec<DispatcherDef>,
 }
 
 fn compile(patterns: &[String], what: &str, id: &str) -> Result<Vec<Glob>> {
@@ -457,6 +601,7 @@ impl Catalogue {
             merged.sanitisers.extend(file.sanitisers);
             merged.propagators.extend(file.propagators);
             merged.frameworks.extend(file.frameworks);
+            merged.dispatchers.extend(file.dispatchers);
             merged.contextual.extend(file.contextual);
             for (lang, fields) in file.non_propagating_fields {
                 merged
@@ -495,11 +640,13 @@ impl Catalogue {
             check_id(&def.id, &def.language)?;
             let calls = compile(&def.calls, "call", &def.id)?;
             let assigns = compile(&def.assigns, "assign", &def.id)?;
+            let decorated = compile(&def.decorated, "decorated", &def.id)?;
             sinks.push(Sink {
                 def,
                 origin,
                 calls,
                 assigns,
+                decorated,
             });
         }
         let mut sources = Vec::new();
@@ -516,6 +663,9 @@ impl Catalogue {
                 files: compile_paths(&def.files, &def.id)?,
                 reads: compile(&def.reads, "read", &def.id)?,
                 calls: compile(&def.calls, "call", &def.id)?,
+                bases: compile(&def.bases, "base", &def.id)?,
+                class_decorators: compile(&def.class_decorators, "class decorator", &def.id)?,
+                has_param_type: compile(&def.has_param_type, "parameter type", &def.id)?,
                 def,
                 origin,
             });
@@ -559,6 +709,29 @@ impl Catalogue {
                 origin,
             });
         }
+        let mut dispatchers = Vec::new();
+        for (def, origin) in merged
+            .dispatchers
+            .into_iter()
+            .map(|d| (d, Origin::Default))
+            .chain(ext.dispatchers.iter().cloned().map(|d| (d, Origin::Config)))
+        {
+            check_id(&def.id, &def.language)?;
+            let implements = def
+                .targets
+                .iter()
+                .map(|t| {
+                    Glob::api(&t.implements)
+                        .with_context(|| format!("implements pattern in {}", def.id))
+                })
+                .collect::<Result<Vec<_>>>()?;
+            dispatchers.push(Dispatcher {
+                calls: compile(&def.calls, "call", &def.id)?,
+                implements,
+                def,
+                origin,
+            });
+        }
         let non_propagating_fields = merged
             .non_propagating_fields
             .into_iter()
@@ -577,10 +750,79 @@ impl Catalogue {
             sanitisers,
             propagators,
             frameworks: merged.frameworks,
+            dispatchers,
             non_propagating_fields,
             value_methods,
             contextual: merged.contextual,
         })
+    }
+
+    /// Every API pattern the catalogue holds for a language, with each framework module as a
+    /// namespace pattern: what a language that resolves names against the catalogue (C#) may
+    /// qualify a name with.
+    pub fn api_patterns(&self, lang: &str) -> Vec<String> {
+        let mut out: Vec<String> = Vec::new();
+        for s in self.sinks.iter().filter(|s| s.def.language == lang) {
+            out.extend(
+                s.def
+                    .calls
+                    .iter()
+                    .chain(&s.def.assigns)
+                    .chain(&s.def.decorated)
+                    .cloned(),
+            );
+            if let Some(h) = &s.def.host {
+                out.extend(h.wrappers.iter().cloned());
+            }
+        }
+        for s in self.sources.iter().filter(|s| s.def.language == lang) {
+            out.extend(
+                s.def
+                    .registrations
+                    .iter()
+                    .chain(&s.def.decorators)
+                    .chain(&s.def.reads)
+                    .chain(&s.def.calls)
+                    .chain(&s.def.bases)
+                    .chain(&s.def.class_decorators)
+                    .chain(&s.def.has_param_type)
+                    .cloned(),
+            );
+            if let Some(m) = &s.def.members {
+                out.extend(m.exclude_decorators.iter().cloned());
+            }
+            for spec in &s.def.params {
+                for rule in std::iter::once(&spec.rule)
+                    .chain(spec.by_type.values())
+                    .chain(spec.by_attr.values())
+                {
+                    out.extend(
+                        rule.skip_types
+                            .iter()
+                            .chain(&rule.skip_bases)
+                            .chain(&rule.skip_attrs)
+                            .chain(&rule.expand_attrs)
+                            .cloned(),
+                    );
+                }
+                out.extend(spec.by_attr.keys().cloned());
+            }
+        }
+        for s in self.sanitisers.iter().filter(|s| s.def.language == lang) {
+            out.extend(s.def.calls.iter().cloned());
+        }
+        for p in self.propagators.iter().filter(|p| p.def.language == lang) {
+            out.extend(p.def.calls.iter().cloned());
+        }
+        for d in self.dispatchers.iter().filter(|d| d.def.language == lang) {
+            out.extend(d.def.calls.iter().cloned());
+            out.extend(d.def.targets.iter().map(|t| t.implements.clone()));
+        }
+        for f in self.frameworks.iter().filter(|f| f.language == lang) {
+            out.extend(f.modules.iter().map(|m| format!("{m}.**")));
+            out.extend(f.types.iter().cloned());
+        }
+        out
     }
 
     pub fn value_method(&self, lang: &str, method: &str) -> bool {

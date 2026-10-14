@@ -135,3 +135,38 @@ sources:
           headers: unknown
           data: unknown
           query_params: unknown
+
+  # ------------------------------------------------------------------ C#
+  - id: cs.aspnetcore.minimal-api
+    language: csharp
+    kind: handler
+    framework: ASP.NET Core
+    description: >-
+      Minimal API endpoints (`app.MapPost("/orders", handler)`): the handler's parameters are
+      bound from the request, except services and the request context, which are injected.
+    registrations:
+      - "Microsoft.AspNetCore.{Builder.WebApplication,Routing.IEndpointRouteBuilder,Routing.RouteGroupBuilder,Builder.IEndpointConventionBuilder}{,()}**.{MapGet,MapPost,MapPut,MapDelete,MapPatch,MapMethods,MapFallback}"
+    params:
+      - all: true
+        whole: unknown
+        typed: true
+        by_name: true
+        skip_types:
+          - "System.Threading.CancellationToken"
+          - "System.Security.Claims.ClaimsPrincipal"
+          - "Microsoft.AspNetCore.Http.{HttpContext,HttpRequest,HttpResponse}"
+          - "Microsoft.Extensions.**"
+          - "Microsoft.EntityFrameworkCore.**"
+          - "Microsoft.AspNetCore.{Identity,Hosting,Antiforgery,Authentication,Components,Mvc}.**"
+          - "MediatR.**"
+          - "System.Net.Http.{HttpClient,IHttpClientFactory}"
+          - "{CancellationToken,ClaimsPrincipal,HttpContext,HttpRequest,HttpResponse,ILogger,ILoggerFactory,IMediator,ISender,IPublisher,IConfiguration,IServiceProvider,IHttpClientFactory,HttpClient,IAntiforgery,IWebHostEnvironment,LinkGenerator,IOptions,IMemoryCache,IDistributedCache,IFormFile,IFormFileCollection,Stream,PipeReader}"
+        skip_bases: ["Microsoft.EntityFrameworkCore.DbContext", "Microsoft.AspNetCore.Identity.EntityFrameworkCore.IdentityDbContext"]
+        skip_interfaces: true
+        skip_attrs: ["Microsoft.AspNetCore.Mvc.FromServicesAttribute{,()}", "Microsoft.Extensions.DependencyInjection.FromKeyedServicesAttribute{,()}"]
+        expand_attrs: ["Microsoft.AspNetCore.Http.AsParametersAttribute{,()}"]
+        by_attr:
+          "Microsoft.AspNetCore.Mvc.{FromBodyAttribute,FromQueryAttribute,FromRouteAttribute,FromHeaderAttribute,FromFormAttribute}{,()}":
+            whole: unknown
+            typed: true
+            by_name: true

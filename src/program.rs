@@ -134,6 +134,7 @@ pub struct GClass {
     pub implements_args: Vec<Vec<VarId>>,
     pub more_ctor_this: Vec<VarId>,
     pub partial_key: Option<String>,
+    pub field_attrs: Vec<(String, Vec<VarId>)>,
 }
 
 #[derive(Clone, Debug)]
@@ -315,6 +316,9 @@ pub struct CallTargets {
     /// The receiver is typed with an interface, whose implementations may come from anywhere:
     /// the local ones it reaches do not make its other, unknown targets less of a gap.
     pub open_world: bool,
+    /// Extension methods among `funcs`: the receiver is their first argument (`x.Mask()` calls
+    /// `Mask(this string s)` with `x`).
+    pub receiver_first: Vec<FuncId>,
 }
 
 pub use crate::resolve::Resolver;
@@ -371,6 +375,8 @@ pub struct Program {
     /// subclasses read (a base constructor sets `self.channel`, a subclass method reads it).
     /// Not the other way, or every subclass would see what its siblings store.
     pub field_links: Vec<(VarId, VarId)>,
+    /// Extension methods by name.
+    extensions: HashMap<Sym, Vec<FuncId>>,
 }
 
 fn add_prov(set: &mut Vec<Prov>, p: Prov) -> bool {
@@ -476,6 +482,7 @@ impl Program {
             stmt_origin: Vec::new(),
             literals: HashMap::new(),
             field_links: Vec::new(),
+            extensions: HashMap::new(),
         };
         let mut pending_reexports: Vec<(FileId, Vec<String>)> = Vec::new();
         for (fi, f) in files.into_iter().enumerate() {
@@ -552,6 +559,11 @@ impl Program {
                         .collect(),
                     more_ctor_this: c.more_ctor_this.iter().map(|t| t + vo).collect(),
                     partial_key: c.partial_key.clone(),
+                    field_attrs: c
+                        .field_attrs
+                        .iter()
+                        .map(|(n, a)| (n.clone(), a.iter().map(|v| v + vo).collect()))
+                        .collect(),
                 });
             }
             for s in &f.stmts {
@@ -732,9 +744,152 @@ impl Program {
                 p.files[fid as usize].reexports = targets;
             }
         }
+        p.merge_partials();
+        for (f, func) in p.funcs.iter().enumerate() {
+            if func.is_extension {
+                let short = func.name.rsplit('.').next().unwrap_or(&func.name);
+                let sym = p.syms.intern(short);
+                p.extensions.entry(sym).or_default().push(f as FuncId);
+            }
+        }
         p.prov = vec![Vec::new(); p.vars.len()];
         p.solve();
         p
+    }
+
+    /// Merge the parts of each C# `partial` type into its first part (in path order): one class,
+    /// one instance, one variable per field.
+    fn merge_partials(&mut self) {
+        let mut groups: BTreeMap<String, Vec<ClassId>> = BTreeMap::new();
+        for (i, c) in self.classes.iter().enumerate() {
+            if let Some(k) = &c.partial_key {
+                groups.entry(k.clone()).or_default().push(i as ClassId);
+            }
+        }
+        let mut cmap: HashMap<ClassId, ClassId> = HashMap::new();
+        let mut vmap: HashMap<VarId, VarId> = HashMap::new();
+        for parts in groups.values().filter(|g| g.len() > 1) {
+            let canon = parts[0];
+            let canon_this = self.classes[canon as usize].this;
+            let mut fields: BTreeMap<Sym, VarId> = BTreeMap::new();
+            for st in &self.stmts {
+                if let GKind::ThisLoad {
+                    obj, field, var, ..
+                }
+                | GKind::ThisStore {
+                    obj, field, var, ..
+                } = st.kind
+                    && obj == canon_this
+                {
+                    fields.entry(field).or_insert(var);
+                }
+            }
+            for &k in &parts[1..] {
+                cmap.insert(k, canon);
+                let k_this = self.classes[k as usize].this;
+                vmap.insert(k_this, canon_this);
+                for st in &self.stmts {
+                    if let GKind::ThisLoad {
+                        obj, field, var, ..
+                    }
+                    | GKind::ThisStore {
+                        obj, field, var, ..
+                    } = st.kind
+                        && obj == k_this
+                    {
+                        match fields.get(&field) {
+                            Some(&cv) if cv != var => {
+                                vmap.insert(var, cv);
+                            }
+                            Some(_) => {}
+                            None => {
+                                fields.insert(field, var);
+                            }
+                        }
+                    }
+                }
+                let emptied = GClass {
+                    methods: Vec::new(),
+                    bases: Vec::new(),
+                    implements: Vec::new(),
+                    decorators: Vec::new(),
+                    base_args: Vec::new(),
+                    implements_args: Vec::new(),
+                    more_ctor_this: Vec::new(),
+                    partial_key: None,
+                    field_attrs: Vec::new(),
+                    ctor_this: None,
+                    ..self.classes[k as usize].clone()
+                };
+                let part = std::mem::replace(&mut self.classes[k as usize], emptied);
+                let canon_class = &mut self.classes[canon as usize];
+                canon_class.methods.extend(part.methods.iter().cloned());
+                canon_class.bases.extend(part.bases);
+                canon_class.base_args.extend(part.base_args);
+                canon_class.implements.extend(part.implements);
+                canon_class.implements_args.extend(part.implements_args);
+                canon_class.decorators.extend(part.decorators);
+                canon_class.field_attrs.extend(part.field_attrs);
+                for t in part.ctor_this.into_iter().chain(part.more_ctor_this) {
+                    if canon_class.ctor_this.is_none() {
+                        canon_class.ctor_this = Some(t);
+                    } else {
+                        canon_class.more_ctor_this.push(t);
+                    }
+                }
+                for (_, f) in &part.methods {
+                    self.funcs[*f as usize].class = Some(canon);
+                }
+            }
+        }
+        if cmap.is_empty() {
+            return;
+        }
+        for f in &mut self.funcs {
+            if let Some(c) = f.class
+                && let Some(&k) = cmap.get(&c)
+            {
+                f.class = Some(k);
+            }
+        }
+        let mv = |v: VarId| *vmap.get(&v).unwrap_or(&v);
+        for st in &mut self.stmts {
+            let kind = std::mem::replace(&mut st.kind, GKind::Return { src: 0 });
+            let kind = match map_kind(kind, &mv, &|f| f) {
+                GKind::ClassRef { dst, class } => GKind::ClassRef {
+                    dst,
+                    class: *cmap.get(&class).unwrap_or(&class),
+                },
+                GKind::Super { dst, class } => GKind::Super {
+                    dst,
+                    class: *cmap.get(&class).unwrap_or(&class),
+                },
+                GKind::ThisLoad {
+                    dst,
+                    obj,
+                    field,
+                    var,
+                } => GKind::ThisLoad {
+                    dst,
+                    obj,
+                    field,
+                    var: mv(var),
+                },
+                GKind::ThisStore {
+                    obj,
+                    field,
+                    src,
+                    var,
+                } => GKind::ThisStore {
+                    obj,
+                    field,
+                    src,
+                    var: mv(var),
+                },
+                k => k,
+            };
+            st.kind = kind;
+        }
     }
 
     pub fn file_id(&self, path: &str) -> Option<FileId> {
@@ -1129,6 +1284,25 @@ impl Program {
             .all(|p| matches!(p, Prov::Instance(c) if self.classes[*c as usize].is_interface))
     }
 
+    /// Whether `v` is only ever an instance of classes declared entirely in source, in a language
+    /// whose classes are closed: a method none of them defines is one every object has
+    /// (`ToString`, `Equals`), not one added at run time.
+    fn closed_instance(&self, v: VarId) -> bool {
+        let ps = &self.prov[v as usize];
+        !ps.is_empty()
+            && ps.iter().all(|p| match p {
+                Prov::Instance(c) => {
+                    let class = &self.classes[*c as usize];
+                    self.files[class.file as usize]
+                        .lang
+                        .traits()
+                        .closed_local_classes
+                        && self.external_bases(&self.lineage(*c)).is_empty()
+                }
+                _ => false,
+            })
+    }
+
     /// Whether `v` is a class's own instance as its methods (or its constructor) see it: `this`,
     /// Python's `self`.
     fn is_this(&self, v: VarId) -> bool {
@@ -1146,7 +1320,20 @@ impl Program {
         let field = self.syms.str(name).to_string();
         let mut out = Vec::new();
         let lineage = self.lineage(c);
-        let mut methods: Vec<FuncId> = self.find_method(&lineage, &field).into_iter().collect();
+        let overloads = self.files[self.classes[c as usize].file as usize]
+            .lang
+            .traits()
+            .closed_local_classes;
+        let mut methods: Vec<FuncId> = if overloads {
+            // C# overloads share a name: every one of the nearest class that defines it.
+            lineage
+                .iter()
+                .map(|&k| self.own_methods(k, &field))
+                .find(|ms| !ms.is_empty())
+                .unwrap_or_default()
+        } else {
+            self.find_method(&lineage, &field).into_iter().collect()
+        };
         let mut classes = lineage.clone();
         if instance {
             for d in self.descendants(c) {
@@ -1179,6 +1366,15 @@ impl Program {
             }
         }
         out
+    }
+
+    fn own_methods(&self, c: ClassId, name: &str) -> Vec<FuncId> {
+        self.classes[c as usize]
+            .methods
+            .iter()
+            .filter(|(n, _)| n == name)
+            .map(|(_, f)| *f)
+            .collect()
     }
 
     fn own_method(&self, c: ClassId, name: &str) -> Option<FuncId> {
@@ -1336,8 +1532,78 @@ impl Program {
     fn callee_provs(&mut self, callee: &GCallee) -> Vec<Prov> {
         match callee {
             GCallee::Value(v) => self.prov[*v as usize].clone(),
-            GCallee::Method { recv, name } => self.member(*recv, *name),
+            GCallee::Method { recv, name } => {
+                let mut out = self.member(*recv, *name);
+                if !out.iter().any(|p| matches!(p, Prov::Func(_))) {
+                    for f in self.extension_targets(*recv, *name) {
+                        out.push(Prov::Func(f));
+                    }
+                    out.sort();
+                    out.dedup();
+                }
+                out
+            }
             GCallee::Dynamic => Vec::new(),
+        }
+    }
+
+    /// The project's extension methods named `name` whose first parameter can be `recv`.
+    fn extension_targets(&self, recv: VarId, name: Sym) -> Vec<FuncId> {
+        let Some(cands) = self.extensions.get(&name) else {
+            return Vec::new();
+        };
+        let provs = &self.prov[recv as usize];
+        cands
+            .iter()
+            .copied()
+            .filter(|&f| {
+                let Some(annot) = self.funcs[f as usize]
+                    .params
+                    .first()
+                    .and_then(|q| q.annot.as_deref())
+                else {
+                    return true;
+                };
+                if provs.is_empty() || matches!(annot, "Object" | "object") {
+                    return true;
+                }
+                provs.iter().any(|p| match p {
+                    Prov::Api(s) | Prov::Unresolved(s) => {
+                        let path = self.syms.str(*s).trim_end_matches("()");
+                        path.rsplit('.').next() == Some(annot)
+                    }
+                    Prov::Instance(c) | Prov::Class(c) => self.lineage(*c).iter().any(|&k| {
+                        let class = &self.classes[k as usize];
+                        class.name == annot
+                            || class.implements.iter().chain(&class.bases).any(|&b| {
+                                self.prov[b as usize].iter().any(|bp| match bp {
+                                    Prov::Api(s) => {
+                                        self.syms.str(*s).rsplit('.').next() == Some(annot)
+                                    }
+                                    Prov::Class(x) => self.classes[*x as usize].name == annot,
+                                    _ => false,
+                                })
+                            })
+                    }),
+                    _ => false,
+                })
+            })
+            .collect()
+    }
+
+    /// The arguments a call passes to `f`: an extension method reached as a method takes the
+    /// receiver first.
+    fn call_args(&self, callee: &GCallee, f: FuncId, args: &[GArg]) -> Option<Vec<GArg>> {
+        match callee {
+            GCallee::Method { recv, .. } if self.funcs[f as usize].is_extension => {
+                let mut out = vec![GArg {
+                    var: *recv,
+                    kind: GArgKind::Positional,
+                }];
+                out.extend(args.iter().cloned());
+                Some(out)
+            }
+            _ => None,
         }
     }
 
@@ -1956,7 +2222,10 @@ impl Program {
                             }
                             let bound = self.funcs[f as usize].bound_self
                                 && self.funcs[f as usize].class.is_some();
-                            changed |= self.bind_formals(f, bound, args);
+                            changed |= match self.call_args(callee, f, args) {
+                                Some(with_recv) => self.bind_formals(f, false, &with_recv),
+                                None => self.bind_formals(f, bound, args),
+                            };
                         }
                         Prov::Class(c) => {
                             out.push(Prov::Instance(c));
@@ -2193,6 +2462,9 @@ impl Program {
                         // function stored in a field and called is not.
                         let bound = func.bound_self && func.class.is_some();
                         t.funcs.push((*f, bound));
+                        if func.is_extension && matches!(callee, GCallee::Method { .. }) {
+                            t.receiver_first.push(*f);
+                        }
                     }
                     Prov::Class(c) => {
                         t.classes.push(*c);
@@ -2235,7 +2507,9 @@ impl Program {
             }
             if provs.is_empty() {
                 match &callee {
-                    GCallee::Method { recv, name } if self.opaque(*recv) => {
+                    GCallee::Method { recv, name }
+                        if self.opaque(*recv) || self.closed_instance(*recv) =>
+                    {
                         t.plain_method = Some((*recv, *name));
                     }
                     _ => t.dynamic = true,
