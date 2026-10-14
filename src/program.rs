@@ -90,6 +90,7 @@ pub struct GParam {
     pub rest: bool,
     pub kwrest: bool,
     pub annot: Option<String>,
+    pub attrs: Vec<VarId>,
 }
 
 #[derive(Clone, Debug)]
@@ -107,6 +108,10 @@ pub struct GFunc {
     pub is_property: bool,
     pub pos: Pos,
     pub is_module: bool,
+    pub is_ctor: bool,
+    pub is_extension: bool,
+    pub is_stub: bool,
+    pub modifiers: Vec<String>,
 }
 
 #[derive(Clone, Debug)]
@@ -122,6 +127,13 @@ pub struct GClass {
     pub implements: Vec<VarId>,
     pub is_interface: bool,
     pub pos: Pos,
+    pub decorators: Vec<VarId>,
+    pub qualified_name: Option<String>,
+    pub type_params: Vec<String>,
+    pub base_args: Vec<Vec<VarId>>,
+    pub implements_args: Vec<Vec<VarId>>,
+    pub more_ctor_this: Vec<VarId>,
+    pub partial_key: Option<String>,
 }
 
 #[derive(Clone, Debug)]
@@ -495,6 +507,7 @@ impl Program {
                             rest: q.rest,
                             kwrest: q.kwrest,
                             annot: q.annot.clone(),
+                            attrs: q.attrs.iter().map(|a| a + vo).collect(),
                         })
                         .collect(),
                     ret: func.ret + vo,
@@ -507,6 +520,10 @@ impl Program {
                     is_property: func.is_property,
                     pos: func.pos,
                     is_module: func.is_module,
+                    is_ctor: func.is_ctor,
+                    is_extension: func.is_extension,
+                    is_stub: func.is_stub,
+                    modifiers: func.modifiers.clone(),
                 });
             }
             for c in &f.classes {
@@ -520,6 +537,21 @@ impl Program {
                     implements: c.implements.iter().map(|b| b + vo).collect(),
                     is_interface: c.is_interface,
                     pos: c.pos,
+                    decorators: c.decorators.iter().map(|d| d + vo).collect(),
+                    qualified_name: c.qualified_name.clone(),
+                    type_params: c.type_params.clone(),
+                    base_args: c
+                        .base_args
+                        .iter()
+                        .map(|a| a.iter().map(|v| v + vo).collect())
+                        .collect(),
+                    implements_args: c
+                        .implements_args
+                        .iter()
+                        .map(|a| a.iter().map(|v| v + vo).collect())
+                        .collect(),
+                    more_ctor_this: c.more_ctor_this.iter().map(|t| t + vo).collect(),
+                    partial_key: c.partial_key.clone(),
                 });
             }
             for s in &f.stmts {
@@ -694,7 +726,7 @@ impl Program {
         }
         for (fid, specs) in pending_reexports {
             let targets: Vec<Target> = specs.iter().map(|s| p.resolve(fid, s, resolver)).collect();
-            if p.files[fid as usize].lang == Lang::Python {
+            if p.files[fid as usize].lang.traits().packages {
                 p.files[fid as usize].star = targets;
             } else {
                 p.files[fid as usize].reexports = targets;
@@ -750,7 +782,13 @@ impl Program {
         let file = &self.files[from as usize];
         match file.lang {
             Lang::Python => self.resolve_py(&file.path, spec),
-            _ => {
+            // The C# lowering resolves names itself: a module is a scanned file that declares
+            // the type, or an external (namespace-qualified) name.
+            Lang::CSharp => match self.exists(spec) {
+                Some(f) => Target::Local(f),
+                None => Target::External(spec.to_string()),
+            },
+            Lang::Javascript | Lang::Typescript => {
                 let dir = dir_of(&file.path);
                 if spec.starts_with("./") || spec.starts_with("../") || spec == "." || spec == ".."
                 {
@@ -917,8 +955,8 @@ impl Program {
 
     // ------------------------------------------------------------------ API paths
 
-    fn is_python(&self, file: FileId) -> bool {
-        self.files[file as usize].lang == Lang::Python
+    fn traits(&self, file: FileId) -> &'static LangTraits {
+        self.files[file as usize].lang.traits()
     }
 
     /// Extend an API path by a member: `m:` + `a` → `m:a`, `m:a` + `b` → `m:a.b`.
@@ -966,14 +1004,16 @@ impl Program {
     }
 
     fn import_prov(&mut self, imp: &GImport) -> Vec<Prov> {
-        let py = self.is_python(imp.file);
+        let traits = self.traits(imp.file);
         match (&imp.target, &imp.kind) {
             // `require('./m')` (and `import * as m`): the module, and in JavaScript whatever it
             // assigned to `module.exports` (`module.exports = class Mailer`), which is what
             // `require` returns.
             (Target::Local(f), ImportKind::Namespace) => {
                 let mut out = vec![Prov::Module(*f)];
-                if !py && let Some(v) = self.export_var(*f, "default") {
+                if self.traits(*f).default_exports
+                    && let Some(v) = self.export_var(*f, "default")
+                {
                     out.extend(self.prov[v as usize].iter().cloned());
                 }
                 out
@@ -992,7 +1032,7 @@ impl Program {
                 vec![Prov::Package(s)]
             }
             (Target::External(m), ImportKind::Named(n)) => {
-                let s = if py {
+                let s = if traits.dotted_api_paths {
                     format!("{m}.{n}")
                 } else {
                     format!("{m}:{n}")
@@ -1000,7 +1040,11 @@ impl Program {
                 vec![Prov::Api(self.syms.intern(&s))]
             }
             (Target::External(m), _) => {
-                let s = if py { m.clone() } else { format!("{m}:") };
+                let s = if traits.dotted_api_paths {
+                    m.clone()
+                } else {
+                    format!("{m}:")
+                };
                 vec![Prov::Api(self.syms.intern(&s))]
             }
             (Target::Unresolved(m), kind) => {
@@ -1023,7 +1067,7 @@ impl Program {
         {
             return ps.clone();
         }
-        if self.is_python(f) {
+        if self.traits(f).packages {
             let path = self.files[f as usize].path.clone();
             if path.ends_with("__init__.py")
                 && let Some(p) = self.submodule(dir_of(&path), name)
@@ -1245,8 +1289,12 @@ impl Program {
             self.this_vars = self
                 .classes
                 .iter()
-                .flat_map(|c| [Some(c.this), c.ctor_this])
-                .flatten()
+                .flat_map(|c| {
+                    [Some(c.this), c.ctor_this]
+                        .into_iter()
+                        .flatten()
+                        .chain(c.more_ctor_this.iter().copied())
+                })
                 .collect();
         }
         let mut subclasses = vec![Vec::new(); self.classes.len()];
@@ -1293,12 +1341,20 @@ impl Program {
         }
     }
 
-    /// The constructor `new C()` runs: its own, or the nearest ancestor's.
-    fn ctor(&self, c: ClassId) -> Option<FuncId> {
-        self.lineage(c).into_iter().find_map(|k| {
-            self.own_method(k, "constructor")
-                .or_else(|| self.own_method(k, "__init__"))
-        })
+    /// The constructors `new C()` may run: its own (every overload), or the nearest ancestor's.
+    fn ctors(&self, c: ClassId) -> Vec<FuncId> {
+        for k in self.lineage(c) {
+            let own: Vec<FuncId> = self.classes[k as usize]
+                .methods
+                .iter()
+                .map(|(_, f)| *f)
+                .filter(|&f| self.funcs[f as usize].is_ctor)
+                .collect();
+            if !own.is_empty() {
+                return own;
+            }
+        }
+        Vec::new()
     }
 
     // ------------------------------------------------------------------ provenance fixpoint
@@ -1377,8 +1433,8 @@ impl Program {
         let nf = self.funcs.len();
         let mut method_class: BTreeMap<FuncId, ClassId> = BTreeMap::new();
         for (c, class) in self.classes.iter().enumerate() {
-            for (name, f) in &class.methods {
-                if name != "constructor" && name != "__init__" {
+            for (_, f) in &class.methods {
+                if !self.funcs[*f as usize].is_ctor {
                     method_class.insert(*f, c as ClassId);
                 }
             }
@@ -1904,7 +1960,7 @@ impl Program {
                         }
                         Prov::Class(c) => {
                             out.push(Prov::Instance(c));
-                            if let Some(ctor) = self.ctor(c) {
+                            for ctor in self.ctors(c) {
                                 let bound = self.funcs[ctor as usize].bound_self;
                                 changed |= self.bind_formals(ctor, bound, args);
                             }
@@ -2081,7 +2137,7 @@ impl Program {
                 // module whose `module.exports` is one.
                 if let (Target::Local(f), ImportKind::Default | ImportKind::Namespace) =
                     (&imp.target, &imp.kind)
-                    && !self.is_python(*f)
+                    && self.traits(*f).default_exports
                     && let Some(v) = self.export_var(*f, "default")
                 {
                     for (k, ps) in self.fields_of(v) {
@@ -2095,7 +2151,8 @@ impl Program {
     }
 
     fn global_prov(&mut self, file: FileId, name: &str) -> Vec<Prov> {
-        if self.is_python(file) {
+        let traits = self.traits(file);
+        if traits.packages {
             for t in self.files[file as usize].star.clone() {
                 match t {
                     Target::Local(f) => {
@@ -2109,10 +2166,9 @@ impl Program {
                     _ => {}
                 }
             }
-            vec![Prov::Api(self.syms.intern(&format!("builtins.{name}")))]
-        } else {
-            vec![Prov::Api(self.syms.intern(name))]
         }
+        let prefix = traits.global_prefix;
+        vec![Prov::Api(self.syms.intern(&format!("{prefix}{name}")))]
     }
 
     fn resolve_calls(&mut self) {
@@ -2140,7 +2196,7 @@ impl Program {
                     }
                     Prov::Class(c) => {
                         t.classes.push(*c);
-                        if let Some(ctor) = self.ctor(*c) {
+                        for ctor in self.ctors(*c) {
                             let bound = self.funcs[ctor as usize].bound_self;
                             t.funcs.push((ctor, bound));
                         }

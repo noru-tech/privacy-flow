@@ -18,6 +18,26 @@ version: "0.1.0"
 non_propagating_fields:
   javascript: [length, size, byteLength]
 
+# Methods of plain values (strings): calling one does not make the receiver a record, so a value
+# named like a personal attribute stays that attribute (`email.toLowerCase()`).
+value_methods:
+  javascript:
+    [toLowerCase, toUpperCase, toLocaleLowerCase, toLocaleUpperCase, trim, trimStart, trimEnd,
+     split, includes, startsWith, endsWith, replace, replaceAll, slice, substring, substr,
+     indexOf, lastIndexOf, match, matchAll, search, toString, valueOf, localeCompare, normalize,
+     padStart, padEnd, charAt, charCodeAt, codePointAt, at, concat, repeat, lower, upper, strip,
+     lstrip, rstrip, startswith, endswith, encode, decode, format, casefold, title, capitalize,
+     find, rfind, index, count, join, isdigit, isalpha, isalnum, zfill, partition, rpartition,
+     removeprefix, removesuffix, splitlines, expandtabs, translate]
+  python:
+    [toLowerCase, toUpperCase, toLocaleLowerCase, toLocaleUpperCase, trim, trimStart, trimEnd,
+     split, includes, startsWith, endsWith, replace, replaceAll, slice, substring, substr,
+     indexOf, lastIndexOf, match, matchAll, search, toString, valueOf, localeCompare, normalize,
+     padStart, padEnd, charAt, charCodeAt, codePointAt, at, concat, repeat, lower, upper, strip,
+     lstrip, rstrip, startswith, endswith, encode, decode, format, casefold, title, capitalize,
+     find, rfind, index, count, join, isdigit, isalpha, isalnum, zfill, partition, rpartition,
+     removeprefix, removesuffix, splitlines, expandtabs, translate]
+
 propagators:
   # ------------------------------------------------------------------ JavaScript / TypeScript
   - id: js.json

@@ -120,7 +120,7 @@
       "pattern": "^(unknown|[a-z0-9_]+(\\.[a-z0-9_]+)*)$",
       "description": "A Fideslang data category key from the vendored taxonomy, or `unknown`."
     },
-    "language": { "enum": ["javascript", "python"] },
+    "language": { "enum": ["javascript", "python", "csharp"] },
     "patterns": { "type": "array", "items": { "type": "string", "minLength": 1 } },
     "param_rule": {
       "type": "object",

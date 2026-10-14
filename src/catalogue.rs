@@ -160,6 +160,7 @@ pub struct ParamRule {
     #[serde(default)]
     pub typed: bool,
     /// Parameters annotated with these types are not request input (injected dependencies).
+    /// Globs over the annotation's type name, and for C# over the declared type's API path.
     #[serde(default)]
     pub skip_types: Vec<String>,
     /// Parameters with these names are not request input.
@@ -321,6 +322,8 @@ struct CatalogueFile {
     #[serde(default)]
     non_propagating_fields: BTreeMap<String, Vec<String>>,
     #[serde(default)]
+    value_methods: BTreeMap<String, Vec<String>>,
+    #[serde(default)]
     contextual: Vec<ContextualDef>,
 }
 
@@ -394,6 +397,9 @@ pub struct Catalogue {
     pub propagators: Vec<Propagator>,
     pub frameworks: Vec<FrameworkDef>,
     pub non_propagating_fields: BTreeMap<String, BTreeSet<String>>,
+    /// Methods of plain values (strings), per language: calling one does not make the receiver
+    /// a record.
+    pub value_methods: BTreeMap<String, BTreeSet<String>>,
     pub contextual: Vec<ContextualDef>,
 }
 
@@ -420,7 +426,7 @@ fn compile_paths(patterns: &[String], id: &str) -> Result<Vec<Glob>> {
         .collect()
 }
 
-const LANGUAGES: &[&str] = &["javascript", "python"];
+const LANGUAGES: &[&str] = &["javascript", "python", "csharp"];
 
 impl Catalogue {
     /// The built-in catalogue only.
@@ -459,6 +465,13 @@ impl Catalogue {
                     .or_default()
                     .extend(fields);
             }
+            for (lang, methods) in file.value_methods {
+                merged
+                    .value_methods
+                    .entry(lang)
+                    .or_default()
+                    .extend(methods);
+            }
         }
         let mut ids = BTreeSet::new();
         let mut check_id = |id: &str, lang: &str| -> Result<()> {
@@ -467,7 +480,7 @@ impl Catalogue {
             }
             if !LANGUAGES.contains(&lang) {
                 bail!(
-                    "catalogue entry {id:?}: unknown language {lang:?} (expected javascript or python)"
+                    "catalogue entry {id:?}: unknown language {lang:?} (expected javascript, python or csharp)"
                 );
             }
             Ok(())
@@ -551,6 +564,11 @@ impl Catalogue {
             .into_iter()
             .map(|(k, v)| (k, v.into_iter().collect()))
             .collect();
+        let value_methods = merged
+            .value_methods
+            .into_iter()
+            .map(|(k, v)| (k, v.into_iter().collect()))
+            .collect();
         Ok(Catalogue {
             version: version.unwrap_or_default(),
             digest: crate::canonical::sha256(hasher_input.as_bytes()),
@@ -560,8 +578,15 @@ impl Catalogue {
             propagators,
             frameworks: merged.frameworks,
             non_propagating_fields,
+            value_methods,
             contextual: merged.contextual,
         })
+    }
+
+    pub fn value_method(&self, lang: &str, method: &str) -> bool {
+        self.value_methods
+            .get(lang)
+            .is_some_and(|s| s.contains(method))
     }
 
     pub fn non_propagating(&self, lang: &str, field: &str) -> bool {

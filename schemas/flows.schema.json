@@ -49,7 +49,7 @@
             "additionalProperties": false,
             "required": ["language", "files", "lines"],
             "properties": {
-              "language": { "enum": ["javascript", "typescript", "python"] },
+              "language": { "enum": ["javascript", "typescript", "python", "csharp"] },
               "files": { "$ref": "#/$defs/count" },
               "lines": { "$ref": "#/$defs/count" }
             }

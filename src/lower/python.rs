@@ -1019,6 +1019,7 @@ impl<'s> Py<'s> {
             })
         };
         let f = self.b.begin_function(display, node, class);
+        self.b.ir.funcs[f as usize].is_ctor = class.is_some() && name == "__init__";
         self.b.ir.funcs[f as usize].decorators = decorators.iter().map(|(v, _)| *v).collect();
         self.b.ir.funcs[f as usize].is_property = class.is_some()
             && decorators.iter().any(|(_, t)| {
@@ -1150,6 +1151,7 @@ impl<'s> Py<'s> {
         let f = self.b.func as usize;
         self.b.ir.funcs[f].params.push(Param {
             var,
+            attrs: Vec::new(),
             name,
             rest,
             kwrest,

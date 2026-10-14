@@ -13,7 +13,8 @@ use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
 use crate::catalogue::{ArgSel, Catalogue, Flow, ParamRule, SinkClass, SourceKind};
 use crate::classify::{Classifier, Place, UNKNOWN};
 use crate::datamap::Datamap;
-use crate::ir::{ImportKind, NoteKind, Pos, VarKind};
+use crate::glob::api_matches_any;
+use crate::ir::{ImportKind, Lang, NoteKind, Pos, VarKind};
 use crate::program::*;
 
 /// A field token: [`TOP`] is the whole value, [`PHI`] is "some field the summary owner does not
@@ -245,7 +246,7 @@ pub fn build(p: &mut Program, inp: &Inputs) -> Facts {
     let mut this_class: HashMap<VarId, usize> = HashMap::new();
     for (i, c) in p.classes.iter().enumerate() {
         this_class.insert(c.this, i);
-        if let Some(t) = c.ctor_this {
+        for &t in c.ctor_this.iter().chain(&c.more_ctor_this) {
             this_class.insert(t, i);
         }
     }
@@ -1219,14 +1220,22 @@ impl<'a, 'p> Builder<'a, 'p> {
     }
 
     fn in_unsupported_framework(&self, path: &str, lang: &str) -> bool {
-        let module = match lang {
-            "python" => path.split('.').next().unwrap_or(path),
-            _ => match path.split_once(':') {
+        let traits = Lang::family_traits(lang);
+        let module = if traits.dotted_api_paths {
+            if traits.packages {
+                path.split('.').next().unwrap_or(path)
+            } else {
+                // A C# path is a namespace-qualified type and its members: any prefix may be the
+                // framework's namespace.
+                path
+            }
+        } else {
+            match path.split_once(':') {
                 Some((m, _)) => m,
                 None => return false,
-            },
+            }
         };
-        let sep = if lang == "python" { "." } else { "/" };
+        let sep = traits.module_sep.to_string();
         self.inp.catalogue.frameworks.iter().any(|fw| {
             !fw.supported
                 && fw.language == lang
@@ -1482,7 +1491,7 @@ impl<'a, 'p> Builder<'a, 'p> {
                         .unwrap_or_else(|| spec.rule.clone());
                     if q.annot
                         .as_ref()
-                        .is_some_and(|a| rule.skip_types.contains(a))
+                        .is_some_and(|a| api_matches_any(&rule.skip_types, a))
                         || rule.skip_names.contains(&q.name)
                     {
                         continue;
@@ -1732,70 +1741,6 @@ impl<'a, 'p> Builder<'a, 'p> {
     }
 
     fn find_records(&self) -> HashSet<VarId> {
-        const STRING_METHODS: &[&str] = &[
-            "toLowerCase",
-            "toUpperCase",
-            "toLocaleLowerCase",
-            "toLocaleUpperCase",
-            "trim",
-            "trimStart",
-            "trimEnd",
-            "split",
-            "includes",
-            "startsWith",
-            "endsWith",
-            "replace",
-            "replaceAll",
-            "slice",
-            "substring",
-            "substr",
-            "indexOf",
-            "lastIndexOf",
-            "match",
-            "matchAll",
-            "search",
-            "toString",
-            "valueOf",
-            "localeCompare",
-            "normalize",
-            "padStart",
-            "padEnd",
-            "charAt",
-            "charCodeAt",
-            "codePointAt",
-            "at",
-            "concat",
-            "repeat",
-            "lower",
-            "upper",
-            "strip",
-            "lstrip",
-            "rstrip",
-            "startswith",
-            "endswith",
-            "encode",
-            "decode",
-            "format",
-            "casefold",
-            "title",
-            "capitalize",
-            "find",
-            "rfind",
-            "index",
-            "count",
-            "join",
-            "isdigit",
-            "isalpha",
-            "isalnum",
-            "zfill",
-            "partition",
-            "rpartition",
-            "removeprefix",
-            "removesuffix",
-            "splitlines",
-            "expandtabs",
-            "translate",
-        ];
         let mut records = HashSet::new();
         for st in &self.p.stmts {
             match &st.kind {
@@ -1816,7 +1761,11 @@ impl<'a, 'p> Builder<'a, 'p> {
                 GKind::Call {
                     callee: GCallee::Method { recv, name },
                     ..
-                } if !STRING_METHODS.contains(&self.p.syms.str(*name)) => {
+                } if !self
+                    .inp
+                    .catalogue
+                    .value_method(self.lang(st.file), self.p.syms.str(*name)) =>
+                {
                     records.insert(*recv);
                 }
                 _ => {}
@@ -1929,12 +1878,14 @@ impl<'a, 'p> Builder<'a, 'p> {
             let Target::External(m) = &imp.target else {
                 continue;
             };
-            let lang = self.p.files[imp.file as usize].lang.family();
+            let file_lang = self.p.files[imp.file as usize].lang;
+            let lang = file_lang.family();
+            let traits = file_lang.traits();
             let mut candidates = vec![m.clone()];
-            if let (ImportKind::Named(n), "python") = (&imp.kind, lang) {
+            if let (ImportKind::Named(n), true) = (&imp.kind, traits.dotted_api_paths) {
                 candidates.push(format!("{m}.{n}"));
             }
-            let sep = if lang == "python" { "." } else { "/" };
+            let sep = traits.module_sep.to_string();
             for fw in &self.inp.catalogue.frameworks {
                 if fw.supported || fw.language != lang {
                     continue;
@@ -1989,7 +1940,7 @@ fn receiver_ident(text: &str) -> Option<String> {
 }
 
 fn is_runtime_global(path: &str, lang: &str) -> bool {
-    lang == "javascript" && !path.contains(':')
+    Lang::family_traits(lang).bare_paths_are_runtime_globals && !path.contains(':')
 }
 
 /// A path through a built-in container (`Map().get()`, `Array.from()`): the value was kept
@@ -2005,8 +1956,18 @@ fn is_container_path(path: &str, lang: &str) -> bool {
 /// The module a specifier belongs to: `@scope/pkg/sub` → `@scope/pkg`, `pkg/sub` → `pkg`,
 /// Python `a.b.c` → `a`.
 pub fn top_module(m: &str, lang: &str) -> String {
-    if lang == "python" {
+    let traits = Lang::family_traits(lang);
+    if traits.packages {
         return m.split('.').next().unwrap_or(m).to_string();
+    }
+    if traits.dotted_api_paths {
+        // A C# namespace is not a package: its first two segments name the vendor and product
+        // (`Microsoft.Extensions`, `Serilog.Sinks`).
+        let mut parts = m.split('.');
+        return match (parts.next(), parts.next()) {
+            (Some(a), Some(b)) => format!("{a}.{b}"),
+            _ => m.to_string(),
+        };
     }
     let mut parts = m.split('/');
     match (parts.next(), parts.next()) {

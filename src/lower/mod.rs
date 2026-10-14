@@ -4,6 +4,7 @@
 //! creation, positions in code points, and citation text. The language modules decide what a
 //! construct means; the builder only records it.
 
+pub mod csharp;
 pub mod js;
 pub mod python;
 
@@ -19,6 +20,7 @@ pub fn lower_file(path: &str, lang: Lang, source: &str) -> FileIr {
     match lang {
         Lang::Javascript | Lang::Typescript => js::lower(path, lang, source),
         Lang::Python => python::lower(path, source),
+        Lang::CSharp => csharp::lower(path, source),
     }
 }
 
@@ -99,6 +101,10 @@ impl<'s> Builder<'s> {
             is_property: false,
             pos: Pos { line: 1, column: 1 },
             is_module: true,
+            is_ctor: false,
+            is_extension: false,
+            is_stub: false,
+            modifiers: Vec::new(),
         });
         b.scopes.push(Scope {
             kind: ScopeKind::Function,
@@ -330,6 +336,10 @@ impl<'s> Builder<'s> {
             is_property: false,
             pos,
             is_module: false,
+            is_ctor: false,
+            is_extension: false,
+            is_stub: false,
+            modifiers: Vec::new(),
         });
         self.func = idx;
         self.scopes.push(Scope {
@@ -409,6 +419,13 @@ impl<'s> Builder<'s> {
             implements: Vec::new(),
             is_interface: false,
             pos,
+            decorators: Vec::new(),
+            qualified_name: None,
+            type_params: Vec::new(),
+            base_args: Vec::new(),
+            implements_args: Vec::new(),
+            more_ctor_this: Vec::new(),
+            partial_key: None,
         });
         // `this` is an instance of the class, so `this.method()` resolves.
         self.instance_of(this, idx, pos);

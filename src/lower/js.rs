@@ -1190,6 +1190,7 @@ impl<'s> Js<'s> {
         };
         let is_ctor = class.is_some() && name.as_deref() == Some("constructor");
         let f = self.b.begin_function(display, node, class);
+        self.b.ir.funcs[f as usize].is_ctor = is_ctor;
         let outer_ctor = self.b.ctor_this.take();
         if let (true, Some(c)) = (is_ctor, class) {
             let pos = self.b.pos(node);
@@ -1280,6 +1281,7 @@ impl<'s> Js<'s> {
         let f = self.b.func as usize;
         self.b.ir.funcs[f].params.push(Param {
             var,
+            attrs: Vec::new(),
             name: name.clone(),
             rest,
             kwrest: false,
