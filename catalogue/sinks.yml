@@ -885,7 +885,7 @@ sinks:
     language: csharp
     class: messaging
     description: A message broker; the payload leaves the process (consumers may be other systems).
-    calls: ["RabbitMQ.Client.{IModel,IChannel,Model,Channel}{,()}**.{BasicPublish,BasicPublishAsync}"]
+    calls: ["RabbitMQ.Client.{IModel,IChannel,IConnection,ConnectionFactory,IConnectionFactory,Model,Channel}{,()}**.{BasicPublish,BasicPublishAsync}"]
 
   - id: cs.masstransit
     language: csharp
@@ -966,7 +966,7 @@ sinks:
       Microsoft.Extensions.AI abstractions (`IChatClient`, `IEmbeddingGenerator`); which provider
       receives the data is decided where the client is registered.
     calls:
-      - "Microsoft.Extensions.AI.{IChatClient,ChatClient,DelegatingChatClient,IEmbeddingGenerator,EmbeddingGenerator,DelegatingEmbeddingGenerator}{,()}**.{GetResponseAsync,GetStreamingResponseAsync,GetResponse,CompleteAsync,CompleteStreamingAsync,GenerateAsync,GenerateVectorAsync,GenerateEmbeddingAsync,GenerateEmbeddingVectorAsync}"
+      - "Microsoft.Extensions.AI.{IChatClient,DelegatingChatClient,IEmbeddingGenerator,DelegatingEmbeddingGenerator}{,()}**.{GetResponseAsync,GetStreamingResponseAsync,GetResponse,CompleteAsync,CompleteStreamingAsync,GenerateAsync,GenerateVectorAsync,GenerateEmbeddingAsync,GenerateEmbeddingVectorAsync}"
       - "**.{AsIChatClient,AsChatClient,AsIEmbeddingGenerator,AsEmbeddingGenerator}().**.{GetResponseAsync,GetStreamingResponseAsync,GenerateAsync,GenerateVectorAsync,GenerateEmbeddingVectorAsync}"
 
   - id: cs.openai

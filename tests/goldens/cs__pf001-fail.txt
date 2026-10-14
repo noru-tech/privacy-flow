@@ -1,0 +1,11 @@
+privacy-flow 0.2.0 · no commit · csharp 2 files · directory walk
+
+PF001  medium   pf-d427561ed9dafb9e  Accounts/SignupService.cs:8:9
+                user.contact.email from `account.Email (account: Account)` (Accounts/SignupService.cs:5) reaches a log sink (cs.microsoft-logging) at Accounts/SignupService.cs:8
+PF001  medium   pf-804f2c26f256b294  Accounts/SignupService.cs:9:9
+                user.contact.phone_number from `account.PhoneNumber (account: Account)` (Accounts/SignupService.cs:5) reaches a log sink (cs.console) at Accounts/SignupService.cs:9
+PF001  medium   pf-5058b3aee14a9f33  Accounts/SignupService.cs:10:9
+                user.contact.email from `account.Email (account: Account)` (Accounts/SignupService.cs:5) reaches a log sink (cs.logger-message) at Accounts/SignupService.cs:10
+
+3 flow(s) from 2 source(s) to 3 sink(s); findings: PF001 3
+coverage: complete

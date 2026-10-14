@@ -392,6 +392,9 @@ pub enum Flow {
     ArgsOnly,
     /// Arguments flow into the receiver (`xs.push(x)`), and to the result.
     ArgsToReceiver,
+    /// Like `args_to_receiver`, and the result is the receiver itself, so a chained call adds
+    /// to it too (`sb.Append(a).Append(b)`).
+    Fluent,
     /// The receiver's elements flow into the first parameter of a callback argument, and the
     /// callback's return value flows to the result (`xs.map(x => ...)`).
     ReceiverToCallback,

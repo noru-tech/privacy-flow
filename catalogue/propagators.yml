@@ -9,6 +9,7 @@
 # flow: args_to_result       arguments (and the receiver) flow to the result
 #       args_only            arguments flow to the result, the receiver does not (service clients)
 #       args_to_receiver     arguments flow into the receiver (`xs.push(x)`) and the result
+#       fluent               as args_to_receiver, and the result is the receiver (`sb.Append(x)`)
 #       receiver_to_callback the receiver's elements flow into a callback's first parameter,
 #                            and the callback's return value to the result (`xs.map(f)`)
 #       none                 nothing flows
@@ -48,6 +49,11 @@ value_methods:
      lstrip, rstrip, startswith, endswith, encode, decode, format, casefold, title, capitalize,
      find, rfind, index, count, join, isdigit, isalpha, isalnum, zfill, partition, rpartition,
      removeprefix, removesuffix, splitlines, expandtabs, translate]
+  csharp:
+    [ToLower, ToUpper, ToLowerInvariant, ToUpperInvariant, Trim, TrimStart, TrimEnd, Split,
+     Contains, StartsWith, EndsWith, Replace, Substring, IndexOf, LastIndexOf, IndexOfAny, PadLeft,
+     PadRight, Remove, Insert, Normalize, ToString, Equals, CompareTo, GetHashCode, ToCharArray,
+     AsSpan, AsMemory, EnumerateRunes, IsNormalized, Format, Join, Concat]
 
 propagators:
   # ------------------------------------------------------------------ JavaScript / TypeScript
@@ -228,12 +234,13 @@ propagators:
   - id: cs.stringbuilder
     language: csharp
     calls: ["System.Text.StringBuilder{,()}**.{Append,AppendLine,AppendFormat,AppendJoin,Insert,Replace}"]
-    flow: args_to_receiver
+    methods: [Append, AppendLine, AppendFormat, AppendJoin]
+    flow: fluent
 
   - id: cs.linq-callbacks
     language: csharp
     description: LINQ and collection methods that hand each element to a callback.
-    methods: [Select, SelectMany, Where, OrderBy, OrderByDescending, ThenBy, ThenByDescending, GroupBy, ForEach, First, FirstOrDefault, Single, SingleOrDefault, Last, LastOrDefault, TakeWhile, SkipWhile, DistinctBy, MaxBy, MinBy, Find, FindAll, ConvertAll, ToDictionary, ToLookup, Aggregate, Any, All, Count, Sum, Max, Min, Average]
+    methods: [Select, SelectMany, Where, OrderBy, OrderByDescending, ThenBy, ThenByDescending, GroupBy, ForEach, First, FirstOrDefault, Single, SingleOrDefault, Last, LastOrDefault, TakeWhile, SkipWhile, DistinctBy, MaxBy, MinBy, Find, FindAll, ConvertAll, ToDictionary, ToLookup, Aggregate, Max, Min]
     flow: receiver_to_callback
 
   - id: cs.collections-mutators
@@ -275,6 +282,8 @@ propagators:
       - "System.Threading.Tasks.{Task,ValueTask,TaskCompletionSource,Parallel}{,()}**"
       - "System.Collections.Generic.{List,Dictionary,HashSet,IEnumerable,IList,ICollection,IDictionary,KeyValuePair,Queue,Stack,SortedDictionary,IReadOnlyList,IReadOnlyCollection,IReadOnlyDictionary}{,()}**"
       - "System.IO.{Stream,MemoryStream,StreamReader,StreamWriter,File,Path,Directory}{,()}**"
+      - "System.{IServiceProvider,IDisposable,IAsyncDisposable,Activator,Lazy,Nullable,Action,Func,EventHandler}{,()}**"
+      - "System.Reflection.{Assembly,MethodInfo,PropertyInfo,TypeInfo,BindingFlags}{,()}**"
       - "Newtonsoft.Json.**"
       - "System.Net.Http.{StringContent,ByteArrayContent,FormUrlEncodedContent,MultipartFormDataContent,StreamContent,HttpRequestMessage,HttpResponseMessage,HttpMethod,Json.JsonContent,Headers}{,()}**"
       - "System.Net.{HttpStatusCode,IPAddress,WebUtility}{,()}**"
@@ -306,6 +315,7 @@ propagators:
       Databases, caches and the ASP.NET Identity stores: data at rest inside the system's own
       boundary. What is read back is classified by its fields.
     calls:
+      - "Microsoft.EntityFrameworkCore.{DbContext,DbSet,DbContextOptions,DbContextOptionsBuilder,ModelBuilder,EntityState,EF,Infrastructure.DatabaseFacade,ChangeTracking.EntityEntry,Storage.IDbContextTransaction}{,()}**"
       - "Microsoft.EntityFrameworkCore.**"
       - "Npgsql.**"
       - "Microsoft.Data.SqlClient.**"
@@ -329,6 +339,7 @@ propagators:
     calls:
       - "Microsoft.Extensions.{DependencyInjection,Options,Configuration,Hosting,Http,Resilience,ServiceDiscovery,Diagnostics,Primitives,FileProviders,Localization}.**"
       - "Microsoft.AspNetCore.{Builder,Routing,Http,Hosting,Authorization,Authentication,Components,Mvc,Antiforgery,DataProtection,Cors,ResponseCompression,StaticFiles,Diagnostics,HttpsPolicy,Server,WebUtilities,OutputCaching,RateLimiting,OpenApi}.**"
+      - "Grpc.Core.{RpcException,Status,StatusCode,Metadata,ServerCallContext,ChannelBase,CallOptions}{,()}**"
       - "{Asp.Versioning,Polly,OpenTelemetry,FluentValidation,Grpc,Google.Protobuf,Duende.IdentityServer,Duende.IdentityModel,IdentityModel,Aspire,MediatR,AutoMapper,Scalar,Swashbuckle,Microsoft.OpenApi,Microsoft.IdentityModel,System.IdentityModel,Microsoft.Identity.Web,Serilog.Extensions,HealthChecks}.**"
       - "System.Security.Claims.{ClaimsPrincipal,ClaimsIdentity,Claim,ClaimTypes}{,()}**"
       - "System.Diagnostics.{Stopwatch,ActivitySource,Metrics,DiagnosticSource,StackTrace,Process}{,()}**"

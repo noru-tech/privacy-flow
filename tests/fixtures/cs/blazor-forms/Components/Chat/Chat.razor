@@ -1,0 +1,17 @@
+@inject IChatClient Client
+
+<textarea @bind="message"></textarea>
+<button @onclick="SendAsync">Send</button>
+<p>@reply</p>
+
+@code {
+    string? message;
+    string? reply;
+
+    async Task SendAsync()
+    {
+        var text = message?.Trim();
+        var response = await Client.GetResponseAsync(text!); @* expect: PF003 *@
+        reply = response.Text;
+    }
+}

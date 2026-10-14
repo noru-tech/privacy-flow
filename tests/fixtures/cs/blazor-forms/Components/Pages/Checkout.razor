@@ -1,0 +1,14 @@
+@page "/checkout"
+@inject OrderingService Ordering
+
+<EditForm Model="Info" OnSubmit="@Submit" FormName="checkout">
+    <InputText @bind-Value="Info.Street" />
+    <button type="submit">Place order</button>
+</EditForm>
+
+@code {
+    [SupplyParameterFromForm]
+    public Address Info { get; set; } = default!;
+
+    private Task Submit() => Ordering.Place(Info);
+}

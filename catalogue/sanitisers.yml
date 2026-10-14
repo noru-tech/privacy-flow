@@ -64,7 +64,7 @@ sanitisers:
   - id: cs.predicates
     language: csharp
     description: Methods and functions that return a boolean, a number or a position, not the data.
-    methods: [Contains, StartsWith, EndsWith, Equals, SequenceEqual, IndexOf, LastIndexOf, CompareTo, IsMatch, Exists, ContainsKey, VerifyHashedPassword, Verify, GetHashCode, GetType, TryParse, IsNullOrEmpty, IsNullOrWhiteSpace]
+    methods: [Contains, StartsWith, EndsWith, Equals, SequenceEqual, Any, All, Count, LongCount, Sum, Average, IndexOf, LastIndexOf, CompareTo, IsMatch, Exists, ContainsKey, VerifyHashedPassword, Verify, GetHashCode, GetType, TryParse, IsNullOrEmpty, IsNullOrWhiteSpace]
     calls:
       - "System.String.{IsNullOrEmpty,IsNullOrWhiteSpace,Equals,Compare,CompareOrdinal}"
       - "System.Text.RegularExpressions.Regex{,()}**.IsMatch"

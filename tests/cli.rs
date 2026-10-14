@@ -381,11 +381,11 @@ fn usage_errors_exit_2_and_invalid_config_exits_3() {
 
 #[test]
 fn rules_doctor_completions_and_manpages() {
-    piiflow()
-        .arg("rules")
-        .assert()
-        .code(0)
-        .stdout(predicate::str::contains("PF003").and(predicate::str::contains("js.openai")));
+    piiflow().arg("rules").assert().code(0).stdout(
+        predicate::str::contains("PF003")
+            .and(predicate::str::contains("js.openai"))
+            .and(predicate::str::contains("cs.microsoft-logging")),
+    );
     let out = piiflow()
         .args(["rules", "-f", "json"])
         .assert()
@@ -402,6 +402,14 @@ fn rules_doctor_completions_and_manpages() {
         .assert()
         .code(0)
         .stdout(predicate::str::contains("Koa"));
+    // C# frameworks are found by the types a class extends, as well as by imports.
+    let cs = copy_fixture("cs/unsupported-framework");
+    piiflow()
+        .arg("doctor")
+        .arg(cs.path())
+        .assert()
+        .code(0)
+        .stdout(predicate::str::contains("SignalR"));
     piiflow()
         .args(["completions", "bash"])
         .assert()

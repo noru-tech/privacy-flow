@@ -1569,6 +1569,17 @@ impl Program {
         }
     }
 
+    /// Whether a method call on `recv` that reaches `f` passes `recv` as its first argument: an
+    /// extension method called as one (`email.Mask()`), not through its class
+    /// (`Masking.Mask(email)`).
+    fn receiver_first(&self, recv: VarId, f: FuncId) -> bool {
+        let func = &self.funcs[f as usize];
+        func.is_extension
+            && !self.prov[recv as usize]
+                .iter()
+                .any(|p| matches!(p, Prov::Class(c) if Some(*c) == func.class))
+    }
+
     /// The project's extension methods named `name` whose first parameter can be `recv`: the
     /// most specific ones, as overload resolution would pick (a first parameter typed with the
     /// receiver's type over one typed `object` or not known).
@@ -1627,7 +1638,7 @@ impl Program {
     /// receiver first.
     fn call_args(&self, callee: &GCallee, f: FuncId, args: &[GArg]) -> Option<Vec<GArg>> {
         match callee {
-            GCallee::Method { recv, .. } if self.funcs[f as usize].is_extension => {
+            GCallee::Method { recv, .. } if self.receiver_first(*recv, f) => {
                 let mut out = vec![GArg {
                     var: *recv,
                     kind: GArgKind::Positional,
@@ -2498,7 +2509,9 @@ impl Program {
                         // function stored in a field and called is not.
                         let bound = func.bound_self && func.class.is_some();
                         t.funcs.push((*f, bound));
-                        if func.is_extension && matches!(callee, GCallee::Method { .. }) {
+                        if let GCallee::Method { recv, .. } = &callee
+                            && self.receiver_first(*recv, *f)
+                        {
                             t.receiver_first.push(*f);
                         }
                     }

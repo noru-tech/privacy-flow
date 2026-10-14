@@ -1,0 +1,11 @@
+version: 1
+sinks:
+  - id: acme.mailer.cs
+    language: csharp
+    class: messaging
+    processor: Acme Mail
+    calls: ["Acme.Mail.Mailer.Deliver"]
+    citation: "Added in PR #12"
+processors:
+  - name: Acme Mail
+    citation: "Acme Mail DPA 2026-02"

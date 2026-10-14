@@ -769,8 +769,31 @@ impl Gen<'_> {
     }
 }
 
+/// The text with every Razor comment (`@* ... *@`) blanked: the same length and lines, so
+/// positions are unchanged.
+fn blank_comments(src: &str) -> String {
+    let mut out = String::with_capacity(src.len());
+    let mut rest = src;
+    while let Some(i) = rest.find("@*") {
+        out.push_str(&rest[..i]);
+        let tail = &rest[i..];
+        let end = tail.find("*@").map_or(tail.len(), |j| j + 2);
+        for c in tail[..end].chars() {
+            match c {
+                '\n' => out.push('\n'),
+                c => out.extend(std::iter::repeat_n(' ', c.len_utf8())),
+            }
+        }
+        rest = &tail[end..];
+    }
+    out.push_str(rest);
+    out
+}
+
 /// Translate a component into C#.
 pub fn generate(path: &str, src: &str, ctx: &RazorCtx) -> Generated {
+    let blanked = blank_comments(src);
+    let src = blanked.as_str();
     let stem = path
         .rsplit('/')
         .next()

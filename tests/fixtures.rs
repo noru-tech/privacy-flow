@@ -97,9 +97,9 @@ fn every_fixture_matches_its_markers() {
 }
 
 #[test]
-fn every_rule_has_failing_and_passing_fixtures_in_both_languages() {
+fn every_rule_has_failing_and_passing_fixtures_in_every_language() {
     let names: BTreeSet<String> = common::fixtures().iter().map(|d| common::name(d)).collect();
-    for lang in ["ts", "py"] {
+    for lang in ["ts", "py", "cs"] {
         for rule in [
             "pf001", "pf002", "pf003", "pf004", "pf005", "pf006", "pfc01",
         ] {

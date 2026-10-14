@@ -1381,10 +1381,13 @@ impl<'a, 'p> Builder<'a, 'p> {
                     self.edge(v, dst, EdgeKind::Collapse, stmt);
                 }
             }
-            Flow::ArgsToReceiver => {
+            Flow::ArgsToReceiver | Flow::Fluent => {
                 if let Some(r) = recv {
                     for a in args {
                         self.edge(a.var, r, EdgeKind::Copy, stmt);
+                    }
+                    if flow == Flow::Fluent {
+                        self.edge(dst, r, EdgeKind::Copy, stmt);
                     }
                 }
                 for v in vars {
@@ -2488,7 +2491,17 @@ impl<'a, 'p> Builder<'a, 'p> {
 
     fn find_records(&self) -> HashSet<VarId> {
         let mut records = HashSet::new();
-        for st in &self.p.stmts {
+        for (i, st) in self.p.stmts.iter().enumerate() {
+            // `email.Masked()` calls the project's extension method with `email`: it is used as
+            // what it is, not as a record.
+            if self
+                .p
+                .calls
+                .get(&(i as u32))
+                .is_some_and(|t| !t.receiver_first.is_empty())
+            {
+                continue;
+            }
             match &st.kind {
                 GKind::Load {
                     obj,

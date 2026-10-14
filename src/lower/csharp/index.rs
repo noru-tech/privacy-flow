@@ -462,6 +462,28 @@ impl CsIndex {
         self.plausible(fqn) == Some(3)
     }
 
+    /// Whether a namespace is the project's, the base class library's (`System.*`), or one the
+    /// catalogue names or covers.
+    fn known_namespace(&self, ns: &str) -> bool {
+        if self.namespaces.contains(ns)
+            || self.external_namespace(ns)
+            || ns == "System"
+            || ns.starts_with("System.")
+        {
+            return true;
+        }
+        let mut n = ns;
+        loop {
+            if self.open.contains(n) {
+                return true;
+            }
+            match n.rsplit_once('.') {
+                Some((a, _)) => n = a,
+                None => return false,
+            }
+        }
+    }
+
     /// Whether `name` is an external namespace root the catalogue names (`System`).
     fn external_namespace(&self, ns: &str) -> bool {
         let dotted = format!("{ns}.");
@@ -672,6 +694,15 @@ impl CsIndex {
             .map(|(_, n)| n)
             .collect();
         if best < 3 {
+            // A `using` of a namespace neither the project nor the catalogue knows may be where
+            // the name is: then a wildcard's guess would hide a call nothing explains.
+            let unknown_using = usings.iter().any(|u| match u {
+                Using::Namespace(ns) => !self.known_namespace(ns),
+                _ => false,
+            });
+            if unknown_using {
+                return None;
+            }
             out.truncate(1);
         }
         Some((Res::External(out), best == 3))
@@ -880,7 +911,8 @@ public class OrdersApi : ControllerBase {
                 ),
             ],
             &[
-                "Microsoft.Extensions.Logging.**.LogInformation",
+                "Microsoft.Extensions.Logging.ILogger**.LogInformation",
+                "Microsoft.Extensions.{Configuration,DependencyInjection,Hosting,Logging}.**",
                 "MediatR.{IMediator}{,()}.Send",
                 "Microsoft.AspNetCore.**.Request",
                 "System.Console.WriteLine",
@@ -926,12 +958,12 @@ public class OrdersApi : ControllerBase {
             })
             .collect();
         assert_eq!(full, vec!["System.Console.WriteLine".to_string()]);
-        // Under a namespace the catalogue covers with a wildcard, any name may be its; outside
-        // every known namespace a name is unknown.
-        assert_eq!(
+        // Under a namespace the catalogue covers with a wildcard, any name may be its (the first
+        // such using wins); outside every known namespace a name is unknown.
+        assert!(matches!(
             ix.resolve_simple(api, scope, &[], "Nope", None),
-            Res::External(vec!["Microsoft.Extensions.Logging.Nope".into()])
-        );
+            Res::External(c) if c.len() == 1
+        ));
         assert_eq!(
             ix.resolve_simple("src/Domain/Order.cs", 1, &[], "Nope", None),
             Res::Unknown
