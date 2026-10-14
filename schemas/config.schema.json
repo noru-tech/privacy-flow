@@ -137,7 +137,8 @@
         "skip_bases": { "$ref": "#/$defs/patterns" },
         "skip_interfaces": { "type": "boolean" },
         "skip_attrs": { "$ref": "#/$defs/patterns" },
-        "expand_attrs": { "$ref": "#/$defs/patterns" }
+        "expand_attrs": { "$ref": "#/$defs/patterns" },
+        "classify_only_types": { "$ref": "#/$defs/patterns" }
       }
     },
     "source": {

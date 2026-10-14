@@ -7,6 +7,7 @@
 pub mod csharp;
 pub mod js;
 pub mod python;
+pub mod razor;
 
 use std::collections::HashMap;
 
@@ -68,6 +69,9 @@ pub struct Builder<'s> {
     /// last; and those of enclosing functions, set aside while a nested one is lowered.
     pub catches: Vec<Var>,
     saved_catches: Vec<Vec<Var>>,
+    /// For generated source (a Razor component's C#): the original text, its line starts, and
+    /// the map from generated to original bytes. Positions and citations are the original's.
+    origin: Option<(&'s str, Vec<usize>, &'s razor::Generated)>,
 }
 
 const TEXT_MAX: usize = 80;
@@ -98,6 +102,7 @@ impl<'s> Builder<'s> {
             ctor_this: None,
             catches: Vec::new(),
             saved_catches: Vec::new(),
+            origin: None,
         };
         // Function 0 is the module: it owns top-level statements and module-level bindings.
         let ret = b.raw_var("<return>", VarKind::Ret, 0, Pos { line: 1, column: 1 });
@@ -132,18 +137,37 @@ impl<'s> Builder<'s> {
         self.ir
     }
 
+    /// Report positions and citations in `original`, which `generated` was made from.
+    pub fn set_origin(&mut self, original: &'s str, generated: &'s razor::Generated) {
+        let mut starts = vec![0];
+        for (i, b) in original.bytes().enumerate() {
+            if b == b'\n' {
+                starts.push(i + 1);
+            }
+        }
+        self.ir.lines = if original.is_empty() {
+            0
+        } else {
+            starts.len() as u32 - u32::from(original.ends_with('\n'))
+        };
+        self.origin = Some((original, starts, generated));
+    }
+
     pub fn pos(&self, node: Node) -> Pos {
         self.pos_at(node.start_byte())
     }
 
     pub fn pos_at(&self, byte: usize) -> Pos {
-        let line = match self.line_starts.binary_search(&byte) {
+        let (text, line_starts, byte) = match &self.origin {
+            Some((orig, starts, g)) => (*orig, starts.as_slice(), g.to_source(byte)),
+            None => (self.src, self.line_starts.as_slice(), byte),
+        };
+        let line = match line_starts.binary_search(&byte) {
             Ok(i) => i,
             Err(i) => i - 1,
         };
-        let start = self.line_starts[line];
-        let column = self
-            .src
+        let start = line_starts[line];
+        let column = text
             .get(start..byte)
             .map_or(byte - start, |s| s.chars().count());
         Pos {
@@ -158,7 +182,26 @@ impl<'s> Builder<'s> {
 
     /// Citation text: the node's source on one line, whitespace collapsed, at most 80 chars.
     pub fn cite(&self, node: Node) -> String {
-        let raw = self.text(node);
+        let raw = match &self.origin {
+            Some((orig, starts, g)) => {
+                let (s, e) = (g.to_source(node.start_byte()), g.to_source(node.end_byte()));
+                match orig.get(s..e).filter(|t| !t.trim().is_empty()) {
+                    Some(t) => t,
+                    // Generated code with no text of its own (`@bind`'s binder): the line it
+                    // was generated for.
+                    None => {
+                        let line = match starts.binary_search(&s) {
+                            Ok(i) => i,
+                            Err(i) => i.saturating_sub(1),
+                        };
+                        let from = starts[line];
+                        let to = starts.get(line + 1).copied().unwrap_or(orig.len());
+                        orig.get(from..to).unwrap_or("")
+                    }
+                }
+            }
+            None => self.text(node),
+        };
         let mut out = String::with_capacity(raw.len().min(TEXT_MAX + 3));
         let mut last_space = false;
         for c in raw.chars() {

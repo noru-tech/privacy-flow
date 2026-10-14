@@ -147,6 +147,45 @@ fn csharp_index(
     if files.is_empty() {
         return None;
     }
+    // Razor components: their namespace comes from the project, their usings from the
+    // `_Imports.razor` files above them.
+    let mut imports: BTreeMap<String, String> = BTreeMap::new();
+    for path in &files {
+        if path.rsplit('/').next() == Some("_Imports.razor")
+            && let Some(bytes) = tree.get(path)
+        {
+            let dir = path.rsplit_once('/').map_or("", |(d, _)| d).to_string();
+            imports.insert(dir, String::from_utf8_lossy(&bytes).into_owned());
+        }
+    }
+    let razor: BTreeMap<String, lower::razor::RazorCtx> = files
+        .iter()
+        .filter(|p| lower::csharp::is_razor(p))
+        .map(|p| {
+            let (dir, root) = match resolver.csproj_for(p) {
+                Some(proj) => {
+                    let dir = proj
+                        .path
+                        .rsplit_once('/')
+                        .map_or("", |(d, _)| d)
+                        .to_string();
+                    let stem = proj
+                        .path
+                        .rsplit('/')
+                        .next()
+                        .unwrap_or("")
+                        .trim_end_matches(".csproj")
+                        .to_string();
+                    (dir, proj.root_namespace.clone().unwrap_or(stem))
+                }
+                None => (String::new(), String::new()),
+            };
+            (
+                (*p).clone(),
+                lower::razor::RazorCtx::for_file(p, &dir, &root, &imports),
+            )
+        })
+        .collect();
     let scans: Vec<lower::csharp::scan::FileScan> = files
         .par_iter()
         .filter_map(|path| {
@@ -155,15 +194,18 @@ fn csharp_index(
                 return None;
             }
             let text = String::from_utf8_lossy(&bytes);
-            Some(lower::csharp::scan_file(path, &text))
+            let ctx = razor.get(*path).cloned().unwrap_or_default();
+            Some(lower::csharp::scan_file(path, &text, &ctx))
         })
         .collect();
     let patterns = catalogue.api_patterns("csharp");
     let (known, open) =
         lower::csharp::index::known_from_patterns(patterns.iter().map(String::as_str));
-    Some(lower::csharp::index::CsIndex::build(
-        scans, resolver, known, open,
-    ))
+    let mut ix = lower::csharp::index::CsIndex::build(scans, resolver, known, open);
+    for (path, ctx) in razor {
+        ix.set_razor_ctx(&path, ctx);
+    }
+    Some(ix)
 }
 
 pub struct Run {

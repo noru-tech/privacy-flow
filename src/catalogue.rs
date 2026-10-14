@@ -202,6 +202,10 @@ pub struct ParamRule {
     /// their declared type is one (`[AsParameters]`).
     #[serde(default)]
     pub expand_attrs: Vec<String>,
+    /// Parameters declared with these types (`Guid`, `Int32`) are request input only when their
+    /// name classifies them: `whole` does not apply.
+    #[serde(default)]
+    pub classify_only_types: Vec<String>,
 }
 
 #[derive(Clone, Debug, Default, Serialize, Deserialize)]
@@ -454,6 +458,10 @@ struct CatalogueFile {
     #[serde(default)]
     value_methods: BTreeMap<String, Vec<String>>,
     #[serde(default)]
+    accessor_fields: BTreeMap<String, Vec<String>>,
+    #[serde(default)]
+    metadata_types: BTreeMap<String, Vec<String>>,
+    #[serde(default)]
     contextual: Vec<ContextualDef>,
 }
 
@@ -543,6 +551,12 @@ pub struct Catalogue {
     /// Methods of plain values (strings), per language: calling one does not make the receiver
     /// a record.
     pub value_methods: BTreeMap<String, BTreeSet<String>>,
+    /// Fields, per language, that read what an object holds rather than an attribute of it
+    /// (`claim.Value`): a read of one is not classified by its name.
+    pub accessor_fields: BTreeMap<String, BTreeSet<String>>,
+    /// Types (API path globs), per language, whose values describe code rather than data
+    /// (`System.Type`): their fields are not personal data.
+    pub metadata_types: BTreeMap<String, Vec<String>>,
     pub contextual: Vec<ContextualDef>,
 }
 
@@ -616,6 +630,16 @@ impl Catalogue {
                     .entry(lang)
                     .or_default()
                     .extend(methods);
+            }
+            for (lang, types) in file.metadata_types {
+                merged.metadata_types.entry(lang).or_default().extend(types);
+            }
+            for (lang, fields) in file.accessor_fields {
+                merged
+                    .accessor_fields
+                    .entry(lang)
+                    .or_default()
+                    .extend(fields);
             }
         }
         let mut ids = BTreeSet::new();
@@ -742,6 +766,11 @@ impl Catalogue {
             .into_iter()
             .map(|(k, v)| (k, v.into_iter().collect()))
             .collect();
+        let accessor_fields = merged
+            .accessor_fields
+            .into_iter()
+            .map(|(k, v)| (k, v.into_iter().collect()))
+            .collect();
         Ok(Catalogue {
             version: version.unwrap_or_default(),
             digest: crate::canonical::sha256(hasher_input.as_bytes()),
@@ -753,6 +782,8 @@ impl Catalogue {
             dispatchers,
             non_propagating_fields,
             value_methods,
+            accessor_fields,
+            metadata_types: merged.metadata_types,
             contextual: merged.contextual,
         })
     }
@@ -823,6 +854,12 @@ impl Catalogue {
             out.extend(f.types.iter().cloned());
         }
         out
+    }
+
+    pub fn accessor_field(&self, lang: &str, field: &str) -> bool {
+        self.accessor_fields
+            .get(lang)
+            .is_some_and(|s| s.contains(field))
     }
 
     pub fn value_method(&self, lang: &str, method: &str) -> bool {

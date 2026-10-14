@@ -19,6 +19,16 @@ non_propagating_fields:
   javascript: [length, size, byteLength]
   csharp: [Length, Count, LongLength, Capacity, HasValue, IsEmpty]
 
+# Fields that read what an object holds rather than an attribute of it: `claim.Value` is the
+# claim's value, classified by the claim type, not "a value".
+accessor_fields:
+  csharp: [Value, Result, Current, Item, Items, Values, Keys, Key, InnerException]
+
+# Types whose values describe code, not data: a field read from one (`type.Name`) is not
+# classified by its name.
+metadata_types:
+  csharp: ["System.Type", "System.Reflection.**", "System.Type.**", "System.Reflection.Assembly{,()}**"]
+
 # Methods of plain values (strings): calling one does not make the receiver a record, so a value
 # named like a personal attribute stays that attribute (`email.toLowerCase()`).
 value_methods:
@@ -228,8 +238,16 @@ propagators:
 
   - id: cs.collections-mutators
     language: csharp
-    methods: [Add, AddRange, Insert, InsertRange, Enqueue, Push, TryAdd, AddOrUpdate, GetOrAdd, Prepend]
+    methods: [Add, AddRange, Insert, InsertRange, Enqueue, Push, TryAdd, AddOrUpdate, GetOrAdd, Prepend, AddMessages, AddFirst, AddLast, Set, Write, TryWrite, WriteAsync]
     flow: args_to_receiver
+
+  - id: cs.validation
+    language: csharp
+    description: >-
+      Validators: their result describes the value, and a failure carries the attempted value.
+    calls: ["FluentValidation.**.{Validate,ValidateAsync,ValidateAndThrow,ValidateAndThrowAsync}"]
+    methods: [Validate, ValidateAsync, ValidateAndThrow, ValidateAndThrowAsync, TryValidateObject]
+    flow: args_to_result
 
   - id: cs.callback-result
     language: csharp
@@ -251,7 +269,67 @@ propagators:
       - "System.{String,Convert,Math,Guid,DateTime,DateTimeOffset,TimeSpan,Uri,Int32,Int64,Decimal,Double,Boolean,Enum,Nullable,BinaryData,Array,Object,Char,Byte,Version,Environment,BitConverter}{,()}**"
       - "System.{Linq,Text,Text.Json,Text.RegularExpressions,Collections,Collections.Generic,Collections.Concurrent,Collections.Immutable,Collections.ObjectModel,Threading,Threading.Tasks,Globalization,Buffers,ComponentModel,Reflection,IO,Numerics,Security.Cryptography,Runtime}.**"
       - "System.{Exception,ArgumentException,ArgumentNullException,ArgumentOutOfRangeException,InvalidOperationException,NotSupportedException,NotImplementedException,KeyNotFoundException,FormatException,UnauthorizedAccessException,ApplicationException}{,()}**"
+      - "System.Text.Json.{JsonSerializer,JsonDocument,JsonElement,JsonSerializerOptions,JsonNamingPolicy,Nodes.JsonNode,Nodes.JsonObject,Nodes.JsonArray}{,()}**"
+      - "System.Text.{Encoding,StringBuilder,RegularExpressions.Regex}{,()}**"
+      - "System.Linq.{Enumerable,Queryable}{,()}**"
+      - "System.Threading.Tasks.{Task,ValueTask,TaskCompletionSource,Parallel}{,()}**"
+      - "System.Collections.Generic.{List,Dictionary,HashSet,IEnumerable,IList,ICollection,IDictionary,KeyValuePair,Queue,Stack,SortedDictionary,IReadOnlyList,IReadOnlyCollection,IReadOnlyDictionary}{,()}**"
+      - "System.IO.{Stream,MemoryStream,StreamReader,StreamWriter,File,Path,Directory}{,()}**"
       - "Newtonsoft.Json.**"
       - "System.Net.Http.{StringContent,ByteArrayContent,FormUrlEncodedContent,MultipartFormDataContent,StreamContent,HttpRequestMessage,HttpResponseMessage,HttpMethod,Json.JsonContent,Headers}{,()}**"
       - "System.Net.{HttpStatusCode,IPAddress,WebUtility}{,()}**"
+    flow: args_to_result
+
+  - id: cs.message-builders
+    language: csharp
+    description: >-
+      Objects a message or request is built from before it is sent: what goes into them is
+      carried by the object.
+    calls:
+      - "MimeKit.**"
+      - "System.Net.Mail.{MailMessage,MailAddress,Attachment,AlternateView,MailAddressCollection}{,()}**"
+      - "SendGrid.Helpers.Mail.**"
+      - "RestSharp.RestRequest{,()}**"
+      - "Microsoft.Extensions.AI.{ChatMessage,ChatOptions,TextContent,DataContent,ChatResponse,ChatResponseUpdate}{,()}**"
+      - "OpenAI.Chat.{ChatMessage,UserChatMessage,SystemChatMessage,AssistantChatMessage,ChatCompletionOptions}{,()}**"
+      - "Azure.Messaging.ServiceBus.ServiceBusMessage{,()}**"
+      - "Azure.Messaging.EventHubs.EventData{,()}**"
+      - "Confluent.Kafka.{Message,ProducerConfig,ProducerBuilder}{,()}**"
+      - "Amazon.**.Model.**"
+      - "Duende.IdentityServer.Events.**"
+      - "RabbitMQ.Client.{BasicProperties,IBasicProperties}{,()}**"
+    flow: args_to_receiver
+
+  - id: cs.databases
+    language: csharp
+    description: >-
+      Databases, caches and the ASP.NET Identity stores: data at rest inside the system's own
+      boundary. What is read back is classified by its fields.
+    calls:
+      - "Microsoft.EntityFrameworkCore.**"
+      - "Npgsql.**"
+      - "Microsoft.Data.SqlClient.**"
+      - "Microsoft.Data.Sqlite.**"
+      - "MySqlConnector.**"
+      - "StackExchange.Redis.**"
+      - "Dapper.**"
+      - "MongoDB.Driver.**"
+      - "Microsoft.Azure.Cosmos.**"
+      - "Microsoft.AspNetCore.Identity.**"
+      - "Microsoft.Extensions.Caching.**"
+      - "Pgvector.**"
+    flow: none
+
+  - id: cs.internal-modules
+    language: csharp
+    description: >-
+      Framework plumbing: dependency injection, configuration, hosting, routing, results,
+      authorization, validation, resilience, telemetry setup, serialization contracts. Values pass
+      through; nothing leaves the process.
+    calls:
+      - "Microsoft.Extensions.{DependencyInjection,Options,Configuration,Hosting,Http,Resilience,ServiceDiscovery,Diagnostics,Primitives,FileProviders,Localization}.**"
+      - "Microsoft.AspNetCore.{Builder,Routing,Http,Hosting,Authorization,Authentication,Components,Mvc,Antiforgery,DataProtection,Cors,ResponseCompression,StaticFiles,Diagnostics,HttpsPolicy,Server,WebUtilities,OutputCaching,RateLimiting,OpenApi}.**"
+      - "{Asp.Versioning,Polly,OpenTelemetry,FluentValidation,Grpc,Google.Protobuf,Duende.IdentityServer,Duende.IdentityModel,IdentityModel,Aspire,MediatR,AutoMapper,Scalar,Swashbuckle,Microsoft.OpenApi,Microsoft.IdentityModel,System.IdentityModel,Microsoft.Identity.Web,Serilog.Extensions,HealthChecks}.**"
+      - "System.Security.Claims.{ClaimsPrincipal,ClaimsIdentity,Claim,ClaimTypes}{,()}**"
+      - "System.Diagnostics.{Stopwatch,ActivitySource,Metrics,DiagnosticSource,StackTrace,Process}{,()}**"
     flow: args_to_result

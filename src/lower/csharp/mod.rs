@@ -29,18 +29,29 @@ use tree_sitter::Node;
 
 use self::index::{CsIndex, Res, TypeId, looks_like_interface};
 use self::scan::{has_token, modifiers, name_text, predefined, type_text};
+use super::razor::{Generated, RazorCtx, generate};
 use super::{Builder, named_children};
 use crate::ir::*;
 
+/// Whether a path is a Razor component, lowered through its generated C#.
+pub fn is_razor(path: &str) -> bool {
+    path.ends_with(".razor")
+}
+
 /// Scan one C# file's declarations (a `.razor` file's generated C#).
-pub fn scan_file(path: &str, src: &str) -> scan::FileScan {
+pub fn scan_file(path: &str, src: &str, razor: &RazorCtx) -> scan::FileScan {
+    if is_razor(path) {
+        let g = generate(path, src, razor);
+        return scan::scan(path, &g.text);
+    }
     scan::scan(path, src)
 }
 
 /// Lower one C# file on its own (no other file's declarations are known).
 pub fn lower_alone(path: &str, src: &str) -> FileIr {
+    let razor = RazorCtx::default();
     let ix = CsIndex::build(
-        vec![scan::scan(path, src)],
+        vec![scan_file(path, src, &razor)],
         &crate::resolve::Resolver::default(),
         Default::default(),
         Default::default(),
@@ -49,9 +60,33 @@ pub fn lower_alone(path: &str, src: &str) -> FileIr {
 }
 
 pub fn lower(path: &str, src: &str, ix: &CsIndex) -> FileIr {
+    if is_razor(path) {
+        let ctx = ix.razor_ctx(path);
+        let g = generate(path, src, &ctx);
+        // Development aid: `PIIFLOW_DEBUG_RAZOR=<path part>` prints the generated C#.
+        if let Some(want) = std::env::var_os("PIIFLOW_DEBUG_RAZOR")
+            && path.contains(&*want.to_string_lossy())
+        {
+            eprintln!("// {path}\n{}", g.text);
+        }
+        return lower_text(path, &g.text, ix, Some((src, &g)));
+    }
+    lower_text(path, src, ix, None)
+}
+
+fn lower_text<'s>(
+    path: &str,
+    src: &'s str,
+    ix: &CsIndex,
+    origin: Option<(&'s str, &'s Generated)>,
+) -> FileIr {
     let mut parser = scan::parser();
+    let mut b = Builder::new(path, Lang::CSharp, src);
+    if let Some((orig, g)) = origin {
+        b.set_origin(orig, g);
+    }
     let mut cs = Cs {
-        b: Builder::new(path, Lang::CSharp, src),
+        b,
         ix,
         path: path.to_string(),
         scope: 0,
@@ -455,12 +490,16 @@ impl<'s> Cs<'s, '_> {
             self.b.ir.exports.push(ExportIr { name: export, var });
         }
         self.b.ir.classes[c as usize].decorators = attrs;
+        // The type's own type parameters are in scope in its base list.
+        self.frames.push(Frame { id, class: c });
         // Base types: classes first, then interfaces, each with its type arguments.
         if let Some(bl) = named_children(node)
             .into_iter()
             .find(|k| k.kind() == "base_list")
         {
-            let enclosing: Vec<TypeId> = self.type_ids();
+            let mut enclosing: Vec<TypeId> = self.type_ids();
+            // A base list does not see the type's own members or nested types.
+            enclosing.pop();
             for bnode in named_children(bl) {
                 let tnode = match bnode.kind() {
                     "primary_constructor_base_type" => bnode.child_by_field_name("type"),
@@ -496,7 +535,6 @@ impl<'s> Cs<'s, '_> {
             fields: Vec::new(),
             pos,
         });
-        self.frames.push(Frame { id, class: c });
         let body = node.child_by_field_name("body");
         let primary = named_children(node)
             .into_iter()
@@ -690,6 +728,10 @@ impl<'s> Cs<'s, '_> {
             self.b.ir.classes[c as usize]
                 .field_attrs
                 .push((key.to_string(), attrs));
+            // The declaration writes the field (with no value), so it can be cited.
+            let this = self.b.ir.classes[c as usize].this;
+            let v = self.b.lit(m, None);
+            self.b.store_member(m, this, Some(key.to_string()), v);
         }
     }
 
@@ -1166,6 +1208,12 @@ impl<'s> Cs<'s, '_> {
         match ty.kind() {
             "nullable_type" | "ref_type" | "scoped_type" | "array_type" | "pointer_type" => {
                 self.annotation(ty.child_by_field_name("type")?)
+            }
+            // `int` is `Int32`: no type declares fields under these names, but they say what a
+            // parameter can hold.
+            "predefined_type" => {
+                let full = predefined(self.text(ty));
+                Some(full.rsplit('.').next().unwrap_or(full).to_string())
             }
             "identifier" | "qualified_name" | "alias_qualified_name" => {
                 let t = type_text(ty, self.b.src)?;
@@ -1757,13 +1805,13 @@ impl<'s> Cs<'s, '_> {
                 self.b.lit(node, v)
             }
             "interpolated_string_expression" => self.interpolated(node),
+            "typeof_expression" => self.import(node, "System.Type".into(), ImportKey::Namespace),
             "character_literal"
             | "integer_literal"
             | "real_literal"
             | "boolean_literal"
             | "null_literal"
             | "default_expression"
-            | "typeof_expression"
             | "sizeof_expression"
             | "makeref_expression"
             | "reftype_expression"
@@ -1956,6 +2004,38 @@ impl<'s> Cs<'s, '_> {
         self.resolved(node, res, name)
     }
 
+    /// The field of the current instance an expression reads, if it reads one: `_items`,
+    /// `Messages`, `this.Messages`.
+    fn field_of_this(&self, e: Node) -> Option<String> {
+        let name = match e.kind() {
+            "identifier" => {
+                let n = self.text(e);
+                if self.b.lookup(n).is_some() {
+                    return None;
+                }
+                n
+            }
+            "member_access_expression"
+                if e.child_by_field_name("expression").is_none()
+                    && has_token(e, self.b.src, "this") =>
+            {
+                self.text(e.child_by_field_name("name")?)
+            }
+            _ => return None,
+        };
+        let fi = self.member_frame(name)?;
+        if fi + 1 != self.frames.len() {
+            return None;
+        }
+        let id = self.frames[fi].id?;
+        match self.ix.member(id, name)?.kind {
+            scan::MemberKind::Field
+            | scan::MemberKind::Property
+            | scan::MemberKind::PrimaryParam => Some(name.to_string()),
+            _ => None,
+        }
+    }
+
     /// A member of an enclosing type, read through its instance.
     fn member_of_frame(&mut self, node: Node, fi: usize, name: &str) -> Var {
         let c = self.frames[fi].class;
@@ -1998,6 +2078,13 @@ impl<'s> Cs<'s, '_> {
         let name = node
             .child_by_field_name("name")
             .map(|n| simple_name(n, self.b.src));
+        // `typeof(T).Name`, `x.GetType().FullName`: metadata of a type, not data.
+        if let Some(e) = node.child_by_field_name("expression")
+            && is_type_metadata(e, self.b.src)
+        {
+            self.expr(e);
+            return self.b.lit(node, None);
+        }
         // `A.B.C` where `A` is not a value in scope: a namespace or type path.
         let mut segs = Vec::new();
         if self.chain(node, &mut segs) {
@@ -2606,6 +2693,13 @@ impl<'s> Cs<'s, '_> {
                     .child_by_field_name("name")
                     .map(|n| simple_name(n, self.b.src))
                     .unwrap_or_default();
+                // `x.GetType()`: a `System.Type`, which holds none of `x`'s data.
+                if is_type_metadata(node, self.b.src) {
+                    if let Some(e) = func.child_by_field_name("expression") {
+                        self.expr(e);
+                    }
+                    return self.import(node, "System.Type".into(), ImportKey::Namespace);
+                }
                 // `x.ConfigureAwait(false)` is `x`.
                 if name == "ConfigureAwait"
                     && func.kind() == "member_access_expression"
@@ -2637,7 +2731,34 @@ impl<'s> Cs<'s, '_> {
                 if let Some(n) = func.child_by_field_name("name") {
                     self.generic_result(n, dst);
                 }
+                // `Messages.Add(m)`, `_items.Add(x)`: a call may change the object a field
+                // holds, and later reads of the field see it.
+                if func.kind() == "member_access_expression"
+                    && let Some(field) = func
+                        .child_by_field_name("expression")
+                        .and_then(|e| self.field_of_this(e))
+                    && let Some(this) = self.this()
+                {
+                    self.b.store_member(func, this, Some(field), recv);
+                }
                 dst
+            }
+            // `message?.Trim()`: a method call on the condition, when it is not null.
+            "conditional_access_expression"
+                if named_children(func)
+                    .last()
+                    .is_some_and(|c| c.kind() == "member_binding_expression") =>
+            {
+                let Some(cond) = func.child_by_field_name("condition") else {
+                    return self.b.lit(node, None);
+                };
+                let recv = self.expr(cond);
+                let binding = *named_children(func).last().expect("binding");
+                let name = binding
+                    .child_by_field_name("name")
+                    .map(|n| simple_name(n, self.b.src))
+                    .unwrap_or_default();
+                self.invoke(node, Callee::Method { recv, name }, args, false)
             }
             _ => {
                 let v = self.expr(func);
@@ -2731,6 +2852,27 @@ fn declarator_value(d: Node) -> Option<Node> {
     named_children(d).into_iter().rfind(|c| {
         Some(*c) != name && c.kind() != "tuple_pattern" && c.kind() != "bracketed_argument_list"
     })
+}
+
+/// `typeof(T)` and `x.GetType()`: a `System.Type`.
+fn is_type_metadata(e: Node, src: &str) -> bool {
+    match e.kind() {
+        "typeof_expression" => true,
+        "invocation_expression" => {
+            let Some(f) = e.child_by_field_name("function") else {
+                return false;
+            };
+            let name = match f.kind() {
+                "member_access_expression" => f.child_by_field_name("name"),
+                "identifier" => Some(f),
+                _ => None,
+            };
+            name.is_some_and(|n| &src[n.byte_range()] == "GetType")
+                && e.child_by_field_name("arguments")
+                    .is_some_and(|a| named_children(a).is_empty())
+        }
+        _ => false,
+    }
 }
 
 /// `Foo` for `Foo` and `Foo<T>`.

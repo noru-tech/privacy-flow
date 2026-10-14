@@ -666,6 +666,20 @@ impl<'a, 'p> Builder<'a, 'p> {
         if self.read_as_record(dst) {
             return;
         }
+        // `claim.Value`, `task.Result`: an accessor of what the object holds, not an attribute.
+        let lang = self.lang(self.p.stmts[stmt as usize].file);
+        if self.inp.catalogue.accessor_field(lang, name) {
+            return;
+        }
+        // `type.Name`: metadata of code.
+        if let Some(globs) = self.inp.catalogue.metadata_types.get(lang)
+            && self
+                .api_paths_of(&[obj])
+                .iter()
+                .any(|p| api_matches_any(globs, p.trim_end_matches("()")))
+        {
+            return;
+        }
         for c in self.inp.classifier.classify_in(name, &place) {
             let seed = self.stmt_seed(
                 stmt,
@@ -1035,6 +1049,13 @@ impl<'a, 'p> Builder<'a, 'p> {
                     }
                 }
             }
+            if std::env::var_os("PIIFLOW_DEBUG_IR").is_some() {
+                let names: Vec<&str> = targets
+                    .iter()
+                    .map(|(f, _, _)| self.p.funcs[*f as usize].name.as_str())
+                    .collect();
+                eprintln!("dispatch #{stmt} {} -> {names:?}", d.def.id);
+            }
             for (f, param, exact) in targets {
                 if self.p.funcs[f as usize].is_stub {
                     continue;
@@ -1042,14 +1063,14 @@ impl<'a, 'p> Builder<'a, 'p> {
                 let site = self.f.sites.len() as u32;
                 self.f.sites.push(Site { stmt, dst, func: f });
                 self.f.callers[f as usize].push(site);
+                // One argument to one parameter, as a direct call would bind it, whether the
+                // type filter could decide the handler or not.
+                let _ = exact;
                 if param < self.f.formals[f as usize].len() {
                     self.f.bindings[arg.var as usize].push(Binding {
                         site,
                         formal: param as u32,
                     });
-                    if !exact {
-                        self.inexact.insert((f, param as u32));
-                    }
                 }
             }
         }
@@ -2078,7 +2099,11 @@ impl<'a, 'p> Builder<'a, 'p> {
                     }
                     narrowed |= !cs.is_empty();
                 }
-                if let (Some(whole), false) = (&rule.whole, narrowed) {
+                // A number or a GUID is request input only when its name says what it is.
+                let scalar = annot
+                    .as_ref()
+                    .is_some_and(|a| api_matches_any(&rule.classify_only_types, a));
+                if let (Some(whole), false, false) = (&rule.whole, narrowed, scalar) {
                     let s = self.param_seed(
                         *var,
                         TOP,
@@ -2321,8 +2346,14 @@ impl<'a, 'p> Builder<'a, 'p> {
                         .collect::<BTreeSet<_>>()
                         .into_iter()
                         .collect();
+                    // Cite the declaration: the first write of the field in the class's file.
+                    let decl = self.p.stmts.iter().position(|st| {
+                        matches!(st.kind, GKind::ThisStore { obj, field, .. }
+                            if obj == class.this && field == fsym)
+                    });
                     for fv in fvars {
                         *self.f.handlers.entry(src.def.id.clone()).or_default() += 1;
+                        let before = self.f.seeds.len();
                         let mut narrowed = false;
                         if rule.typed
                             && let Some(a) = annots.get(&fv).cloned()
@@ -2340,6 +2371,15 @@ impl<'a, 'p> Builder<'a, 'p> {
                                 field.clone(),
                             );
                             self.seed(s);
+                        }
+                        if let Some(d) = decl {
+                            let st = &self.p.stmts[d];
+                            let (file, pos, text) = (st.file, st.pos, st.text.clone());
+                            for seed in &mut self.f.seeds[before..] {
+                                seed.file = file;
+                                seed.pos = pos;
+                                seed.text = text.clone();
+                            }
                         }
                     }
                 }

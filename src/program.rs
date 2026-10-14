@@ -358,6 +358,9 @@ pub struct Program {
     pub subclasses: Vec<Vec<ClassId>>,
     /// The variable of each class's own `this.f`, by field.
     class_fields: Vec<BTreeMap<Sym, VarId>>,
+    /// The fields each class's own code writes (declarations with a type or an initializer,
+    /// constructor parameters stored into fields).
+    stored_fields: Vec<BTreeSet<Sym>>,
     /// Every class's `this` and constructor `this`.
     this_vars: HashSet<VarId>,
     /// Whether inherited template methods have been copied into their subclasses.
@@ -475,6 +478,7 @@ impl Program {
             var_containers: HashMap::new(),
             subclasses: Vec::new(),
             class_fields: Vec::new(),
+            stored_fields: Vec::new(),
             this_vars: HashSet::new(),
             specialised: false,
             complete_dispatch: HashSet::new(),
@@ -1357,7 +1361,18 @@ impl Program {
                 out.extend(ps.iter().cloned());
             }
         }
-        if out.is_empty() {
+        // A member the class declares in source is never its external base's, even while its
+        // value is still unknown (C#, whose classes are closed).
+        let declared = self.files[self.classes[c as usize].file as usize]
+            .lang
+            .traits()
+            .closed_local_classes
+            && lineage.iter().any(|&k| {
+                self.stored_fields
+                    .get(k as usize)
+                    .is_some_and(|f| f.contains(&name))
+            });
+        if out.is_empty() && !declared {
             for s in self.external_bases(&lineage) {
                 let base = if instance { self.api_call(s) } else { Some(s) };
                 if let Some(m) = base.and_then(|b| self.api_member(b, &field)) {
@@ -1467,7 +1482,13 @@ impl Program {
                 .map(|(i, c)| (c.this, i as ClassId))
                 .collect();
             let mut fields = vec![BTreeMap::new(); self.classes.len()];
+            let mut stored = vec![BTreeSet::new(); self.classes.len()];
             for s in &self.stmts {
+                if let GKind::ThisStore { obj, field, .. } = s.kind
+                    && let Some(&c) = this_of.get(&obj)
+                {
+                    stored[c as usize].insert(field);
+                }
                 let (GKind::ThisLoad {
                     obj, field, var, ..
                 }
@@ -1482,6 +1503,7 @@ impl Program {
                 }
             }
             self.class_fields = fields;
+            self.stored_fields = stored;
             self.this_vars = self
                 .classes
                 .iter()
@@ -1547,47 +1569,57 @@ impl Program {
         }
     }
 
-    /// The project's extension methods named `name` whose first parameter can be `recv`.
+    /// The project's extension methods named `name` whose first parameter can be `recv`: the
+    /// most specific ones, as overload resolution would pick (a first parameter typed with the
+    /// receiver's type over one typed `object` or not known).
     fn extension_targets(&self, recv: VarId, name: Sym) -> Vec<FuncId> {
         let Some(cands) = self.extensions.get(&name) else {
             return Vec::new();
         };
         let provs = &self.prov[recv as usize];
-        cands
+        let names_type = |annot: &str| {
+            provs.iter().any(|p| match p {
+                Prov::Api(s) | Prov::Unresolved(s) => {
+                    let path = self.syms.str(*s);
+                    path.trim_end_matches("()").rsplit('.').next() == Some(annot)
+                }
+                Prov::Instance(c) | Prov::Class(c) => self.lineage(*c).iter().any(|&k| {
+                    let class = &self.classes[k as usize];
+                    class.name == annot
+                        || class.implements.iter().chain(&class.bases).any(|&b| {
+                            self.prov[b as usize].iter().any(|bp| match bp {
+                                Prov::Api(s) => self.syms.str(*s).rsplit('.').next() == Some(annot),
+                                Prov::Class(x) => self.classes[*x as usize].name == annot,
+                                _ => false,
+                            })
+                        })
+                }),
+                _ => false,
+            })
+        };
+        let scored: Vec<(u8, FuncId)> = cands
             .iter()
             .copied()
-            .filter(|&f| {
-                let Some(annot) = self.funcs[f as usize]
+            .filter_map(|f| {
+                let annot = self.funcs[f as usize]
                     .params
                     .first()
-                    .and_then(|q| q.annot.as_deref())
-                else {
-                    return true;
-                };
-                if provs.is_empty() || matches!(annot, "Object" | "object") {
-                    return true;
+                    .and_then(|q| q.annot.as_deref());
+                match annot {
+                    None | Some("Object" | "object") => Some((1, f)),
+                    // Of what the receiver is nothing is known: an overload for any object
+                    // applies, one for a particular type only if no general one exists.
+                    Some(_) if provs.is_empty() => Some((0, f)),
+                    Some(a) if names_type(a) => Some((2, f)),
+                    Some(_) => None,
                 }
-                provs.iter().any(|p| match p {
-                    Prov::Api(s) | Prov::Unresolved(s) => {
-                        let path = self.syms.str(*s).trim_end_matches("()");
-                        path.rsplit('.').next() == Some(annot)
-                    }
-                    Prov::Instance(c) | Prov::Class(c) => self.lineage(*c).iter().any(|&k| {
-                        let class = &self.classes[k as usize];
-                        class.name == annot
-                            || class.implements.iter().chain(&class.bases).any(|&b| {
-                                self.prov[b as usize].iter().any(|bp| match bp {
-                                    Prov::Api(s) => {
-                                        self.syms.str(*s).rsplit('.').next() == Some(annot)
-                                    }
-                                    Prov::Class(x) => self.classes[*x as usize].name == annot,
-                                    _ => false,
-                                })
-                            })
-                    }),
-                    _ => false,
-                })
             })
+            .collect();
+        let best = scored.iter().map(|(s, _)| *s).max().unwrap_or(0);
+        scored
+            .into_iter()
+            .filter(|(s, _)| *s == best)
+            .map(|(_, f)| f)
             .collect()
     }
 
@@ -2011,9 +2043,13 @@ impl Program {
                 }
             }
             for (label, f) in funcs {
+                let typed = self
+                    .traits(self.funcs[f as usize].file)
+                    .declared_types_authoritative;
                 let params: Vec<VarId> = self.funcs[f as usize]
                     .params
                     .iter()
+                    .filter(|q| !(typed && q.annot.is_some()))
                     .map(|q| q.var)
                     .collect();
                 for (j, var) in params.into_iter().enumerate() {

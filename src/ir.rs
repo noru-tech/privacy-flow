@@ -55,6 +55,9 @@ pub struct LangTraits {
     /// Classes are closed: a member a class declared entirely in source does not have is a
     /// member of the language's root object (`ToString`), not one added at run time.
     pub closed_local_classes: bool,
+    /// A parameter's declared type says what it is: a function handed to a library does not also
+    /// get "what the library passes" as provenance for its typed parameters.
+    pub declared_types_authoritative: bool,
 }
 
 const JS_TRAITS: LangTraits = LangTraits {
@@ -65,6 +68,7 @@ const JS_TRAITS: LangTraits = LangTraits {
     packages: false,
     bare_paths_are_runtime_globals: true,
     closed_local_classes: false,
+    declared_types_authoritative: false,
 };
 
 const PY_TRAITS: LangTraits = LangTraits {
@@ -75,6 +79,7 @@ const PY_TRAITS: LangTraits = LangTraits {
     packages: true,
     bare_paths_are_runtime_globals: false,
     closed_local_classes: false,
+    declared_types_authoritative: false,
 };
 
 const CS_TRAITS: LangTraits = LangTraits {
@@ -85,6 +90,7 @@ const CS_TRAITS: LangTraits = LangTraits {
     packages: false,
     bare_paths_are_runtime_globals: false,
     closed_local_classes: true,
+    declared_types_authoritative: true,
 };
 
 impl Lang {

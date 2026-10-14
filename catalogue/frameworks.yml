@@ -50,3 +50,19 @@ frameworks:
   - { name: Starlette (direct), language: python, modules: [starlette.applications, starlette.routing], supported: false }
   - { name: GraphQL servers, language: python, modules: [graphene, strawberry, ariadne], supported: false }
   - { name: Slack Bolt, language: python, modules: [slack_bolt], supported: false, note: "Slack event and command handlers receive user input that is not modelled." }
+
+  # C# — supported
+  - { name: ASP.NET Core, language: csharp, modules: [Microsoft.AspNetCore.Builder, Microsoft.AspNetCore.Routing, Microsoft.AspNetCore.Http], supported: true, note: "Minimal API endpoints." }
+  - { name: ASP.NET Core MVC, language: csharp, modules: [Microsoft.AspNetCore.Mvc], supported: true, note: "Controller actions; model binding attributes." }
+  - { name: Blazor, language: csharp, modules: [Microsoft.AspNetCore.Components], supported: true, note: "Components in .razor files: bound form values and supplied parameters." }
+  - { name: gRPC, language: csharp, modules: [Grpc.AspNetCore, Grpc.Core], supported: true, note: "Service overrides taking a ServerCallContext." }
+
+  # C# — not supported
+  - { name: SignalR, language: csharp, modules: [Microsoft.AspNetCore.SignalR], supported: false, types: ["Microsoft.AspNetCore.SignalR.{Hub,Hub`1}"], note: "Hub methods receive client input that is not modelled." }
+  - { name: Azure Functions, language: csharp, modules: [Microsoft.Azure.Functions.Worker, Microsoft.Azure.WebJobs], supported: false, types: ["Microsoft.Azure.Functions.Worker.FunctionAttribute{,()}", "Microsoft.Azure.WebJobs.FunctionNameAttribute{,()}"] }
+  - { name: Orleans, language: csharp, modules: [Orleans], supported: false, types: ["Orleans.Grain{,`1}"] }
+  - { name: Razor Pages, language: csharp, modules: [Microsoft.AspNetCore.Mvc.RazorPages], supported: false, types: ["Microsoft.AspNetCore.Mvc.RazorPages.PageModel"], note: "PageModel handlers (OnGet, OnPost) and .cshtml views are not lowered." }
+  - { name: FastEndpoints, language: csharp, modules: [FastEndpoints], supported: false, types: ["FastEndpoints.{Endpoint,EndpointWithoutRequest}"] }
+  - { name: GraphQL servers, language: csharp, modules: [HotChocolate, GraphQL], supported: false }
+  - { name: CoreWCF, language: csharp, modules: [CoreWCF], supported: false }
+  - { name: ASP.NET (.NET Framework), language: csharp, modules: [System.Web.Mvc, System.Web.Http, System.Web.UI], supported: false }

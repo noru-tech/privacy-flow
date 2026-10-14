@@ -840,3 +840,154 @@ sinks:
       Refit interface methods: Refit implements them as HTTP calls to the base address given to
       `RestService.For` or `AddRefitClient`.
     decorated: ["Refit.{GetAttribute,PostAttribute,PutAttribute,PatchAttribute,DeleteAttribute,HeadAttribute}{,()}"]
+
+  # ------------------------------------------------------------------ C#: error tracking
+  - id: cs.sentry
+    language: csharp
+    class: error_tracking
+    processor: Sentry
+    calls:
+      - "Sentry.SentrySdk.{CaptureException,CaptureMessage,CaptureEvent,CaptureFeedback,CaptureUserFeedback,AddBreadcrumb,SetTag,SetExtra,SetUser}"
+      - "Sentry.SentrySdk.{ConfigureScope,ConfigureScopeAsync}.<cb0>.{SetTag,SetTags,SetExtra,SetExtras,AddBreadcrumb,SetUser}"
+      - "Sentry.{IHub,Hub,Scope,ISentryClient,SentryClient}{,()}**.{CaptureException,CaptureMessage,CaptureEvent,AddBreadcrumb,SetTag,SetTags,SetExtra,SetExtras}"
+    assigns: ["Sentry.**.User", "Sentry.**.User.{Email,Username,IpAddress,Id}"]
+
+  - id: cs.application-insights
+    language: csharp
+    class: error_tracking
+    processor: Azure Application Insights
+    calls:
+      - "Microsoft.ApplicationInsights.TelemetryClient{,()}**.{TrackEvent,TrackTrace,TrackException,TrackMetric,TrackDependency,TrackRequest,TrackPageView,TrackAvailability,Track}"
+    assigns: ["Microsoft.ApplicationInsights.TelemetryClient{,()}.Context.User.{Id,AuthenticatedUserId,AccountId}"]
+
+  # ------------------------------------------------------------------ C#: product analytics
+  - id: cs.segment
+    language: csharp
+    class: analytics
+    processor: Segment
+    calls: ["Segment.{Analytics,Client,IAnalyticsClient}{,()}**.{Identify,Track,Page,Screen,Group,Alias}"]
+
+  - id: cs.mixpanel
+    language: csharp
+    class: analytics
+    processor: Mixpanel
+    calls:
+      - "Mixpanel.{MixpanelClient,IMixpanelClient}{,()}**.{Track,TrackAsync,Alias,AliasAsync,PeopleSet,PeopleSetAsync,PeopleSetOnce,PeopleSetOnceAsync,PeopleAppend,PeopleAppendAsync,PeopleUnion,PeopleUnionAsync,Send,SendAsync}"
+
+  - id: cs.posthog
+    language: csharp
+    class: analytics
+    processor: PostHog
+    calls: ["PostHog.{PostHogClient,IPostHogClient}{,()}**.{Capture,CaptureEvent,Identify,IdentifyAsync,Alias,AliasAsync,GroupIdentify,GroupIdentifyAsync}"]
+
+  # ------------------------------------------------------------------ C#: email and messaging
+  - id: cs.rabbitmq
+    language: csharp
+    class: messaging
+    description: A message broker; the payload leaves the process (consumers may be other systems).
+    calls: ["RabbitMQ.Client.{IModel,IChannel,Model,Channel}{,()}**.{BasicPublish,BasicPublishAsync}"]
+
+  - id: cs.masstransit
+    language: csharp
+    class: messaging
+    calls: ["MassTransit.{IBus,IPublishEndpoint,ISendEndpoint,ISendEndpointProvider,IBusControl,ConsumeContext}{,()}**.{Publish,Send,PublishBatch,SendBatch,RespondAsync}"]
+
+  - id: cs.azure-service-bus
+    language: csharp
+    class: messaging
+    processor: Azure Service Bus
+    calls: ["Azure.Messaging.ServiceBus.{ServiceBusSender,ServiceBusClient}{,()}**.{SendMessageAsync,SendMessagesAsync,ScheduleMessageAsync,ScheduleMessagesAsync}"]
+
+  - id: cs.azure-event-hubs
+    language: csharp
+    class: messaging
+    processor: Azure Event Hubs
+    calls: ["Azure.Messaging.EventHubs.{Producer.EventHubProducerClient,Producer.EventHubBufferedProducerClient}{,()}**.{SendAsync,EnqueueEventAsync,EnqueueEventsAsync}"]
+
+  - id: cs.azure-queues
+    language: csharp
+    class: messaging
+    processor: Azure Storage
+    calls: ["Azure.Storage.Queues.QueueClient{,()}**.{SendMessage,SendMessageAsync,UpdateMessage,UpdateMessageAsync}"]
+
+  - id: cs.kafka
+    language: csharp
+    class: messaging
+    calls: ["Confluent.Kafka.{IProducer,Producer}{,()}**.{Produce,ProduceAsync}"]
+
+  - id: cs.aws-sns
+    language: csharp
+    class: messaging
+    processor: Amazon SNS
+    calls: ["Amazon.SimpleNotificationService.{IAmazonSimpleNotificationService,AmazonSimpleNotificationServiceClient}{,()}**.{PublishAsync,PublishBatchAsync}"]
+
+  - id: cs.aws-sqs
+    language: csharp
+    class: messaging
+    processor: Amazon SQS
+    calls: ["Amazon.SQS.{IAmazonSQS,AmazonSQSClient}{,()}**.{SendMessageAsync,SendMessageBatchAsync}"]
+
+  - id: cs.aws-ses
+    language: csharp
+    class: messaging
+    processor: Amazon SES
+    calls:
+      - "Amazon.SimpleEmail.{IAmazonSimpleEmailService,AmazonSimpleEmailServiceClient}{,()}**.{SendEmailAsync,SendRawEmailAsync,SendTemplatedEmailAsync,SendBulkTemplatedEmailAsync}"
+      - "Amazon.SimpleEmailV2.{IAmazonSimpleEmailServiceV2,AmazonSimpleEmailServiceV2Client}{,()}**.{SendEmailAsync,SendBulkEmailAsync}"
+
+  - id: cs.sendgrid
+    language: csharp
+    class: messaging
+    processor: SendGrid
+    calls: ["SendGrid.{ISendGridClient,SendGridClient,BaseClient}{,()}**.{SendEmailAsync,RequestAsync}"]
+
+  - id: cs.mailkit
+    language: csharp
+    class: messaging
+    description: An SMTP client; the message goes to the mail server and its recipients.
+    calls: ["MailKit.{Net.Smtp.SmtpClient,Net.Smtp.ISmtpClient,IMailTransport,MailTransport}{,()}**.{Send,SendAsync}"]
+
+  - id: cs.smtpclient
+    language: csharp
+    class: messaging
+    calls: ["System.Net.Mail.SmtpClient{,()}**.{Send,SendAsync,SendMailAsync}"]
+
+  - id: cs.twilio
+    language: csharp
+    class: messaging
+    processor: Twilio
+    calls: ["Twilio.Rest.**.{MessageResource,CallResource,VerificationResource}.{Create,CreateAsync}"]
+
+  # ------------------------------------------------------------------ C#: LLM providers
+  - id: cs.microsoft-extensions-ai
+    language: csharp
+    class: llm
+    description: >-
+      Microsoft.Extensions.AI abstractions (`IChatClient`, `IEmbeddingGenerator`); which provider
+      receives the data is decided where the client is registered.
+    calls:
+      - "Microsoft.Extensions.AI.{IChatClient,ChatClient,DelegatingChatClient,IEmbeddingGenerator,EmbeddingGenerator,DelegatingEmbeddingGenerator}{,()}**.{GetResponseAsync,GetStreamingResponseAsync,GetResponse,CompleteAsync,CompleteStreamingAsync,GenerateAsync,GenerateVectorAsync,GenerateEmbeddingAsync,GenerateEmbeddingVectorAsync}"
+      - "**.{AsIChatClient,AsChatClient,AsIEmbeddingGenerator,AsEmbeddingGenerator}().**.{GetResponseAsync,GetStreamingResponseAsync,GenerateAsync,GenerateVectorAsync,GenerateEmbeddingVectorAsync}"
+
+  - id: cs.openai
+    language: csharp
+    class: llm
+    processor: OpenAI
+    calls:
+      - "OpenAI.{OpenAIClient,Chat.ChatClient,Embeddings.EmbeddingClient,Responses.OpenAIResponseClient,Assistants.AssistantClient,Audio.AudioClient,Moderations.ModerationClient}{,()}**.{CompleteChat,CompleteChatAsync,CompleteChatStreaming,CompleteChatStreamingAsync,GenerateEmbedding,GenerateEmbeddingAsync,GenerateEmbeddings,GenerateEmbeddingsAsync,CreateResponse,CreateResponseAsync,CreateResponseStreamingAsync,CreateMessage,CreateMessageAsync,ClassifyText,ClassifyTextAsync}"
+
+  - id: cs.azure-openai
+    language: csharp
+    class: llm
+    processor: Azure OpenAI
+    calls:
+      - "Azure.AI.OpenAI.{AzureOpenAIClient,OpenAIClient}{,()}**.{CompleteChat,CompleteChatAsync,CompleteChatStreaming,CompleteChatStreamingAsync,GenerateEmbedding,GenerateEmbeddingAsync,GetChatCompletions,GetChatCompletionsAsync,GetChatCompletionsStreamingAsync,GetCompletionsAsync,GetEmbeddingsAsync}"
+
+  - id: cs.anthropic
+    language: csharp
+    class: llm
+    processor: Anthropic
+    calls:
+      - "Anthropic.{AnthropicClient,IAnthropicClient}{,()}**.Messages.{Create,CreateStreaming,CountTokens}"
+      - "Anthropic.{AnthropicClient,IAnthropicClient}{,()}**.Messages.Batches.Create"
+      - "Anthropic.SDK.AnthropicClient{,()}**.{GetClaudeMessageAsync,StreamClaudeMessageAsync}"

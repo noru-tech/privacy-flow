@@ -11,4 +11,21 @@
 
 version: "0.1.0"
 
-dispatchers: []
+dispatchers:
+  - id: cs.mediatr.request
+    language: csharp
+    description: MediatR requests reach their handler and every pipeline behavior and processor.
+    calls: ["MediatR.{IMediator,ISender,Mediator}{,()}**.{Send,CreateStream}"]
+    arg: 0
+    targets:
+      - { implements: "MediatR.{IRequestHandler,IStreamRequestHandler}", method: Handle, param: 0, type_arg: 0 }
+      - { implements: "MediatR.{IPipelineBehavior,IStreamPipelineBehavior}", method: Handle, param: 0, type_arg: 0 }
+      - { implements: "MediatR.Pipeline.{IRequestPreProcessor,IRequestPostProcessor}", method: Process, param: 0, type_arg: 0 }
+
+  - id: cs.mediatr.notification
+    language: csharp
+    description: MediatR notifications reach every handler of their type.
+    calls: ["MediatR.{IMediator,IPublisher,Mediator}{,()}**.Publish"]
+    arg: 0
+    targets:
+      - { implements: "MediatR.INotificationHandler", method: Handle, param: 0, type_arg: 0 }

@@ -107,6 +107,8 @@ pub struct CsIndex {
     /// it may know.
     open: BTreeSet<String>,
     projects: BTreeMap<String, ProjectUsings>,
+    /// The context each Razor component was generated with.
+    razor: BTreeMap<String, crate::lower::razor::RazorCtx>,
 }
 
 /// Expand `{a,b}` alternations (nested ones too).
@@ -381,6 +383,15 @@ impl CsIndex {
         ix
     }
 
+    /// Record the context a Razor component's C# was generated with, for its lowering.
+    pub fn set_razor_ctx(&mut self, path: &str, ctx: crate::lower::razor::RazorCtx) {
+        self.razor.insert(path.to_string(), ctx);
+    }
+
+    pub fn razor_ctx(&self, path: &str) -> crate::lower::razor::RazorCtx {
+        self.razor.get(path).cloned().unwrap_or_default()
+    }
+
     pub fn file_project(&self, path: &str) -> Option<&str> {
         self.files.get(path).map(|f| f.project.as_str())
     }
@@ -418,12 +429,12 @@ impl CsIndex {
         out
     }
 
-    /// How well the catalogue knows the external name `fqn`: `None` when it does not, higher
-    /// when it spells the name (or a member of it) than when only a wildcard covers it, and
-    /// higher for a nearer wildcard namespace.
-    fn plausible(&self, fqn: &str) -> Option<usize> {
+    /// How well the catalogue knows the external name `fqn`: `None` when it does not; 3 when
+    /// it spells the name (or a member of it); 2 when the name's namespace is one it covers
+    /// with a wildcard; 1 when an enclosing namespace is.
+    fn plausible(&self, fqn: &str) -> Option<u8> {
         if self.known.contains(fqn) {
-            return Some(usize::MAX);
+            return Some(3);
         }
         let dotted = format!("{fqn}.");
         if self
@@ -432,13 +443,15 @@ impl CsIndex {
             .next()
             .is_some_and(|k| k.starts_with(&dotted))
         {
-            return Some(usize::MAX);
+            return Some(3);
         }
         let mut ns = fqn;
+        let mut first = true;
         while let Some((a, _)) = ns.rsplit_once('.') {
             if self.open.contains(a) {
-                return Some(a.len());
+                return Some(if first { 2 } else { 1 });
             }
+            first = false;
             ns = a;
         }
         None
@@ -446,7 +459,7 @@ impl CsIndex {
 
     /// Whether the catalogue spells the external name `fqn` (or a member of it).
     pub fn is_spelled(&self, fqn: &str) -> bool {
-        self.plausible(fqn) == Some(usize::MAX)
+        self.plausible(fqn) == Some(3)
     }
 
     /// Whether `name` is an external namespace root the catalogue names (`System`).
@@ -561,6 +574,8 @@ impl CsIndex {
             }
         }
         // Namespace levels, innermost first; each declaration's own usings apply at its level.
+        // A name only a catalogue wildcard covers is a guess: an outer level may still know it.
+        let mut guess: Option<Res> = None;
         let mut s = Some(scope).filter(|&i| i > 0);
         while let Some(i) = s {
             let sc = &f.scan.scopes[i];
@@ -578,8 +593,12 @@ impl CsIndex {
                 }
                 if first {
                     let usings: Vec<&Using> = sc.usings.iter().collect();
-                    if let Some(r) = self.via_usings(&usings, &[], name, arity, project) {
-                        return r;
+                    match self.via_usings(&usings, name, arity, project) {
+                        Some((r, true)) => return r,
+                        Some((r, false)) => {
+                            guess.get_or_insert(r);
+                        }
+                        None => {}
                     }
                 }
                 first = false;
@@ -604,33 +623,35 @@ impl CsIndex {
             .chain(namespaces.into_iter().map(Using::Namespace))
             .collect();
         let refs: Vec<&Using> = usings.iter().collect();
-        if let Some(r) = self.via_usings(&refs, &[], name, arity, project) {
-            return r;
+        match self.via_usings(&refs, name, arity, project) {
+            Some((r, true)) => r,
+            Some((r, false)) => guess.unwrap_or(r),
+            None => guess.unwrap_or(Res::Unknown),
         }
-        Res::Unknown
     }
 
+    /// A name through a level's `using` directives, and whether the answer is definite (a
+    /// project type, an alias, a name the catalogue spells) rather than a wildcard's guess.
     fn via_usings(
         &self,
         usings: &[&Using],
-        _statics: &[String],
         name: &str,
         arity: Option<usize>,
         project: &str,
-    ) -> Option<Res> {
+    ) -> Option<(Res, bool)> {
         for u in usings {
             if let Using::Alias(a, t) = u
                 && a == name
             {
-                return Some(self.resolve_absolute(t, project));
+                return Some((self.resolve_absolute(t, project), true));
             }
         }
-        let mut externals: Vec<(usize, String)> = Vec::new();
+        let mut externals: Vec<(u8, String)> = Vec::new();
         for u in usings {
             if let Using::Namespace(ns) = u {
                 let fqn = format!("{ns}.{name}");
                 if let Some(id) = self.project_type(&fqn, arity, project) {
-                    return Some(Res::Project(id));
+                    return Some((Res::Project(id), true));
                 }
                 if let Some(score) = self.plausible(&fqn)
                     && !externals.iter().any(|(_, x)| *x == fqn)
@@ -639,16 +660,21 @@ impl CsIndex {
                 }
             }
         }
-        // Only the best-known candidates: a name the catalogue spells over one a wildcard
-        // covers, a nearer wildcard over a farther one.
+        // A name the catalogue spells beats one a wildcard covers. Several spelled ones are all
+        // kept (the compiler rejects a real ambiguity, so one is right and the catalogue
+        // matches it); of wildcard ones only the first in using order is (the file's own
+        // usings, then the project's, then the SDK's implicit ones), since a wildcard says
+        // nothing of which namespace a name the catalogue does not know is in.
         let best = externals.iter().map(|(s, _)| *s).max()?;
-        Some(Res::External(
-            externals
-                .into_iter()
-                .filter(|(s, _)| *s == best)
-                .map(|(_, n)| n)
-                .collect(),
-        ))
+        let mut out: Vec<String> = externals
+            .into_iter()
+            .filter(|(s, _)| *s == best)
+            .map(|(_, n)| n)
+            .collect();
+        if best < 3 {
+            out.truncate(1);
+        }
+        Some((Res::External(out), best == 3))
     }
 
     /// A fully qualified name (an alias target, `global::A.B`).
