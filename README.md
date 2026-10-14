@@ -55,7 +55,7 @@ checksum file next to it (`<archive>.sha256`; `sha256.sum` lists all of them). C
 you unpack:
 
 ```bash
-VERSION=v0.3.0
+VERSION=v0.3.1
 ARCHIVE=privacy-flow-aarch64-apple-darwin.tar.xz
 gh release download "$VERSION" --repo noru-tech/privacy-flow \
   --pattern "$ARCHIVE" --pattern "$ARCHIVE.sha256"
@@ -115,7 +115,7 @@ jobs:
     steps:
       - uses: actions/checkout@v5
         with: { fetch-depth: 0 }
-      - uses: noru-tech/privacy-flow@v0.3.0
+      - uses: noru-tech/privacy-flow@v0.3.1
 ```
 
 <a id="what-it-does"></a>
