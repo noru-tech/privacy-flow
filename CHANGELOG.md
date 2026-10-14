@@ -6,6 +6,8 @@ All notable changes to this project are documented here. The format is based on
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-10-14
+
 C# is the third language: ASP.NET Core services, Blazor components and the libraries around
 them, analysed the same way as TypeScript and Python, offline. TypeScript and Python output is
 unchanged apart from the catalogue digest.
@@ -195,7 +197,8 @@ No change to the analysis: for the same input, 0.1.1 reports the same flows, fin
   criterion benchmarks, a CI performance budget, and a release pipeline with artifact
   attestations, checksums and an SBOM.
 
-[Unreleased]: https://github.com/noru-tech/privacy-flow/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/noru-tech/privacy-flow/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/noru-tech/privacy-flow/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/noru-tech/privacy-flow/compare/v0.1.1...v0.2.0
 [0.1.1]: https://github.com/noru-tech/privacy-flow/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/noru-tech/privacy-flow/releases/tag/v0.1.0
