@@ -31,7 +31,67 @@ pub enum Lang {
     Javascript,
     Typescript,
     Python,
+    #[serde(rename = "csharp")]
+    CSharp,
 }
+
+/// What the analysis outside the lowering needs to know about a language: how its API paths
+/// are spelled and what its module system looks like. Everything else stays in its lowering.
+#[derive(Clone, Copy, Debug)]
+pub struct LangTraits {
+    /// API paths are dotted from the module on (`logging.getLogger`, `System.Console.WriteLine`)
+    /// rather than `module:member` (`pino:().info`).
+    pub dotted_api_paths: bool,
+    /// The separator inside a module name (`@sentry/node`, `aiohttp.web`).
+    pub module_sep: char,
+    /// What a free name resolves to (`builtins.print`); empty for a bare name.
+    pub global_prefix: &'static str,
+    /// Modules have a default export (`import x from 'm'`, `module.exports = ...`).
+    pub default_exports: bool,
+    /// Directories are packages: star imports, `__init__` and submodules (Python).
+    pub packages: bool,
+    /// An API path with no module is a run-time global of the program's own (JavaScript).
+    pub bare_paths_are_runtime_globals: bool,
+    /// Classes are closed: a member a class declared entirely in source does not have is a
+    /// member of the language's root object (`ToString`), not one added at run time.
+    pub closed_local_classes: bool,
+    /// A parameter's declared type says what it is: a function handed to a library does not also
+    /// get "what the library passes" as provenance for its typed parameters.
+    pub declared_types_authoritative: bool,
+}
+
+const JS_TRAITS: LangTraits = LangTraits {
+    dotted_api_paths: false,
+    module_sep: '/',
+    global_prefix: "",
+    default_exports: true,
+    packages: false,
+    bare_paths_are_runtime_globals: true,
+    closed_local_classes: false,
+    declared_types_authoritative: false,
+};
+
+const PY_TRAITS: LangTraits = LangTraits {
+    dotted_api_paths: true,
+    module_sep: '.',
+    global_prefix: "builtins.",
+    default_exports: false,
+    packages: true,
+    bare_paths_are_runtime_globals: false,
+    closed_local_classes: false,
+    declared_types_authoritative: false,
+};
+
+const CS_TRAITS: LangTraits = LangTraits {
+    dotted_api_paths: true,
+    module_sep: '.',
+    global_prefix: "",
+    default_exports: false,
+    packages: false,
+    bare_paths_are_runtime_globals: false,
+    closed_local_classes: true,
+    declared_types_authoritative: true,
+};
 
 impl Lang {
     pub fn name(self) -> &'static str {
@@ -39,6 +99,7 @@ impl Lang {
             Lang::Javascript => "javascript",
             Lang::Typescript => "typescript",
             Lang::Python => "python",
+            Lang::CSharp => "csharp",
         }
     }
 
@@ -47,6 +108,24 @@ impl Lang {
         match self {
             Lang::Javascript | Lang::Typescript => "javascript",
             Lang::Python => "python",
+            Lang::CSharp => "csharp",
+        }
+    }
+
+    pub fn traits(self) -> &'static LangTraits {
+        match self {
+            Lang::Javascript | Lang::Typescript => &JS_TRAITS,
+            Lang::Python => &PY_TRAITS,
+            Lang::CSharp => &CS_TRAITS,
+        }
+    }
+
+    /// The traits of a catalogue language (a [`Lang::family`]).
+    pub fn family_traits(family: &str) -> &'static LangTraits {
+        match family {
+            "python" => &PY_TRAITS,
+            "csharp" => &CS_TRAITS,
+            _ => &JS_TRAITS,
         }
     }
 }
@@ -83,6 +162,9 @@ pub struct Param {
     /// `**kwargs`: collects every unmatched keyword argument.
     pub kwrest: bool,
     pub annot: Option<String>,
+    /// Attributes on the parameter (C# `[FromBody]`), lowered into variables of the enclosing
+    /// function, like decorators.
+    pub attrs: Vec<Var>,
 }
 
 #[derive(Clone, Debug)]
@@ -108,6 +190,16 @@ pub struct FuncIr {
     pub pos: Pos,
     /// True for the synthetic function holding a file's top-level statements.
     pub is_module: bool,
+    /// A constructor: `new C()` (or Python's `C()`) runs it (JavaScript `constructor`, Python
+    /// `__init__`, a C# constructor or primary constructor).
+    pub is_ctor: bool,
+    /// A C# extension method: `x.M(a)` calls it with `x` as its first parameter.
+    pub is_extension: bool,
+    /// Declared without a body in source (abstract, interface or `extern` methods, and C#
+    /// `partial` methods a source generator implements): a call reaches a declaration only.
+    pub is_stub: bool,
+    /// Modifiers as written (`public`, `static`, `override`, `partial`).
+    pub modifiers: Vec<String>,
 }
 
 #[derive(Clone, Debug)]
@@ -130,6 +222,25 @@ pub struct ClassIr {
     /// A TypeScript interface: a type with no members of its own.
     pub is_interface: bool,
     pub pos: Pos,
+    /// Attributes on the class (C# `[ApiController]`), lowered like decorators.
+    pub decorators: Vec<Var>,
+    /// The namespace-qualified name (C# `eShop.Ordering.API.OrdersApi`), when the language has
+    /// one.
+    pub qualified_name: Option<String>,
+    /// Generic type parameters (`TRequest`).
+    pub type_params: Vec<String>,
+    /// The type arguments of each base in `bases` (`IRequestHandler<CreateOrderCommand, bool>`),
+    /// as type expressions lowered into variables; parallel to `bases`.
+    pub base_args: Vec<Vec<Var>>,
+    /// The type arguments of each interface in `implements`; parallel to `implements`.
+    pub implements_args: Vec<Vec<Var>>,
+    /// The own instances of further constructors (C# overloads): each returns its own.
+    pub more_ctor_this: Vec<Var>,
+    /// For a part of a C# `partial` type: the key every part of the type shares, so the program
+    /// merges them into one class.
+    pub partial_key: Option<String>,
+    /// Attributes on fields and properties (C# `[Parameter]`), by member name.
+    pub field_attrs: Vec<(String, Vec<Var>)>,
 }
 
 #[derive(Clone, Debug)]

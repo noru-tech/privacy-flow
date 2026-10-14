@@ -126,12 +126,26 @@ Field names that are not personal data in this codebase, overriding the table. T
 table marks *maybe* personal (`payload`, `title`, `name`), whose findings are otherwise reported at
 `info` for review.
 
-## `sources`, `sinks`, `sanitisers`, `propagators`
+## `sources`, `sinks`, `sanitisers`, `propagators`, `dispatchers`
 
 Catalogue entries with the same shape as the built-in [`catalogue/`](../catalogue/) files, plus a
 required `citation`; [the catalogue reference](catalogue.md) explains every field. IDs must not
 clash with built-in ones. Config entries are listed as `[config]` by `piiflow rules --config
 .privacy-flow.yml`.
+
+A C# project with its own in-process bus declares it as a dispatcher, so that what it publishes
+reaches the handlers ([ADR 0017](adr/0017-dispatch.md)):
+
+```yaml
+dispatchers:
+  - id: shop.events
+    language: csharp
+    calls: ["Shop.Events.InProcessBus.Publish"]      # the bus's own method, by qualified name
+    arg: 0
+    targets:
+      - { implements: "Shop.Events.IEventHandler", method: Handle, param: 0, type_arg: 0 }
+    citation: "src/Events/InProcessBus.cs: handlers run in-process"
+```
 
 A sanitiser's `functions` names local functions as `path/to/file:functionName` (globs allowed in
 both halves); a call to one replaces its arguments' categories with nothing for the categories it

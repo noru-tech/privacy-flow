@@ -1121,7 +1121,7 @@ fn doctor(a: DoctorArgs) -> Outcome {
         );
     }
     if doc.subject.languages.is_empty() {
-        out.push_str("  (no TypeScript, JavaScript or Python files after exclusions)\n");
+        out.push_str("  (no TypeScript, JavaScript, Python or C# files after exclusions)\n");
     }
     let cat = Catalogue::load(&loaded.config.extensions()).map_err(invalid)?;
     out.push_str("frameworks (from imports):\n");

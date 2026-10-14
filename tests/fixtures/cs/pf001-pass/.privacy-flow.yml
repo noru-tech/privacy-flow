@@ -1,0 +1,7 @@
+version: 1
+sanitisers:
+  - id: shop.mask
+    language: csharp
+    functions: ["Accounts/Privacy.cs:Mask"]
+    removes: ["*"]
+    citation: "Reviewed in SEC-142"

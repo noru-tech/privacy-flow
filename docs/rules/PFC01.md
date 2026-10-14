@@ -7,7 +7,7 @@
 | Rule ID | `PFC01` |
 | Default severity | `warning` (warning (SARIF)) |
 | Fails the default policy (`fail_on: medium`) | never as a pass: an open gap makes `check` exit 4 |
-| Fixtures | [`tests/fixtures/ts/pfc01-fail`](../../tests/fixtures/ts/pfc01-fail) (fails), [`tests/fixtures/ts/pfc01-pass`](../../tests/fixtures/ts/pfc01-pass) (passes), and the Python equivalents |
+| Fixtures | [`tests/fixtures/ts/pfc01-fail`](../../tests/fixtures/ts/pfc01-fail) (fails), [`tests/fixtures/ts/pfc01-pass`](../../tests/fixtures/ts/pfc01-pass) (passes), the Python equivalents, and [`tests/fixtures/cs/pfc01-fail`](../../tests/fixtures/cs/pfc01-fail) and [`-pass`](../../tests/fixtures/cs/pfc01-pass) for C# |
 
 ## Why it matters
 

@@ -6,6 +6,56 @@ All notable changes to this project are documented here. The format is based on
 
 ## [Unreleased]
 
+C# is the third language: ASP.NET Core services, Blazor components and the libraries around
+them, analysed the same way as TypeScript and Python, offline. TypeScript and Python output is
+unchanged apart from the catalogue digest.
+
+### Added
+- C# (`.cs`) and Blazor components (`.razor`), ADR 0016. Names resolve against the whole
+  project: namespaces, `using` directives (global, static, aliases, `<Using>` items in the
+  project file and the SDK's implicit usings from `ImplicitUsings`), nested and partial types,
+  members inherited from base classes in other files, primary constructors, records,
+  properties, attributes, extension methods, overloads, `out`/`ref`, patterns, LINQ query
+  syntax and exceptions. External types are qualified by the namespaces the catalogue spells.
+  Razor components are translated into C# with positions kept in the component.
+- C# sources: ASP.NET Core minimal API handlers (services, `[FromServices]`, DbContexts, the
+  request context and interfaces are injected; `[AsParameters]` binds each property;
+  `[FromBody]` and friends are input), MVC controller actions, gRPC service methods,
+  `HttpRequest` reads, the remote IP, claims (classified by the claim type: `sub` is a
+  pseudonymous identifier), and Blazor `@bind`, `[SupplyParameterFromForm]`,
+  `[SupplyParameterFromQuery]` and routable `[Parameter]`s.
+- C# sinks: Microsoft.Extensions.Logging (including `[LoggerMessage]` methods), the console,
+  `Debug`/`Trace`, Serilog, NLog, log4net, OpenTelemetry activity tags, Duende IdentityServer
+  events, `HttpClient` (with the host of a request message), RestSharp, Refit, Sentry,
+  Application Insights, Segment, Mixpanel, PostHog, RabbitMQ, MassTransit, Azure Service Bus,
+  Event Hubs and Queues, Kafka, Amazon SNS, SQS and SES, SendGrid, MailKit, `SmtpClient`,
+  Twilio, Microsoft.Extensions.AI, OpenAI, Azure OpenAI and Anthropic. Sanitisers for password
+  hashing and predicates; propagators for the base class library, LINQ, `StringBuilder`,
+  message builders, databases (EF Core, ASP.NET Identity, Redis, Dapper …) and framework
+  plumbing.
+- Dispatchers (ADR 0017, `catalogue/dispatchers.yml`): MediatR's `Send` and `Publish` reach the
+  project's request and notification handlers and pipeline behaviors for the value's type. A
+  project can declare its own bus under `dispatchers` in `.privacy-flow.yml`.
+- Frameworks reported as unsupported for C#: SignalR, Azure Functions, Orleans, Razor Pages,
+  FastEndpoints, HotChocolate and GraphQL.NET, CoreWCF, ASP.NET on .NET Framework; `.cshtml`
+  files are an `unsupported_language` gap. A C# class uses a framework when it extends one of
+  its types or carries its attribute.
+- Catalogue fields: `decorated` sinks, `host.built_arg` and `host.wrappers`, `bases`,
+  `class_decorators`, `members` and `has_param_type` for handlers, `kind: property` sources,
+  `arg_category` for reads, `skip_bases`, `skip_interfaces`, `skip_attrs`, `expand_attrs`,
+  `classify_only_types` and `by_attr` for parameters, flows `fluent` and `callback_result`,
+  framework `types`, and per-language `value_methods`, `accessor_fields` and `metadata_types`.
+  `skip_types` takes globs.
+- Fixtures `cs/*` for every rule and the C# features; conformance vectors `cs-*`; a `dispatch`
+  break in the conformance CI job; fuzz inputs for C#, Razor and project files; a C# variant of
+  the synthetic benchmark in the performance budget; and a smoke test on dotnet/eShop at a
+  pinned commit (`.github/scripts/smoke_eshop.py`, `tests/smoke/eshop.expected.json`), run in CI
+  on changes to the analysis or the catalogue.
+
+### Changed
+- Language-specific branches outside the lowerings are a table (`LangTraits`); constructors are
+  found by a flag rather than by name.
+
 ## [0.2.0] - 2026-10-03
 
 What `piiflow` sees grows: email, messaging and push SDKs, inheritance and interfaces, exceptions,

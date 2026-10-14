@@ -46,6 +46,28 @@ impl Glob {
     }
 }
 
+thread_local! {
+    static API_CACHE: std::cell::RefCell<std::collections::HashMap<String, Option<Glob>>> =
+        std::cell::RefCell::new(std::collections::HashMap::new());
+}
+
+/// Whether `s` matches any of the API patterns, which are compiled once per thread. A pattern
+/// that does not compile matches nothing (the catalogue validates its own when it loads).
+pub fn api_matches_any(patterns: &[String], s: &str) -> bool {
+    patterns.iter().any(|p| {
+        if !p.contains(['*', '{']) {
+            return p == s;
+        }
+        API_CACHE.with(|c| {
+            c.borrow_mut()
+                .entry(p.clone())
+                .or_insert_with(|| Glob::api(p).ok())
+                .as_ref()
+                .is_some_and(|g| g.is_match(s))
+        })
+    })
+}
+
 fn translate(
     chars: &[char],
     i: &mut usize,

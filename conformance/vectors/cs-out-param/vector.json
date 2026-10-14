@@ -1,0 +1,5 @@
+{
+  "description": "An out argument receives what the callee assigns it, the method's bool result does not; the analysis passes out values through the result, so it reports the result.",
+  "language": "csharp",
+  "status": "known-limitation"
+}

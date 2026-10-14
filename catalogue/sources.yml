@@ -135,3 +135,200 @@ sources:
           headers: unknown
           data: unknown
           query_params: unknown
+
+  # ------------------------------------------------------------------ C#
+  - id: cs.aspnetcore.minimal-api
+    language: csharp
+    kind: handler
+    framework: ASP.NET Core
+    description: >-
+      Minimal API endpoints (`app.MapPost("/orders", handler)`): the handler's parameters are
+      bound from the request, except services, the request context and cancellation tokens.
+      `[AsParameters]` binds each property of a parameter's type on its own.
+    registrations:
+      - "Microsoft.AspNetCore.{Builder.WebApplication,Routing.IEndpointRouteBuilder,Routing.RouteGroupBuilder,Builder.IEndpointConventionBuilder}{,()}**.{MapGet,MapPost,MapPut,MapDelete,MapPatch,MapMethods,MapFallback}"
+    params:
+      - all: true
+        whole: unknown
+        typed: true
+        by_name: true
+        skip_types:
+          - "System.Threading.CancellationToken"
+          - "System.Security.Claims.ClaimsPrincipal"
+          - "Microsoft.AspNetCore.Http.{HttpContext,HttpRequest,HttpResponse,IFormFile,IFormFileCollection}"
+          - "Microsoft.Extensions.**"
+          - "Microsoft.EntityFrameworkCore.**"
+          - "Microsoft.AspNetCore.{Identity,Hosting,Antiforgery,Authentication,Authorization,Components,Mvc,Routing,DataProtection}.**"
+          - "MediatR.**"
+          - "System.Net.Http.{HttpClient,IHttpClientFactory}"
+          - "{CancellationToken,ClaimsPrincipal,HttpContext,HttpRequest,HttpResponse,ILogger,ILoggerFactory,IMediator,ISender,IPublisher,IConfiguration,IServiceProvider,IHttpClientFactory,HttpClient,IAntiforgery,IWebHostEnvironment,IHostEnvironment,LinkGenerator,IOptions,IMemoryCache,IDistributedCache,IFormFile,IFormFileCollection,Stream,PipeReader,IMapper,IValidator}"
+        classify_only_types: ["{Guid,Int16,Int32,Int64,UInt16,UInt32,UInt64,Byte,SByte,Boolean,Decimal,Double,Single,DateTime,DateTimeOffset,DateOnly,TimeOnly,TimeSpan}"]
+        skip_bases: ["Microsoft.EntityFrameworkCore.DbContext", "Microsoft.AspNetCore.Identity.EntityFrameworkCore.IdentityDbContext"]
+        skip_interfaces: true
+        skip_attrs: ["Microsoft.AspNetCore.Mvc.FromServicesAttribute{,()}", "Microsoft.Extensions.DependencyInjection.FromKeyedServicesAttribute{,()}"]
+        expand_attrs: ["Microsoft.AspNetCore.Http.AsParametersAttribute{,()}"]
+        by_attr:
+          "Microsoft.AspNetCore.Mvc.{FromBodyAttribute,FromQueryAttribute,FromRouteAttribute,FromHeaderAttribute,FromFormAttribute}{,()}":
+            whole: unknown
+            typed: true
+            by_name: true
+            classify_only_types: ["{Guid,Int16,Int32,Int64,UInt16,UInt32,UInt64,Byte,SByte,Boolean,Decimal,Double,Single,DateTime,DateTimeOffset,DateOnly,TimeOnly,TimeSpan}"]
+
+  - id: cs.aspnetcore.mvc
+    language: csharp
+    kind: handler
+    framework: ASP.NET Core MVC
+    description: >-
+      Controller actions: the public methods of classes that extend `Controller` or
+      `ControllerBase` (or carry `[ApiController]`). Their parameters are bound from the request
+      as minimal API handlers' are.
+    bases: ["Microsoft.AspNetCore.Mvc.{Controller,ControllerBase}"]
+    class_decorators: ["Microsoft.AspNetCore.Mvc.{ApiControllerAttribute,ControllerAttribute}{,()}"]
+    members:
+      require: [public]
+      exclude: [static, abstract, constructor, override]
+      exclude_decorators: ["Microsoft.AspNetCore.Mvc.NonActionAttribute{,()}"]
+    params:
+      - all: true
+        whole: unknown
+        typed: true
+        by_name: true
+        skip_types:
+          - "System.Threading.CancellationToken"
+          - "System.Security.Claims.ClaimsPrincipal"
+          - "Microsoft.AspNetCore.Http.{HttpContext,HttpRequest,HttpResponse,IFormFile,IFormFileCollection}"
+          - "Microsoft.Extensions.**"
+          - "Microsoft.EntityFrameworkCore.**"
+          - "Microsoft.AspNetCore.{Identity,Hosting,Antiforgery,Authentication,Authorization,Components,Mvc,Routing,DataProtection}.**"
+          - "MediatR.**"
+          - "System.Net.Http.{HttpClient,IHttpClientFactory}"
+          - "{CancellationToken,ClaimsPrincipal,HttpContext,HttpRequest,HttpResponse,ILogger,ILoggerFactory,IMediator,ISender,IPublisher,IConfiguration,IServiceProvider,IHttpClientFactory,HttpClient,IAntiforgery,IWebHostEnvironment,IHostEnvironment,LinkGenerator,IOptions,IMemoryCache,IDistributedCache,IFormFile,IFormFileCollection,Stream,PipeReader,IMapper,IValidator}"
+        classify_only_types: ["{Guid,Int16,Int32,Int64,UInt16,UInt32,UInt64,Byte,SByte,Boolean,Decimal,Double,Single,DateTime,DateTimeOffset,DateOnly,TimeOnly,TimeSpan}"]
+        skip_bases: ["Microsoft.EntityFrameworkCore.DbContext", "Microsoft.AspNetCore.Identity.EntityFrameworkCore.IdentityDbContext"]
+        skip_interfaces: true
+        skip_attrs: ["Microsoft.AspNetCore.Mvc.FromServicesAttribute{,()}", "Microsoft.Extensions.DependencyInjection.FromKeyedServicesAttribute{,()}"]
+        expand_attrs: ["Microsoft.AspNetCore.Http.AsParametersAttribute{,()}"]
+        by_attr:
+          "Microsoft.AspNetCore.Mvc.{FromBodyAttribute,FromQueryAttribute,FromRouteAttribute,FromHeaderAttribute,FromFormAttribute}{,()}":
+            whole: unknown
+            typed: true
+            by_name: true
+            classify_only_types: ["{Guid,Int16,Int32,Int64,UInt16,UInt32,UInt64,Byte,SByte,Boolean,Decimal,Double,Single,DateTime,DateTimeOffset,DateOnly,TimeOnly,TimeSpan}"]
+
+  - id: cs.grpc.service
+    language: csharp
+    kind: handler
+    framework: gRPC
+    description: >-
+      gRPC service methods: overrides of a protoc-generated `*Base` class, which is generated at
+      build time and is not in the repository. They take the request message and a
+      `ServerCallContext`.
+    has_param_type: ["Grpc.Core.ServerCallContext"]
+    members: { require: [override] }
+    params:
+      - all: true
+        whole: unknown
+        typed: true
+        skip_types: ["Grpc.Core.{ServerCallContext,IServerStreamWriter}", "{ServerCallContext,IServerStreamWriter}"]
+
+  - id: cs.aspnetcore.request
+    language: csharp
+    kind: read
+    framework: ASP.NET Core
+    description: The request object's inputs.
+    reads:
+      - "Microsoft.AspNetCore.**.{Request,HttpRequest}.{Query,Form,Headers,Cookies,RouteValues,Body,BodyReader,QueryString,Path}"
+      - "Grpc.Core.ServerCallContext.RequestHeaders"
+    calls:
+      - "Microsoft.AspNetCore.**.{Request,HttpRequest}.{ReadFromJsonAsync,ReadFormAsync}"
+      - "Microsoft.AspNetCore.**.{Request,HttpRequest}.{Query,Form,Headers,Cookies,RouteValues}.{TryGetValue,GetValueOrDefault}"
+    category: unknown
+
+  - id: cs.aspnetcore.remote-ip
+    language: csharp
+    kind: read
+    framework: ASP.NET Core
+    reads: ["Microsoft.AspNetCore.**.Connection.RemoteIpAddress", "Grpc.Core.ServerCallContext.Peer"]
+    category: user.device.ip_address
+
+  - id: cs.claims
+    language: csharp
+    kind: read
+    description: >-
+      The signed-in user's claims. With a literal claim type (or a `ClaimTypes` constant) the
+      value is classified by the type: `sub` is a pseudonymous identifier, `email` an email
+      address.
+    calls:
+      - "System.Security.Claims.{ClaimsPrincipal,ClaimsIdentity}{,()}**.{FindFirst,FindFirstValue,FindAll}"
+      - "{Microsoft.AspNetCore,Grpc}.**.{User,Principal}.{FindFirst,FindFirstValue,FindAll}"
+    reads:
+      - "System.Security.Claims.{ClaimsPrincipal,ClaimsIdentity}{,()}**.Claims"
+      - "{Microsoft.AspNetCore,Grpc}.**.{User,Principal}.Claims"
+    arg_category:
+      index: 0
+      classify: true
+      names:
+        sub: user.unique_id.pseudonymous
+        nameidentifier: user.unique_id.pseudonymous
+        oid: user.unique_id.pseudonymous
+        name: user.name
+        givenname: user.name.first
+        given_name: user.name.first
+        surname: user.name.last
+        family_name: user.name.last
+        preferred_username: user.account.username
+        emailaddress: user.contact.email
+        email: user.contact.email
+        mobilephone: user.contact.phone_number
+        phone_number: user.contact.phone_number
+        address_street: user.contact.address.street
+        address_city: user.contact.address.city
+        address_state: user.contact.address.state
+        address_country: user.contact.address.country
+        address_zip_code: user.contact.address.postal_code
+        streetaddress: user.contact.address.street
+        dateofbirth: user.demographic.date_of_birth
+    category: unknown
+
+  - id: cs.claims.identity-name
+    language: csharp
+    kind: read
+    reads:
+      - "System.Security.Claims.{ClaimsPrincipal,ClaimsIdentity,IIdentity}{,()}**.Name"
+      - "{Microsoft.AspNetCore,Grpc}.**.User.Identity.Name"
+    category: user.account.username
+
+  - id: cs.blazor.bind
+    language: csharp
+    kind: read
+    framework: Blazor
+    description: >-
+      Values a user enters into a component's form (`@bind`, `@bind-Value`): the Razor compiler
+      makes each one a binder that sets the bound variable.
+    calls: ["Microsoft.AspNetCore.Components.EventCallbackFactoryBinderExtensions.CreateBinder"]
+    reads: ["Microsoft.AspNetCore.Components.ChangeEventArgs{,()}.Value"]
+    category: unknown
+
+  - id: cs.blazor.supplied-parameters
+    language: csharp
+    kind: property
+    framework: Blazor
+    description: Component properties a static-rendering form post or the query string sets.
+    decorators: ["Microsoft.AspNetCore.Components.{SupplyParameterFromFormAttribute,SupplyParameterFromQueryAttribute}{,()}"]
+    params: [{ all: true, whole: unknown, typed: true }]
+
+  - id: cs.blazor.route-parameters
+    language: csharp
+    kind: property
+    framework: Blazor
+    description: The `[Parameter]` properties of a routable component (`@page`), set from the URL.
+    decorators: ["Microsoft.AspNetCore.Components.ParameterAttribute{,()}"]
+    class_decorators: ["Microsoft.AspNetCore.Components.RouteAttribute{,()}"]
+    params: [{ all: true, whole: unknown, typed: true }]
+
+  - id: cs.aspnetcore.bind-property
+    language: csharp
+    kind: property
+    framework: ASP.NET Core MVC
+    decorators: ["Microsoft.AspNetCore.Mvc.BindPropertyAttribute{,()}"]
+    params: [{ all: true, whole: unknown, typed: true }]

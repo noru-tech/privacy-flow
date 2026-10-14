@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """Fail on a large performance regression.
 
-Two cases, each scanned with the release binary:
+Three cases, each scanned with the release binary:
 
-- the 100k-line synthetic TypeScript service (benches/synthetic.py), against wall time and
-  peak memory;
+- the 100k-line synthetic TypeScript service (benches/synthetic.py), and its C# counterpart
+  (`--lang cs`), against wall time and peak memory;
 - wide summaries (benches/wide_summaries.py), the shape that made the engine quadratic on
   polarsource/polar, against the engine phase's time (about 0.45 s fixed, 16 s quadratic, on
   an Apple M3 Pro).
@@ -47,29 +47,38 @@ def wide_summaries(binary):
     return None
 
 
-def main():
-    binary = sys.argv[1] if len(sys.argv) > 1 else str(ROOT / "target/release/piiflow")
+def synthetic(binary, lang):
+    """The 100k-line synthetic service in one language; returns False when over budget."""
+    extra = ["--lang", "cs"] if lang == "cs" else []
     with tempfile.TemporaryDirectory() as tmp:
-        subprocess.run([sys.executable, str(ROOT / "benches/synthetic.py"), tmp, "100000"], check=True)
+        subprocess.run([sys.executable, str(ROOT / "benches/synthetic.py"), tmp, "100000", *extra], check=True)
         start = time.monotonic()
         proc = subprocess.run([binary, "scan", tmp, "--walk", "--timings", "-o", os.devnull], capture_output=True, text=True)
         wall = time.monotonic() - start
     if proc.returncode not in (0, 4):
         print(proc.stderr, file=sys.stderr)
-        return 1
+        return False
+    # The peak of every child so far: the largest case decides it.
     peak = resource.getrusage(resource.RUSAGE_CHILDREN).ru_maxrss
     # ru_maxrss is KiB on Linux and bytes on macOS.
     peak_mib = peak / 1024 if sys.platform != "darwin" else peak / (1024 * 1024)
     timings = next((l for l in proc.stderr.splitlines() if l.startswith("timings:")), "")
-    print(f"100k-line synthetic service: {wall:.2f} s wall, {peak_mib:.0f} MiB peak")
+    print(f"100k-line synthetic service ({lang}): {wall:.2f} s wall, {peak_mib:.0f} MiB peak")
     print(timings)
     ok = True
     if wall > BUDGET_SECONDS:
-        print(f"::error::scan took {wall:.2f} s, over the {BUDGET_SECONDS:.0f} s budget", file=sys.stderr)
+        print(f"::error::{lang} scan took {wall:.2f} s, over the {BUDGET_SECONDS:.0f} s budget", file=sys.stderr)
         ok = False
     if peak_mib > BUDGET_MIB:
         print(f"::error::peak memory {peak_mib:.0f} MiB, over the {BUDGET_MIB:.0f} MiB budget", file=sys.stderr)
         ok = False
+    return ok
+
+
+def main():
+    binary = sys.argv[1] if len(sys.argv) > 1 else str(ROOT / "target/release/piiflow")
+    ok = synthetic(binary, "ts")
+    ok = synthetic(binary, "cs") and ok
     error = wide_summaries(binary)
     if error:
         print(f"::error::{error}", file=sys.stderr)

@@ -1,0 +1,10 @@
+@page "/profile/{UserId}"
+
+<ProfileCard Email="@email" />
+
+@code {
+    [Parameter]
+    public string UserId { get; set; } = "";
+
+    private string email = "";
+}

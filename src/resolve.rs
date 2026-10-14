@@ -11,6 +11,10 @@
 //! - **workspaces:** every `package.json` with a `name` makes that name resolve to its
 //!   directory; `exports` (`"."` and `"./*"` patterns, string targets), `module`, `main` and
 //!   `types` name the entry point, falling back to `index`.
+//! - **C# projects:** every `.csproj` applies to the files below its directory (the nearest
+//!   wins), with the `Directory.Build.props` above it: its SDK and `ImplicitUsings` give the
+//!   namespaces every file sees, as do its `<Using>` items. Files a project compiles from
+//!   elsewhere (`<Compile Include="..\Shared\x.cs">`) belong to it too.
 
 use std::collections::BTreeMap;
 
@@ -34,11 +38,92 @@ pub struct Package {
     pub subpaths: Vec<(String, String)>,
 }
 
+/// A `<Using>` item of a C# project.
+#[derive(Clone, Debug, Default, PartialEq)]
+pub struct UsingItem {
+    pub name: String,
+    pub alias: Option<String>,
+    pub is_static: bool,
+    pub remove: bool,
+}
+
+/// A C# project: what its files see without a `using` of their own.
+#[derive(Clone, Debug, Default, PartialEq)]
+pub struct CsProject {
+    /// The `.csproj` path; its directory is the project's.
+    pub path: String,
+    /// `Microsoft.NET.Sdk.Web`, without a version.
+    pub sdk: String,
+    pub implicit_usings: bool,
+    pub usings: Vec<UsingItem>,
+    pub root_namespace: Option<String>,
+}
+
+impl CsProject {
+    /// The namespaces every file of the project imports: the SDK's implicit ones (when
+    /// enabled) and the `<Using>` items, minus the removed ones. Aliases and static usings are
+    /// in [`CsProject::usings`].
+    pub fn namespaces(&self) -> Vec<String> {
+        let mut out: Vec<String> = Vec::new();
+        if self.implicit_usings {
+            out.extend(implicit_usings(&self.sdk).iter().map(|s| s.to_string()));
+        }
+        for u in &self.usings {
+            if !u.remove && u.alias.is_none() && !u.is_static && !out.contains(&u.name) {
+                out.push(u.name.clone());
+            }
+        }
+        out.retain(|n| !self.usings.iter().any(|u| u.remove && &u.name == n));
+        out
+    }
+}
+
+/// The SDK's implicit `global using` namespaces, from the table in the .NET SDK documentation
+/// ("Implicit using directives", <https://learn.microsoft.com/dotnet/core/project-sdk/overview>).
+/// The Razor, Blazor WebAssembly and Aspire SDKs build on `Microsoft.NET.Sdk` and add none.
+pub fn implicit_usings(sdk: &str) -> Vec<&'static str> {
+    const BASE: &[&str] = &[
+        "System",
+        "System.Collections.Generic",
+        "System.IO",
+        "System.Linq",
+        "System.Net.Http",
+        "System.Threading",
+        "System.Threading.Tasks",
+    ];
+    const EXTENSIONS: &[&str] = &[
+        "Microsoft.Extensions.Configuration",
+        "Microsoft.Extensions.DependencyInjection",
+        "Microsoft.Extensions.Hosting",
+        "Microsoft.Extensions.Logging",
+    ];
+    let mut out: Vec<&'static str> = BASE.to_vec();
+    match sdk {
+        "Microsoft.NET.Sdk.Web" => {
+            out.extend([
+                "System.Net.Http.Json",
+                "Microsoft.AspNetCore.Builder",
+                "Microsoft.AspNetCore.Hosting",
+                "Microsoft.AspNetCore.Http",
+                "Microsoft.AspNetCore.Routing",
+            ]);
+            out.extend(EXTENSIONS);
+        }
+        "Microsoft.NET.Sdk.Worker" => out.extend(EXTENSIONS),
+        _ => {}
+    }
+    out
+}
+
 #[derive(Clone, Debug, Default)]
 pub struct Resolver {
     /// tsconfig directory (root-relative, `""` for the root) → aliases.
     pub tsconfigs: BTreeMap<String, Aliases>,
     pub packages: BTreeMap<String, Package>,
+    /// C# project directory → project.
+    pub csprojs: BTreeMap<String, CsProject>,
+    /// Files a C# project compiles from outside its directory → that project's directory.
+    pub cs_links: BTreeMap<String, String>,
 }
 
 fn dir_of(p: &str) -> &str {
@@ -72,9 +157,14 @@ fn is_config(path: &str) -> bool {
     (name.starts_with("tsconfig") && name.ends_with(".json")) || name == "jsconfig.json"
 }
 
-/// The files a resolver needs: every `package.json`, `tsconfig*.json` and `jsconfig.json`.
+/// The files a resolver needs: every `package.json`, `tsconfig*.json` and `jsconfig.json`, and
+/// every `.csproj` and `Directory.Build.props`.
 pub fn wants(path: &str) -> bool {
-    path.rsplit('/').next() == Some("package.json") || is_config(path)
+    let name = path.rsplit('/').next().unwrap_or(path);
+    name == "package.json"
+        || is_config(path)
+        || name.ends_with(".csproj")
+        || name == "Directory.Build.props"
 }
 
 impl Resolver {
@@ -144,7 +234,76 @@ impl Resolver {
             let aliases = r.load_tsconfig(path, &texts, 0);
             r.tsconfigs.insert(dir, aliases);
         }
+        r.load_csprojs(&texts);
         r
+    }
+
+    fn load_csprojs(&mut self, texts: &BTreeMap<&str, &str>) {
+        for (path, text) in texts {
+            if !path.ends_with(".csproj") {
+                continue;
+            }
+            let dir = dir_of(path).to_string();
+            // Two projects in one directory: the first in path order applies to its files.
+            if self.csprojs.contains_key(&dir) {
+                continue;
+            }
+            // `Directory.Build.props` files above the project are imported before it, nearest
+            // last; the project's own settings override theirs.
+            let mut props = Vec::new();
+            let mut d = dir.clone();
+            loop {
+                let candidate = join(&d, "Directory.Build.props");
+                if let Some(t) = texts.get(candidate.as_str()) {
+                    props.push(*t);
+                }
+                if d.is_empty() {
+                    break;
+                }
+                d = dir_of(&d).to_string();
+            }
+            let mut project = CsProject {
+                path: path.to_string(),
+                sdk: "Microsoft.NET.Sdk".into(),
+                ..CsProject::default()
+            };
+            for t in props.iter().rev().chain(std::iter::once(text)) {
+                let t = strip_xml_comments(t);
+                if let Some(sdk) = project_sdk(&t) {
+                    project.sdk = sdk;
+                }
+                if let Some(v) = xml_property(&t, "ImplicitUsings") {
+                    project.implicit_usings = matches!(v.as_str(), "enable" | "true");
+                }
+                if let Some(v) = xml_property(&t, "RootNamespace") {
+                    project.root_namespace = Some(v);
+                }
+                project.usings.extend(using_items(&t));
+                for inc in compile_includes(&t) {
+                    let target = join(&dir, &inc.replace('\\', "/"));
+                    self.cs_links.entry(target).or_insert_with(|| dir.clone());
+                }
+            }
+            self.csprojs.insert(dir, project);
+        }
+    }
+
+    /// The C# project a file belongs to: the nearest `.csproj` above it, or the project that
+    /// compiles it from elsewhere.
+    pub fn csproj_for(&self, file: &str) -> Option<&CsProject> {
+        let mut dir = dir_of(file);
+        loop {
+            if let Some(p) = self.csprojs.get(dir) {
+                return Some(p);
+            }
+            if dir.is_empty() {
+                break;
+            }
+            dir = dir_of(dir);
+        }
+        self.cs_links
+            .get(file)
+            .and_then(|d| self.csprojs.get(d.as_str()))
     }
 
     fn load_tsconfig(&self, path: &str, texts: &BTreeMap<&str, &str>, depth: u32) -> Aliases {
@@ -272,6 +431,79 @@ impl Resolver {
     }
 }
 
+fn strip_xml_comments(t: &str) -> String {
+    let mut out = String::with_capacity(t.len());
+    let mut rest = t;
+    while let Some(i) = rest.find("<!--") {
+        out.push_str(&rest[..i]);
+        match rest[i..].find("-->") {
+            Some(j) => rest = &rest[i + j + 3..],
+            None => return out,
+        }
+    }
+    out.push_str(rest);
+    out
+}
+
+/// The value of an XML attribute in a tag's text: `Include="X"` → `X`.
+fn xml_attr(tag: &str, name: &str) -> Option<String> {
+    let re = regex::Regex::new(&format!(r#"\b{name}\s*=\s*"([^"]*)""#)).ok()?;
+    re.captures(tag).map(|c| c[1].trim().to_string())
+}
+
+/// `<Project Sdk="Microsoft.NET.Sdk.Web">`, `<Sdk Name="..."/>`, without a version: the first
+/// SDK named, which is the one whose implicit usings apply.
+fn project_sdk(t: &str) -> Option<String> {
+    let re = regex::Regex::new(r"<(Project|Sdk)\b[^>]*>").ok()?;
+    for c in re.captures_iter(t) {
+        let tag = c.get(0)?.as_str();
+        let attr = if &c[1] == "Project" { "Sdk" } else { "Name" };
+        if let Some(v) = xml_attr(tag, attr) {
+            let first = v.split(';').next().unwrap_or(&v);
+            return Some(first.split('/').next().unwrap_or(first).trim().to_string());
+        }
+    }
+    None
+}
+
+/// The last value of an MSBuild property: `<ImplicitUsings>enable</ImplicitUsings>`.
+fn xml_property(t: &str, name: &str) -> Option<String> {
+    let re = regex::Regex::new(&format!(r"<{name}(?:\s[^>]*)?>([^<]*)</{name}>")).ok()?;
+    re.captures_iter(t).last().map(|c| c[1].trim().to_string())
+}
+
+fn using_items(t: &str) -> Vec<UsingItem> {
+    let Ok(re) = regex::Regex::new(r"<Using\b[^>]*>") else {
+        return Vec::new();
+    };
+    re.find_iter(t)
+        .filter_map(|m| {
+            let tag = m.as_str();
+            let (name, remove) = match (xml_attr(tag, "Include"), xml_attr(tag, "Remove")) {
+                (Some(n), _) => (n, false),
+                (None, Some(n)) => (n, true),
+                _ => return None,
+            };
+            Some(UsingItem {
+                name,
+                alias: xml_attr(tag, "Alias"),
+                is_static: xml_attr(tag, "Static").is_some_and(|v| v == "true"),
+                remove,
+            })
+        })
+        .collect()
+}
+
+fn compile_includes(t: &str) -> Vec<String> {
+    let Ok(re) = regex::Regex::new(r"<Compile\b[^>]*>") else {
+        return Vec::new();
+    };
+    re.find_iter(t)
+        .filter_map(|m| xml_attr(m.as_str(), "Include"))
+        .filter(|p| !p.contains(['*', '$']))
+        .collect()
+}
+
 fn split_package(spec: &str) -> (&str, &str) {
     let mut idx = spec.find('/');
     if spec.starts_with('@') {
@@ -351,5 +583,54 @@ mod tests {
         );
         assert_eq!(split_package("@a/b/c/d"), ("@a/b", "c/d"));
         assert_eq!(split_package("lodash/fp"), ("lodash", "fp"));
+    }
+
+    #[test]
+    fn csharp_projects() {
+        let r = Resolver::from_files(&files(&[
+            (
+                "Directory.Build.props",
+                "<Project><PropertyGroup><ImplicitUsings>enable</ImplicitUsings></PropertyGroup></Project>",
+            ),
+            (
+                "src/Api/Api.csproj",
+                r#"<Project Sdk="Microsoft.NET.Sdk.Web/9.0.0">
+                  <!-- <Using Include="Commented.Out" /> -->
+                  <PropertyGroup><RootNamespace>Shop.Api</RootNamespace></PropertyGroup>
+                  <ItemGroup>
+                    <Using Include="MediatR" />
+                    <Using Include="System.IO" Remove="System.IO" />
+                    <Using Remove="System.Threading" />
+                    <Using Include="Serilog.Log" Alias="Log" />
+                    <Compile Include="..\Shared\Activity.cs" Link="Activity.cs" />
+                  </ItemGroup>
+                </Project>"#,
+            ),
+            (
+                "src/Lib/Lib.csproj",
+                r#"<Project Sdk="Microsoft.NET.Sdk"><PropertyGroup><ImplicitUsings>disable</ImplicitUsings></PropertyGroup></Project>"#,
+            ),
+        ]));
+        let api = r.csproj_for("src/Api/Endpoints/Orders.cs").unwrap();
+        assert_eq!(api.sdk, "Microsoft.NET.Sdk.Web");
+        assert_eq!(api.root_namespace.as_deref(), Some("Shop.Api"));
+        let ns = api.namespaces();
+        assert!(ns.contains(&"Microsoft.Extensions.Logging".to_string()));
+        assert!(ns.contains(&"MediatR".to_string()));
+        assert!(!ns.contains(&"System.Threading".to_string()));
+        assert!(!ns.contains(&"Commented.Out".to_string()));
+        assert!(!ns.contains(&"Serilog.Log".to_string()));
+        assert!(
+            r.csproj_for("src/Lib/X.cs")
+                .unwrap()
+                .namespaces()
+                .is_empty()
+        );
+        assert_eq!(
+            r.csproj_for("src/Shared/Activity.cs")
+                .map(|p| p.path.as_str()),
+            Some("src/Api/Api.csproj")
+        );
+        assert!(r.csproj_for("tools/x.cs").is_none());
     }
 }

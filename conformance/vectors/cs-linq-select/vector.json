@@ -1,0 +1,5 @@
+{
+  "description": "A LINQ projection carries the property it selects; a count does not.",
+  "language": "csharp",
+  "status": "required"
+}

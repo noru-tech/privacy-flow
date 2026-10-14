@@ -1,6 +1,6 @@
 # The catalogue
 
-Sources, sinks, sanitisers, propagators and frameworks are data, in YAML under
+Sources, sinks, sanitisers, propagators, frameworks and dispatchers are data, in YAML under
 [`catalogue/`](../catalogue/), compiled into the binary and versioned together (the `version`
 key of each file, and a SHA-256 over all of them that every output document records). Adding an
 SDK is a change to these files, not to Rust; a project can add entries of the same shape in
@@ -24,8 +24,20 @@ import, a global or a type annotation.
 | Python `from openai import OpenAI; OpenAI().chat.completions.create(…)` | `openai.OpenAI().chat.completions.create` |
 | Python `def f(client: WebClient)` from `slack_sdk`, then `client.chat_postMessage(…)` | `slack_sdk.WebClient.chat_postMessage` |
 | Python `print(x)` | `builtins.print` |
+| C# `ILogger<OrdersApi> logger` (injected), then `logger.LogInformation(…)` | `Microsoft.Extensions.Logging.ILogger.LogInformation` |
+| C# `new HttpClient().PostAsJsonAsync(…)` (an extension method of `HttpClient`) | `System.Net.Http.HttpClient().PostAsJsonAsync` |
+| C# `Console.WriteLine(x)`, `string.Join(…)` | `System.Console.WriteLine`, `System.String.Join` |
+| C# `[FromBody]` on a parameter | `Microsoft.AspNetCore.Mvc.FromBodyAttribute()` |
 
-JavaScript paths are `module:path`; Python paths are fully dotted. A call adds `()`. A callback
+JavaScript paths are `module:path`; Python paths are fully dotted. C# paths are
+namespace-qualified types and their members, with generic arguments stripped: the type comes
+from the declaration (`ILogger<T> logger`), a constructor call (`new HttpClient()` gives
+`HttpClient()`), or a static access; extension methods are members of the type they extend,
+and attributes are constructions of the attribute type. A C# file names a type without its
+namespace, so the analysis qualifies it by the `using` directives in scope: a type the catalogue
+spells (a literal prefix of one of its C# patterns) is qualified exactly, which is why C# entries
+spell their receiver types (`Microsoft.Extensions.Logging.{ILogger,ILoggerFactory}**.LogInformation`)
+rather than start with a wildcard ([ADR 0016](adr/0016-csharp.md)). A call adds `()`. A callback
 passed to an API gets the parameter path `<cbN>` (or `<fieldN>` for a function in a field of an
 options object, such as a `render` prop). Imports of the project's own files, workspace packages
 (`package.json` names) and `tsconfig.json` path aliases resolve to local functions instead, which
@@ -46,7 +58,7 @@ of segments, `**.` also matches none (`posthog-js:**.capture` matches `posthog-j
 
 ```yaml
 - id: js.posthog                # stable; findings and declarations refer to it
-  language: javascript          # javascript (also TypeScript) or python
+  language: javascript          # javascript (also TypeScript), python or csharp
   class: analytics              # log, error_tracking, analytics, messaging, llm, http,
                                 # browser_storage, third_party
   processor: PostHog            # the vendor that receives the data, if there is one
@@ -58,6 +70,7 @@ of segments, `**.` also matches none (`posthog-js:**.capture` matches `posthog-j
   keywords: []                  # Python keyword arguments to include when args is a list
   receiver: false               # the receiver is sent too (a message object's `send()`)
   host: { arg: 0, keyword: url, field: url, base_url: false }   # outbound HTTP only
+  decorated: []                 # project functions with one of these attributes are this sink
 ```
 
 With `receiver: true` the object the method is called on carries data out as well as the
@@ -69,7 +82,14 @@ with, though `send()` itself takes nothing. Builder methods that put data into s
 options object. A literal URL (or a template or concatenation starting with one, followed through
 constants) gives the host, which names the processor; a relative URL is the application's own
 origin; anything else is `dynamic` ([PF006](rules/PF006.md)). With `base_url: true` a relative URL
-resolves against a client's configured base URL, so it is dynamic too.
+resolves against a client's configured base URL, so it is dynamic too. `built_arg: N` follows
+the URL argument to the call that built it and takes that call's argument `N`
+(`SendAsync(new HttpRequestMessage(HttpMethod.Post, url))`), or its `field` when it was set in an
+initializer (`RequestUri = …`); `wrappers` are calls the URL passes through (`new Uri(url)`).
+
+`decorated` makes calls to the project's own functions a sink when they carry a matching
+attribute: a `[LoggerMessage]` method, whose body a source generator writes, logs its arguments;
+a Refit interface method is an HTTP call.
 
 ## Sources (`catalogue/sources.yml`)
 
@@ -101,12 +121,24 @@ The catalogue adds request input from frameworks:
 ```
 
 `handler` sources are functions passed to a registration call, decorated by a matching decorator
-(FastAPI), or defined in matching files (`files`, Django views). `route_export` sources are named
-exports of matching files (Next.js route handlers). `read` sources are reads and calls of API
-paths (`flask.request.form`, `next/headers:cookies`). A parameter's `whole`, `fields` and `methods`
-give categories; `typed: true` narrows an annotated parameter to its type's classified fields
-(FastAPI with a Pydantic body); `by_name: true` classifies by the parameter's own name;
-`skip_types` and `skip_names` leave injected dependencies alone.
+(FastAPI), or defined in matching files (`files`, Django views); or methods of classes that
+extend one of `bases` or carry one of `class_decorators` (MVC controllers), or that take a
+parameter of a `has_param_type` type (gRPC services), filtered by `members` (`require` and
+`exclude` modifiers, `exclude_decorators`). `route_export` sources are named exports of matching
+files (Next.js route handlers). `read` sources are reads and calls of API paths
+(`flask.request.form`, `next/headers:cookies`); with `arg_category`, a literal argument decides
+the category (`FindFirst("sub")` is a pseudonymous identifier, `FindFirst(ClaimTypes.Email)` an
+email address). `property` sources are properties with one of `decorators` that a framework sets
+from the request (Blazor's `[SupplyParameterFromForm]`).
+
+A parameter's `whole`, `fields` and `methods` give categories; `typed: true` narrows an annotated
+parameter to its type's classified fields (FastAPI with a Pydantic body); `by_name: true`
+classifies by the parameter's own name. Injected dependencies are left alone by `skip_types`
+(globs over the annotation and the declared type's path), `skip_names`, `skip_bases` (a class
+extending a `DbContext`), `skip_interfaces` (any of the project's interfaces) and `skip_attrs`
+(`[FromServices]`); `classify_only_types` keeps `whole` off a `Guid` or a number;
+`expand_attrs` binds each property of a parameter's type on its own (`[AsParameters]`); `by_attr`
+picks a rule by attribute (`[FromBody]`), ahead of `by_type` and the skips.
 
 ## Classification context (`catalogue/classification.yml`)
 
@@ -160,29 +192,64 @@ calls known not to be sinks:
   language: javascript
   calls: ["{@prisma/client,drizzle-orm,mongoose,knex,pg,redis}:**"]
   receivers: [prisma, tx, db]   # any method on a receiver with these names and unknown origin
-  flow: none                    # args_to_result | args_only | args_to_receiver | receiver_to_callback | none
+  flow: none                    # args_to_result | args_only | args_to_receiver | fluent |
+                                # receiver_to_callback | callback_result | none
 ```
 
 `args_only` passes the arguments but not the receiver: a call on a service client returns the
 service's data, not the client's configuration (the API key it was built with). `args_to_result` is the default for string building, validation, formatting and framework
 plumbing; `args_to_receiver` puts arguments into the receiver (`xs.push(x)`);
+`fluent` does that and returns the receiver, so a chained call adds to it too
+(`sb.Append(a).Append(b)`);
 `receiver_to_callback` hands the receiver's elements to a callback's first parameter (`xs.map(f)`);
+`callback_result` makes each callback argument's return value the result (`Task.Run(() => …)`);
 `none` passes nothing (database clients: writing to the system's own store is data at rest, and a
-query's result is the stored record, not its filter values). `non_propagating_fields` lists field
-reads that are not the data (`length`, `size`).
+query's result is the stored record, not its filter values).
+
+Per language, `non_propagating_fields` lists field reads that are not the data (`length`, `Count`);
+`value_methods` lists methods of plain values (strings) that do not make a value a record
+(`email.toLowerCase()` keeps `email` an email address); `accessor_fields` lists fields that read
+what an object holds rather than an attribute (`claim.Value`), which are not classified by name;
+and `metadata_types` lists types whose values describe code (`System.Type`), whose fields are not
+personal data.
 
 ## Frameworks (`catalogue/frameworks.yml`)
 
 Each web framework, by the modules that identify it, and whether its request input is modelled.
 Importing an unsupported one is a coverage gap ([PFC01](rules/PFC01.md)), and calls into its
-modules fold into that one gap.
+modules fold into that one gap. C# imports are global and implicit, so a framework also lists
+`types`: a class that extends one of them, or carries one as an attribute, uses the framework
+(a SignalR `Hub`).
+
+## Dispatchers (`catalogue/dispatchers.yml`)
+
+A library call that hands its argument to the project's own handlers ([ADR 0017](adr/0017-dispatch.md)):
+
+```yaml
+- id: cs.mediatr.request
+  language: csharp
+  calls: ["MediatR.{IMediator,ISender,Mediator}{,()}**.{Send,CreateStream}"]
+  arg: 0                       # the positional argument dispatched
+  targets:
+    - implements: "MediatR.{IRequestHandler,IStreamRequestHandler}"   # classes implementing this
+      method: Handle           # receive the argument in this method
+      param: 0                 # as this parameter
+      type_arg: 0              # when the value's class is this type argument (or extends it)
+```
+
+The argument is bound to each handler's parameter as a direct call would bind it, and the
+handlers' return values are the call's result. A handler generic over that type argument (a
+pipeline behavior) receives every value; a value of unknown class reaches every handler. A
+project declares its own bus the same way in `.privacy-flow.yml`; `calls` may then name its own
+method by its class's qualified name (`Shop.Events.Bus.Publish`).
 
 ## How a call is decided
 
 For each call, in this order:
 
 1. A local function or class: followed through its summary (or treated as a sanitiser if a
-   sanitiser's `functions` names it).
+   sanitiser's `functions` names it, or a sink if a sink's `decorated` names its attribute); a
+   dispatcher's handlers likewise.
 2. Each API path of the callee: a **sink** (a hit), a **read source**, a **sanitiser**, or a
    **propagator**; then the receiver-name heuristic sinks; then, for a method on a JavaScript global
    the catalogue does not name, the plain-value methods.

@@ -20,3 +20,5 @@ what follows. Records are never rewritten; a reversal is a new record that super
 | [0013](0013-per-subclass-methods.md) | Template methods are analysed per subclass | Accepted |
 | [0014](0014-exceptions.md) | Exceptions reach their catch, and library errors may echo their input | Accepted |
 | [0015](0015-identifiers.md) | Identifiers of people are sources, and logging one is not a finding | Accepted |
+| [0016](0016-csharp.md) | C#: a lowering that resolves names against the whole project | Accepted |
+| [0017](0017-dispatch.md) | Dispatchers: library calls that reach the project's handlers | Accepted |

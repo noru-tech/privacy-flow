@@ -64,7 +64,7 @@ fn output_matches_committed_goldens() {
     for dir in common::fixtures() {
         let name = common::name(&dir).replace('/', "__");
         let mut outputs = vec![(format!("{name}.json"), render(&dir, Format::Json))];
-        if name == "ts__pf003-fail" || name == "py__pf004-fail" {
+        if name == "ts__pf003-fail" || name == "py__pf004-fail" || name == "cs__pf001-fail" {
             outputs.push((format!("{name}.sarif"), render(&dir, Format::Sarif)));
             outputs.push((format!("{name}.fides.yml"), render(&dir, Format::Fides)));
             outputs.push((format!("{name}.txt"), render(&dir, Format::Table)));

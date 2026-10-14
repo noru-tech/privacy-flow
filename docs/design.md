@@ -4,7 +4,8 @@ How `piiflow` turns a repository into cited flows. The decisions behind the majo
 recorded as ADRs in [`adr/`](adr/README.md); this page describes the system as it is.
 
 ```text
-files ──► lower (tree-sitter, per file, parallel) ──► IR per file
+files ──► [C#: scan declarations (parallel) ──► project index]
+      ──► lower (tree-sitter, per file, parallel) ──► IR per file
       ──► program (renumber in path order, resolve imports, provenance fixpoint)
       ──► facts (edges, seeds, call sites, sink and gap hits, from the catalogue)
       ──► engine (summaries bottom-up, then a shortest-path search per seed)
@@ -23,8 +24,8 @@ recorded in the output.
 
 ## 2. Lowering
 
-Each file is parsed with tree-sitter (TypeScript, TSX, JavaScript, Python grammars, pinned in
-`Cargo.lock`) and lowered into a small shared IR ([`src/ir.rs`](../src/ir.rs),
+Each file is parsed with tree-sitter (TypeScript, TSX, JavaScript, Python and C# grammars, pinned
+in `Cargo.lock`) and lowered into a small shared IR ([`src/ir.rs`](../src/ir.rs),
 [ADR 0001](adr/0001-shared-ir.md)). Every expression becomes a variable; statements move values:
 
 | Statement | Meaning |
@@ -37,17 +38,30 @@ Each file is parsed with tree-sitter (TypeScript, TSX, JavaScript, Python gramma
 | `Return`, `FuncRef`, `ClassRef`, `Global`, `Import`, `TypeRef`, `Lit` | the rest |
 
 Scoping follows each language (block scope and hoisting in JavaScript; function scope with
-`global`/`nonlocal` and invisible class scopes in Python). JSX elements that render a component are
+`global`/`nonlocal` and invisible class scopes in Python; implicit `this` and namespace lookup in
+C#). JSX elements that render a component are
 calls with a props object; destructuring becomes loads; `x.get("email")` is also a load of
 `email`. Parsing happens in parallel; each file's IR uses file-local numbers, so nothing depends on
 the thread count.
+
+**C#** ([ADR 0016](adr/0016-csharp.md)) needs the whole project to resolve a name, so its files are
+lowered in two passes. A parallel scan collects each file's namespace scopes, `using` directives,
+types, base lists and member names; they are merged in path order into an index together with the
+project files (`.csproj`, `Directory.Build.props`: SDK, implicit usings, `<Using>` items). The
+lowering then resolves every name against the index: a member of the enclosing class (or of a base
+declared elsewhere) is read through the instance, a project type is an import of the file that
+declares it, an external type an import of its qualified name (qualified by the `using` the
+catalogue knows it in). Blazor components (`.razor`) are translated into C# first
+(`src/lower/razor.rs`), with a byte map that keeps positions and citations in the component.
 
 ## 3. Program and provenance
 
 Files are assembled in sorted path order and renumbered. Imports resolve to scanned files:
 relative paths, `tsconfig.json` path aliases (the nearest config above the importing file, with
 `extends`), workspace packages (`package.json` names), and Python packages (relative imports, and
-absolute ones by the shortest matching path); otherwise to an external module.
+absolute ones by the shortest matching path); otherwise to an external module. C# imports already
+name a file or an external qualified name; the program merges the parts of `partial` classes and
+indexes extension methods by name.
 
 **Provenance** answers "what is this value?" so that calls can be resolved
 ([ADR 0003](adr/0003-provenance-and-resolution.md)). It is a flow-insensitive fixpoint over the

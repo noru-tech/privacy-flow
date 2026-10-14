@@ -1,0 +1,5 @@
+{
+  "description": "A minimal API handler parameter is request input.",
+  "language": "csharp",
+  "status": "required"
+}

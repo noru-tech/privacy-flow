@@ -48,3 +48,27 @@ sanitisers:
     methods: [startswith, endswith, isdigit, isalpha, isalnum, islower, isupper, isspace, isidentifier, count, find, rfind, index, rindex]
     calls: ["builtins.{len,bool,isinstance,issubclass,hasattr,callable,id,type,hash}"]
     removes: ["*"]
+
+  - id: cs.password-hash
+    language: csharp
+    description: Password hashing.
+    calls:
+      - "Microsoft.AspNetCore.Identity.{IPasswordHasher,PasswordHasher}{,()}**.HashPassword"
+      - "BCrypt.Net.BCrypt.{HashPassword,EnhancedHashPassword,HashString}"
+      - "System.Security.Cryptography.Rfc2898DeriveBytes{,()}**.{Pbkdf2,GetBytes}"
+      - "Microsoft.AspNetCore.Cryptography.KeyDerivation.KeyDerivation.Pbkdf2"
+      - "Isopoh.Cryptography.Argon2.Argon2.Hash"
+      - "Konscious.Security.Cryptography.Argon2id{,()}**.GetBytes"
+    removes: [user.authorization]
+
+  - id: cs.predicates
+    language: csharp
+    description: Methods and functions that return a boolean, a number or a position, not the data.
+    methods: [Contains, StartsWith, EndsWith, Equals, SequenceEqual, Any, All, Count, LongCount, Sum, Average, IndexOf, LastIndexOf, CompareTo, IsMatch, Exists, ContainsKey, VerifyHashedPassword, Verify, GetHashCode, GetType, TryParse, IsNullOrEmpty, IsNullOrWhiteSpace]
+    calls:
+      - "System.String.{IsNullOrEmpty,IsNullOrWhiteSpace,Equals,Compare,CompareOrdinal}"
+      - "System.Text.RegularExpressions.Regex{,()}**.IsMatch"
+      - "BCrypt.Net.BCrypt.{Verify,EnhancedVerify}"
+      - "System.Object.ReferenceEquals"
+      - "**.{GetType,GetHashCode}"
+    removes: ["*"]

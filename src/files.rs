@@ -41,6 +41,11 @@ pub const DEFAULT_EXCLUDES: &[&str] = &[
     "**/*.bundle.js",
     "**/*.d.ts",
     "**/*.generated.*",
+    "**/{bin,obj}/**/*.{cs,razor}",
+    "**/Migrations/**/*.cs",
+    "**/*.Designer.cs",
+    "**/*.g.cs",
+    "**/*.g.i.cs",
     // Tests and fixtures.
     "**/test/**",
     "**/tests/**",
@@ -58,6 +63,7 @@ pub const DEFAULT_EXCLUDES: &[&str] = &[
     "**/e2e/**",
     "**/cypress/**",
     "**/playwright/**",
+    "**/*.{Tests,UnitTests,FunctionalTests,IntegrationTests}/**",
     "**/*.stories.*",
     "**/storybook-static/**",
     // Seed data and mocks.
@@ -78,7 +84,8 @@ const UNSUPPORTED: &[(&str, &str)] = &[
     ("scala", "scala"),
     ("rb", "ruby"),
     ("php", "php"),
-    ("cs", "csharp"),
+    // Razor views and pages (`.cshtml`): their models are not lowered yet.
+    ("cshtml", "razor-pages"),
     ("fs", "fsharp"),
     ("rs", "rust"),
     ("swift", "swift"),
@@ -99,6 +106,7 @@ pub fn language_of(path: &str) -> Option<Lang> {
         "ts" | "tsx" | "mts" | "cts" => Some(Lang::Typescript),
         "js" | "jsx" | "mjs" | "cjs" => Some(Lang::Javascript),
         "py" | "pyi" if !path.ends_with(".pyi") => Some(Lang::Python),
+        "cs" | "razor" => Some(Lang::CSharp),
         _ => None,
     }
 }
@@ -421,6 +429,8 @@ mod tests {
         assert_eq!(language_of("a/b.tsx"), Some(Lang::Typescript));
         assert_eq!(language_of("a/b.cjs"), Some(Lang::Javascript));
         assert_eq!(language_of("a.py"), Some(Lang::Python));
+        assert_eq!(language_of("src/Api/Orders.cs"), Some(Lang::CSharp));
+        assert_eq!(language_of("Components/Chat.razor"), Some(Lang::CSharp));
         assert_eq!(language_of("a.pyi"), None);
         assert_eq!(unsupported_language_of("main.go"), Some("go"));
         assert_eq!(language_of("README.md"), None);
@@ -436,5 +446,10 @@ mod tests {
         assert!(e.excluded("types/global.d.ts"));
         assert!(!e.excluded("src/api/users.ts"));
         assert!(!e.excluded("src/latest/x.ts"));
+        assert!(e.excluded("src/Api/obj/Debug/net9.0/Api.AssemblyInfo.cs"));
+        assert!(e.excluded("src/Api/Migrations/20240101_Init.cs"));
+        assert!(e.excluded("src/Basket.UnitTests/BasketTests.cs"));
+        assert!(!e.excluded("bin/cli.js"));
+        assert!(!e.excluded("src/Ordering.API/Apis/OrdersApi.cs"));
     }
 }

@@ -1,0 +1,5 @@
+{
+  "description": "A record built from a classified read carries it in its property.",
+  "language": "csharp",
+  "status": "required"
+}

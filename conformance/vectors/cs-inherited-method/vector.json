@@ -1,0 +1,5 @@
+{
+  "description": "A method inherited from a base class sinks its argument.",
+  "language": "csharp",
+  "status": "required"
+}

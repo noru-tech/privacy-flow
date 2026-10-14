@@ -122,7 +122,7 @@ jobs:
 ## How do I find where personal data goes in my code?
 
 Trace each value that holds personal data to every place it leaves the program, and cite the
-chain: `piiflow` does that for TypeScript, JavaScript and Python, offline and deterministically,
+chain: `piiflow` does that for TypeScript, JavaScript, Python and C#, offline and deterministically,
 and reports each path as a chain of `file:line:column` hops from the source to the sink.
 
 ```console
@@ -148,19 +148,23 @@ model: the flow through the helper is computed per argument and per field.
 
 - **Sources** are reads of fields the [classification table](vendor/classification/classification.json)
   names (`user.email`, `customer.phone_number`), parameters named that way, objects typed with a
-  type that declares such fields, request input in Express, Fastify, Next.js, FastAPI, Flask and
-  Django, and fields from an existing Fides data map. Categories are
+  type that declares such fields, request input in Express, Fastify, Next.js, FastAPI, Flask,
+  Django, ASP.NET Core (minimal APIs, MVC controllers, gRPC services, claims) and Blazor (bound
+  form values, supplied parameters), and fields from an existing Fides data map. Categories are
   [Fideslang](https://github.com/ethyca/fideslang) keys.
-- **Sinks** are logs (console, pino, winston, Python logging, structlog …), error tracking
-  (Sentry), product analytics (Segment, Mixpanel, PostHog, Amplitude), email, SMS, chat and push
-  (SMTP, Nodemailer, Django and Flask mail, SendGrid, Postmark, Twilio, Slack, Firebase …), LLM providers (OpenAI, Anthropic, Gemini,
-  Mistral, LangChain, the Vercel AI SDK), outbound HTTP (`fetch`, axios, `requests`, `httpx` …,
-  with the host when it is a literal), browser storage, and other processors (Stripe, S3 …). Each
-  names the processor that receives the data.
+- **Sinks** are logs (console, pino, winston, Python logging, structlog, `ILogger` and
+  `[LoggerMessage]`, Serilog …), error tracking (Sentry, Application Insights), product analytics
+  (Segment, Mixpanel, PostHog, Amplitude), email, SMS, chat, push and message brokers (SMTP,
+  Nodemailer, Django and Flask mail, SendGrid, Postmark, Twilio, Slack, Firebase, RabbitMQ, Azure
+  Service Bus, Kafka …), LLM providers (OpenAI, Anthropic, Gemini, Mistral, LangChain, the Vercel
+  AI SDK, Microsoft.Extensions.AI), outbound HTTP (`fetch`, axios, `requests`, `httpx`,
+  `HttpClient` …, with the host when it is a literal), browser storage, and other processors
+  (Stripe, S3 …). Each names the processor that receives the data.
 - **The analysis** is field-sensitive (`user.id` does not carry `user.email`), follows calls into
   the project's own functions through summaries (a helper called with an email address and with
-  an ID does not mix them), across files, packages and `tsconfig` aliases, and is flow-insensitive
-  within a function.
+  an ID does not mix them), across files, packages, `tsconfig` aliases and C# namespaces (with
+  global and implicit usings, partial classes, extension methods and MediatR dispatch), and is
+  flow-insensitive within a function.
 - **Unknown is reported as unknown.** A call the analysis cannot place, a framework it does not
   model, a file it could not parse: each is a [coverage gap](docs/rules/PFC01.md), and a result with
   open gaps never exits as clean.
@@ -215,7 +219,7 @@ It never calls a model, makes no network calls, and sends no telemetry. A clean 
 statement about the scanned scope, with its gaps listed, not a compliance certification.
 
 The analysis is flow-insensitive within a function, follows plain objects one field deep, and
-supports TypeScript, JavaScript and Python with the frameworks listed above. Everything it does
+supports TypeScript, JavaScript, Python and C# with the frameworks listed above. Everything it does
 not cover is in [KNOWN-LIMITATIONS.md](KNOWN-LIMITATIONS.md); what comes next is in the
 [roadmap](ROADMAP.md).
 

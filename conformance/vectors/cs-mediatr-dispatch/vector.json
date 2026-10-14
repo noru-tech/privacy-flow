@@ -1,0 +1,5 @@
+{
+  "description": "A MediatR request reaches the pipeline behavior that logs it.",
+  "language": "csharp",
+  "status": "required"
+}

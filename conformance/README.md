@@ -19,7 +19,9 @@ Each vector isolates one behaviour: field sensitivity, nested objects, writes th
 whole-object logging, spreads, string
 building, helpers that return or sink their argument, context-sensitivity, cross-file imports,
 default exports, class fields, instance isolation, closures, array callbacks, predicates,
-computed keys, request input (Express, Flask), keyword arguments, comprehensions. The ground
+computed keys, request input (Express, Flask, ASP.NET Core minimal APIs), keyword arguments,
+comprehensions, and for C# records, LINQ, namespaces across files, interface and MediatR
+dispatch. The ground
 truth is deliberately uncontroversial so that a tool's own catalogue does not decide the
 outcome:
 
@@ -28,7 +30,8 @@ outcome:
   `unknown`. No vector depends on names the table only marks as maybe-personal, or on whether an
   identifier (`user.id`) is personal data: where a vector needs a field beside a personal one
   that is not personal, it is `plan`.
-- **Sinks** are `console.*`, `print` and Python `logging`.
+- **Sinks** are `console.*`, `print`, Python `logging`, C#'s `Console.Write`/`WriteLine` and
+  `Microsoft.Extensions.Logging`'s `ILogger`.
 - A flow is identified by its source location, its sink location and its category, compared by
   path and line: `(source path, source line, sink path, sink line, category)`.
 

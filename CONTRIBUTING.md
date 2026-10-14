@@ -46,13 +46,16 @@ docs/             design, ADRs, one page per rule, configuration, catalogue, out
 ## Adding an SDK
 
 1. Add an entry to `catalogue/sinks.yml` (or `sources.yml`, `sanitisers.yml`, `propagators.yml`):
-   a stable `id` (`js.vendor` or `py.vendor`), the `class`, the `processor`, and `calls` patterns
-   matched against API paths ([docs/catalogue.md](docs/catalogue.md)). Write instance segments as
-   `Client{,()}` so that annotated and constructed clients both match. Bump nothing: the catalogue
-   digest changes by itself.
-2. Add a fixture under `tests/fixtures/<ts|py>/<name>/` that uses the SDK the way its documentation
-   does, with `// expect: PF00x` (or `# expect: …`) on the sink line, and `fixture.json`
-   (`{"complete": true}` unless the fixture is about a gap).
+   a stable `id` (`js.vendor`, `py.vendor` or `cs.vendor`), the `class`, the `processor`, and
+   `calls` patterns matched against API paths ([docs/catalogue.md](docs/catalogue.md)). Write
+   instance segments as `Client{,()}` so that annotated and constructed clients both match. For
+   C#, spell the namespace-qualified receiver type (`Vendor.Sdk.{Client,IClient}{,()}**.Send`)
+   rather than starting with a wildcard: the analysis qualifies a type by the namespaces the
+   catalogue spells. Bump nothing: the catalogue digest changes by itself.
+2. Add a fixture under `tests/fixtures/<ts|py|cs>/<name>/` that uses the SDK the way its
+   documentation does, with `// expect: PF00x` (or `# expect: …`, or `@* expect: … *@` in a
+   `.razor` file) on the sink line, and `fixture.json` (`{"complete": true}` unless the fixture is
+   about a gap). A C# fixture has a `.csproj` (with `ImplicitUsings`) like a real project.
 3. Run `cargo test --test fixtures`, then `UPDATE_GOLDENS=1 cargo test --test determinism` and
    review the golden diff.
 4. Put the vendor's documentation in the pull request as the citation. `piiflow rules` shows the
@@ -65,7 +68,7 @@ waiting for a release.
 
 Rules live in `src/rules.rs` (metadata) and `derive` in `src/report.rs` (conditions, which must
 read only the document). Every rule needs: a page under `docs/rules/` (the test suite checks), a
-failing and a passing fixture in both languages, a row in the README and in
+failing and a passing fixture in every language, a row in the README and in
 `docs/control-mapping.md`, and a `CHANGELOG.md` entry. Control mappings carry identifiers and a
 short gloss only; never quote a standard.
 
@@ -75,6 +78,9 @@ Both engines implement the semantics written in `src/engine/mod.rs`; change both
 suite (which compares them on every fixture) fails. Run the conformance corpus
 (`cargo test --test conformance`); if a change makes a `known-limitation` vector pass, promote it
 and update KNOWN-LIMITATIONS.md. If the change is a design decision, add an ADR under `docs/adr/`.
+A change to the C# lowering, the facts or the catalogue also runs the eShop smoke test in CI;
+locally, `python3 .github/scripts/smoke_eshop.py target/release/piiflow` fetches eShop at the
+pinned commit and checks `tests/smoke/eshop.expected.json`.
 
 ## Tests
 

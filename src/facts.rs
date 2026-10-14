@@ -13,7 +13,8 @@ use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
 use crate::catalogue::{ArgSel, Catalogue, Flow, ParamRule, SinkClass, SourceKind};
 use crate::classify::{Classifier, Place, UNKNOWN};
 use crate::datamap::Datamap;
-use crate::ir::{ImportKind, NoteKind, Pos, VarKind};
+use crate::glob::api_matches_any;
+use crate::ir::{ImportKind, Lang, NoteKind, Pos, VarKind};
 use crate::program::*;
 
 /// A field token: [`TOP`] is the whole value, [`PHI`] is "some field the summary owner does not
@@ -233,7 +234,14 @@ struct Builder<'a, 'p> {
     /// (function, formal) pairs some call binds other than one argument to one parameter
     /// (rest parameters, `...xs`, `**kw`): they do not get formal sites.
     inexact: BTreeSet<(FuncId, u32)>,
+    /// Per (dispatcher, target): the classes it reaches, with their receiving methods and type
+    /// arguments.
+    dispatch_cache: HashMap<(usize, usize), Vec<DispatchCandidate>>,
 }
+
+/// A class a dispatcher's target reaches: the methods that receive the argument, and the type
+/// arguments of the type it implements.
+type DispatchCandidate = (Vec<FuncId>, Vec<VarId>);
 
 pub fn build(p: &mut Program, inp: &Inputs) -> Facts {
     let nvars = p.vars.len();
@@ -245,7 +253,7 @@ pub fn build(p: &mut Program, inp: &Inputs) -> Facts {
     let mut this_class: HashMap<VarId, usize> = HashMap::new();
     for (i, c) in p.classes.iter().enumerate() {
         this_class.insert(c.this, i);
-        if let Some(t) = c.ctor_this {
+        for &t in c.ctor_this.iter().chain(&c.more_ctor_this) {
             this_class.insert(t, i);
         }
     }
@@ -282,6 +290,7 @@ pub fn build(p: &mut Program, inp: &Inputs) -> Facts {
         copies: HashMap::new(),
         loads: Vec::new(),
         inexact: BTreeSet::new(),
+        dispatch_cache: HashMap::new(),
     };
     let handlers = b.find_handlers();
     if handlers.iter().any(|h| h.provenance.is_some()) {
@@ -306,6 +315,7 @@ pub fn build(p: &mut Program, inp: &Inputs) -> Facts {
     b.load_fields();
     b.statements();
     b.handler_seeds(&handlers);
+    b.property_seeds();
     b.annotation_seeds();
     b.param_name_seeds();
     b.static_gaps();
@@ -365,9 +375,18 @@ type TypedField = (String, String, bool, String, Option<(FileId, Pos)>);
 struct Handler {
     source: usize,
     func: FuncId,
-    /// (formal var, formal name, annotation, rule)
-    params: Vec<(VarId, String, Option<String>, ParamRule)>,
+    params: Vec<HandlerParam>,
     provenance: Option<(VarId, String)>,
+}
+
+/// A parameter of a handler that is request input, or one property of it (`[AsParameters]`).
+struct HandlerParam {
+    var: VarId,
+    name: String,
+    annot: Option<String>,
+    rule: ParamRule,
+    /// The property of the parameter that is the input, when not the whole parameter.
+    field: Option<String>,
 }
 
 impl<'a, 'p> Builder<'a, 'p> {
@@ -469,14 +488,15 @@ impl<'a, 'p> Builder<'a, 'p> {
         for (i, st) in self.p.stmts.iter().enumerate() {
             match &st.kind {
                 GKind::Copy { dst, src } => copies.entry(*src).or_default().push(*dst),
-                GKind::Call { args, .. } => {
+                GKind::Call { args, callee, .. } => {
                     let Some(t) = self.p.calls.get(&(i as u32)) else {
                         continue;
                     };
                     for &(f, bound) in &t.funcs {
                         let params = &self.p.funcs[f as usize].params;
                         let mut pos = usize::from(bound);
-                        for a in args {
+                        let with_recv = receiver_args(callee, args, t.receiver_first.contains(&f));
+                        for a in &with_recv {
                             if matches!(a.kind, GArgKind::Positional) {
                                 if let Some(q) = params.get(pos).filter(|q| !q.rest) {
                                     copies.entry(a.var).or_default().push(q.var);
@@ -654,6 +674,20 @@ impl<'a, 'p> Builder<'a, 'p> {
         if self.read_as_record(dst) {
             return;
         }
+        // `claim.Value`, `task.Result`: an accessor of what the object holds, not an attribute.
+        let lang = self.lang(self.p.stmts[stmt as usize].file);
+        if self.inp.catalogue.accessor_field(lang, name) {
+            return;
+        }
+        // `type.Name`: metadata of code.
+        if let Some(globs) = self.inp.catalogue.metadata_types.get(lang)
+            && self
+                .api_paths_of(&[obj])
+                .iter()
+                .any(|p| api_matches_any(globs, p.trim_end_matches("()")))
+        {
+            return;
+        }
         for c in self.inp.classifier.classify_in(name, &place) {
             let seed = self.stmt_seed(
                 stmt,
@@ -794,9 +828,23 @@ impl<'a, 'p> Builder<'a, 'p> {
                 self.edge(this, dst, EdgeKind::Copy, stmt);
             }
         }
+        // Functions with no body in source (a generated `[LoggerMessage]` method): a sink when
+        // the catalogue names their attribute, otherwise a call that reaches nothing visible.
+        let mut stubs: Vec<String> = Vec::new();
+        let mut reached = 0usize;
         for &(f, bound) in &t.funcs {
+            let fargs = receiver_args(callee, args, t.receiver_first.contains(&f));
+            if self.decorated_sink(stmt, f, &fargs, lang) {
+                reached += 1;
+                continue;
+            }
+            if self.p.funcs[f as usize].is_stub {
+                stubs.push(self.p.funcs[f as usize].name.clone());
+                continue;
+            }
+            reached += 1;
             if let Some(si) = self.local_sanitiser(f) {
-                for &a in &Self::arg_vars(args) {
+                for &a in &Self::arg_vars(&fargs) {
                     self.edge(a, dst, EdgeKind::Sanitize(si), stmt);
                 }
                 continue;
@@ -804,7 +852,7 @@ impl<'a, 'p> Builder<'a, 'p> {
             let site = self.f.sites.len() as u32;
             self.f.sites.push(Site { stmt, dst, func: f });
             self.f.callers[f as usize].push(site);
-            self.bind_args(site, f, bound, args);
+            self.bind_args(site, f, bound, &fargs);
             self.annotated_result(stmt, dst, f);
         }
         let apis: Vec<String> = t
@@ -820,9 +868,12 @@ impl<'a, 'p> Builder<'a, 'p> {
         // explain a target in an external module (an adapter loaded at run time, `require()()`).
         // Paths through built-in containers (`Map().get()`) are where the value was kept, not
         // what it is, and still are.
-        let local = !t.funcs.is_empty() || !t.classes.is_empty();
-        let mut explained = (!t.funcs.is_empty() && !t.open_world) || !t.classes.is_empty();
-        let mut unknown = Vec::new();
+        if self.dispatch(stmt, dst, &apis, &t, args, lang) {
+            reached += 1;
+        }
+        let local = reached > 0 || !t.classes.is_empty();
+        let mut explained = (reached > 0 && !t.open_world) || !t.classes.is_empty();
+        let mut unknown = stubs;
         for path in &apis {
             if self.api_call(stmt, dst, path, args, recv, lang)
                 || self.name_heuristic_sink(stmt, path, args, lang)
@@ -891,6 +942,230 @@ impl<'a, 'p> Builder<'a, 'p> {
                 Self::arg_vars(args),
             );
         }
+    }
+
+    /// A dispatching call (`mediator.Send(command)`): the argument reaches the handlers of its
+    /// type, as a call to each would pass it. Returns true when a dispatcher matched.
+    fn dispatch(
+        &mut self,
+        stmt: u32,
+        dst: VarId,
+        apis: &[String],
+        t: &CallTargets,
+        args: &[GArg],
+        lang: &str,
+    ) -> bool {
+        let cat = self.inp.catalogue;
+        let mut names: Vec<String> = apis.to_vec();
+        // A project's own bus: its local method, by the class's qualified name.
+        for &(f, _) in &t.funcs {
+            let func = &self.p.funcs[f as usize];
+            if let Some(c) = func.class
+                && let Some(q) = &self.p.classes[c as usize].qualified_name
+            {
+                let short = func.name.rsplit('.').next().unwrap_or(&func.name);
+                names.push(format!("{q}.{short}"));
+            }
+        }
+        let mut matched = false;
+        for (di, d) in cat.dispatchers.iter().enumerate() {
+            if d.def.language != lang
+                || !names.iter().any(|n| d.calls.iter().any(|g| g.is_match(n)))
+            {
+                continue;
+            }
+            let Some(arg) = args
+                .iter()
+                .filter(|a| matches!(a.kind, GArgKind::Positional))
+                .nth(d.def.arg)
+            else {
+                continue;
+            };
+            matched = true;
+            let arg_classes: Vec<ClassId> = self.p.prov[arg.var as usize]
+                .iter()
+                .filter_map(|p| match p {
+                    Prov::Instance(c) => Some(*c),
+                    _ => None,
+                })
+                .collect();
+            let mut targets: BTreeSet<(FuncId, usize, bool)> = BTreeSet::new();
+            for (ti, target) in d.def.targets.iter().enumerate() {
+                let candidates = self.dispatch_candidates(di, ti, lang);
+                for (methods, targs) in candidates {
+                    let (fits, exact) = match target.type_arg.and_then(|i| targs.get(i)) {
+                        Some(&ta) => self.dispatch_fits(ta, &arg_classes),
+                        None => (true, false),
+                    };
+                    if fits {
+                        for m in methods {
+                            targets.insert((m, target.param, exact));
+                        }
+                    }
+                }
+            }
+            if std::env::var_os("PIIFLOW_DEBUG_IR").is_some() {
+                let names: Vec<&str> = targets
+                    .iter()
+                    .map(|(f, _, _)| self.p.funcs[*f as usize].name.as_str())
+                    .collect();
+                eprintln!("dispatch #{stmt} {} -> {names:?}", d.def.id);
+            }
+            for (f, param, exact) in targets {
+                if self.p.funcs[f as usize].is_stub {
+                    continue;
+                }
+                let site = self.f.sites.len() as u32;
+                self.f.sites.push(Site { stmt, dst, func: f });
+                self.f.callers[f as usize].push(site);
+                // One argument to one parameter, as a direct call would bind it, whether the
+                // type filter could decide the handler or not.
+                let _ = exact;
+                if param < self.f.formals[f as usize].len() {
+                    self.f.bindings[arg.var as usize].push(Binding {
+                        site,
+                        formal: param as u32,
+                    });
+                }
+            }
+        }
+        matched
+    }
+
+    /// The project's classes a dispatcher's target reaches, whatever is dispatched: each with the
+    /// methods that receive the argument and the type arguments of the type it implements.
+    /// Computed once per target.
+    fn dispatch_candidates(&mut self, di: usize, ti: usize, lang: &str) -> Vec<DispatchCandidate> {
+        if let Some(c) = self.dispatch_cache.get(&(di, ti)) {
+            return c.clone();
+        }
+        let d = &self.inp.catalogue.dispatchers[di];
+        let target = &d.def.targets[ti];
+        let glob = &d.implements[ti];
+        let mut out = Vec::new();
+        for c in 0..self.p.classes.len() as ClassId {
+            let class = &self.p.classes[c as usize];
+            if class.is_interface || self.lang(class.file) != lang {
+                continue;
+            }
+            let lineage = self.p.lineage(c);
+            // The base (or interface) that matches, and its type arguments.
+            let mut type_args: Option<Vec<VarId>> = None;
+            'lineage: for &k in &lineage {
+                let kc = &self.p.classes[k as usize];
+                let none: Vec<VarId> = Vec::new();
+                let pairs = kc
+                    .bases
+                    .iter()
+                    .enumerate()
+                    .map(|(i, b)| (b, kc.base_args.get(i).unwrap_or(&none)))
+                    .chain(
+                        kc.implements
+                            .iter()
+                            .enumerate()
+                            .map(|(i, b)| (b, kc.implements_args.get(i).unwrap_or(&none))),
+                    );
+                for (b, targs) in pairs {
+                    let hit = self.p.prov[*b as usize].iter().any(|p| match p {
+                        Prov::Api(s) => {
+                            let path = self.p.syms.str(*s);
+                            glob.is_match(path.strip_suffix("()").unwrap_or(path))
+                        }
+                        Prov::Class(x) => self.p.classes[*x as usize]
+                            .qualified_name
+                            .as_ref()
+                            .is_some_and(|q| glob.is_match(q)),
+                        _ => false,
+                    });
+                    if hit {
+                        type_args = Some(targs.clone());
+                        break 'lineage;
+                    }
+                }
+            }
+            let Some(targs) = type_args else { continue };
+            for &k in &lineage {
+                let ms: Vec<FuncId> = self.p.classes[k as usize]
+                    .methods
+                    .iter()
+                    .filter(|(n, _)| *n == target.method)
+                    .map(|(_, f)| *f)
+                    .collect();
+                if !ms.is_empty() {
+                    out.push((ms, targs));
+                    break;
+                }
+            }
+        }
+        self.dispatch_cache.insert((di, ti), out.clone());
+        out
+    }
+
+    /// Whether a dispatched value whose classes are `arg_classes` fits a handler's type argument
+    /// `ta`, and whether the fit is exact. A type parameter (no provenance) takes anything; a
+    /// value of unknown class reaches every handler, inexactly.
+    fn dispatch_fits(&self, ta: VarId, arg_classes: &[ClassId]) -> (bool, bool) {
+        let tprov = &self.p.prov[ta as usize];
+        if tprov.is_empty() {
+            return (true, false);
+        }
+        if arg_classes.is_empty() {
+            return (true, false);
+        }
+        let fits = tprov.iter().any(|p| match p {
+            Prov::Class(k) => arg_classes.iter().any(|&a| self.p.lineage(a).contains(k)),
+            Prov::Api(s) => {
+                let want = self.p.syms.str(*s).rsplit('.').next().unwrap_or("");
+                arg_classes
+                    .iter()
+                    .any(|&a| self.p.classes[a as usize].name == want)
+            }
+            _ => false,
+        });
+        (fits, true)
+    }
+
+    /// A call to a project function whose attribute the catalogue names as a sink.
+    fn decorated_sink(&mut self, stmt: u32, f: FuncId, args: &[GArg], lang: &str) -> bool {
+        let decorators = self.p.funcs[f as usize].decorators.clone();
+        if decorators.is_empty() {
+            return false;
+        }
+        let paths: Vec<String> = decorators
+            .iter()
+            .flat_map(|d| self.p.prov[*d as usize].iter())
+            .filter_map(|p| match p {
+                Prov::Api(s) => Some(self.p.syms.str(*s).to_string()),
+                _ => None,
+            })
+            .collect();
+        let cat = self.inp.catalogue;
+        for (si, sink) in cat.sinks.iter().enumerate() {
+            if sink.def.language != lang
+                || !sink
+                    .decorated
+                    .iter()
+                    .any(|g| paths.iter().any(|p| g.is_match(p)))
+            {
+                continue;
+            }
+            let selected = Self::select_args(&sink.def.args, &sink.def.keywords, args);
+            let host = match sink.def.class {
+                SinkClass::Http => Host::Dynamic,
+                _ => Host::None,
+            };
+            self.hit(
+                stmt,
+                HitKind::Sink {
+                    sink: si as u32,
+                    heuristic: false,
+                    host,
+                },
+                selected,
+            );
+            return true;
+        }
+        false
     }
 
     fn local_sanitiser(&self, f: FuncId) -> Option<u32> {
@@ -1034,18 +1309,59 @@ impl<'a, 'p> Builder<'a, 'p> {
                 && src.def.language == lang
                 && src.calls.iter().any(|g| g.is_match(path))
             {
-                let category = src.def.category.clone().unwrap_or_else(|| UNKNOWN.into());
-                let seed = self.stmt_seed(
-                    stmt,
-                    dst,
-                    TOP,
-                    category,
-                    false,
-                    SeedKind::Request,
-                    src.def.id.clone(),
-                    path.to_string(),
-                );
-                self.seed(seed);
+                let mut categories = Vec::new();
+                let mut name = path.to_string();
+                if let Some(ac) = &src.def.arg_category
+                    && let Some(arg) = args
+                        .iter()
+                        .filter(|a| matches!(a.kind, GArgKind::Positional))
+                        .nth(ac.index)
+                    && let Some(key) = self.name_of(arg.var)
+                {
+                    // `FindFirst("sub")`, `FindFirstValue(ClaimTypes.Email)`: the claim type
+                    // says what the value is.
+                    let short = key.rsplit(['/', '.']).next().unwrap_or(&key).to_string();
+                    let found = ac
+                        .names
+                        .iter()
+                        .find(|(k, _)| k.eq_ignore_ascii_case(&short))
+                        .map(|(_, c)| c.clone());
+                    match found {
+                        Some(c) => categories.push((c, false, src.def.id.clone())),
+                        None if ac.classify => {
+                            let place = Place {
+                                object: None,
+                                siblings: &[],
+                            };
+                            for c in self.inp.classifier.classify_in(&short, &place) {
+                                categories.push((
+                                    c.category,
+                                    c.needs_review,
+                                    format!("{}+{}", src.def.id, c.by),
+                                ));
+                            }
+                        }
+                        None => {}
+                    }
+                    name = format!("{path}({short})");
+                }
+                if categories.is_empty() {
+                    let category = src.def.category.clone().unwrap_or_else(|| UNKNOWN.into());
+                    categories.push((category, false, src.def.id.clone()));
+                }
+                for (category, needs_review, by) in categories {
+                    let seed = self.stmt_seed(
+                        stmt,
+                        dst,
+                        TOP,
+                        category,
+                        needs_review,
+                        SeedKind::Request,
+                        by,
+                        name.clone(),
+                    );
+                    self.seed(seed);
+                }
                 return true;
             }
         }
@@ -1089,10 +1405,13 @@ impl<'a, 'p> Builder<'a, 'p> {
                     self.edge(v, dst, EdgeKind::Collapse, stmt);
                 }
             }
-            Flow::ArgsToReceiver => {
+            Flow::ArgsToReceiver | Flow::Fluent => {
                 if let Some(r) = recv {
                     for a in args {
                         self.edge(a.var, r, EdgeKind::Copy, stmt);
+                    }
+                    if flow == Flow::Fluent {
+                        self.edge(dst, r, EdgeKind::Copy, stmt);
                     }
                 }
                 for v in vars {
@@ -1117,6 +1436,24 @@ impl<'a, 'p> Builder<'a, 'p> {
                             let ret = self.p.funcs[f as usize].ret;
                             self.edge(ret, dst, EdgeKind::Copy, stmt);
                         }
+                    }
+                }
+            }
+            Flow::CallbackResult => {
+                for a in args {
+                    let funcs: Vec<FuncId> = self.p.prov[a.var as usize]
+                        .iter()
+                        .filter_map(|p| match p {
+                            Prov::Func(f) => Some(*f),
+                            _ => None,
+                        })
+                        .collect();
+                    if funcs.is_empty() {
+                        self.edge(a.var, dst, EdgeKind::Collapse, stmt);
+                    }
+                    for f in funcs {
+                        let ret = self.p.funcs[f as usize].ret;
+                        self.edge(ret, dst, EdgeKind::Copy, stmt);
                     }
                 }
             }
@@ -1219,14 +1556,22 @@ impl<'a, 'p> Builder<'a, 'p> {
     }
 
     fn in_unsupported_framework(&self, path: &str, lang: &str) -> bool {
-        let module = match lang {
-            "python" => path.split('.').next().unwrap_or(path),
-            _ => match path.split_once(':') {
+        let traits = Lang::family_traits(lang);
+        let module = if traits.dotted_api_paths {
+            if traits.packages {
+                path.split('.').next().unwrap_or(path)
+            } else {
+                // A C# path is a namespace-qualified type and its members: any prefix may be the
+                // framework's namespace.
+                path
+            }
+        } else {
+            match path.split_once(':') {
                 Some((m, _)) => m,
                 None => return false,
-            },
+            }
         };
-        let sep = if lang == "python" { "." } else { "/" };
+        let sep = traits.module_sep.to_string();
         self.inp.catalogue.frameworks.iter().any(|fw| {
             !fw.supported
                 && fw.language == lang
@@ -1270,6 +1615,59 @@ impl<'a, 'p> Builder<'a, 'p> {
     }
 
     // ------------------------------------------------------------------ string constants
+
+    /// The name a value spells: a string literal, or the last segment of the API path of a
+    /// constant read (`ClaimTypes.Email`).
+    fn name_of(&self, var: VarId) -> Option<String> {
+        if let Some((s, true)) = self.literal_prefix(var, 0) {
+            return Some(s);
+        }
+        self.p.prov[var as usize].iter().find_map(|p| match p {
+            Prov::Api(s) => {
+                let path = self.p.syms.str(*s);
+                (!path.ends_with(')')).then(|| path.rsplit('.').next().unwrap_or(path).to_string())
+            }
+            _ => None,
+        })
+    }
+
+    /// What a variable was copied from, through single plain copies.
+    fn copy_origin(&self, var: VarId, depth: u32) -> VarId {
+        let defs = &self.defs[var as usize];
+        match (defs.as_slice(), depth < 8) {
+            ([d], true) => match &self.p.stmts[*d as usize].kind {
+                GKind::Copy { src, .. } => self.copy_origin(*src, depth + 1),
+                _ => var,
+            },
+            _ => var,
+        }
+    }
+
+    /// The call that defines a variable, through plain copies: (its arguments, its API paths).
+    fn defining_call(&self, var: VarId, depth: u32) -> Option<(Vec<GArg>, Vec<String>)> {
+        if depth > 8 {
+            return None;
+        }
+        let defs = &self.defs[var as usize];
+        if defs.len() != 1 {
+            return None;
+        }
+        let stmt = defs[0];
+        match &self.p.stmts[stmt as usize].kind {
+            GKind::Copy { src, .. } => self.defining_call(*src, depth + 1),
+            GKind::Call { args, callee, .. } => {
+                let mut paths: Vec<String> = Vec::new();
+                if let Some(t) = self.p.calls.get(&stmt) {
+                    paths.extend(t.apis.iter().map(|s| self.p.syms.str(*s).to_string()));
+                }
+                if let GCallee::Value(v) = callee {
+                    paths.extend(self.api_paths_of(&[*v]));
+                }
+                Some((args.clone(), paths))
+            }
+            _ => None,
+        }
+    }
 
     /// The literal text a variable is known to start with, and whether that is all of it.
     fn literal_prefix(&self, var: VarId, depth: u32) -> Option<(String, bool)> {
@@ -1330,22 +1728,52 @@ impl<'a, 'p> Builder<'a, 'p> {
         let Some(mut v) = var else {
             return Host::Dynamic;
         };
+        // `SendAsync(new HttpRequestMessage(HttpMethod.Post, url))`: the URL the request was
+        // built with.
+        if let Some(i) = spec.built_arg
+            && self.literal_prefix(v, 0).is_none()
+            && let Some((args, _)) = self.defining_call(v, 0)
+            && let Some(a) = args
+                .iter()
+                .filter(|a| matches!(a.kind, GArgKind::Positional))
+                .nth(i)
+        {
+            v = a.var;
+        }
         if let Some(field) = &spec.field
             && self.literal_prefix(v, 0).is_none()
         {
-            // An options object: `axios({ url: '...' })`.
+            // An options object: `axios({ url: '...' })`, `new HttpRequestMessage { RequestUri =
+            // ... }` held in a variable.
             let sym = self.p.syms.get(field);
+            let objs = [v, self.copy_origin(v, 0)];
             let store = self.p.stmts.iter().find_map(|s| match &s.kind {
                 GKind::Store {
                     obj,
                     field: Some(k),
                     src,
-                } if *obj == v && Some(*k) == sym => Some(*src),
+                } if objs.contains(obj) && Some(*k) == sym => Some(*src),
                 _ => None,
             });
             match store {
                 Some(src) => v = src,
+                None if spec.built_arg.is_some() => {}
                 None => return Host::Dynamic,
+            }
+        }
+        // `new Uri("https://...")`: the URL is the wrapper's argument.
+        for _ in 0..4 {
+            if self.literal_prefix(v, 0).is_some() || spec.wrappers.is_empty() {
+                break;
+            }
+            match self.defining_call(v, 0) {
+                Some((args, paths)) if paths.iter().any(|p| api_matches_any(&spec.wrappers, p)) => {
+                    match args.iter().find(|a| matches!(a.kind, GArgKind::Positional)) {
+                        Some(a) => v = a.var,
+                        None => break,
+                    }
+                }
+                _ => break,
             }
         }
         match self.literal_prefix(v, 0) {
@@ -1453,44 +1881,139 @@ impl<'a, 'p> Builder<'a, 'p> {
                 _ => {}
             }
         }
+        // Methods of classes: by base type or class attribute (controllers), or by a parameter's
+        // type (gRPC services).
+        for (si, src) in cat.sources.iter().enumerate() {
+            if src.def.kind != SourceKind::Handler {
+                continue;
+            }
+            if !src.bases.is_empty() || !src.class_decorators.is_empty() {
+                for c in 0..self.p.classes.len() as ClassId {
+                    let class = &self.p.classes[c as usize];
+                    if self.lang(class.file) != src.def.language || class.is_interface {
+                        continue;
+                    }
+                    let by_base = !src.bases.is_empty() && {
+                        let paths = self.ancestor_paths(c);
+                        paths
+                            .iter()
+                            .any(|p| src.bases.iter().any(|g| g.is_match(p)))
+                    };
+                    let by_attr = !src.class_decorators.is_empty() && {
+                        let paths = self.api_paths_of(&class.decorators);
+                        paths
+                            .iter()
+                            .any(|p| src.class_decorators.iter().any(|g| g.is_match(p)))
+                    };
+                    if !(by_base || by_attr) {
+                        continue;
+                    }
+                    let methods: Vec<FuncId> = class.methods.iter().map(|(_, f)| *f).collect();
+                    for f in methods {
+                        if self.member_selected(f, src.def.members.as_ref()) {
+                            found.push((si, f));
+                        }
+                    }
+                }
+            }
+            if !src.has_param_type.is_empty() {
+                for f in 0..self.p.funcs.len() as FuncId {
+                    let func = &self.p.funcs[f as usize];
+                    if func.is_module || self.lang(func.file) != src.def.language {
+                        continue;
+                    }
+                    let hit = func.params.iter().any(|q| {
+                        self.api_paths_of(&[q.var])
+                            .iter()
+                            .any(|p| src.has_param_type.iter().any(|g| g.is_match(p)))
+                    });
+                    if hit && self.member_selected(f, src.def.members.as_ref()) {
+                        found.push((si, f));
+                    }
+                }
+            }
+        }
         found.sort();
         found.dedup();
+        let annots: HashMap<VarId, String> = self.p.annots.iter().cloned().collect();
         let mut handlers = Vec::new();
         for (si, f) in found {
             let src = &cat.sources[si];
             let func = &self.p.funcs[f as usize];
             let skip = usize::from(func.bound_self);
-            let formals: Vec<&GParam> = func.params.iter().skip(skip).collect();
+            let formals: Vec<GParam> = func.params.iter().skip(skip).cloned().collect();
             let mut params = Vec::new();
             let mut provenance = None;
             for spec in &src.def.params {
                 let selected: Vec<&GParam> = if spec.all {
-                    formals.clone()
+                    formals.iter().collect()
                 } else if let Some(n) = &spec.name {
-                    formals.iter().copied().filter(|q| &q.name == n).collect()
+                    formals.iter().filter(|q| &q.name == n).collect()
                 } else if let Some(i) = spec.index {
-                    formals.get(i).copied().into_iter().collect()
+                    formals.get(i).into_iter().collect()
                 } else {
                     Vec::new()
                 };
                 for q in selected {
-                    let rule = q
-                        .annot
-                        .as_ref()
-                        .and_then(|a| spec.by_type.get(a))
-                        .cloned()
-                        .unwrap_or_else(|| spec.rule.clone());
-                    if q.annot
-                        .as_ref()
-                        .is_some_and(|a| rule.skip_types.contains(a))
-                        || rule.skip_names.contains(&q.name)
-                    {
-                        continue;
+                    let attr_paths = self.api_paths_of(&q.attrs);
+                    let by_attr = spec
+                        .by_attr
+                        .iter()
+                        .find(|(g, _)| {
+                            attr_paths
+                                .iter()
+                                .any(|p| api_matches_any(std::slice::from_ref(*g), p))
+                        })
+                        .map(|(_, r)| r.clone());
+                    let rule = by_attr.clone().unwrap_or_else(|| {
+                        q.annot
+                            .as_ref()
+                            .and_then(|a| spec.by_type.get(a))
+                            .cloned()
+                            .unwrap_or_else(|| spec.rule.clone())
+                    });
+                    if by_attr.is_none() {
+                        if self.param_skipped(
+                            q.var,
+                            q.annot.as_deref(),
+                            &q.name,
+                            &rule,
+                            &attr_paths,
+                        ) {
+                            continue;
+                        }
+                        // `[AsParameters] OrderServices services`: each property is bound on
+                        // its own, by the same rule.
+                        if attr_paths
+                            .iter()
+                            .any(|p| api_matches_any(&rule.expand_attrs, p))
+                        {
+                            for (field, fvar) in self.declared_fields(q.var) {
+                                let fannot = annots.get(&fvar).cloned();
+                                if self.param_skipped(fvar, fannot.as_deref(), &field, &rule, &[]) {
+                                    continue;
+                                }
+                                params.push(HandlerParam {
+                                    var: q.var,
+                                    name: format!("{}.{field}", q.name),
+                                    annot: fannot,
+                                    rule: rule.clone(),
+                                    field: Some(field),
+                                });
+                            }
+                            continue;
+                        }
                     }
                     if let Some(pv) = &rule.provenance {
                         provenance = Some((q.var, pv.clone()));
                     }
-                    params.push((q.var, q.name.clone(), q.annot.clone(), rule));
+                    params.push(HandlerParam {
+                        var: q.var,
+                        name: q.name.clone(),
+                        annot: q.annot.clone(),
+                        rule,
+                        field: None,
+                    });
                 }
             }
             // A handler that selects nothing (Django: no `request` parameter) is not one.
@@ -1540,7 +2063,42 @@ impl<'a, 'p> Builder<'a, 'p> {
     fn handler_seeds(&mut self, handlers: &[Handler]) {
         for h in handlers {
             let src_id = self.inp.catalogue.sources[h.source].def.id.clone();
-            for (var, name, annot, rule) in &h.params {
+            for hp in &h.params {
+                let (var, name, annot, rule) = (&hp.var, &hp.name, &hp.annot, &hp.rule);
+                if let Some(field) = &hp.field {
+                    // One property of the parameter: classified by its name, or `whole`.
+                    let place = Place {
+                        object: None,
+                        siblings: &[],
+                    };
+                    let mut cs = Vec::new();
+                    if rule.by_name {
+                        cs = self.inp.classifier.classify_in(field, &place);
+                    }
+                    let sym = self.p.syms.intern(field);
+                    let mut cats: Vec<(String, bool, String)> = cs
+                        .into_iter()
+                        .map(|c| (c.category, c.needs_review, format!("{src_id}+{}", c.by)))
+                        .collect();
+                    if cats.is_empty()
+                        && let Some(w) = &rule.whole
+                    {
+                        cats.push((w.clone(), false, src_id.clone()));
+                    }
+                    for (category, needs_review, by) in cats {
+                        let s = self.param_seed(
+                            *var,
+                            named(sym),
+                            category,
+                            needs_review,
+                            SeedKind::Request,
+                            by,
+                            name.clone(),
+                        );
+                        self.seed(s);
+                    }
+                    continue;
+                }
                 let mut narrowed = false;
                 if rule.typed
                     && let Some(a) = annot
@@ -1548,7 +2106,7 @@ impl<'a, 'p> Builder<'a, 'p> {
                     narrowed = self.typed_seeds(*var, a, SeedKind::Request, &src_id);
                 }
                 if rule.by_name && !narrowed {
-                    let others: Vec<String> = h.params.iter().map(|p| p.1.clone()).collect();
+                    let others: Vec<String> = h.params.iter().map(|p| p.name.clone()).collect();
                     let place = Place {
                         object: None,
                         siblings: &others,
@@ -1568,7 +2126,11 @@ impl<'a, 'p> Builder<'a, 'p> {
                     }
                     narrowed |= !cs.is_empty();
                 }
-                if let (Some(whole), false) = (&rule.whole, narrowed) {
+                // A number or a GUID is request input only when its name says what it is.
+                let scalar = annot
+                    .as_ref()
+                    .is_some_and(|a| api_matches_any(&rule.classify_only_types, a));
+                if let (Some(whole), false, false) = (&rule.whole, narrowed, scalar) {
                     let s = self.param_seed(
                         *var,
                         TOP,
@@ -1629,6 +2191,226 @@ impl<'a, 'p> Builder<'a, 'p> {
                 }
             }
             let _ = h.func;
+        }
+    }
+
+    /// The API paths a variable's provenance holds (calls' `()` kept).
+    fn api_paths_of(&self, vars: &[VarId]) -> Vec<String> {
+        vars.iter()
+            .flat_map(|v| self.p.prov[*v as usize].iter())
+            .filter_map(|p| match p {
+                Prov::Api(s) => Some(self.p.syms.str(*s).to_string()),
+                _ => None,
+            })
+            .collect()
+    }
+
+    /// API paths of the external types a class extends or implements, through its local
+    /// ancestors.
+    fn ancestor_paths(&self, c: ClassId) -> Vec<String> {
+        let mut out = Vec::new();
+        for k in self.p.lineage(c) {
+            let class = &self.p.classes[k as usize];
+            out.extend(self.api_paths_of(&class.bases));
+            out.extend(self.api_paths_of(&class.implements));
+        }
+        out
+    }
+
+    /// Whether a method of a matched class is a handler under the source's member filter.
+    fn member_selected(&self, f: FuncId, filter: Option<&crate::catalogue::MemberFilter>) -> bool {
+        let func = &self.p.funcs[f as usize];
+        if func.is_property || func.is_stub {
+            return false;
+        }
+        let Some(m) = filter else {
+            return !func.is_ctor;
+        };
+        if m.require.iter().any(|r| !func.modifiers.contains(r)) {
+            return false;
+        }
+        if m.exclude
+            .iter()
+            .any(|x| func.modifiers.contains(x) || (x == "constructor" && func.is_ctor))
+        {
+            return false;
+        }
+        let paths = self.api_paths_of(&func.decorators);
+        !paths
+            .iter()
+            .any(|p| api_matches_any(&m.exclude_decorators, p))
+    }
+
+    /// Whether a handler parameter is not request input: an injected service, the request
+    /// context, a cancellation token.
+    fn param_skipped(
+        &self,
+        var: VarId,
+        annot: Option<&str>,
+        name: &str,
+        rule: &ParamRule,
+        attr_paths: &[String],
+    ) -> bool {
+        if rule.skip_names.iter().any(|n| n == name) {
+            return true;
+        }
+        if annot.is_some_and(|a| api_matches_any(&rule.skip_types, a)) {
+            return true;
+        }
+        if attr_paths
+            .iter()
+            .any(|p| api_matches_any(&rule.skip_attrs, p))
+        {
+            return true;
+        }
+        for p in &self.p.prov[var as usize] {
+            match p {
+                Prov::Api(s) => {
+                    let path = self.p.syms.str(*s);
+                    let path = path.strip_suffix("()").unwrap_or(path);
+                    if api_matches_any(&rule.skip_types, path) {
+                        return true;
+                    }
+                }
+                Prov::Instance(c) => {
+                    if rule.skip_interfaces && self.p.classes[*c as usize].is_interface {
+                        return true;
+                    }
+                    if !rule.skip_bases.is_empty()
+                        && self
+                            .ancestor_paths(*c)
+                            .iter()
+                            .any(|p| api_matches_any(&rule.skip_bases, p))
+                    {
+                        return true;
+                    }
+                }
+                _ => {}
+            }
+        }
+        false
+    }
+
+    /// The fields of the class a variable is declared with, and each one's variable.
+    fn declared_fields(&self, var: VarId) -> Vec<(String, VarId)> {
+        let mut out: BTreeMap<String, VarId> = BTreeMap::new();
+        for p in &self.p.prov[var as usize] {
+            let Prov::Instance(c) = p else { continue };
+            let this = self.p.classes[*c as usize].this;
+            for st in &self.p.stmts {
+                if let GKind::ThisStore {
+                    obj, field, var, ..
+                } = st.kind
+                    && obj == this
+                {
+                    out.entry(self.p.syms.str(field).to_string()).or_insert(var);
+                }
+            }
+        }
+        out.into_iter().collect()
+    }
+
+    /// Properties a framework sets from request input (`[SupplyParameterFromForm]`): their field
+    /// variables are seeded.
+    fn property_seeds(&mut self) {
+        let cat = self.inp.catalogue;
+        let annots: HashMap<VarId, String> = self.p.annots.iter().cloned().collect();
+        for src in &cat.sources {
+            if src.def.kind != SourceKind::Property {
+                continue;
+            }
+            let rule = src
+                .def
+                .params
+                .first()
+                .map(|p| p.rule.clone())
+                .unwrap_or_default();
+            for c in 0..self.p.classes.len() as ClassId {
+                let class = self.p.classes[c as usize].clone();
+                if self.lang(class.file) != src.def.language || class.field_attrs.is_empty() {
+                    continue;
+                }
+                if !src.bases.is_empty()
+                    && !self
+                        .ancestor_paths(c)
+                        .iter()
+                        .any(|p| src.bases.iter().any(|g| g.is_match(p)))
+                {
+                    continue;
+                }
+                if !src.class_decorators.is_empty()
+                    && !self
+                        .api_paths_of(&class.decorators)
+                        .iter()
+                        .any(|p| src.class_decorators.iter().any(|g| g.is_match(p)))
+                {
+                    continue;
+                }
+                for (field, attrs) in &class.field_attrs {
+                    let paths = self.api_paths_of(attrs);
+                    if !paths
+                        .iter()
+                        .any(|p| src.decorators.iter().any(|g| g.is_match(p)))
+                    {
+                        continue;
+                    }
+                    let Some(fsym) = self.p.syms.get(field) else {
+                        continue;
+                    };
+                    let fvars: Vec<VarId> = self
+                        .p
+                        .stmts
+                        .iter()
+                        .filter_map(|st| match st.kind {
+                            GKind::ThisStore {
+                                obj, field, var, ..
+                            }
+                            | GKind::ThisLoad {
+                                obj, field, var, ..
+                            } if obj == class.this && field == fsym => Some(var),
+                            _ => None,
+                        })
+                        .collect::<BTreeSet<_>>()
+                        .into_iter()
+                        .collect();
+                    // Cite the declaration: the first write of the field in the class's file.
+                    let decl = self.p.stmts.iter().position(|st| {
+                        matches!(st.kind, GKind::ThisStore { obj, field, .. }
+                            if obj == class.this && field == fsym)
+                    });
+                    for fv in fvars {
+                        *self.f.handlers.entry(src.def.id.clone()).or_default() += 1;
+                        let before = self.f.seeds.len();
+                        let mut narrowed = false;
+                        if rule.typed
+                            && let Some(a) = annots.get(&fv).cloned()
+                        {
+                            narrowed = self.typed_seeds(fv, &a, SeedKind::Request, &src.def.id);
+                        }
+                        if !narrowed && let Some(w) = &rule.whole {
+                            let s = self.param_seed(
+                                fv,
+                                TOP,
+                                w.clone(),
+                                false,
+                                SeedKind::Request,
+                                src.def.id.clone(),
+                                field.clone(),
+                            );
+                            self.seed(s);
+                        }
+                        if let Some(d) = decl {
+                            let st = &self.p.stmts[d];
+                            let (file, pos, text) = (st.file, st.pos, st.text.clone());
+                            for seed in &mut self.f.seeds[before..] {
+                                seed.file = file;
+                                seed.pos = pos;
+                                seed.text = text.clone();
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
 
@@ -1732,72 +2514,18 @@ impl<'a, 'p> Builder<'a, 'p> {
     }
 
     fn find_records(&self) -> HashSet<VarId> {
-        const STRING_METHODS: &[&str] = &[
-            "toLowerCase",
-            "toUpperCase",
-            "toLocaleLowerCase",
-            "toLocaleUpperCase",
-            "trim",
-            "trimStart",
-            "trimEnd",
-            "split",
-            "includes",
-            "startsWith",
-            "endsWith",
-            "replace",
-            "replaceAll",
-            "slice",
-            "substring",
-            "substr",
-            "indexOf",
-            "lastIndexOf",
-            "match",
-            "matchAll",
-            "search",
-            "toString",
-            "valueOf",
-            "localeCompare",
-            "normalize",
-            "padStart",
-            "padEnd",
-            "charAt",
-            "charCodeAt",
-            "codePointAt",
-            "at",
-            "concat",
-            "repeat",
-            "lower",
-            "upper",
-            "strip",
-            "lstrip",
-            "rstrip",
-            "startswith",
-            "endswith",
-            "encode",
-            "decode",
-            "format",
-            "casefold",
-            "title",
-            "capitalize",
-            "find",
-            "rfind",
-            "index",
-            "count",
-            "join",
-            "isdigit",
-            "isalpha",
-            "isalnum",
-            "zfill",
-            "partition",
-            "rpartition",
-            "removeprefix",
-            "removesuffix",
-            "splitlines",
-            "expandtabs",
-            "translate",
-        ];
         let mut records = HashSet::new();
-        for st in &self.p.stmts {
+        for (i, st) in self.p.stmts.iter().enumerate() {
+            // `email.Masked()` calls the project's extension method with `email`: it is used as
+            // what it is, not as a record.
+            if self
+                .p
+                .calls
+                .get(&(i as u32))
+                .is_some_and(|t| !t.receiver_first.is_empty())
+            {
+                continue;
+            }
             match &st.kind {
                 GKind::Load {
                     obj,
@@ -1816,7 +2544,11 @@ impl<'a, 'p> Builder<'a, 'p> {
                 GKind::Call {
                     callee: GCallee::Method { recv, name },
                     ..
-                } if !STRING_METHODS.contains(&self.p.syms.str(*name)) => {
+                } if !self
+                    .inp
+                    .catalogue
+                    .value_method(self.lang(st.file), self.p.syms.str(*name)) =>
+                {
                     records.insert(*recv);
                 }
                 _ => {}
@@ -1929,12 +2661,14 @@ impl<'a, 'p> Builder<'a, 'p> {
             let Target::External(m) = &imp.target else {
                 continue;
             };
-            let lang = self.p.files[imp.file as usize].lang.family();
+            let file_lang = self.p.files[imp.file as usize].lang;
+            let lang = file_lang.family();
+            let traits = file_lang.traits();
             let mut candidates = vec![m.clone()];
-            if let (ImportKind::Named(n), "python") = (&imp.kind, lang) {
+            if let (ImportKind::Named(n), true) = (&imp.kind, traits.dotted_api_paths) {
                 candidates.push(format!("{m}.{n}"));
             }
-            let sep = if lang == "python" { "." } else { "/" };
+            let sep = traits.module_sep.to_string();
             for fw in &self.inp.catalogue.frameworks {
                 if fw.supported || fw.language != lang {
                     continue;
@@ -1949,6 +2683,31 @@ impl<'a, 'p> Builder<'a, 'p> {
                         .entry(fw.name.clone())
                         .or_default()
                         .push((self.p.files[imp.file as usize].path.clone(), Some(imp.pos)));
+                }
+            }
+        }
+        // C# imports are global and implicit: a class that extends a framework's type (or carries
+        // its attribute) uses it.
+        for c in 0..self.p.classes.len() as ClassId {
+            let class = &self.p.classes[c as usize];
+            let lang = self.lang(class.file);
+            let mut paths = self.ancestor_paths(c);
+            paths.extend(self.api_paths_of(&class.decorators));
+            let methods: Vec<VarId> = class
+                .methods
+                .iter()
+                .flat_map(|(_, f)| self.p.funcs[*f as usize].decorators.iter().copied())
+                .collect();
+            paths.extend(self.api_paths_of(&methods));
+            for fw in &self.inp.catalogue.frameworks {
+                if fw.supported || fw.language != lang || fw.types.is_empty() {
+                    continue;
+                }
+                if paths.iter().any(|p| api_matches_any(&fw.types, p)) {
+                    by_framework.entry(fw.name.clone()).or_default().push((
+                        self.p.files[class.file as usize].path.clone(),
+                        Some(class.pos),
+                    ));
                 }
             }
         }
@@ -1988,8 +2747,22 @@ fn receiver_ident(text: &str) -> Option<String> {
     (!ident.is_empty()).then_some(ident)
 }
 
+/// A call's arguments as a function receives them: an extension method reached as a method
+/// (`x.Mask()`) takes the receiver first.
+fn receiver_args(callee: &GCallee, args: &[GArg], receiver_first: bool) -> Vec<GArg> {
+    match callee {
+        GCallee::Method { recv, .. } if receiver_first => std::iter::once(GArg {
+            var: *recv,
+            kind: GArgKind::Positional,
+        })
+        .chain(args.iter().cloned())
+        .collect(),
+        _ => args.to_vec(),
+    }
+}
+
 fn is_runtime_global(path: &str, lang: &str) -> bool {
-    lang == "javascript" && !path.contains(':')
+    Lang::family_traits(lang).bare_paths_are_runtime_globals && !path.contains(':')
 }
 
 /// A path through a built-in container (`Map().get()`, `Array.from()`): the value was kept
@@ -2005,8 +2778,18 @@ fn is_container_path(path: &str, lang: &str) -> bool {
 /// The module a specifier belongs to: `@scope/pkg/sub` → `@scope/pkg`, `pkg/sub` → `pkg`,
 /// Python `a.b.c` → `a`.
 pub fn top_module(m: &str, lang: &str) -> String {
-    if lang == "python" {
+    let traits = Lang::family_traits(lang);
+    if traits.packages {
         return m.split('.').next().unwrap_or(m).to_string();
+    }
+    if traits.dotted_api_paths {
+        // A C# namespace is not a package: its first two segments name the vendor and product
+        // (`Microsoft.Extensions`, `Serilog.Sinks`).
+        let mut parts = m.split('.');
+        return match (parts.next(), parts.next()) {
+            (Some(a), Some(b)) => format!("{a}.{b}"),
+            _ => m.to_string(),
+        };
     }
     let mut parts = m.split('/');
     match (parts.next(), parts.next()) {

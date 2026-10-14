@@ -4,8 +4,10 @@
 //! creation, positions in code points, and citation text. The language modules decide what a
 //! construct means; the builder only records it.
 
+pub mod csharp;
 pub mod js;
 pub mod python;
+pub mod razor;
 
 use std::collections::HashMap;
 
@@ -13,12 +15,27 @@ use tree_sitter::Node;
 
 use crate::ir::*;
 
+/// What lowering a file may know of the rest of the project.
+#[derive(Default)]
+pub struct LowerCtx<'a> {
+    /// Every C# file's declarations (C# resolves names across files).
+    pub cs: Option<&'a csharp::index::CsIndex>,
+}
+
 /// Lower one file. Never fails: a file that does not parse is lowered as far as the tree goes
 /// and carries a `ParseError` note, which the coverage section reports.
 pub fn lower_file(path: &str, lang: Lang, source: &str) -> FileIr {
+    lower_file_with(path, lang, source, &LowerCtx::default())
+}
+
+pub fn lower_file_with(path: &str, lang: Lang, source: &str, ctx: &LowerCtx) -> FileIr {
     match lang {
         Lang::Javascript | Lang::Typescript => js::lower(path, lang, source),
         Lang::Python => python::lower(path, source),
+        Lang::CSharp => match ctx.cs {
+            Some(ix) => csharp::lower(path, source, ix),
+            None => csharp::lower_alone(path, source),
+        },
     }
 }
 
@@ -52,6 +69,9 @@ pub struct Builder<'s> {
     /// last; and those of enclosing functions, set aside while a nested one is lowered.
     pub catches: Vec<Var>,
     saved_catches: Vec<Vec<Var>>,
+    /// For generated source (a Razor component's C#): the original text, its line starts, and
+    /// the map from generated to original bytes. Positions and citations are the original's.
+    origin: Option<(&'s str, Vec<usize>, &'s razor::Generated)>,
 }
 
 const TEXT_MAX: usize = 80;
@@ -82,6 +102,7 @@ impl<'s> Builder<'s> {
             ctor_this: None,
             catches: Vec::new(),
             saved_catches: Vec::new(),
+            origin: None,
         };
         // Function 0 is the module: it owns top-level statements and module-level bindings.
         let ret = b.raw_var("<return>", VarKind::Ret, 0, Pos { line: 1, column: 1 });
@@ -99,6 +120,10 @@ impl<'s> Builder<'s> {
             is_property: false,
             pos: Pos { line: 1, column: 1 },
             is_module: true,
+            is_ctor: false,
+            is_extension: false,
+            is_stub: false,
+            modifiers: Vec::new(),
         });
         b.scopes.push(Scope {
             kind: ScopeKind::Function,
@@ -112,18 +137,37 @@ impl<'s> Builder<'s> {
         self.ir
     }
 
+    /// Report positions and citations in `original`, which `generated` was made from.
+    pub fn set_origin(&mut self, original: &'s str, generated: &'s razor::Generated) {
+        let mut starts = vec![0];
+        for (i, b) in original.bytes().enumerate() {
+            if b == b'\n' {
+                starts.push(i + 1);
+            }
+        }
+        self.ir.lines = if original.is_empty() {
+            0
+        } else {
+            starts.len() as u32 - u32::from(original.ends_with('\n'))
+        };
+        self.origin = Some((original, starts, generated));
+    }
+
     pub fn pos(&self, node: Node) -> Pos {
         self.pos_at(node.start_byte())
     }
 
     pub fn pos_at(&self, byte: usize) -> Pos {
-        let line = match self.line_starts.binary_search(&byte) {
+        let (text, line_starts, byte) = match &self.origin {
+            Some((orig, starts, g)) => (*orig, starts.as_slice(), g.to_source(byte)),
+            None => (self.src, self.line_starts.as_slice(), byte),
+        };
+        let line = match line_starts.binary_search(&byte) {
             Ok(i) => i,
             Err(i) => i - 1,
         };
-        let start = self.line_starts[line];
-        let column = self
-            .src
+        let start = line_starts[line];
+        let column = text
             .get(start..byte)
             .map_or(byte - start, |s| s.chars().count());
         Pos {
@@ -138,7 +182,26 @@ impl<'s> Builder<'s> {
 
     /// Citation text: the node's source on one line, whitespace collapsed, at most 80 chars.
     pub fn cite(&self, node: Node) -> String {
-        let raw = self.text(node);
+        let raw = match &self.origin {
+            Some((orig, starts, g)) => {
+                let (s, e) = (g.to_source(node.start_byte()), g.to_source(node.end_byte()));
+                match orig.get(s..e).filter(|t| !t.trim().is_empty()) {
+                    Some(t) => t,
+                    // Generated code with no text of its own (`@bind`'s binder): the line it
+                    // was generated for.
+                    None => {
+                        let line = match starts.binary_search(&s) {
+                            Ok(i) => i,
+                            Err(i) => i.saturating_sub(1),
+                        };
+                        let from = starts[line];
+                        let to = starts.get(line + 1).copied().unwrap_or(orig.len());
+                        orig.get(from..to).unwrap_or("")
+                    }
+                }
+            }
+            None => self.text(node),
+        };
         let mut out = String::with_capacity(raw.len().min(TEXT_MAX + 3));
         let mut last_space = false;
         for c in raw.chars() {
@@ -330,6 +393,10 @@ impl<'s> Builder<'s> {
             is_property: false,
             pos,
             is_module: false,
+            is_ctor: false,
+            is_extension: false,
+            is_stub: false,
+            modifiers: Vec::new(),
         });
         self.func = idx;
         self.scopes.push(Scope {
@@ -409,6 +476,14 @@ impl<'s> Builder<'s> {
             implements: Vec::new(),
             is_interface: false,
             pos,
+            decorators: Vec::new(),
+            qualified_name: None,
+            type_params: Vec::new(),
+            base_args: Vec::new(),
+            implements_args: Vec::new(),
+            more_ctor_this: Vec::new(),
+            partial_key: None,
+            field_attrs: Vec::new(),
         });
         // `this` is an instance of the class, so `this.method()` resolves.
         self.instance_of(this, idx, pos);

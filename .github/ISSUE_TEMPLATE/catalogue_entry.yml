@@ -1,5 +1,5 @@
 name: Catalogue entry
-description: A sink, source, sanitiser, propagator or framework the catalogue does not know
+description: A sink, source, sanitiser, propagator, framework or dispatcher the catalogue does not know
 labels: [catalogue]
 body:
   - type: markdown
@@ -11,14 +11,14 @@ body:
     id: kind
     attributes:
       label: Kind
-      options: [sink, source, sanitiser, propagator, framework]
+      options: [sink, source, sanitiser, propagator, framework, dispatcher]
     validations:
       required: true
   - type: input
     id: api
     attributes:
       label: Library and API
-      placeholder: e.g. npm @vendor/sdk, client.track(event, properties)
+      placeholder: e.g. npm @vendor/sdk, client.track(event, properties); NuGet Vendor.Sdk, IVendorClient.TrackAsync(...)
     validations:
       required: true
   - type: input

@@ -9,6 +9,7 @@
 # flow: args_to_result       arguments (and the receiver) flow to the result
 #       args_only            arguments flow to the result, the receiver does not (service clients)
 #       args_to_receiver     arguments flow into the receiver (`xs.push(x)`) and the result
+#       fluent               as args_to_receiver, and the result is the receiver (`sb.Append(x)`)
 #       receiver_to_callback the receiver's elements flow into a callback's first parameter,
 #                            and the callback's return value to the result (`xs.map(f)`)
 #       none                 nothing flows
@@ -17,6 +18,42 @@ version: "0.1.0"
 
 non_propagating_fields:
   javascript: [length, size, byteLength]
+  csharp: [Length, Count, LongLength, Capacity, HasValue, IsEmpty]
+
+# Fields that read what an object holds rather than an attribute of it: `claim.Value` is the
+# claim's value, classified by the claim type, not "a value".
+accessor_fields:
+  csharp: [Value, Result, Current, Item, Items, Values, Keys, Key, InnerException]
+
+# Types whose values describe code, not data: a field read from one (`type.Name`) is not
+# classified by its name.
+metadata_types:
+  csharp: ["System.Type", "System.Reflection.**", "System.Type.**", "System.Reflection.Assembly{,()}**"]
+
+# Methods of plain values (strings): calling one does not make the receiver a record, so a value
+# named like a personal attribute stays that attribute (`email.toLowerCase()`).
+value_methods:
+  javascript:
+    [toLowerCase, toUpperCase, toLocaleLowerCase, toLocaleUpperCase, trim, trimStart, trimEnd,
+     split, includes, startsWith, endsWith, replace, replaceAll, slice, substring, substr,
+     indexOf, lastIndexOf, match, matchAll, search, toString, valueOf, localeCompare, normalize,
+     padStart, padEnd, charAt, charCodeAt, codePointAt, at, concat, repeat, lower, upper, strip,
+     lstrip, rstrip, startswith, endswith, encode, decode, format, casefold, title, capitalize,
+     find, rfind, index, count, join, isdigit, isalpha, isalnum, zfill, partition, rpartition,
+     removeprefix, removesuffix, splitlines, expandtabs, translate]
+  python:
+    [toLowerCase, toUpperCase, toLocaleLowerCase, toLocaleUpperCase, trim, trimStart, trimEnd,
+     split, includes, startsWith, endsWith, replace, replaceAll, slice, substring, substr,
+     indexOf, lastIndexOf, match, matchAll, search, toString, valueOf, localeCompare, normalize,
+     padStart, padEnd, charAt, charCodeAt, codePointAt, at, concat, repeat, lower, upper, strip,
+     lstrip, rstrip, startswith, endswith, encode, decode, format, casefold, title, capitalize,
+     find, rfind, index, count, join, isdigit, isalpha, isalnum, zfill, partition, rpartition,
+     removeprefix, removesuffix, splitlines, expandtabs, translate]
+  csharp:
+    [ToLower, ToUpper, ToLowerInvariant, ToUpperInvariant, Trim, TrimStart, TrimEnd, Split,
+     Contains, StartsWith, EndsWith, Replace, Substring, IndexOf, LastIndexOf, IndexOfAny, PadLeft,
+     PadRight, Remove, Insert, Normalize, ToString, Equals, CompareTo, GetHashCode, ToCharArray,
+     AsSpan, AsMemory, EnumerateRunes, IsNormalized, Format, Join, Concat]
 
 propagators:
   # ------------------------------------------------------------------ JavaScript / TypeScript
@@ -191,4 +228,119 @@ propagators:
       - "{json,copy,uuid,re,os,time,random,secrets,hashlib,hmac,base64,math,datetime,dataclasses,functools,itertools,typing}"
       - "{blockkit,slack_sdk.models,jinja2,markupsafe,tabulate,dateparser,humanize,arrow,pendulum,tenacity,backoff,cachetools,limits,schedule,apscheduler}.**"
       - "{pydantic,pydantic_settings,alembic,django,flask,fastapi,starlette,werkzeug,jinja2,marshmallow,attrs,attr,celery,rq,dramatiq,jwt,jose,passlib,bcrypt,argon2,cryptography,nacl,itsdangerous,dotenv,click,typer,rich,tqdm,numpy,pandas,yaml,toml,tomllib,orjson,ujson,msgpack,dateutil,pytz,zoneinfo,babel,email_validator,phonenumbers,validators,slugify,unidecode,bleach,markdown,uvicorn,gunicorn}.**"
+    flow: args_to_result
+
+  # ------------------------------------------------------------------ C#
+  - id: cs.stringbuilder
+    language: csharp
+    calls: ["System.Text.StringBuilder{,()}**.{Append,AppendLine,AppendFormat,AppendJoin,Insert,Replace}"]
+    methods: [Append, AppendLine, AppendFormat, AppendJoin]
+    flow: fluent
+
+  - id: cs.linq-callbacks
+    language: csharp
+    description: LINQ and collection methods that hand each element to a callback.
+    methods: [Select, SelectMany, Where, OrderBy, OrderByDescending, ThenBy, ThenByDescending, GroupBy, ForEach, First, FirstOrDefault, Single, SingleOrDefault, Last, LastOrDefault, TakeWhile, SkipWhile, DistinctBy, MaxBy, MinBy, Find, FindAll, ConvertAll, ToDictionary, ToLookup, Aggregate, Max, Min]
+    flow: receiver_to_callback
+
+  - id: cs.collections-mutators
+    language: csharp
+    methods: [Add, AddRange, Insert, InsertRange, Enqueue, Push, TryAdd, AddOrUpdate, GetOrAdd, Prepend, AddMessages, AddFirst, AddLast, Set, Write, TryWrite, WriteAsync]
+    flow: args_to_receiver
+
+  - id: cs.validation
+    language: csharp
+    description: >-
+      Validators: their result describes the value, and a failure carries the attempted value.
+    calls: ["FluentValidation.**.{Validate,ValidateAsync,ValidateAndThrow,ValidateAndThrowAsync}"]
+    methods: [Validate, ValidateAsync, ValidateAndThrow, ValidateAndThrowAsync, TryValidateObject]
+    flow: args_to_result
+
+  - id: cs.callback-result
+    language: csharp
+    calls:
+      - "System.Threading.Tasks.{Task,ValueTask}.{Run,FromResult}"
+      - "Microsoft.Extensions.AI.AIFunctionFactory.Create"
+    flow: callback_result
+
+  - id: cs.data-methods
+    language: csharp
+    description: Methods of strings, collections and tasks that return (part of) their data.
+    methods: [ToLower, ToUpper, ToLowerInvariant, ToUpperInvariant, Trim, TrimStart, TrimEnd, Substring, Replace, Split, PadLeft, PadRight, Remove, Normalize, ToString, ToCharArray, ToList, ToArray, ToHashSet, ToListAsync, ToArrayAsync, AsEnumerable, AsQueryable, Distinct, Reverse, Skip, Take, Concat, Union, Append, GetValueOrDefault, GetAwaiter, GetResult, Format, Join, Clone, CopyTo, Cast, OfType, Zip, ElementAt, ElementAtOrDefault, DefaultIfEmpty]
+    flow: args_to_result
+
+  - id: cs.builtins
+    language: csharp
+    description: The base class library's value types, text, LINQ, serialization and tasks.
+    calls:
+      - "System.{String,Convert,Math,Guid,DateTime,DateTimeOffset,TimeSpan,Uri,Int32,Int64,Decimal,Double,Boolean,Enum,Nullable,BinaryData,Array,Object,Char,Byte,Version,Environment,BitConverter}{,()}**"
+      - "System.{Linq,Text,Text.Json,Text.RegularExpressions,Collections,Collections.Generic,Collections.Concurrent,Collections.Immutable,Collections.ObjectModel,Threading,Threading.Tasks,Globalization,Buffers,ComponentModel,Reflection,IO,Numerics,Security.Cryptography,Runtime}.**"
+      - "System.{Exception,ArgumentException,ArgumentNullException,ArgumentOutOfRangeException,InvalidOperationException,NotSupportedException,NotImplementedException,KeyNotFoundException,FormatException,UnauthorizedAccessException,ApplicationException}{,()}**"
+      - "System.Text.Json.{JsonSerializer,JsonDocument,JsonElement,JsonSerializerOptions,JsonNamingPolicy,Nodes.JsonNode,Nodes.JsonObject,Nodes.JsonArray}{,()}**"
+      - "System.Text.{Encoding,StringBuilder,RegularExpressions.Regex}{,()}**"
+      - "System.Linq.{Enumerable,Queryable}{,()}**"
+      - "System.Threading.Tasks.{Task,ValueTask,TaskCompletionSource,Parallel}{,()}**"
+      - "System.Collections.Generic.{List,Dictionary,HashSet,IEnumerable,IList,ICollection,IDictionary,KeyValuePair,Queue,Stack,SortedDictionary,IReadOnlyList,IReadOnlyCollection,IReadOnlyDictionary}{,()}**"
+      - "System.IO.{Stream,MemoryStream,StreamReader,StreamWriter,File,Path,Directory}{,()}**"
+      - "System.{IServiceProvider,IDisposable,IAsyncDisposable,Activator,Lazy,Nullable,Action,Func,EventHandler}{,()}**"
+      - "System.Reflection.{Assembly,MethodInfo,PropertyInfo,TypeInfo,BindingFlags}{,()}**"
+      - "Newtonsoft.Json.**"
+      - "System.Net.Http.{StringContent,ByteArrayContent,FormUrlEncodedContent,MultipartFormDataContent,StreamContent,HttpRequestMessage,HttpResponseMessage,HttpMethod,Json.JsonContent,Headers}{,()}**"
+      - "System.Net.{HttpStatusCode,IPAddress,WebUtility}{,()}**"
+    flow: args_to_result
+
+  - id: cs.message-builders
+    language: csharp
+    description: >-
+      Objects a message or request is built from before it is sent: what goes into them is
+      carried by the object.
+    calls:
+      - "MimeKit.**"
+      - "System.Net.Mail.{MailMessage,MailAddress,Attachment,AlternateView,MailAddressCollection}{,()}**"
+      - "SendGrid.Helpers.Mail.**"
+      - "RestSharp.RestRequest{,()}**"
+      - "Microsoft.Extensions.AI.{ChatMessage,ChatOptions,TextContent,DataContent,ChatResponse,ChatResponseUpdate}{,()}**"
+      - "OpenAI.Chat.{ChatMessage,UserChatMessage,SystemChatMessage,AssistantChatMessage,ChatCompletionOptions}{,()}**"
+      - "Azure.Messaging.ServiceBus.ServiceBusMessage{,()}**"
+      - "Azure.Messaging.EventHubs.EventData{,()}**"
+      - "Confluent.Kafka.{Message,ProducerConfig,ProducerBuilder}{,()}**"
+      - "Amazon.**.Model.**"
+      - "Duende.IdentityServer.Events.**"
+      - "RabbitMQ.Client.{BasicProperties,IBasicProperties}{,()}**"
+    flow: args_to_receiver
+
+  - id: cs.databases
+    language: csharp
+    description: >-
+      Databases, caches and the ASP.NET Identity stores: data at rest inside the system's own
+      boundary. What is read back is classified by its fields.
+    calls:
+      - "Microsoft.EntityFrameworkCore.{DbContext,DbSet,DbContextOptions,DbContextOptionsBuilder,ModelBuilder,EntityState,EF,Infrastructure.DatabaseFacade,ChangeTracking.EntityEntry,Storage.IDbContextTransaction}{,()}**"
+      - "Microsoft.EntityFrameworkCore.**"
+      - "Npgsql.**"
+      - "Microsoft.Data.SqlClient.**"
+      - "Microsoft.Data.Sqlite.**"
+      - "MySqlConnector.**"
+      - "StackExchange.Redis.**"
+      - "Dapper.**"
+      - "MongoDB.Driver.**"
+      - "Microsoft.Azure.Cosmos.**"
+      - "Microsoft.AspNetCore.Identity.**"
+      - "Microsoft.Extensions.Caching.**"
+      - "Pgvector.**"
+    flow: none
+
+  - id: cs.internal-modules
+    language: csharp
+    description: >-
+      Framework plumbing: dependency injection, configuration, hosting, routing, results,
+      authorization, validation, resilience, telemetry setup, serialization contracts. Values pass
+      through; nothing leaves the process.
+    calls:
+      - "Microsoft.Extensions.{DependencyInjection,Options,Configuration,Hosting,Http,Resilience,ServiceDiscovery,Diagnostics,Primitives,FileProviders,Localization}.**"
+      - "Microsoft.AspNetCore.{Builder,Routing,Http,Hosting,Authorization,Authentication,Components,Mvc,Antiforgery,DataProtection,Cors,ResponseCompression,StaticFiles,Diagnostics,HttpsPolicy,Server,WebUtilities,OutputCaching,RateLimiting,OpenApi}.**"
+      - "Grpc.Core.{RpcException,Status,StatusCode,Metadata,ServerCallContext,ChannelBase,CallOptions}{,()}**"
+      - "{Asp.Versioning,Polly,OpenTelemetry,FluentValidation,Grpc,Google.Protobuf,Duende.IdentityServer,Duende.IdentityModel,IdentityModel,Aspire,MediatR,AutoMapper,Scalar,Swashbuckle,Microsoft.OpenApi,Microsoft.IdentityModel,System.IdentityModel,Microsoft.Identity.Web,Serilog.Extensions,HealthChecks}.**"
+      - "System.Security.Claims.{ClaimsPrincipal,ClaimsIdentity,Claim,ClaimTypes}{,()}**"
+      - "System.Diagnostics.{Stopwatch,ActivitySource,Metrics,DiagnosticSource,StackTrace,Process}{,()}**"
     flow: args_to_result

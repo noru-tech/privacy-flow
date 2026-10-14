@@ -123,6 +123,12 @@ fn principle_6_rules_are_data() {
         "pino",
         "winston",
         "logging.",
+        "microsoft.",
+        "system.",
+        "mediatr",
+        "serilog",
+        "grpc",
+        "aspnetcore",
     ] {
         assert!(
             !facts.to_lowercase().contains(&format!("\"{sdk}")),
@@ -183,10 +189,14 @@ fn every_rule_has_a_page_and_every_catalogue_category_is_a_taxonomy_key() {
             cats.extend(p.rule.whole.iter());
             cats.extend(p.rule.fields.values());
             cats.extend(p.rule.methods.values());
-            for r in p.by_type.values() {
+            for r in p.by_type.values().chain(p.by_attr.values()) {
+                cats.extend(r.whole.iter());
                 cats.extend(r.fields.values());
                 cats.extend(r.methods.values());
             }
+        }
+        if let Some(ac) = &s.def.arg_category {
+            cats.extend(ac.names.values());
         }
         for c in cats {
             classifier
