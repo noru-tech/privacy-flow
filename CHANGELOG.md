@@ -6,6 +6,12 @@ All notable changes to this project are documented here. The format is based on
 
 ## [Unreleased]
 
+## [0.3.1] - 2026-10-14
+
+The Fides fragment lists every destination personal data reaches, including those the code
+does not name, and declared processors are named by their declaration. The analysis is
+unchanged: for the same input, 0.3.1 reports the same flows and findings as 0.3.0.
+
 ### Changed
 
 - Fides output: egress to a destination the code does not name (a host computed at run time, a
@@ -213,7 +219,8 @@ No change to the analysis: for the same input, 0.1.1 reports the same flows, fin
   criterion benchmarks, a CI performance budget, and a release pipeline with artifact
   attestations, checksums and an SBOM.
 
-[Unreleased]: https://github.com/noru-tech/privacy-flow/compare/v0.3.0...HEAD
+[Unreleased]: https://github.com/noru-tech/privacy-flow/compare/v0.3.1...HEAD
+[0.3.1]: https://github.com/noru-tech/privacy-flow/compare/v0.3.0...v0.3.1
 [0.3.0]: https://github.com/noru-tech/privacy-flow/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/noru-tech/privacy-flow/compare/v0.1.1...v0.2.0
 [0.1.1]: https://github.com/noru-tech/privacy-flow/compare/v0.1.0...v0.1.1
