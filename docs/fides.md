@@ -13,12 +13,20 @@ this fills in where it sends it.
 system:
   - fides_key: "checkout_service"
     name: "Checkout service"
+    # Keys starting with unresolved_ are destinations the code does not name (a host
+    # computed at run time, a provider chosen by configuration). Replace each with the
+    # receiving system's key, or declare the processor in .privacy-flow.yml and scan again.
     egress:
       # Mixpanel via analytics
       - fides_key: "mixpanel"
         type: "system"
         data_categories:
           - "user.demographic.religious_belief"
+      # Unresolved http destination, sent from src/services/ordering.ts:17
+      - fides_key: "unresolved_http_ordering"
+        type: "system"
+        data_categories:
+          - "user.financial.credit_card"
 ```
 
 ## Field names
@@ -35,12 +43,20 @@ checked against `src/fideslang/models.py` at tag 3.1.3.
   tracking, analytics, messaging, LLM, outbound HTTP with a literal host, other third-party SDKs).
   Logs, browser storage and relative URLs are not egress.
 - The `fides_key` is the processor's `fides_key` from `.privacy-flow.yml` when declared, otherwise
-  a slug of the processor name (`PostHog` → `posthog`) or the host (`api.example.com`).
+  a slug of its name: the declared name (`Acme CRM` → `acme_crm`), else the catalogue's
+  (`PostHog` → `posthog`), else the literal host (`api.example.com`). A declaration names the
+  processor however it matched: by name, by sink ID or by host.
 - `data_categories` lists only keys of the vendored taxonomy. Request input of category `unknown`
   has no Fides key; a comment says the flow also carries data of unknown category, to review.
 - A comment above each entry names the processor, the sink classes, and whether it is declared.
-- Egress that has no processor key (a host computed at run time, a model provider chosen at run
-  time) is listed in a closing comment, not as a `DataFlow`.
+- Egress to a destination the code does not name (a host computed at run time, a model provider
+  chosen by configuration) is still a `DataFlow`, so a first scan with no configuration shows
+  where data goes. Its key is a placeholder, `unresolved_<sink class>_<file>`, one per sink class
+  and sending file (`unresolved_http_ordering_service`; directories are added when two files
+  share a name), with a comment naming the call sites. Replace it with the receiving system's
+  key, or declare the processor under `processors:` (by `sinks` or `hosts`) and scan again. Like
+  `this_system`, a placeholder names no system in your data map; the Fides CLI expects every
+  receiving system to exist there (see below).
 - `system.fides_key` and `name` come from `system:` in `.privacy-flow.yml`; without it the key is
   `this_system` and a comment says to set it.
 

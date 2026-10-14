@@ -3,9 +3,11 @@
 //! Field names follow the Fideslang version the vendored taxonomy comes from (3.1.3):
 //! `System.egress` is a list of `DataFlow { fides_key, type, data_categories }`, where `type`
 //! is `system` for another system. Only categories that are keys of the vendored taxonomy are
-//! written; flows whose category is `unknown` are listed in a comment instead, because Fides
-//! has no key for "not yet classified".
+//! written; flows whose category is `unknown` are noted in a comment instead, because Fides
+//! has no key for "not yet classified". A destination the code does not name gets the
+//! placeholder key `unresolved_<sink class>`, as the system itself gets `this_system`.
 
+use std::collections::{BTreeMap, BTreeSet};
 use std::fmt::Write;
 
 use crate::report::Document;
@@ -55,78 +57,212 @@ pub fn render(doc: &Document) -> String {
     if let Some(n) = name {
         let _ = writeln!(out, "    name: {}", q(&n));
     }
-    let keyed: Vec<_> = doc
-        .egress
-        .iter()
-        .filter(|e| e.fides_key.is_some())
-        .collect();
-    if keyed.is_empty() {
+    if doc.egress.is_empty() {
         out.push_str("    egress: []\n");
-    } else {
-        out.push_str("    egress:\n");
-        // One DataFlow per processor key, across sink classes.
-        let mut merged: std::collections::BTreeMap<
-            String,
-            (std::collections::BTreeSet<String>, Vec<String>, bool),
-        > = Default::default();
-        for e in &keyed {
-            let k = e.fides_key.clone().expect("filtered");
-            let entry = merged.entry(k).or_default();
-            for c in &e.categories {
-                if c == crate::classify::UNKNOWN {
-                    entry.2 = true;
-                } else {
-                    entry.0.insert(c.clone());
-                }
-            }
-            let label = format!(
-                "{}{}{}",
-                e.processor.as_deref().unwrap_or("?"),
-                if e.declared { "" } else { " (undeclared)" },
-                format_args!(" via {}", e.class.as_str())
-            );
-            entry.1.push(label);
-        }
-        for (k, (cats, labels, unknown)) in merged {
-            let _ = writeln!(out, "      # {}", labels.join("; "));
-            if unknown {
-                out.push_str("      # also data of unknown category (request input not narrowed by a type): review\n");
-            }
-            let _ = writeln!(out, "      - fides_key: {}", q(&k));
-            out.push_str("        type: \"system\"\n");
-            if !cats.is_empty() {
-                out.push_str("        data_categories:\n");
-                for c in cats {
-                    let _ = writeln!(out, "          - {}", q(&c));
-                }
+        return out;
+    }
+    // One DataFlow per processor key, across sink classes. A destination the code does not
+    // name (a host computed at run time, a model provider chosen by configuration) still gets
+    // one, under a placeholder key per sink class, so a first run shows where data goes.
+    #[derive(Default)]
+    struct Entry {
+        categories: BTreeSet<String>,
+        labels: Vec<String>,
+        unknown: bool,
+        unresolved: Option<&'static str>,
+        sites: BTreeSet<(String, u32)>,
+    }
+    impl Entry {
+        fn add_category(&mut self, c: &str) {
+            if c == crate::classify::UNKNOWN {
+                self.unknown = true;
+            } else {
+                self.categories.insert(c.to_string());
             }
         }
     }
-    let unkeyed: Vec<_> = doc
-        .egress
-        .iter()
-        .filter(|e| e.fides_key.is_none())
-        .collect();
-    if !unkeyed.is_empty() {
-        out.push_str(
-            "# Egress without a processor key (dynamic hosts, run-time model providers):\n",
-        );
-        for e in unkeyed {
+    let sinks: BTreeMap<&str, &crate::report::SinkRec> =
+        doc.sinks.iter().map(|s| (s.id.as_str(), s)).collect();
+    let flows: BTreeMap<&str, &crate::report::FlowRec> =
+        doc.flows.iter().map(|f| (f.id.as_str(), f)).collect();
+    let mut merged: BTreeMap<String, Entry> = BTreeMap::new();
+    // Unresolved destinations, by sink class and the file that sends: one file usually holds
+    // one client (eShop's `OrderingService.cs` and `CatalogService.cs` reach different APIs).
+    let mut unresolved: BTreeMap<(&str, &str), Entry> = BTreeMap::new();
+    for e in &doc.egress {
+        let Some(k) = &e.fides_key else {
+            for f in e.flows.iter().filter_map(|f| flows.get(f.as_str())) {
+                let Some(snk) = sinks.get(f.sink.as_str()) else {
+                    continue;
+                };
+                let entry = unresolved
+                    .entry((e.class.as_str(), snk.location.path.as_str()))
+                    .or_default();
+                entry.unresolved = Some(e.class.as_str());
+                entry.add_category(&f.category);
+                entry
+                    .sites
+                    .insert((snk.location.path.clone(), snk.location.line));
+            }
+            continue;
+        };
+        let entry = merged.entry(k.clone()).or_default();
+        for c in &e.categories {
+            entry.add_category(c);
+        }
+        entry.labels.push(format!(
+            "{}{} via {}",
+            e.processor.as_deref().unwrap_or(e.class.as_str()),
+            if e.declared { "" } else { " (undeclared)" },
+            e.class.as_str()
+        ));
+    }
+    let keys = unresolved_keys(unresolved.keys().copied());
+    for ((class, path), entry) in unresolved {
+        merged.insert(keys[&(class, path)].clone(), entry);
+    }
+    if merged.values().any(|e| e.unresolved.is_some()) {
+        out.push_str("    # Keys starting with unresolved_ are destinations the code does not name (a host\n");
+        out.push_str("    # computed at run time, a provider chosen by configuration). Replace each with the\n");
+        out.push_str("    # receiving system's key, or declare the processor in .privacy-flow.yml and scan again.\n");
+    }
+    out.push_str("    egress:\n");
+    for (k, entry) in merged {
+        if let Some(class) = entry.unresolved {
+            let sites: Vec<String> = entry
+                .sites
+                .iter()
+                .map(|(p, l)| format!("{p}:{l}"))
+                .collect();
+            const SHOWN: usize = 5;
             let _ = writeln!(
                 out,
-                "#   {} — {} flow(s), categories: {}",
-                e.class.as_str(),
-                e.flows.len(),
-                e.categories.join(", ")
+                "      # Unresolved {class} destination, sent from {}{}",
+                sites
+                    .iter()
+                    .take(SHOWN)
+                    .cloned()
+                    .collect::<Vec<_>>()
+                    .join(", "),
+                if sites.len() > SHOWN {
+                    format!(" and {} more", sites.len() - SHOWN)
+                } else {
+                    String::new()
+                }
             );
+        } else {
+            let _ = writeln!(out, "      # {}", entry.labels.join("; "));
+        }
+        if entry.unknown {
+            out.push_str("      # also data of unknown category (request input not narrowed by a type): review\n");
+        }
+        let _ = writeln!(out, "      - fides_key: {}", q(&k));
+        out.push_str("        type: \"system\"\n");
+        if !entry.categories.is_empty() {
+            out.push_str("        data_categories:\n");
+            for c in entry.categories {
+                let _ = writeln!(out, "          - {}", q(&c));
+            }
         }
     }
     out
 }
 
+/// `unresolved_<class>_<file>`, with the file's directories added, innermost first, until the
+/// keys of one class are distinct: `unresolved_http_ordering_service`.
+fn unresolved_keys<'a>(
+    groups: impl Iterator<Item = (&'a str, &'a str)>,
+) -> BTreeMap<(&'a str, &'a str), String> {
+    let groups: Vec<_> = groups.collect();
+    let mut depth = vec![1usize; groups.len()];
+    let key = |(class, path): (&str, &str), d: usize| {
+        let parts: Vec<&str> = path.split('/').collect();
+        let from = parts.len().saturating_sub(d);
+        let mut name: Vec<String> = parts[from..].iter().map(|p| snake(p)).collect();
+        if let Some(last) = name.last_mut() {
+            let file = parts.last().copied().unwrap_or(path);
+            *last = snake(file.rsplit_once('.').map_or(file, |(stem, _)| stem));
+        }
+        format!("unresolved_{class}_{}", name.join("_"))
+    };
+    loop {
+        let keys: Vec<String> = groups
+            .iter()
+            .zip(&depth)
+            .map(|(g, d)| key(*g, *d))
+            .collect();
+        let mut changed = false;
+        for i in 0..groups.len() {
+            let clash = keys
+                .iter()
+                .enumerate()
+                .any(|(j, k)| j != i && *k == keys[i]);
+            if clash && depth[i] < groups[i].1.split('/').count() {
+                depth[i] += 1;
+                changed = true;
+            }
+        }
+        if !changed {
+            // Same directories and stem (`a.ts` beside `a.js`): number them in path order.
+            let mut seen: BTreeMap<String, usize> = BTreeMap::new();
+            let keys = keys.into_iter().map(|k| {
+                let n = seen.entry(k.clone()).or_default();
+                *n += 1;
+                if *n == 1 { k } else { format!("{k}_{n}") }
+            });
+            return groups.into_iter().zip(keys).collect();
+        }
+    }
+}
+
+/// `OrderingService` → `ordering_service`, `web-hooks.client` → `web_hooks_client`.
+fn snake(s: &str) -> String {
+    let mut out = String::new();
+    let mut prev_lower = false;
+    for c in s.chars() {
+        if c.is_ascii_alphanumeric() {
+            if c.is_ascii_uppercase() && prev_lower {
+                out.push('_');
+            }
+            prev_lower = c.is_ascii_lowercase() || c.is_ascii_digit();
+            out.push(c.to_ascii_lowercase());
+        } else {
+            if !out.is_empty() && !out.ends_with('_') {
+                out.push('_');
+            }
+            prev_lower = false;
+        }
+    }
+    out.trim_end_matches('_').to_string()
+}
+
 #[cfg(test)]
 mod tests {
-    use super::q;
+    use super::{q, snake, unresolved_keys};
+
+    #[test]
+    fn unresolved_keys_are_distinct_and_readable() {
+        let groups = [
+            ("http", "src/WebApp/Services/OrderingService.cs"),
+            ("http", "src/HybridApp/Services/CatalogService.cs"),
+            ("http", "src/WebAppComponents/Services/CatalogService.cs"),
+            ("llm", "src/Catalog.API/Services/CatalogService.cs"),
+            ("http", "src/a.ts"),
+            ("http", "src/a.js"),
+        ];
+        let keys = unresolved_keys(groups.iter().copied());
+        let k = |g: (&'static str, &'static str)| keys[&g].as_str();
+        assert_eq!(k(groups[0]), "unresolved_http_ordering_service");
+        assert_eq!(
+            k(groups[1]),
+            "unresolved_http_hybrid_app_services_catalog_service"
+        );
+        assert_eq!(k(groups[3]), "unresolved_llm_catalog_service");
+        assert_eq!(k(groups[4]), "unresolved_http_src_a");
+        assert_eq!(k(groups[5]), "unresolved_http_src_a_2");
+        assert_eq!(snake("WebHooks.Client"), "web_hooks_client");
+        assert_eq!(snake("chat-state"), "chat_state");
+    }
 
     #[test]
     fn quotes() {

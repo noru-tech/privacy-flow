@@ -1,0 +1,9 @@
+version: 1
+system:
+  fides_key: storefront
+  name: Storefront
+processors:
+  # Declared by sink ID: the AI SDK names no provider, and no fides_key is given.
+  - name: Anthropic
+    sinks: ["js.vercel-ai"]
+    citation: "Anthropic commercial terms, LEG-81"
