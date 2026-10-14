@@ -1,4 +1,4 @@
-privacy-flow 0.2.0 · no commit · csharp 2 files · directory walk
+privacy-flow 0.3.0 · no commit · csharp 2 files · directory walk
 
 PF001  medium   pf-d427561ed9dafb9e  Accounts/SignupService.cs:8:9
                 user.contact.email from `account.Email (account: Account)` (Accounts/SignupService.cs:5) reaches a log sink (cs.microsoft-logging) at Accounts/SignupService.cs:8
