@@ -562,3 +562,53 @@ released binary): byte-identical on repeat and to a local build of the tag. On t
 sinks of the ten applications: found 55 % (45–64 %), 57 % counting gaps, 47 % by the original
 rule; 0.1.0 32 %, Privado 17 %. 21,568 flows across the twelve applications; precision needs a
 new sample of them, labelled. Ghost 4.0 s, Polar 15.2 s, PrivateGPT 3.1 s.
+
+## 2026-10-14 — C# (ADRs 0016, 0017); v0.3.0 released
+
+**Why.** C# was reported only as an `unsupported_language` gap. The owner chose one milestone PR
+(#31), like M3's Python, with dotnet/eShop pinned at `dc7ea499` as a CI smoke test; the frozen
+benchmark corpus is not touched. eShop's ordering API logs the whole order request, card number
+included, four lines below the comment saying it must not (`OrdersApi.cs:134`), and its MediatR
+pipeline behaviors log every command whole.
+
+**Done.** A two-pass C# lowering: declarations of every file are indexed first, so names resolve
+across the project (namespaces; global, `<Using>` and implicit usings; partial types; implicit
+`this`); external types are qualified by the names the catalogue spells (ADR 0016). Razor
+components are translated to C# with a byte map back. ASP.NET Core minimal APIs, MVC controllers,
+gRPC services and Blazor parameters and `@bind` as sources; logging (including `[LoggerMessage]`),
+HTTP, messaging, error-tracking, analytics and LLM sinks. Dispatchers as catalogue data: MediatR
+`Send`/`Publish` reach the project's handlers and pipeline behaviors, filtered by the request's
+type (ADR 0017). Language differences outside the lowerings are a table (`LangTraits`).
+TypeScript and Python goldens are unchanged apart from the catalogue digest. Fixtures `cs/*`,
+conformance vectors `cs-*` and a `dispatch` break, fuzz inputs for C#, Razor and project files, a
+C# performance budget, and `.github/workflows/smoke-eshop.yml`.
+
+**Measured** (Apple M3 Pro). eShop, 516 C# and Razor files, 20,605 lines: 0.6 s with one thread,
+0.4 s with eight; PF001 134, PF003 12, PF006 41, PFC01 27; 27 coverage gaps (two files the grammar
+cannot parse, the `.cshtml` views, MAUI client APIs). The smoke test's required findings all hold:
+`OrdersApi.cs:134`, the three behaviors through MediatR, the Duende events with user names, the
+chatbot's `@bind` input reaching the model, the checkout form reaching the ordering API. The
+100k-line synthetic C# service: 2.0 s and 644 MiB, against 1.2 s and 488 MiB for TypeScript.
+Computing dispatch candidates once per target took its facts phase from 2.0 s to 0.45 s.
+
+**Not done.** New classification names eShop needs (`card_security_number`, `card_holder_name`,
+`buyer`) are held back: they change TypeScript and Python output on the frozen benchmark, and
+need their own measurement. MassTransit's mediator (consumers receive a `ConsumeContext<T>`).
+
+**Next** for C#: Razor Pages and `.cshtml` views, getters followed for data, SignalR hubs and
+Azure Functions as sources, assembly metadata for external return types.
+
+**Released.** `v0.3.0` was tagged at `a3c916b` (#32, merged by auto-merge once CI passed). The
+release workflow built the four archives, published the Homebrew formula and the crate (trusted
+publishing), and Zenodo archived the release (DOI `10.5281/zenodo.23376703`). Verified as a user
+would: `gh attestation verify` on the aarch64 macOS archive passes with the release workflow at
+the tag as signer (source commit `a3c916b`), the checksum matches (with the same blank-line
+warning from `shasum -c` as 0.2.0), the binary reports `piiflow 0.3.0`, and crates.io and the
+Homebrew formula are at 0.3.0. No new benchmark run: the corpus has no C# application.
+
+**Found after the release.** On eShop the Fides fragment has no egress until processors are
+declared: its HTTP hosts are service-discovery names and its chat client's provider is chosen at
+run time. Declaring one by `sinks:` exposed two bugs in `src/report.rs`: the entry's comment
+names the processor `?` (the catalogue sink has no processor, and the declaration's name is not
+used), and without a `fides_key` the declared processor falls back to the unkeyed comment instead
+of a slug of its name, as `docs/fides.md` says. For 0.3.1.
