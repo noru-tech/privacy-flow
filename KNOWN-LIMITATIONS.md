@@ -24,15 +24,20 @@ can tell; the items marked **silent** below are the ones it cannot.
 ## Languages
 
 - **Supported:** TypeScript (`.ts`, `.tsx`, `.mts`, `.cts`), JavaScript (`.js`, `.jsx`, `.mjs`,
-  `.cjs`) and Python (`.py`).
+  `.cjs`), Python (`.py`), and C# (`.cs`, and Blazor components in `.razor`).
 - **Not analysed, reported as `unsupported_language` gaps:** Go, Java, Kotlin, Scala, Ruby, PHP,
-  C#, F#, Rust, Swift, Objective-C, Elixir, Erlang, Clojure, Dart, and the script blocks of Vue,
-  Svelte and Astro single-file components. Go and Java/Kotlin are next on the [roadmap](ROADMAP.md).
+  F#, Rust, Swift, Objective-C, Elixir, Erlang, Clojure, Dart, the script blocks of Vue, Svelte and
+  Astro single-file components, and Razor views and pages (`.cshtml`). Go and Java/Kotlin are next
+  on the [roadmap](ROADMAP.md).
 - **Silent:** files in other languages (C, C++, shell, SQL, Jupyter notebooks) are ignored without
   a gap; Python stub files (`.pyi`) and TypeScript declaration files (`.d.ts`) are not code.
-- **Parsing:** tree-sitter-typescript 0.23 rejects a bare `&` in JSX text (`<p>Terms & conditions</p>`).
-  The file is analysed as far as it parses and reported as a `parse_error` gap; so is any file with
-  a syntax error. Files over 2 MiB are skipped and reported.
+- **Parsing:** tree-sitter-typescript 0.23 rejects a bare `&` in JSX text (`<p>Terms & conditions</p>`),
+  and tree-sitter-c-sharp 0.23 a `#if` inside an expression or a base list. The file is analysed as
+  far as it parses and reported as a `parse_error` gap; so is any file with a syntax error. Files
+  over 2 MiB are skipped and reported.
+- **C# defaults:** build output (`bin/`, `obj/`), designer and generated files (`*.Designer.cs`,
+  `*.g.cs`), EF Core migrations and test projects (`*.Tests`, `*.UnitTests`, `*.FunctionalTests`,
+  `*.IntegrationTests`) are excluded by default.
 
 ## Frameworks
 
@@ -42,12 +47,22 @@ Request input is a source only in frameworks whose request objects are modelled
 - **Supported:** Express (handler `req.body`, `query`, `params`, `cookies`, `headers`, `ip`),
   Fastify, Next.js App Router route handlers and Pages Router API routes, `next/headers`, FastAPI
   (Pydantic-typed bodies are narrowed to their classified fields), Flask (`flask.request`),
-  Django and Django REST framework views in `views` modules (the `request` parameter).
+  Django and Django REST framework views in `views` modules (the `request` parameter), ASP.NET Core
+  minimal APIs (`Map*` handlers; services, `[FromServices]`, DbContexts, the request context and
+  interfaces are injected, not input; `[AsParameters]` binds each property; a `Guid` or a number is
+  input only when its name says what it is), ASP.NET Core MVC controller actions, gRPC service
+  methods (overrides taking a `ServerCallContext`), `HttpRequest` reads, claims
+  (`FindFirst("sub")` is classified by the claim type), and Blazor components (`@bind`,
+  `[SupplyParameterFromForm]`, `[SupplyParameterFromQuery]`, `[Parameter]` on routable pages).
 - **Not supported, reported as `unsupported_framework` gaps** (calls into them fold into that gap):
   Koa, Hapi, NestJS (`@Body()` and friends), Hono, Elysia, Remix, SvelteKit, Nuxt and h3, Restify,
   AdonisJS, tRPC, ts-rest servers, GraphQL servers (Apollo, Yoga, Mercurius, TypeGraphQL, Graphene,
-  Strawberry, Ariadne), Slack Bolt, aiohttp servers, Tornado, Sanic, Falcon, Pyramid, Bottle,
-  Quart, Litestar, and Starlette used directly ([`catalogue/frameworks.yml`](catalogue/frameworks.yml)).
+  Strawberry, Ariadne, HotChocolate, GraphQL.NET), Slack Bolt, aiohttp servers, Tornado, Sanic,
+  Falcon, Pyramid, Bottle, Quart, Litestar, Starlette used directly, SignalR hubs, Azure Functions,
+  Orleans grains, Razor Pages (`PageModel`), FastEndpoints, CoreWCF and ASP.NET on .NET Framework
+  ([`catalogue/frameworks.yml`](catalogue/frameworks.yml)). A C# class is in a framework when it
+  extends one of the framework's types or carries its attribute, since its imports are global and
+  implicit.
 - **Next.js server actions** (`'use server'`) are reported as `unsupported_construct` gaps: their
   arguments come from the client and are not modelled as request input.
 - **Silent:** other kinds of input are not sources unless a field name says so: WebSocket messages,
@@ -121,6 +136,35 @@ Request input is a source only in frameworks whose request objects are modelled
 - **Python:** `**kwargs` binds every unmatched keyword argument; metaclasses, descriptors and
   `__getattr__` are not modelled; the results of ORM queries are not typed (their fields are
   classified by name when read).
+- **C#** ([ADR 0016](docs/adr/0016-csharp.md)): names resolve against the whole project, with
+  global, project-file and implicit usings, partial classes and extension methods; there is no
+  assembly metadata.
+  - A type outside the project is known by name only. One the catalogue spells is qualified
+    exactly; one only a catalogue wildcard covers (`Microsoft.EntityFrameworkCore.**`) is
+    qualified by the first such `using` in scope, which may be the wrong namespace when several
+    `using`s are covered by wildcards; one no `using` explains stays bare, and a call on it is
+    an `unresolved_callee` gap. The return types of external calls are not known: their paths
+    are `T.Method()`, matched by the catalogue's globs.
+  - Every variable declared with a type that declares classified fields is a source of those
+    fields (`Customer customer` with an `Email` property), as for TypeScript annotations; C#
+    declares types almost everywhere, so typed seeds are common.
+  - Overloads share a name: a call reaches every overload of the nearest class that defines it.
+    `out` and `ref` arguments receive the call's result, so a method's return value carries what
+    it writes to them (conformance vector `cs-out-param`).
+  - **Silent:** a getter's body is followed for what it is, not for the data it reads
+    (`public string Label => "card of " + Holder;` read as `card.Label` does not carry `Holder`;
+    vector `cs-property-getter`); code that a source generator writes (other than `[LoggerMessage]`
+    methods, which are log sinks, and gRPC message classes, which propagate) is not seen; `dynamic`
+    is an object of unknown type.
+  - **Dispatch** ([ADR 0017](docs/adr/0017-dispatch.md)): MediatR's `Send` and `Publish` reach
+    the project's handlers and pipeline behaviors for the value's type; a value of unknown class
+    reaches every handler. Other mediators and buses are followed only when a project declares
+    them under `dispatchers`; an interface call on the project's own bus reaches its
+    implementations as any interface call does. A message published to a broker leaves the
+    process: its consumers are not reached from the producer.
+  - Razor components are translated into C# for the analysis; markup expressions are rendered
+    into the application's own page, which is not a sink. Child content templates
+    (`RenderFragment` lambdas with `context`) read `context` as an unknown member.
 
 ## Sources and sinks
 

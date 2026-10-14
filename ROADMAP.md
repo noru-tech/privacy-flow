@@ -22,6 +22,10 @@ DOI for the corpus. See the protocol in [docs/benchmark.md](docs/benchmark.md#pr
 
 ## After v0.1
 
+- **C#** (done after 0.2.0, [ADR 0016](docs/adr/0016-csharp.md)): ASP.NET Core, MVC, gRPC,
+  Blazor and MediatR ([ADR 0017](docs/adr/0017-dispatch.md)); next for C#: Razor Pages and
+  `.cshtml` views, getters followed for data, SignalR hubs and Azure Functions as sources, and
+  assembly metadata for external return types.
 - **Go**, then **Java and Kotlin**: one lowering each into the shared IR
   ([ADR 0001](docs/adr/0001-shared-ir.md)), with their logging, HTTP and SDK sinks in the catalogue
   and the common frameworks (net/http, gin, echo; Spring) as sources.

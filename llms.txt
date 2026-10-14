@@ -2,7 +2,7 @@
 
 > Deterministic, offline static analysis of where personal data goes: logs, third-party SDKs, LLM providers and outbound HTTP. Cited file:line flow paths, SARIF, canonical JSON and Fides egress.
 
-The command-line tool is `piiflow`; the package is `privacy-flow` everywhere (the names `pflow` on crates.io and PyPI belong to unrelated tools). It analyses TypeScript, JavaScript and Python with tree-sitter, follows calls across files and packages through function summaries, and reports each flow of personal data (Fideslang categories) to a sink as a chain of file:line:column hops. Anything it cannot see is reported as a coverage gap, and a result with open gaps never exits as clean. It makes no network calls, sends no telemetry and calls no model. MIT licensed, maintained by Noru (https://noru.tech).
+The command-line tool is `piiflow`; the package is `privacy-flow` everywhere (the names `pflow` on crates.io and PyPI belong to unrelated tools). It analyses TypeScript, JavaScript, Python and C# (with Blazor `.razor` components) with tree-sitter, follows calls across files and packages through function summaries, and reports each flow of personal data (Fideslang categories) to a sink as a chain of file:line:column hops. Anything it cannot see is reported as a coverage gap, and a result with open gaps never exits as clean. It makes no network calls, sends no telemetry and calls no model. MIT licensed, maintained by Noru (https://noru.tech).
 
 Install:
 
