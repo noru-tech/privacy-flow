@@ -1,0 +1,134 @@
+{
+  "description": "What piiflow must and must not report on dotnet/eShop at a pinned commit. Lines are 1-based; a rule with no line matches any line of the file. `categories` must all be among the finding's categories at that location.",
+  "repository": "https://github.com/dotnet/eShop",
+  "commit": "dc7ea499cd356924fb6689b3702964a5869dbae9",
+  "max_seconds": 120,
+  "max_parse_error_files": 3,
+  "max_gaps": 60,
+  "allowed_gap_kinds": [
+    "parse_error",
+    "unsupported_language",
+    "unresolved_callee",
+    "unresolved_method",
+    "unresolved_import",
+    "dynamic_call"
+  ],
+  "must": [
+    {
+      "rule": "PF001",
+      "path": "src/Ordering.API/Apis/OrdersApi.cs",
+      "line": 134,
+      "categories": ["user.financial.credit_card", "user.contact.address.street"],
+      "why": "The whole CreateOrderRequest (card number, address) is logged, four lines below the comment saying it must not be."
+    },
+    {
+      "rule": "PF001",
+      "path": "src/Ordering.API/Apis/OrdersApi.cs",
+      "line": 148,
+      "categories": ["user.financial.credit_card"],
+      "why": "The identified command carrying the order command is logged whole."
+    },
+    {
+      "rule": "PF001",
+      "path": "src/Ordering.API/Application/Behaviors/LoggingBehavior.cs",
+      "line": 9,
+      "categories": ["user.financial.credit_card"],
+      "why": "MediatR's pipeline behavior logs every command with {@Command}; it is reached only through dispatch."
+    },
+    {
+      "rule": "PF001",
+      "path": "src/Ordering.API/Application/Behaviors/ValidatorBehavior.cs",
+      "line": 30,
+      "categories": ["user.financial.credit_card"]
+    },
+    {
+      "rule": "PF001",
+      "path": "src/Ordering.API/Application/Behaviors/TransactionBehavior.cs",
+      "line": 41,
+      "categories": ["user.financial.credit_card"],
+      "why": "Logged inside a lambda handed to EF Core's execution strategy."
+    },
+    {
+      "rule": "PF001",
+      "path": "src/Ordering.API/Application/Commands/IdentifiedCommandHandler.cs",
+      "line": 79,
+      "categories": ["user.financial.credit_card"]
+    },
+    {
+      "rule": "PF001",
+      "path": "src/Identity.API/Quickstart/Account/AccountController.cs",
+      "line": 99,
+      "categories": ["user.account.username"],
+      "why": "A Duende IdentityServer event with the user name, written to the log."
+    },
+    {
+      "rule": "PF001",
+      "path": "src/Identity.API/Quickstart/Account/AccountController.cs",
+      "line": 130,
+      "categories": ["user.account.username"]
+    },
+    {
+      "rule": "PF003",
+      "path": "src/Catalog.API/Services/CatalogAI.cs",
+      "line": 61,
+      "why": "Search text from the request is embedded by the model."
+    },
+    {
+      "rule": "PF003",
+      "path": "src/WebApp/Components/Chatbot/ChatState.cs",
+      "line": 78
+    },
+    {
+      "rule": "PF006",
+      "path": "src/WebApp/Services/OrderingService.cs",
+      "line": 17,
+      "categories": ["user.contact.address.street", "user.financial.credit_card"],
+      "why": "The checkout form's address and card go to the ordering API, whose base address is configured elsewhere."
+    }
+  ],
+  "must_flows": [
+    {
+      "source": {"path": "src/WebApp/Components/Chatbot/Chatbot.razor", "line": 72},
+      "sink": {"path": "src/WebApp/Components/Chatbot/ChatState.cs", "line": 78},
+      "why": "What the user types into the chatbot (@bind) reaches the chat model."
+    },
+    {
+      "source": {"path": "src/WebApp/Components/Pages/Checkout/Checkout.razor", "line": 68},
+      "sink": {"path": "src/WebApp/Services/OrderingService.cs", "line": 17},
+      "why": "The [SupplyParameterFromForm] checkout model reaches the outbound order request."
+    },
+    {
+      "source": {"path": "src/Basket.API/Extensions/ServerCallContextIdentityExtensions.cs", "line": 7},
+      "sink": {"path": "src/Basket.API/Grpc/BasketService.cs", "line": 23},
+      "category": "user.unique_id.pseudonymous",
+      "why": "The user's subject identifier is logged: a flow, but not a PF001 finding on its own (ADR 0015)."
+    }
+  ],
+  "must_not": [
+    {
+      "rule": "PF001",
+      "path": "src/Ordering.API/Apis/OrdersApi.cs",
+      "line": 126,
+      "why": "Only the type name and the user id are logged here."
+    },
+    {
+      "rule": "PF005",
+      "path": "src/Identity.API/Quickstart/Account/AccountController.cs",
+      "why": "The password goes to ASP.NET Identity's sign-in, which stays inside the system."
+    },
+    {
+      "rule": "PF001",
+      "path": "src/Basket.API/Grpc/BasketService.cs",
+      "line": 23,
+      "min_severity": "medium",
+      "why": "A pseudonymous identifier alone."
+    },
+    {
+      "rule": "PF006",
+      "path": "src/Webhooks.API/Services/WebhooksSender.cs",
+      "line": 32,
+      "min_severity": "medium",
+      "why": "The webhook payload carries order and stock events, not personal data."
+    }
+  ]
+}

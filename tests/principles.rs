@@ -123,6 +123,12 @@ fn principle_6_rules_are_data() {
         "pino",
         "winston",
         "logging.",
+        "microsoft.",
+        "system.",
+        "mediatr",
+        "serilog",
+        "grpc",
+        "aspnetcore",
     ] {
         assert!(
             !facts.to_lowercase().contains(&format!("\"{sdk}")),

@@ -131,6 +131,20 @@ const VOID_ELEMENTS: &[&str] = &[
     "wbr",
 ];
 
+/// `src[a..b]`, with the bounds moved out to character boundaries: the scanner steps through
+/// bytes, and a file that is not UTF-8 holds multi-byte replacement characters.
+fn snap(src: &str, a: usize, b: usize) -> &str {
+    let mut a = a.min(src.len());
+    let mut b = b.min(src.len()).max(a);
+    while !src.is_char_boundary(a) {
+        a -= 1;
+    }
+    while !src.is_char_boundary(b) {
+        b += 1;
+    }
+    &src[a..b]
+}
+
 struct Gen<'s> {
     src: &'s str,
     b: &'s [u8],
@@ -143,13 +157,18 @@ impl Gen<'_> {
         if end <= start {
             return;
         }
-        dst.segments.push((dst.text.len(), start, end - start));
-        dst.text.push_str(&src[start..end]);
+        let text = snap(src, start, end);
+        dst.segments.push((dst.text.len(), start, text.len()));
+        dst.text.push_str(text);
     }
 
     fn synth(dst: &mut Generated, at: usize, text: &str) {
         dst.segments.push((dst.text.len(), at, 0));
         dst.text.push_str(text);
+    }
+
+    fn s(&self, a: usize, b: usize) -> &str {
+        snap(self.src, a, b)
     }
 
     fn code(&mut self, start: usize, end: usize) {
@@ -175,7 +194,8 @@ impl Gen<'_> {
             b'"' => {
                 // A raw string `"""..."""`.
                 if self.starts(i, "\"\"\"") {
-                    return self.src[i + 3..end]
+                    return self
+                        .s(i + 3, end)
                         .find("\"\"\"")
                         .map_or(end, |j| i + 3 + j + 3);
                 }
@@ -204,10 +224,10 @@ impl Gen<'_> {
                 }
                 end
             }
-            b'/' if self.peek(i + 1) == b'/' => self.src[i..end].find('\n').map_or(end, |j| i + j),
-            b'/' if self.peek(i + 1) == b'*' => self.src[i + 2..end]
-                .find("*/")
-                .map_or(end, |j| i + 2 + j + 2),
+            b'/' if self.peek(i + 1) == b'/' => self.s(i, end).find('\n').map_or(end, |j| i + j),
+            b'/' if self.peek(i + 1) == b'*' => {
+                self.s(i + 2, end).find("*/").map_or(end, |j| i + 2 + j + 2)
+            }
             _ => i,
         }
     }
@@ -266,10 +286,10 @@ impl Gen<'_> {
                 b'@' => i = self.transition(i, end),
                 b'<' if self.peek(i + 1) == b'!' => {
                     // `<!-- -->`, `<!DOCTYPE>`
-                    i = self.src[i..end].find('>').map_or(end, |j| i + j + 1);
+                    i = self.s(i, end).find('>').map_or(end, |j| i + j + 1);
                 }
                 b'<' if self.peek(i + 1) == b'/' => {
-                    i = self.src[i..end].find('>').map_or(end, |j| i + j + 1);
+                    i = self.s(i, end).find('>').map_or(end, |j| i + j + 1);
                 }
                 b'<' if self.peek(i + 1).is_ascii_alphabetic() => i = self.tag(i, end).0,
                 _ => i += 1,
@@ -286,7 +306,7 @@ impl Gen<'_> {
         }
         match self.peek(i) {
             b'@' => i + 1,
-            b'*' => self.src[i..end].find("*@").map_or(end, |j| i + j + 2),
+            b'*' => self.s(i, end).find("*@").map_or(end, |j| i + j + 2),
             b'(' => {
                 let close = self.matching(i, end);
                 self.expression(i, close);
@@ -299,13 +319,13 @@ impl Gen<'_> {
             }
             b':' => {
                 // `@: text` in a code block: a line of markup.
-                let eol = self.src[i..end].find('\n').map_or(end, |j| i + j);
+                let eol = self.s(i, end).find('\n').map_or(end, |j| i + j);
                 self.markup(i + 1, eol);
                 eol
             }
             c if c.is_ascii_alphabetic() || c == b'_' => {
                 let word_end = self.ident_end(i, end);
-                let word = &self.src[i..word_end];
+                let word = self.s(i, word_end);
                 if CONTROL.contains(&word) {
                     return self.control(i, end);
                 }
@@ -377,11 +397,11 @@ impl Gen<'_> {
 
     /// `@if (...) { ... } else { ... }`, `@foreach (...) { ... }`, `@try { } catch { }`.
     fn control(&mut self, kw: usize, end: usize) -> usize {
-        let first = self.src[kw..self.ident_end(kw, end)].to_string();
+        let first = self.s(kw, self.ident_end(kw, end)).to_string();
         let mut i = kw;
         loop {
             let we = self.ident_end(i, end);
-            let word = self.src[i..we].to_string();
+            let word = self.s(i, we).to_string();
             self.code(i, we);
             self.put(we, " ");
             let mut j = self.skip_ws(we, end);
@@ -404,16 +424,16 @@ impl Gen<'_> {
                 i = close;
             } else {
                 // A single statement without braces: to the end of the line.
-                let eol = self.src[j..end].find('\n').map_or(end, |k| j + k);
+                let eol = self.s(j, end).find('\n').map_or(end, |k| j + k);
                 self.put(j, "{\n");
                 self.code_block(j, eol);
                 self.put(eol, "}\n");
                 i = eol;
             }
             let k = self.skip_ws(i, end);
-            let next = &self.src[k..self.ident_end(k, end)];
+            let next = self.s(k, self.ident_end(k, end));
             if first == "do" && next == "while" {
-                let semi = self.src[k..end].find(';').map_or(end, |x| k + x + 1);
+                let semi = self.s(k, end).find(';').map_or(end, |x| k + x + 1);
                 self.code(k, semi);
                 self.put(semi, "\n");
                 return semi;
@@ -461,7 +481,7 @@ impl Gen<'_> {
             }
             if c == b'@' && self.peek(i + 1) == b':' {
                 self.code(chunk, i);
-                let eol = self.src[i..end].find('\n').map_or(end, |j| i + j);
+                let eol = self.s(i, end).find('\n').map_or(end, |j| i + j);
                 self.markup(i + 2, eol);
                 i = eol;
                 chunk = i;
@@ -502,7 +522,7 @@ impl Gen<'_> {
                         while s > start && self.b[s - 1].is_ascii_alphabetic() {
                             s -= 1;
                         }
-                        return matches!(&self.src[s..w], "if" | "foreach" | "for" | "while");
+                        return matches!(self.s(s, w), "if" | "foreach" | "for" | "while");
                     }
                 }
                 _ => {}
@@ -516,9 +536,9 @@ impl Gen<'_> {
     /// self-closing or void).
     fn element_end(&self, start: usize, end: usize) -> usize {
         let name_end = self.tag_name_end(start + 1, end);
-        let name = &self.src[start + 1..name_end];
+        let name = self.s(start + 1, name_end);
         let open_end = self.open_tag_end(name_end, end);
-        if self.b[open_end - 1] == b'>' && open_end >= 2 && self.b[open_end - 2] == b'/' {
+        if open_end >= 2 && self.b[open_end - 1] == b'>' && self.b[open_end - 2] == b'/' {
             return open_end;
         }
         if VOID_ELEMENTS.contains(&name.to_ascii_lowercase().as_str()) {
@@ -528,23 +548,23 @@ impl Gen<'_> {
         let mut i = open_end;
         while i < end {
             if self.b[i] == b'@' && self.peek(i + 1) == b'*' {
-                i = self.src[i..end].find("*@").map_or(end, |j| i + j + 2);
+                i = self.s(i, end).find("*@").map_or(end, |j| i + j + 2);
                 continue;
             }
             if self.b[i] == b'<' {
                 if self.peek(i + 1) == b'/' {
                     let ne = self.tag_name_end(i + 2, end);
-                    if &self.src[i + 2..ne] == name {
+                    if self.s(i + 2, ne) == name {
                         depth -= 1;
                         if depth == 0 {
-                            return self.src[i..end].find('>').map_or(end, |j| i + j + 1);
+                            return self.s(i, end).find('>').map_or(end, |j| i + j + 1);
                         }
                     }
                 } else if self.peek(i + 1).is_ascii_alphabetic() {
                     let ne = self.tag_name_end(i + 1, end);
-                    if &self.src[i + 1..ne] == name {
+                    if self.s(i + 1, ne) == name {
                         let oe = self.open_tag_end(ne, end);
-                        if !(self.b[oe - 1] == b'>' && self.b[oe - 2] == b'/') {
+                        if !(oe >= 2 && self.b[oe - 1] == b'>' && self.b[oe - 2] == b'/') {
                             depth += 1;
                         }
                         i = oe;
@@ -600,7 +620,7 @@ impl Gen<'_> {
     /// of the name).
     fn tag(&mut self, start: usize, end: usize) -> (usize, usize) {
         let name_end = self.tag_name_end(start + 1, end);
-        let name = self.src[start + 1..name_end].to_string();
+        let name = self.s(start + 1, name_end).to_string();
         let component =
             name.chars().next().is_some_and(|c| c.is_ascii_uppercase()) && name != "text";
         let mut params: Vec<(usize, usize, String, bool)> = Vec::new();
@@ -635,7 +655,7 @@ impl Gen<'_> {
                 }
                 i += 1;
             }
-            let attr = self.src[a_start..i].to_string();
+            let attr = self.s(a_start, i).to_string();
             let mut value: Option<(usize, usize)> = None;
             let k = self.skip_ws(i, end);
             if self.peek(k) == b'=' {
@@ -756,7 +776,7 @@ impl Gen<'_> {
     /// Whether `[s, e)` is a member chain (`Info`, `model.Address`): for a component's
     /// parameter that is not a string, a C# expression.
     fn is_member_chain(&self, s: usize, e: usize) -> bool {
-        let t = &self.src[s..e];
+        let t = self.s(s, e);
         !t.is_empty()
             && t.split('.').all(|p| {
                 !p.is_empty()
@@ -820,8 +840,10 @@ pub fn generate(path: &str, src: &str, ctx: &RazorCtx) -> Generated {
     let mut i = 0;
     let mut markup_start = 0;
     while i < end {
-        let line_end = src[i..].find('\n').map_or(end, |j| i + j + 1);
-        let t = src[i..line_end].trim_start_matches('\u{feff}');
+        let line_end = snap(src, i, src.len())
+            .find('\n')
+            .map_or(end, |j| i + j + 1);
+        let t = snap(src, i, line_end).trim_start_matches('\u{feff}');
         let lead = line_end - i - t.len();
         let trimmed = t.trim_start();
         let at = i + lead + (t.len() - trimmed.len());
@@ -864,11 +886,11 @@ pub fn generate(path: &str, src: &str, ctx: &RazorCtx) -> Generated {
                     "inject" => {
                         // `@inject T Name`: the type and the name, as written.
                         let body = at + 1 + d.len();
-                        let rest = src[body..line_end].trim_end();
+                        let rest = snap(src, body, line_end).trim_end();
                         let lead = rest.len() - rest.trim_start().len();
                         let s = body + lead;
                         let e = body + rest.len();
-                        if let Some(sp) = src[s..e].rfind(char::is_whitespace) {
+                        if let Some(sp) = snap(src, s, e).rfind(char::is_whitespace) {
                             injects.push((s, s + sp, s + sp + 1, e));
                         }
                     }
@@ -1005,6 +1027,6 @@ mod tests {
         // Positions map back: `Info.Street` in the binder is the source's.
         let g_at = t.find("Info.Street = Microsoft").unwrap();
         let s_at = g.to_source(g_at);
-        assert_eq!(&src[s_at..s_at + 11], "Info.Street");
+        assert_eq!(snap(src, s_at, s_at + 11), "Info.Street");
     }
 }

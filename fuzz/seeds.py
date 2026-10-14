@@ -20,9 +20,9 @@ ROOT = Path(__file__).resolve().parent.parent
 TREES = [ROOT / "tests" / "fixtures", ROOT / "examples"]
 
 # Must match the tables in fuzz_targets/lower.rs and fuzz_targets/scan.rs.
-LOWER_EXT = {".ts": 0, ".tsx": 1, ".js": 2, ".py": 3}
-SCAN_EXT = {".ts": 0, ".tsx": 2, ".js": 3, ".py": 4}
-SCAN_PACKAGE_JSON, SCAN_CONFIG, SCAN_MAX_FILES = 6, 7, 8
+LOWER_EXT = {".ts": 0, ".tsx": 1, ".js": 2, ".py": 3, ".cs": 4, ".razor": 5}
+SCAN_EXT = {".ts": 0, ".tsx": 2, ".js": 3, ".py": 4, ".cs": 8, ".razor": 10}
+SCAN_PACKAGE_JSON, SCAN_CONFIG, SCAN_CSPROJ, SCAN_MAX_FILES = 6, 7, 11, 12
 
 DATAMAPS = [
     b"\x00dataset:\n  - fides_key: app\n    collections:\n      - name: users\n        fields:\n"
@@ -36,11 +36,18 @@ DATAMAPS = [
 
 def scan_seed(directory: Path) -> bytes | None:
     chunks = []
+    cs_files = 0
     for path in sorted(p for p in directory.rglob("*") if p.is_file()):
         if path.name == ".privacy-flow.yml":
             pick = SCAN_CONFIG
         elif path.name == "package.json":
             pick = SCAN_PACKAGE_JSON
+        elif path.suffix == ".csproj":
+            pick = SCAN_CSPROJ
+        elif path.suffix == ".cs":
+            # Two C# names, so a seed can hold two files that refer to each other.
+            pick = SCAN_EXT[".cs"] + cs_files % 2
+            cs_files += 1
         elif path.suffix in SCAN_EXT:
             pick = SCAN_EXT[path.suffix]
         else:

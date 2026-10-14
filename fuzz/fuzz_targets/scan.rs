@@ -2,8 +2,9 @@
 //! worklist engine and the report. It never panics, and the same input gives the same document
 //! digest twice (the determinism principle).
 //!
-//! The input is split on NUL bytes into at most eight files. The first byte of each chunk picks
-//! its name, including `.privacy-flow.yml`, so a configuration can take part.
+//! The input is split on NUL bytes into at most twelve files. The first byte of each chunk picks
+//! its name, including `.privacy-flow.yml` and a C# project file, so a configuration and a
+//! project's usings can take part.
 
 #![no_main]
 
@@ -13,7 +14,7 @@ use libfuzzer_sys::fuzz_target;
 use privacy_flow::analyze::{self, EngineKind, Tree};
 use privacy_flow::files::{Listing, Method};
 
-const NAMES: [&str; 8] = [
+const NAMES: [&str; 12] = [
     "src/index.ts",
     "src/users.ts",
     "src/view.tsx",
@@ -22,6 +23,10 @@ const NAMES: [&str; 8] = [
     "app/models.py",
     "package.json",
     ".privacy-flow.yml",
+    "Api/Program.cs",
+    "Api/Users.cs",
+    "Api/Pages/Users.razor",
+    "Api/Api.csproj",
 ];
 
 fn scan(tree: &BTreeMap<String, Vec<u8>>) -> Option<String> {

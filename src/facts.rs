@@ -234,7 +234,14 @@ struct Builder<'a, 'p> {
     /// (function, formal) pairs some call binds other than one argument to one parameter
     /// (rest parameters, `...xs`, `**kw`): they do not get formal sites.
     inexact: BTreeSet<(FuncId, u32)>,
+    /// Per (dispatcher, target): the classes it reaches, with their receiving methods and type
+    /// arguments.
+    dispatch_cache: HashMap<(usize, usize), Vec<DispatchCandidate>>,
 }
+
+/// A class a dispatcher's target reaches: the methods that receive the argument, and the type
+/// arguments of the type it implements.
+type DispatchCandidate = (Vec<FuncId>, Vec<VarId>);
 
 pub fn build(p: &mut Program, inp: &Inputs) -> Facts {
     let nvars = p.vars.len();
@@ -283,6 +290,7 @@ pub fn build(p: &mut Program, inp: &Inputs) -> Facts {
         copies: HashMap::new(),
         loads: Vec::new(),
         inexact: BTreeSet::new(),
+        dispatch_cache: HashMap::new(),
     };
     let handlers = b.find_handlers();
     if handlers.iter().any(|h| h.provenance.is_some()) {
@@ -960,7 +968,7 @@ impl<'a, 'p> Builder<'a, 'p> {
             }
         }
         let mut matched = false;
-        for d in &cat.dispatchers {
+        for (di, d) in cat.dispatchers.iter().enumerate() {
             if d.def.language != lang
                 || !names.iter().any(|n| d.calls.iter().any(|g| g.is_match(n)))
             {
@@ -983,68 +991,15 @@ impl<'a, 'p> Builder<'a, 'p> {
                 .collect();
             let mut targets: BTreeSet<(FuncId, usize, bool)> = BTreeSet::new();
             for (ti, target) in d.def.targets.iter().enumerate() {
-                let glob = &d.implements[ti];
-                for c in 0..self.p.classes.len() as ClassId {
-                    let class = &self.p.classes[c as usize];
-                    if class.is_interface || self.lang(class.file) != lang {
-                        continue;
-                    }
-                    // The base (or interface) that matches, and its type arguments.
-                    let mut type_args: Option<Vec<VarId>> = None;
-                    for k in self.p.lineage(c) {
-                        let kc = &self.p.classes[k as usize];
-                        let none: Vec<VarId> = Vec::new();
-                        let pairs =
-                            kc.bases
-                                .iter()
-                                .enumerate()
-                                .map(|(i, b)| (b, kc.base_args.get(i).unwrap_or(&none)))
-                                .chain(
-                                    kc.implements.iter().enumerate().map(|(i, b)| {
-                                        (b, kc.implements_args.get(i).unwrap_or(&none))
-                                    }),
-                                );
-                        for (b, targs) in pairs {
-                            let hit = self.p.prov[*b as usize].iter().any(|p| match p {
-                                Prov::Api(s) => {
-                                    let path = self.p.syms.str(*s);
-                                    glob.is_match(path.strip_suffix("()").unwrap_or(path))
-                                }
-                                Prov::Class(x) => self.p.classes[*x as usize]
-                                    .qualified_name
-                                    .as_ref()
-                                    .is_some_and(|q| glob.is_match(q)),
-                                _ => false,
-                            });
-                            if hit {
-                                type_args = Some(targs.clone());
-                                break;
-                            }
-                        }
-                        if type_args.is_some() {
-                            break;
-                        }
-                    }
-                    let Some(targs) = type_args else { continue };
+                let candidates = self.dispatch_candidates(di, ti, lang);
+                for (methods, targs) in candidates {
                     let (fits, exact) = match target.type_arg.and_then(|i| targs.get(i)) {
                         Some(&ta) => self.dispatch_fits(ta, &arg_classes),
                         None => (true, false),
                     };
-                    if !fits {
-                        continue;
-                    }
-                    for k in self.p.lineage(c) {
-                        let ms: Vec<FuncId> = self.p.classes[k as usize]
-                            .methods
-                            .iter()
-                            .filter(|(n, _)| *n == target.method)
-                            .map(|(_, f)| *f)
-                            .collect();
-                        if !ms.is_empty() {
-                            for m in ms {
-                                targets.insert((m, target.param, exact));
-                            }
-                            break;
+                    if fits {
+                        for m in methods {
+                            targets.insert((m, target.param, exact));
                         }
                     }
                 }
@@ -1075,6 +1030,75 @@ impl<'a, 'p> Builder<'a, 'p> {
             }
         }
         matched
+    }
+
+    /// The project's classes a dispatcher's target reaches, whatever is dispatched: each with the
+    /// methods that receive the argument and the type arguments of the type it implements.
+    /// Computed once per target.
+    fn dispatch_candidates(&mut self, di: usize, ti: usize, lang: &str) -> Vec<DispatchCandidate> {
+        if let Some(c) = self.dispatch_cache.get(&(di, ti)) {
+            return c.clone();
+        }
+        let d = &self.inp.catalogue.dispatchers[di];
+        let target = &d.def.targets[ti];
+        let glob = &d.implements[ti];
+        let mut out = Vec::new();
+        for c in 0..self.p.classes.len() as ClassId {
+            let class = &self.p.classes[c as usize];
+            if class.is_interface || self.lang(class.file) != lang {
+                continue;
+            }
+            let lineage = self.p.lineage(c);
+            // The base (or interface) that matches, and its type arguments.
+            let mut type_args: Option<Vec<VarId>> = None;
+            'lineage: for &k in &lineage {
+                let kc = &self.p.classes[k as usize];
+                let none: Vec<VarId> = Vec::new();
+                let pairs = kc
+                    .bases
+                    .iter()
+                    .enumerate()
+                    .map(|(i, b)| (b, kc.base_args.get(i).unwrap_or(&none)))
+                    .chain(
+                        kc.implements
+                            .iter()
+                            .enumerate()
+                            .map(|(i, b)| (b, kc.implements_args.get(i).unwrap_or(&none))),
+                    );
+                for (b, targs) in pairs {
+                    let hit = self.p.prov[*b as usize].iter().any(|p| match p {
+                        Prov::Api(s) => {
+                            let path = self.p.syms.str(*s);
+                            glob.is_match(path.strip_suffix("()").unwrap_or(path))
+                        }
+                        Prov::Class(x) => self.p.classes[*x as usize]
+                            .qualified_name
+                            .as_ref()
+                            .is_some_and(|q| glob.is_match(q)),
+                        _ => false,
+                    });
+                    if hit {
+                        type_args = Some(targs.clone());
+                        break 'lineage;
+                    }
+                }
+            }
+            let Some(targs) = type_args else { continue };
+            for &k in &lineage {
+                let ms: Vec<FuncId> = self.p.classes[k as usize]
+                    .methods
+                    .iter()
+                    .filter(|(n, _)| *n == target.method)
+                    .map(|(_, f)| *f)
+                    .collect();
+                if !ms.is_empty() {
+                    out.push((ms, targs));
+                    break;
+                }
+            }
+        }
+        self.dispatch_cache.insert((di, ti), out.clone());
+        out
     }
 
     /// Whether a dispatched value whose classes are `arg_classes` fits a handler's type argument
