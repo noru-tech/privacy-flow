@@ -1,0 +1,5 @@
+{
+  "description": "A computed property returns the data its getter reads. Getters are followed for what they are, not for the data they read.",
+  "language": "csharp",
+  "status": "known-limitation"
+}

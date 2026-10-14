@@ -1,0 +1,5 @@
+{
+  "description": "An interpolated string carries what it interpolates.",
+  "language": "csharp",
+  "status": "required"
+}

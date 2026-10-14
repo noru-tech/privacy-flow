@@ -1,0 +1,5 @@
+{
+  "description": "Data crosses into a type of another file found through a using.",
+  "language": "csharp",
+  "status": "required"
+}

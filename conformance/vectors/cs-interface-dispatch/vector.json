@@ -1,0 +1,5 @@
+{
+  "description": "A call through an interface reaches its implementation.",
+  "language": "csharp",
+  "status": "required"
+}

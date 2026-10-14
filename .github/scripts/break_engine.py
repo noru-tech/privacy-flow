@@ -15,7 +15,7 @@ BREAKS = {
     # Field sensitivity: a field read sees every field.
     "field-sensitivity": ("src/engine/worklist.rs", "if t == TOP || t == named(k) {", "if true {"),
     # Interprocedural flow: calls to local functions bind no arguments.
-    "summaries": ("src/facts.rs", "self.bind_args(site, f, bound, args);", "let _ = (site, bound, args);"),
+    "summaries": ("src/facts.rs", "self.bind_args(site, f, bound, &fargs);", "let _ = (site, bound, &fargs);"),
     # Instances: every instance carries every construction's data again.
     "instances": ("src/facts.rs", "if class.ctor_this.is_none() {", "if true {"),
     # Sanitisers: predicates no longer remove anything.
@@ -32,6 +32,8 @@ BREAKS = {
     "per-subclass": ("src/program.rs", "        self.specialised = true;", "        return false;"),
     # Inheritance: no class has a local base class or implements a local interface.
     "inheritance": ("src/program.rs", "for &b in class.bases.iter().chain(&class.implements) {", "for &b in class.bases.iter().take(0) {"),
+    # Dispatch: a mediator's `Send` reaches none of the project's handlers.
+    "dispatch": ("src/facts.rs", "if self.dispatch(stmt, dst, &apis, &t, args, lang) {", "if false {"),
 }
 
 
