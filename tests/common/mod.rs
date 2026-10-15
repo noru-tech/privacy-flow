@@ -53,7 +53,7 @@ pub fn datamap_doc(dir: &Path) -> privacy_flow::report::Document {
     let listing = files::walk(dir).expect("walk");
     let run = analyze::analyze(&tree, &listing, &loaded, EngineKind::Worklist).expect("analysis");
     let topo = privacy_flow::topology::catalogue::TopologyCatalogue::builtin().expect("catalogue");
-    privacy_flow::datamap::document(run, &loaded.config, &topo).expect("datamap")
+    privacy_flow::datamap::document(&tree, run, &loaded.config, &topo).expect("datamap")
 }
 
 /// Fixtures whose fixture.json has `"topology": true`.

@@ -3,39 +3,52 @@
 # Keys starting with unresolved_ are destinations the code does not name: replace each with
 # the receiving system's key, or declare it in .privacy-flow.yml and run again.
 system:
-  #: service rooted at Orders.Api (cs.web: Orders.Api/Orders.Api.csproj)
-  - fides_key: "orders_api"
-    name: "Orders.Api"
-    system_type: "Service"
-    privacy_declarations: []
-  #: HTTP destination the code does not name, sent from Shared.Clients/OrdersClient.cs:9
-  - fides_key: "unresolved_http_orders_client"
-    name: "Unresolved HTTP destination"
-    system_type: "Unresolved destination"
-    meta:
-      privacy_flow:
-        unresolved: true
+  #: third-party processor legacy.example.com
+  - fides_key: "legacy.example.com"
+    name: "legacy.example.com"
+    system_type: "Third Party"
     ingress:
-      #: also data of unknown category (request input not narrowed by a type): review
-      - fides_key: "web"
-        type: "system"
-        data_categories:
-          - "user.contact.email"
       #: also data of unknown category (request input not narrowed by a type): review
       - fides_key: "worker"
         type: "system"
         data_categories:
           - "user.contact.email"
     privacy_declarations: []
+  #: service rooted at Orders.Api (cs.web: Orders.Api/Orders.Api.csproj)
+  #: reached as orders-api (AppHost/Program.cs:3)
+  - fides_key: "orders_api"
+    name: "Orders.Api"
+    system_type: "Service"
+    ingress:
+      #: also data of unknown category (request input not narrowed by a type): review
+      - fides_key: "web"
+        type: "system"
+        data_categories:
+          - "user.contact.email"
+      #: request input to its handlers: Orders.Api/Program.cs:7, Orders.Api/Program.cs:9, Orders.Api/Program.cs:10 and more
+      - fides_key: "user"
+        type: "user"
+        data_categories:
+          - "user.contact.email"
+          - "user.financial.credit_card"
+    privacy_declarations: []
   #: service rooted at Web (cs.web: Web/Web.csproj)
+  #: reached as web (AppHost/Program.cs:4)
   - fides_key: "web"
     name: "Web"
     system_type: "Service"
     egress:
-      #: unresolved HTTP destination, sent from Shared.Clients/OrdersClient.cs:9
+      #: to orders_api over HTTP: Shared.Clients/OrdersClient.cs:9
       #: also data of unknown category (request input not narrowed by a type): review
-      - fides_key: "unresolved_http_orders_client"
+      - fides_key: "orders_api"
         type: "system"
+        data_categories:
+          - "user.contact.email"
+    ingress:
+      #: request input to its handlers: Web/Program.cs:7 and more
+      #: also data of unknown category (request input not narrowed by a type): review
+      - fides_key: "user"
+        type: "user"
         data_categories:
           - "user.contact.email"
     privacy_declarations: []
@@ -44,9 +57,9 @@ system:
     name: "Worker"
     system_type: "Service"
     egress:
-      #: unresolved HTTP destination, sent from Shared.Clients/OrdersClient.cs:9
+      #: legacy.example.com via http (undeclared): Shared.Clients/OrdersClient.cs:9
       #: also data of unknown category (request input not narrowed by a type): review
-      - fides_key: "unresolved_http_orders_client"
+      - fides_key: "legacy.example.com"
         type: "system"
         data_categories:
           - "user.contact.email"

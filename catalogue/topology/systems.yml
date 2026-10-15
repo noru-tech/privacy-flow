@@ -17,6 +17,13 @@
 #                  file's own directory
 #
 # `never` entries exclude units that would otherwise match (orchestrators, test projects).
+#
+# `orchestrators` name the systems: a call that adds a project to an application model gives it
+# the host name other systems reach it by (`AddProject("orders-api", "../Orders.Api")`). The
+# project is a path argument (a project file or its directory, relative to the calling
+# project), or a type argument in the generated `Projects` namespace (`Projects.Orders_Api`,
+# dots and dashes of the project file's name as underscores). docker-compose files name their
+# services the same way, by `build` context; that needs no entry.
 
 version: "0.1.0"
 
@@ -97,3 +104,18 @@ never:
   - id: cs.test-frameworks
     project: { package_refs: ["xunit", "xunit.v3", "NUnit", "MSTest.TestFramework", "TUnit"] }
     citation: "Test frameworks' packages, https://learn.microsoft.com/dotnet/core/testing/"
+
+orchestrators:
+  - id: cs.aspire.project
+    language: csharp
+    calls: ["**.{AddProject,AddDotnetProject,AddCSharpApp}"]
+    name_arg: 0
+    path_arg: 1
+    type_arg_namespace: Projects
+    citation: ".NET Aspire app host, https://learn.microsoft.com/dotnet/aspire/fundamentals/app-host-overview"
+  - id: cs.aspire.executable
+    language: csharp
+    calls: ["**.{AddNpmApp,AddNodeApp,AddViteApp,AddJavaScriptApp,AddPythonApp,AddUvicornApp,AddDockerfile}"]
+    name_arg: 0
+    path_arg: 1
+    citation: ".NET Aspire hosting integrations for Node.js, Python and Dockerfiles, https://learn.microsoft.com/dotnet/aspire/"

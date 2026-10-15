@@ -17,6 +17,8 @@ pub struct Topology {
     pub systems: Vec<SystemRec>,
     /// FACT: the systems each flow belongs to, by flow ID.
     pub attribution: Vec<AttributionRec>,
+    /// FACT: requests bound to a client registration, per system: where they go.
+    pub bindings: Vec<BindingRec>,
     /// DERIVED from the flows, sinks, processors and attribution.
     pub edges: Vec<EdgeRec>,
     pub notes: Vec<NoteRec>,
@@ -42,6 +44,34 @@ pub struct SystemRec {
     /// Directories of the library units it references.
     pub libraries: Vec<String>,
     pub evidence: Vec<Evidence>,
+    /// Host names other systems reach it by, from orchestrators and `systems:`.
+    pub aliases: Vec<String>,
+    /// What its request handlers receive from users.
+    pub user_input: UserInput,
+}
+
+/// The data a system's request handlers receive: categories, and where (first five sites).
+#[derive(Clone, Debug, Default, Serialize, Deserialize, PartialEq)]
+#[serde(deny_unknown_fields)]
+pub struct UserInput {
+    pub categories: Vec<String>,
+    pub sites: Vec<String>,
+    pub sources: u32,
+}
+
+/// A request sent through a registered client, in one system.
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord)]
+#[serde(deny_unknown_fields)]
+pub struct BindingRec {
+    pub sink: String,
+    pub system: String,
+    /// The catalogue entry of the registration.
+    pub client: String,
+    /// `path:line` of the registering call.
+    pub registration: String,
+    /// The base address it sets.
+    pub base: String,
+    pub to: Endpoint,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord)]

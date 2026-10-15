@@ -41,6 +41,10 @@ impl Flow {
     }
 
     fn node(self, key: &str) -> Node {
+        self.node_of(key, "system")
+    }
+
+    fn node_of(self, key: &str, kind: &str) -> Node {
         let mut notes: Vec<String> = self.labels.into_iter().collect();
         if self.unknown {
             notes.push(
@@ -50,7 +54,7 @@ impl Flow {
         }
         let mut m = vec![
             ("fides_key".to_string(), Node::str(key)),
-            ("type".to_string(), Node::str("system")),
+            ("type".to_string(), Node::str(kind)),
         ];
         if !self.categories.is_empty() {
             m.push(("data_categories".into(), Node::strs(self.categories)));
@@ -140,7 +144,11 @@ pub fn generate(doc: &Document) -> Node {
                 )
             }
             Endpoint::System { key } => {
-                format!("to {key} over {}: {}", e.class.as_str(), sites(&at))
+                format!(
+                    "to {key} over {}: {}",
+                    class_label(e.class.as_str()),
+                    sites(&at)
+                )
             }
             Endpoint::Unresolved { class, .. } => {
                 let r = receivers
@@ -193,6 +201,7 @@ pub fn generate(doc: &Document) -> Node {
                 let why: Vec<String> = s
                     .evidence
                     .iter()
+                    .filter(|e| e.rule != "alias")
                     .map(|e| format!("{}: {}", e.rule, e.path))
                     .collect();
                 notes.push(if s.declared && s.kind != "repository" {
@@ -209,6 +218,23 @@ pub fn generate(doc: &Document) -> Node {
                 } else {
                     format!("{} rooted at {root} ({})", s.kind, why.join("; "))
                 });
+                let named: Vec<String> = s
+                    .evidence
+                    .iter()
+                    .filter(|e| e.rule == "alias")
+                    .map(|e| e.path.clone())
+                    .collect();
+                if !s.aliases.is_empty() {
+                    notes.push(format!(
+                        "reached as {}{}",
+                        s.aliases.join(", "),
+                        if named.is_empty() {
+                            String::new()
+                        } else {
+                            format!(" ({})", named.join(", "))
+                        }
+                    ));
+                }
             }
             Receiver::Processor { name } => {
                 m.push(("name".into(), Node::str(name)));
@@ -241,11 +267,34 @@ pub fn generate(doc: &Document) -> Node {
                 Node::List(out.into_iter().map(|(k, f)| f.node(&k)).collect()),
             ));
         }
-        if let Some(inn) = ingress.remove(key) {
-            m.push((
-                "ingress".into(),
-                Node::List(inn.into_iter().map(|(k, f)| f.node(&k)).collect()),
+        let mut inn: Vec<Node> = ingress
+            .remove(key)
+            .map(|inn| inn.into_iter().map(|(k, f)| f.node(&k)).collect())
+            .unwrap_or_default();
+        if let (Receiver::System, Some(s)) = (r, systems_by_key.get(key.as_str()))
+            && s.user_input.sources > 0
+        {
+            let mut f = Flow::default();
+            for c in &s.user_input.categories {
+                if c == UNKNOWN {
+                    f.unknown = true;
+                } else {
+                    f.categories.insert(c.clone());
+                }
+            }
+            f.labels.insert(format!(
+                "request input to its handlers: {}{}",
+                s.user_input.sites.join(", "),
+                if s.user_input.sources as usize > s.user_input.sites.len() {
+                    " and more"
+                } else {
+                    ""
+                }
             ));
+            inn.push(f.node_of("user", "user"));
+        }
+        if !inn.is_empty() {
+            m.push(("ingress".into(), Node::List(inn)));
         }
         m.push(("privacy_declarations".into(), Node::List(Vec::new())));
         items.push(Node::noted(notes, Node::Map(m)));

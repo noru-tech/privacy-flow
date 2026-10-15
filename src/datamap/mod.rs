@@ -15,17 +15,30 @@ use crate::report::{self, Document};
 use crate::topology::catalogue::TopologyCatalogue;
 
 /// The flow-facts document of a run, with the repository's topology, sealed.
-pub fn document(run: Run, config: &Config, topo: &TopologyCatalogue) -> Result<Document> {
+pub fn document(
+    tree: &crate::analyze::Tree,
+    run: Run,
+    config: &Config,
+    topo: &TopologyCatalogue,
+) -> Result<Document> {
+    let compose: Vec<(String, String)> = run
+        .files
+        .iter()
+        .filter(|f| crate::topology::wants(f))
+        .filter_map(|f| tree.read_text(f).map(|t| (f.clone(), t)))
+        .collect();
     let mut doc = run.document;
     crate::topology::build(
         &mut doc,
-        &crate::topology::systems::Inputs {
+        &crate::topology::Inputs {
             program: &run.program,
+            facts: &run.facts,
             resolver: &run.resolver,
             files: &run.files,
             config,
             catalogue: &run.catalogue,
             topo,
+            compose: &compose,
         },
     );
     report::seal(&mut doc)?;

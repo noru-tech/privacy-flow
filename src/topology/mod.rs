@@ -2,7 +2,9 @@
 //! `piiflow datamap` (ADR 0018). `scan` and `diff` never run this: their output is unchanged.
 
 pub mod catalogue;
+pub mod clients;
 pub mod model;
+pub mod names;
 pub mod systems;
 
 use std::collections::{BTreeMap, BTreeSet};
@@ -11,9 +13,68 @@ use crate::catalogue::SinkClass;
 use crate::report::{self, Document};
 use model::{AttributionRec, EdgeRec, Endpoint, NoteRec, Topology};
 
-/// Detect the systems, attribute every flow, and derive the edges into `doc.topology`.
-pub fn build(doc: &mut Document, inp: &systems::Inputs) {
-    let sys = systems::detect(inp);
+pub struct Inputs<'a> {
+    pub program: &'a crate::program::Program,
+    pub facts: &'a crate::facts::Facts,
+    pub resolver: &'a crate::resolve::Resolver,
+    /// Every listed file the configuration does not exclude.
+    pub files: &'a [String],
+    pub config: &'a crate::config::Config,
+    pub catalogue: &'a crate::catalogue::Catalogue,
+    pub topo: &'a catalogue::TopologyCatalogue,
+    /// docker-compose files: (path, text).
+    pub compose: &'a [(String, String)],
+}
+
+/// Whether a listed file is a docker-compose file `build` needs.
+pub fn wants(path: &str) -> bool {
+    let name = path.rsplit('/').next().unwrap_or(path);
+    (name.starts_with("docker-compose") || name.starts_with("compose"))
+        && (name.ends_with(".yml") || name.ends_with(".yaml"))
+}
+
+/// Detect the systems, bind requests to client registrations, attribute every flow, and
+/// derive the edges into `doc.topology`.
+pub fn build(doc: &mut Document, inp: &Inputs) {
+    let mut sys = systems::detect(&systems::Inputs {
+        program: inp.program,
+        resolver: inp.resolver,
+        files: inp.files,
+        config: inp.config,
+        catalogue: inp.catalogue,
+        topo: inp.topo,
+    });
+    let defs = crate::values::Defs::build(inp.program);
+    let names = names::collect(
+        &names::Inputs {
+            program: inp.program,
+            defs: &defs,
+            resolver: inp.resolver,
+            topo: inp.topo,
+            compose: inp.compose,
+        },
+        &mut sys.recs,
+    );
+    let closures: Vec<(String, &[bool])> = sys
+        .recs
+        .iter()
+        .zip(&sys.closure)
+        .map(|(r, c)| (r.key.clone(), c.as_slice()))
+        .collect();
+    let bindings = clients::bind(
+        &clients::Inputs {
+            program: inp.program,
+            facts: inp.facts,
+            defs: &defs,
+            catalogue: inp.catalogue,
+            topo: inp.topo,
+            names: &names,
+            systems: &closures,
+        },
+        &doc.sinks,
+    );
+    drop(closures);
+    user_input(inp, &mut sys);
     let path_index: BTreeMap<&str, usize> = inp
         .program
         .files
@@ -23,6 +84,8 @@ pub fn build(doc: &mut Document, inp: &systems::Inputs) {
         .collect();
     let mut attribution = Vec::new();
     let mut notes = sys.notes;
+    notes.extend(names.notes);
+    notes.extend(bindings.notes);
     for fl in &doc.flows {
         let files: BTreeSet<usize> = fl
             .path
@@ -61,13 +124,58 @@ pub fn build(doc: &mut Document, inp: &systems::Inputs) {
         mode: sys.mode,
         systems: sys.recs,
         attribution,
+        bindings: bindings.recs,
         edges: Vec::new(),
         notes,
     });
     derive(doc);
 }
 
-/// Recompute the edges from the flows, sinks, processors and attribution.
+/// What each system's request handlers receive: the seeds in handler functions (and request
+/// input) within its closure.
+fn user_input(inp: &Inputs, sys: &mut systems::Systems) {
+    let p = inp.program;
+    let handler = |mut f: crate::program::FuncId| -> bool {
+        loop {
+            if inp.facts.handler_funcs.binary_search(&f).is_ok() {
+                return true;
+            }
+            match p.funcs[f as usize].parent {
+                Some(parent) => f = parent,
+                None => return false,
+            }
+        }
+    };
+    for (rec, closure) in sys.recs.iter_mut().zip(&sys.closure) {
+        let mut categories: BTreeSet<String> = BTreeSet::new();
+        let mut sites: BTreeSet<(String, u32)> = BTreeSet::new();
+        let mut sources = 0u32;
+        for seed in &inp.facts.seeds {
+            if !closure[seed.file as usize] || seed.needs_review {
+                continue;
+            }
+            let request = seed.kind == crate::facts::SeedKind::Request
+                || handler(p.vars[seed.var as usize].func);
+            if !request {
+                continue;
+            }
+            sources += 1;
+            categories.insert(seed.category.clone());
+            sites.insert((p.files[seed.file as usize].path.clone(), seed.pos.line));
+        }
+        rec.user_input = model::UserInput {
+            categories: categories.into_iter().collect(),
+            sites: sites
+                .into_iter()
+                .take(5)
+                .map(|(p, l)| format!("{p}:{l}"))
+                .collect(),
+            sources,
+        };
+    }
+}
+
+/// Recompute the edges from the flows, sinks, processors, attribution and bindings.
 pub fn derive(doc: &mut Document) {
     let Some(mut topo) = doc.topology.take() else {
         return;
@@ -84,6 +192,13 @@ pub fn derive(doc: &mut Document) {
         bool,
     );
     let mut acc: BTreeMap<(String, Endpoint, SinkClass), Acc> = BTreeMap::new();
+    let mut bound: BTreeMap<(&str, &str), Vec<&Endpoint>> = BTreeMap::new();
+    for b in &topo.bindings {
+        bound
+            .entry((b.sink.as_str(), b.system.as_str()))
+            .or_default()
+            .push(&b.to);
+    }
     for a in &topo.attribution {
         let Some(fl) = flows.get(a.flow.as_str()) else {
             continue;
@@ -111,13 +226,21 @@ pub fn derive(doc: &mut Document) {
             },
         };
         for s in &a.systems {
-            let e = acc.entry((s.clone(), to.clone(), snk.class)).or_default();
-            e.0.insert(fl.category.clone());
-            e.1.insert(fl.id.clone());
-            e.2.insert(snk.id.clone());
-            if let Some(d) = decl {
-                e.3.get_or_insert_with(|| d.citation.clone());
-                e.4 = true;
+            let targets: Vec<&Endpoint> = match bound.get(&(snk.id.as_str(), s.as_str())) {
+                Some(t) => t.clone(),
+                None => vec![&to],
+            };
+            for t in targets {
+                let e = acc.entry((s.clone(), t.clone(), snk.class)).or_default();
+                e.0.insert(fl.category.clone());
+                e.1.insert(fl.id.clone());
+                e.2.insert(snk.id.clone());
+                if let Some(d) = decl
+                    && *t == to
+                {
+                    e.3.get_or_insert_with(|| d.citation.clone());
+                    e.4 = true;
+                }
             }
         }
     }

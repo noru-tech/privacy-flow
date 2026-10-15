@@ -14,6 +14,7 @@ system:
           - "user.contact.email"
     privacy_declarations: []
   #: service rooted at apps/api (js.server: apps/api/package.json)
+  #: reached as api (docker-compose.yml)
   - fides_key: "shop_api"
     name: "@shop/api"
     system_type: "Service"
@@ -23,29 +24,37 @@ system:
         type: "system"
         data_categories:
           - "user.contact.email"
-    privacy_declarations: []
-  #: service rooted at apps/web (js.server: apps/web/package.json)
-  - fides_key: "shop_web"
-    name: "@shop/web"
-    system_type: "Service"
-    egress:
-      #: unresolved HTTP destination, sent from apps/web/app/api/subscribe/route.ts:7
-      - fides_key: "unresolved_http_route"
+    ingress:
+      - fides_key: "shop_web"
         type: "system"
         data_categories:
           - "user.contact.email"
           - "user.device.ip_address"
+      #: request input to its handlers: apps/api/src/server.ts:7, apps/api/src/server.ts:8 and more
+      #: also data of unknown category (request input not narrowed by a type): review
+      - fides_key: "user"
+        type: "user"
+        data_categories:
+          - "user.contact.email"
+          - "user.device.ip_address"
     privacy_declarations: []
-  #: HTTP destination the code does not name, sent from apps/web/app/api/subscribe/route.ts:7
-  - fides_key: "unresolved_http_route"
-    name: "Unresolved HTTP destination"
-    system_type: "Unresolved destination"
-    meta:
-      privacy_flow:
-        unresolved: true
-    ingress:
-      - fides_key: "shop_web"
+  #: service rooted at apps/web (js.server: apps/web/package.json)
+  #: reached as web (docker-compose.yml)
+  - fides_key: "shop_web"
+    name: "@shop/web"
+    system_type: "Service"
+    egress:
+      #: to shop_api over HTTP: apps/web/app/api/subscribe/route.ts:7
+      - fides_key: "shop_api"
         type: "system"
+        data_categories:
+          - "user.contact.email"
+          - "user.device.ip_address"
+    ingress:
+      #: request input to its handlers: apps/web/app/api/subscribe/route.ts:5, apps/web/app/api/subscribe/route.ts:6, apps/web/app/api/subscribe/route.ts:7 and more
+      #: also data of unknown category (request input not narrowed by a type): review
+      - fides_key: "user"
+        type: "user"
         data_categories:
           - "user.contact.email"
           - "user.device.ip_address"

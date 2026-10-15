@@ -491,7 +491,7 @@ fn datamap(a: DatamapArgs, quiet: bool) -> Outcome {
     .map_err(invalid)?;
     let topo = crate::topology::catalogue::TopologyCatalogue::builtin().map_err(invalid)?;
     let run = analyze::analyze(&tree, &listing, &loaded, EngineKind::Worklist).map_err(invalid)?;
-    let doc = crate::datamap::document(run, &loaded.config, &topo).map_err(invalid)?;
+    let doc = crate::datamap::document(&tree, run, &loaded.config, &topo).map_err(invalid)?;
     if let Some(f) = a.facts {
         emit(&doc, Some(f), Some(Format::Json), PathBuf::new(), quiet)?;
     }

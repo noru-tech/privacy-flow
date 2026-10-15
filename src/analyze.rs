@@ -41,6 +41,11 @@ impl Tree<'_> {
             Tree::Revision(files) => files.get(rel).cloned(),
         }
     }
+    /// A file's text, if it can be read.
+    pub fn read_text(&self, rel: &str) -> Option<String> {
+        self.get(rel)
+            .map(|b| String::from_utf8_lossy(&b).into_owned())
+    }
 }
 
 #[derive(Clone, Debug, Default)]

@@ -198,6 +198,8 @@ pub struct Facts {
     pub static_gaps: Vec<StaticGap>,
     /// Handlers recognised per source id, for `doctor` and coverage notes.
     pub handlers: BTreeMap<String, usize>,
+    /// The functions recognised as handlers, sorted: request input arrives in them.
+    pub handler_funcs: Vec<FuncId>,
     /// The function each return slot belongs to: its return value, and the field variables of
     /// the sites it returns (ADR 0009).
     pub slot_of: Vec<Option<FuncId>>,
@@ -279,6 +281,7 @@ pub fn build(p: &mut Program, inp: &Inputs) -> Facts {
                 .collect(),
             static_gaps: Vec::new(),
             handlers: BTreeMap::new(),
+            handler_funcs: Vec::new(),
             slot_of: Vec::new(),
             exits: Vec::new(),
         },
@@ -293,6 +296,9 @@ pub fn build(p: &mut Program, inp: &Inputs) -> Facts {
         dispatch_cache: HashMap::new(),
     };
     let handlers = b.find_handlers();
+    b.f.handler_funcs = handlers.iter().map(|h| h.func).collect();
+    b.f.handler_funcs.sort_unstable();
+    b.f.handler_funcs.dedup();
     if handlers.iter().any(|h| h.provenance.is_some()) {
         for h in &handlers {
             if let Some((var, path)) = &h.provenance {

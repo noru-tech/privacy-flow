@@ -307,7 +307,7 @@
       "type": "object",
       "description": "The repository's systems and their edges. Only `piiflow datamap` writes it; `scan` and `diff` documents do not have it.",
       "additionalProperties": false,
-      "required": ["catalogue", "mode", "systems", "attribution", "edges", "notes"],
+      "required": ["catalogue", "mode", "systems", "attribution", "bindings", "edges", "notes"],
       "properties": {
         "catalogue": {
           "type": "object",
@@ -321,7 +321,7 @@
           "items": {
             "type": "object",
             "additionalProperties": false,
-            "required": ["key", "name", "kind", "language", "root", "manifest", "declared", "files", "closure_files", "libraries", "evidence"],
+            "required": ["key", "name", "kind", "language", "root", "manifest", "declared", "files", "closure_files", "libraries", "evidence", "aliases", "user_input"],
             "properties": {
               "key": { "$ref": "#/$defs/fides_key" },
               "name": { "type": "string" },
@@ -341,7 +341,34 @@
                   "required": ["rule", "path"],
                   "properties": { "rule": { "type": "string" }, "path": { "type": "string" } }
                 }
+              },
+              "aliases": { "type": "array", "items": { "type": "string" } },
+              "user_input": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["categories", "sites", "sources"],
+                "properties": {
+                  "categories": { "type": "array", "items": { "$ref": "#/$defs/category" } },
+                  "sites": { "type": "array", "items": { "type": "string" } },
+                  "sources": { "$ref": "#/$defs/count" }
+                }
               }
+            }
+          }
+        },
+        "bindings": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["sink", "system", "client", "registration", "base", "to"],
+            "properties": {
+              "sink": { "type": "string" },
+              "system": { "$ref": "#/$defs/fides_key" },
+              "client": { "type": "string" },
+              "registration": { "type": "string" },
+              "base": { "type": "string" },
+              "to": { "$ref": "#/$defs/endpoint" }
             }
           }
         },

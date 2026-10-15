@@ -4,31 +4,37 @@
 # the receiving system's key, or declare it in .privacy-flow.yml and run again.
 system:
   #: service rooted at notifier (py.app: notifier/pyproject.toml)
+  #: reached as notifier (docker-compose.yml)
   - fides_key: "notifier"
     name: "notifier"
     system_type: "Service"
+    ingress:
+      - fides_key: "shop"
+        type: "system"
+        data_categories:
+          - "user.contact.email"
+      #: request input to its handlers: notifier/app/main.py:15, notifier/app/main.py:16
+      - fides_key: "user"
+        type: "user"
+        data_categories:
+          - "user.contact.email"
     privacy_declarations: []
   #: service rooted at shop (py.django: shop/manage.py)
+  #: reached as shop (docker-compose.yml)
   - fides_key: "shop"
     name: "shop"
     system_type: "Service"
     egress:
-      #: unresolved HTTP destination, sent from shop/accounts/views.py:9
-      - fides_key: "unresolved_http_views"
+      #: to notifier over HTTP: shop/accounts/views.py:9
+      - fides_key: "notifier"
         type: "system"
         data_categories:
           - "user.contact.email"
-    privacy_declarations: []
-  #: HTTP destination the code does not name, sent from shop/accounts/views.py:9
-  - fides_key: "unresolved_http_views"
-    name: "Unresolved HTTP destination"
-    system_type: "Unresolved destination"
-    meta:
-      privacy_flow:
-        unresolved: true
     ingress:
-      - fides_key: "shop"
-        type: "system"
+      #: request input to its handlers: shop/accounts/views.py:7, shop/accounts/views.py:8 and more
+      #: also data of unknown category (request input not narrowed by a type): review
+      - fides_key: "user"
+        type: "user"
         data_categories:
           - "user.contact.email"
     privacy_declarations: []

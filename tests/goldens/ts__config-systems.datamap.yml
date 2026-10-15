@@ -4,6 +4,7 @@
 # the receiving system's key, or declare it in .privacy-flow.yml and run again.
 system:
   #: declared under systems: in .privacy-flow.yml (api/**)
+  #: reached as accounts.internal.example.com
   - fides_key: "accounts_api"
     name: "Accounts API"
     system_type: "Service"
