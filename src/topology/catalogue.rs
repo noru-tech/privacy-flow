@@ -15,6 +15,10 @@ pub const FILES: &[(&str, &str)] = &[
         include_str!("../../catalogue/topology/clients.yml"),
     ),
     (
+        "purposes.yml",
+        include_str!("../../catalogue/topology/purposes.yml"),
+    ),
+    (
         "stores.yml",
         include_str!("../../catalogue/topology/stores.yml"),
     ),
@@ -38,6 +42,33 @@ struct File {
     clients: Vec<ClientDef>,
     #[serde(default)]
     stores: Vec<StoreDef>,
+    #[serde(default)]
+    default_data_subjects: Vec<String>,
+    #[serde(default)]
+    by_class: BTreeMap<String, Purpose>,
+    #[serde(default)]
+    by_processor: BTreeMap<String, Purpose>,
+    #[serde(default)]
+    evidence: BTreeMap<String, Purpose>,
+}
+
+/// A proposed data use and why.
+#[derive(Clone, Debug, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct Purpose {
+    pub data_use: String,
+    pub why: String,
+}
+
+/// Proposals for privacy declarations (`purposes.yml`).
+#[derive(Clone, Debug, Default)]
+pub struct Purposes {
+    pub default_data_subjects: Vec<String>,
+    pub by_class: BTreeMap<String, Purpose>,
+    pub by_processor: BTreeMap<String, Purpose>,
+    pub evidence: BTreeMap<String, Purpose>,
+    /// Vendored data use key → its name (`Analytics for Reporting`).
+    pub use_names: BTreeMap<String, String>,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Deserialize)]
@@ -274,9 +305,40 @@ pub struct TopologyCatalogue {
     pub orchestrators: Vec<Orchestrator>,
     pub clients: Vec<ClientDef>,
     pub stores: Vec<StoreDef>,
+    pub purposes: Purposes,
+}
+
+#[derive(Deserialize)]
+struct TaxonomyEntry {
+    fides_key: String,
+    #[serde(default)]
+    name: Option<String>,
+}
+
+/// The vendored Fideslang data uses (key → name) and data subject keys.
+fn vendored_taxonomy() -> Result<(BTreeMap<String, String>, Vec<String>)> {
+    let uses: Vec<TaxonomyEntry> =
+        serde_json::from_str(include_str!("../../vendor/taxonomy/data_uses.json"))?;
+    let subjects: Vec<TaxonomyEntry> =
+        serde_json::from_str(include_str!("../../vendor/taxonomy/data_subjects.json"))?;
+    Ok((
+        uses.into_iter()
+            .map(|u| {
+                let name = u.name.unwrap_or_else(|| u.fides_key.clone());
+                (u.fides_key, name)
+            })
+            .collect(),
+        subjects.into_iter().map(|s| s.fides_key).collect(),
+    ))
 }
 
 impl TopologyCatalogue {
+    /// The built-in catalogue, loaded once.
+    pub fn shared() -> &'static TopologyCatalogue {
+        static CAT: std::sync::OnceLock<TopologyCatalogue> = std::sync::OnceLock::new();
+        CAT.get_or_init(|| TopologyCatalogue::builtin().expect("built-in topology catalogue loads"))
+    }
+
     pub fn builtin() -> Result<TopologyCatalogue> {
         let mut version: Option<String> = None;
         let mut hasher_input = String::new();
@@ -285,6 +347,7 @@ impl TopologyCatalogue {
         let mut orchestrators = Vec::new();
         let mut clients = Vec::new();
         let mut stores = Vec::new();
+        let mut purposes = Purposes::default();
         for (name, text) in FILES {
             let file: File = serde_saphyr::from_str(text)
                 .with_context(|| format!("catalogue/topology/{name}"))?;
@@ -304,6 +367,12 @@ impl TopologyCatalogue {
             orchestrators.extend(file.orchestrators);
             clients.extend(file.clients);
             stores.extend(file.stores);
+            purposes
+                .default_data_subjects
+                .extend(file.default_data_subjects);
+            purposes.by_class.extend(file.by_class);
+            purposes.by_processor.extend(file.by_processor);
+            purposes.evidence.extend(file.evidence);
         }
         let citations = deployables
             .iter()
@@ -317,6 +386,28 @@ impl TopologyCatalogue {
                 bail!("catalogue/topology: {id} needs a citation");
             }
         }
+        let (use_names, subjects) = vendored_taxonomy()?;
+        for (what, p) in purposes
+            .by_class
+            .iter()
+            .chain(&purposes.by_processor)
+            .chain(&purposes.evidence)
+        {
+            if !use_names.contains_key(&p.data_use) {
+                bail!(
+                    "catalogue/topology/purposes.yml: {what} proposes {}, which is not a vendored Fideslang data use",
+                    p.data_use
+                );
+            }
+        }
+        for s in &purposes.default_data_subjects {
+            if !subjects.contains(s) {
+                bail!(
+                    "catalogue/topology/purposes.yml: {s} is not a vendored Fideslang data subject"
+                );
+            }
+        }
+        purposes.use_names = use_names;
         Ok(TopologyCatalogue {
             reference: CatalogueRef {
                 version: version.unwrap_or_default(),
@@ -327,6 +418,7 @@ impl TopologyCatalogue {
             orchestrators,
             clients,
             stores,
+            purposes,
         })
     }
 }

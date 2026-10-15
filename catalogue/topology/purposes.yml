@@ -1,0 +1,57 @@
+# Proposed purposes for the data map's privacy declarations. Every value here is a PROPOSAL:
+# `piiflow datamap` writes it with a needs-review marker and the evidence behind it, and a
+# person decides. Nothing here is a legal basis, and none is proposed.
+#
+# A system's evidence (its egress, its user input, its datasets, the systems it receives from)
+# is grouped by the data use proposed for it; each group is one declaration. The data use of an
+# edge to a processor comes from `by_processor` (the catalogue's processor name), else from
+# `by_class` (the sink class); other evidence from `evidence`. Logs give no declaration:
+# logging is not a purpose (PF001 reports what reaches them).
+#
+# Every key must be a vendored Fideslang data use or data subject (vendor/taxonomy/), which
+# loading checks. `why` is shown beside the proposal.
+
+version: "0.1.0"
+
+default_data_subjects: [customer]
+
+by_class:
+  analytics: { data_use: analytics.reporting, why: "product analytics" }
+  error_tracking: { data_use: essential.service.operations, why: "error and crash reporting" }
+  messaging: { data_use: essential.service.notifications, why: "messages to users or operators" }
+  llm: { data_use: essential.service, why: "model inference in a feature; check the provider's retention and training terms" }
+  http: { data_use: third_party_sharing, why: "data sent to an outside host" }
+  third_party: { data_use: essential.service, why: "a service provider's SDK" }
+  browser_storage: { data_use: functional.storage, why: "stored on the user's device" }
+
+by_processor:
+  SendGrid: { data_use: essential.service.notifications.email, why: "transactional email" }
+  Mailgun: { data_use: essential.service.notifications.email, why: "transactional email" }
+  Postmark: { data_use: essential.service.notifications.email, why: "transactional email" }
+  Resend: { data_use: essential.service.notifications.email, why: "transactional email" }
+  Amazon SES: { data_use: essential.service.notifications.email, why: "transactional email" }
+  MailerSend: { data_use: essential.service.notifications.email, why: "transactional email" }
+  Mailjet: { data_use: essential.service.notifications.email, why: "transactional email" }
+  Mailchimp Transactional: { data_use: essential.service.notifications.email, why: "transactional email" }
+  Brevo: { data_use: marketing.communications, why: "a marketing-automation platform; transactional use is essential.service.notifications.email" }
+  Customer.io: { data_use: marketing.communications, why: "a marketing-automation platform; transactional use is essential.service.notifications" }
+  Loops: { data_use: marketing.communications, why: "a marketing-automation platform; transactional use is essential.service.notifications.email" }
+  Twilio: { data_use: essential.service.notifications.sms, why: "SMS and calls" }
+  Vonage: { data_use: essential.service.notifications.sms, why: "SMS and calls" }
+  Slack: { data_use: essential.service.operations, why: "messages to the team's workspace" }
+  Telegram: { data_use: essential.service.operations, why: "messages to a chat" }
+  Amazon SQS: { data_use: essential.service, why: "a message queue of the service's own infrastructure" }
+  Azure Service Bus: { data_use: essential.service, why: "a message bus of the service's own infrastructure" }
+  Azure Event Hubs: { data_use: essential.service, why: "an event stream of the service's own infrastructure" }
+  Intercom: { data_use: essential.service.operations.support, why: "customer support" }
+  HubSpot: { data_use: marketing.communications, why: "a CRM; sales or support use is a different data use" }
+  Stripe: { data_use: essential.service.payment_processing, why: "payments" }
+  Polar: { data_use: essential.service.payment_processing, why: "payments" }
+  Inngest: { data_use: essential.service.operations, why: "background jobs" }
+  Trigger.dev: { data_use: essential.service.operations, why: "background jobs" }
+
+evidence:
+  datasets: { data_use: essential.service, why: "stored in the service's own database" }
+  user_ingress: { data_use: essential.service, why: "collected from users through request input" }
+  internal: { data_use: essential.service, why: "exchanged with another service of this repository" }
+  unresolved: { data_use: essential.service, why: "sent to a destination the code does not name" }

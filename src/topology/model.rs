@@ -23,6 +23,9 @@ pub struct Topology {
     pub bindings: Vec<BindingRec>,
     /// DERIVED from the flows, sinks, processors and attribution.
     pub edges: Vec<EdgeRec>,
+    /// DERIVED: proposed privacy declarations, one per (system, proposed data use). Proposals,
+    /// never decisions: every one needs review.
+    pub declarations: Vec<DeclarationRec>,
     pub notes: Vec<NoteRec>,
 }
 
@@ -166,4 +169,24 @@ pub struct NoteRec {
     pub kind: String,
     pub detail: String,
     pub paths: Vec<String>,
+}
+
+/// A proposed privacy declaration: a data use for a group of a system's evidence.
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
+#[serde(deny_unknown_fields)]
+pub struct DeclarationRec {
+    pub system: String,
+    /// The data use's name in the taxonomy (`Analytics for Reporting`).
+    pub name: String,
+    pub data_use: String,
+    /// Where the proposal comes from (`purposes.yml#by_class.analytics`) and why.
+    pub basis: Vec<String>,
+    pub data_subjects: Vec<String>,
+    pub data_categories: Vec<String>,
+    pub egress: Vec<Endpoint>,
+    /// System keys, or `user`.
+    pub ingress: Vec<String>,
+    pub datasets: Vec<String>,
+    /// Always true: a person decides.
+    pub needs_review: bool,
 }

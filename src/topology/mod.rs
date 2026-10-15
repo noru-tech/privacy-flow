@@ -155,6 +155,7 @@ pub fn build(doc: &mut Document, inp: &Inputs) {
         attribution,
         bindings: bindings.recs,
         edges: Vec::new(),
+        declarations: Vec::new(),
         notes,
     });
     derive(doc);
@@ -288,5 +289,148 @@ pub fn derive(doc: &mut Document) {
             },
         )
         .collect();
+    topo.declarations = declarations(&topo, catalogue::TopologyCatalogue::shared());
     doc.topology = Some(topo);
+}
+
+/// Group each system's evidence by the data use proposed for it.
+fn declarations(topo: &Topology, cat: &catalogue::TopologyCatalogue) -> Vec<model::DeclarationRec> {
+    use model::DeclarationRec;
+    let pur = &cat.purposes;
+    #[derive(Default)]
+    struct Acc {
+        basis: BTreeSet<String>,
+        categories: BTreeSet<String>,
+        egress: BTreeSet<Endpoint>,
+        ingress: BTreeSet<String>,
+        datasets: BTreeSet<String>,
+    }
+    let mut groups: BTreeMap<(String, String), Acc> = BTreeMap::new();
+    let mut add = |system: &str, p: &catalogue::Purpose, basis: String| -> (String, String) {
+        let key = (system.to_string(), p.data_use.clone());
+        groups
+            .entry(key.clone())
+            .or_default()
+            .basis
+            .insert(format!("{basis}: {}", p.why));
+        key
+    };
+    let categories = |cats: &[String]| -> Vec<String> {
+        cats.iter()
+            .filter(|c| c.as_str() != crate::classify::UNKNOWN)
+            .cloned()
+            .collect()
+    };
+    // (group, categories, egress endpoint, ingress key, dataset key) to add.
+    type Planned = (
+        (String, String),
+        Vec<String>,
+        Option<Endpoint>,
+        Option<String>,
+        Option<String>,
+    );
+    let mut planned: Vec<Planned> = Vec::new();
+    for e in &topo.edges {
+        let (p, basis) = match &e.to {
+            Endpoint::Processor { name, .. } => match pur.by_processor.get(name) {
+                Some(p) => (p, format!("purposes.yml#by_processor.{name}")),
+                None => match pur.by_class.get(e.class.as_str()) {
+                    Some(p) => (p, format!("purposes.yml#by_class.{}", e.class.as_str())),
+                    None => continue,
+                },
+            },
+            Endpoint::System { .. } => match pur.evidence.get("internal") {
+                Some(p) => (p, "purposes.yml#evidence.internal".to_string()),
+                None => continue,
+            },
+            Endpoint::Unresolved { .. } => match pur.evidence.get("unresolved") {
+                Some(p) => (p, "purposes.yml#evidence.unresolved".to_string()),
+                None => continue,
+            },
+        };
+        let key = add(&e.from, p, basis);
+        planned.push((
+            key,
+            categories(&e.categories),
+            Some(e.to.clone()),
+            None,
+            None,
+        ));
+        // The receiving system of an internal edge receives it for the same reason.
+        if let Endpoint::System { key: to } = &e.to {
+            let k = add(to, p, "purposes.yml#evidence.internal".to_string());
+            planned.push((
+                k,
+                categories(&e.categories),
+                None,
+                Some(e.from.clone()),
+                None,
+            ));
+        }
+    }
+    for s in &topo.systems {
+        if s.user_input.sources > 0
+            && let Some(p) = pur.evidence.get("user_ingress")
+        {
+            let k = add(&s.key, p, "purposes.yml#evidence.user_ingress".to_string());
+            planned.push((
+                k,
+                categories(&s.user_input.categories),
+                None,
+                Some("user".into()),
+                None,
+            ));
+        }
+        if let Some(p) = pur.evidence.get("datasets") {
+            for ds in &s.datasets {
+                let k = add(&s.key, p, "purposes.yml#evidence.datasets".to_string());
+                let cats: Vec<String> = topo
+                    .datasets
+                    .iter()
+                    .filter(|d| &d.key == ds)
+                    .flat_map(|d| d.collections.iter())
+                    .flat_map(|c| field_categories(&c.fields))
+                    .collect();
+                planned.push((k, cats, None, None, Some(ds.clone())));
+            }
+        }
+    }
+    for (key, cats, egress, ingress, dataset) in planned {
+        let acc = groups.entry(key).or_default();
+        acc.categories.extend(cats);
+        acc.egress.extend(egress);
+        acc.ingress.extend(ingress);
+        acc.datasets.extend(dataset);
+    }
+    groups
+        .into_iter()
+        .map(|((system, data_use), acc)| DeclarationRec {
+            system,
+            name: pur
+                .use_names
+                .get(&data_use)
+                .cloned()
+                .unwrap_or_else(|| data_use.clone()),
+            data_use,
+            basis: acc.basis.into_iter().collect(),
+            data_subjects: pur.default_data_subjects.clone(),
+            data_categories: acc.categories.into_iter().collect(),
+            egress: acc.egress.into_iter().collect(),
+            ingress: acc.ingress.into_iter().collect(),
+            datasets: acc.datasets.into_iter().collect(),
+            needs_review: true,
+        })
+        .collect()
+}
+
+fn field_categories(fields: &[model::FieldRec]) -> Vec<String> {
+    fields
+        .iter()
+        .flat_map(|f| {
+            f.categories
+                .iter()
+                .cloned()
+                .chain(field_categories(&f.fields))
+        })
+        .collect()
 }

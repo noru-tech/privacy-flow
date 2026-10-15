@@ -1,7 +1,10 @@
 # A Fides data map (Fideslang 3.1.3) of this repository, written by `piiflow datamap`.
-# Systems, egress and ingress come from the code; lines starting with "#:" say where.
+# Systems, datasets, egress and ingress come from the code; lines starting with "#:" say where.
 # Keys starting with unresolved_ are destinations the code does not name: replace each with
 # the receiving system's key, or declare it in .privacy-flow.yml and run again.
+# Privacy declarations are PROPOSALS: their data use and data subjects are suggested from the
+# evidence, and each system lists them under meta.privacy_flow.needs_review until a person
+# decides. No legal basis is proposed.
 dataset:
   #: py.sqlalchemy at notifier/app/models.py:9
   - fides_key: "notifier_db"
@@ -84,6 +87,10 @@ system:
   - fides_key: "notifier"
     name: "notifier"
     system_type: "Service"
+    meta:
+      privacy_flow:
+        needs_review:
+          - "Essential for Service"
     dataset_references:
       - "notifier_db"
     ingress:
@@ -96,12 +103,34 @@ system:
         type: "user"
         data_categories:
           - "user.contact.email"
-    privacy_declarations: []
+    privacy_declarations:
+      #: PROPOSED essential.service with data subjects customer, from the code: review it
+      #: purposes.yml#evidence.datasets: stored in the service's own database
+      #: purposes.yml#evidence.internal: exchanged with another service of this repository
+      #: purposes.yml#evidence.user_ingress: collected from users through request input
+      - name: "Essential for Service"
+        data_use: "essential.service"
+        data_subjects:
+          - "customer"
+        data_categories:
+          - "user.contact.address.city"
+          - "user.contact.email"
+          - "user.name"
+          - "user.unique_id.pseudonymous"
+        dataset_references:
+          - "notifier_db"
+        ingress:
+          - "shop"
+          - "user"
   #: service rooted at shop (py.django: shop/manage.py)
   #: reached as shop (docker-compose.yml)
   - fides_key: "shop"
     name: "shop"
     system_type: "Service"
+    meta:
+      privacy_flow:
+        needs_review:
+          - "Essential for Service"
     dataset_references:
       - "shop_db"
     egress:
@@ -117,4 +146,28 @@ system:
         type: "user"
         data_categories:
           - "user.contact.email"
-    privacy_declarations: []
+    privacy_declarations:
+      #: PROPOSED essential.service with data subjects customer, from the code: review it
+      #: purposes.yml#evidence.datasets: stored in the service's own database
+      #: purposes.yml#evidence.internal: exchanged with another service of this repository
+      #: purposes.yml#evidence.user_ingress: collected from users through request input
+      - name: "Essential for Service"
+        data_use: "essential.service"
+        data_subjects:
+          - "customer"
+        data_categories:
+          - "user.account.username"
+          - "user.authorization.password"
+          - "user.contact.address.postal_code"
+          - "user.contact.address.street"
+          - "user.contact.email"
+          - "user.contact.phone_number"
+          - "user.name.first"
+          - "user.name.last"
+          - "user.unique_id.pseudonymous"
+        dataset_references:
+          - "shop_db"
+        egress:
+          - "notifier"
+        ingress:
+          - "user"

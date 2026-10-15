@@ -307,7 +307,7 @@
       "type": "object",
       "description": "The repository's systems and their edges. Only `piiflow datamap` writes it; `scan` and `diff` documents do not have it.",
       "additionalProperties": false,
-      "required": ["catalogue", "mode", "systems", "datasets", "attribution", "bindings", "edges", "notes"],
+      "required": ["catalogue", "mode", "systems", "datasets", "attribution", "bindings", "edges", "declarations", "notes"],
       "properties": {
         "catalogue": {
           "type": "object",
@@ -430,6 +430,27 @@
               "sinks": { "type": "array", "items": { "type": "string" } },
               "declared": { "type": "boolean" },
               "citation": { "type": ["string", "null"] }
+            }
+          }
+        },
+        "declarations": {
+          "type": "array",
+          "description": "Proposed privacy declarations: suggestions from the evidence, never decisions.",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["system", "name", "data_use", "basis", "data_subjects", "data_categories", "egress", "ingress", "datasets", "needs_review"],
+            "properties": {
+              "system": { "$ref": "#/$defs/fides_key" },
+              "name": { "type": "string" },
+              "data_use": { "$ref": "#/$defs/fides_key" },
+              "basis": { "type": "array", "items": { "type": "string" } },
+              "data_subjects": { "type": "array", "items": { "$ref": "#/$defs/fides_key" } },
+              "data_categories": { "type": "array", "items": { "$ref": "#/$defs/category" } },
+              "egress": { "type": "array", "items": { "$ref": "#/$defs/endpoint" } },
+              "ingress": { "type": "array", "items": { "$ref": "#/$defs/fides_key" } },
+              "datasets": { "type": "array", "items": { "$ref": "#/$defs/fides_key" } },
+              "needs_review": { "const": true }
             }
           }
         },

@@ -66,9 +66,12 @@ impl Flow {
 /// The comment at the top of a generated data map.
 pub const HEADER: &[&str] = &[
     "A Fides data map (Fideslang 3.1.3) of this repository, written by `piiflow datamap`.",
-    "Systems, egress and ingress come from the code; lines starting with \"#:\" say where.",
+    "Systems, datasets, egress and ingress come from the code; lines starting with \"#:\" say where.",
     "Keys starting with unresolved_ are destinations the code does not name: replace each with",
     "the receiving system's key, or declare it in .privacy-flow.yml and run again.",
+    "Privacy declarations are PROPOSALS: their data use and data subjects are suggested from the",
+    "evidence, and each system lists them under meta.privacy_flow.needs_review until a person",
+    "decides. No legal basis is proposed.",
 ];
 
 const SHOWN: usize = 5;
@@ -193,6 +196,21 @@ pub fn generate(doc: &Document) -> Node {
                 let s = systems_by_key[key.as_str()];
                 m.push(("name".into(), Node::str(&s.name)));
                 m.push(("system_type".into(), Node::str("Service")));
+                let review: Vec<String> = topo
+                    .declarations
+                    .iter()
+                    .filter(|d| d.system == *key && d.needs_review)
+                    .map(|d| d.name.clone())
+                    .collect();
+                if !review.is_empty() {
+                    m.push((
+                        "meta".into(),
+                        Node::Map(vec![(
+                            "privacy_flow".into(),
+                            Node::Map(vec![("needs_review".into(), Node::strs(review))]),
+                        )]),
+                    ));
+                }
                 if !s.datasets.is_empty() {
                     m.push((
                         "dataset_references".into(),
@@ -302,7 +320,13 @@ pub fn generate(doc: &Document) -> Node {
         if !inn.is_empty() {
             m.push(("ingress".into(), Node::List(inn)));
         }
-        m.push(("privacy_declarations".into(), Node::List(Vec::new())));
+        let decls: Vec<Node> = topo
+            .declarations
+            .iter()
+            .filter(|d| d.system == *key)
+            .map(|d| declaration(d, &key_of))
+            .collect();
+        m.push(("privacy_declarations".into(), Node::List(decls)));
         items.push(Node::noted(notes, Node::Map(m)));
     }
     let mut root = Vec::new();
@@ -314,6 +338,45 @@ pub fn generate(doc: &Document) -> Node {
     }
     root.push(("system".into(), Node::List(items)));
     Node::Map(root)
+}
+
+/// A proposed privacy declaration, with what it rests on.
+fn declaration(
+    d: &crate::topology::model::DeclarationRec,
+    key_of: &dyn Fn(&Endpoint) -> String,
+) -> Node {
+    let mut m: Vec<(String, Node)> = vec![
+        ("name".into(), Node::str(&d.name)),
+        ("data_use".into(), Node::str(&d.data_use)),
+        (
+            "data_subjects".into(),
+            Node::strs(d.data_subjects.iter().cloned()),
+        ),
+        (
+            "data_categories".into(),
+            Node::strs(d.data_categories.iter().cloned()),
+        ),
+    ];
+    if !d.datasets.is_empty() {
+        m.push((
+            "dataset_references".into(),
+            Node::strs(d.datasets.iter().cloned()),
+        ));
+    }
+    let egress: BTreeSet<String> = d.egress.iter().map(key_of).collect();
+    if !egress.is_empty() {
+        m.push(("egress".into(), Node::strs(egress)));
+    }
+    if !d.ingress.is_empty() {
+        m.push(("ingress".into(), Node::strs(d.ingress.iter().cloned())));
+    }
+    let mut notes = vec![format!(
+        "PROPOSED {} with data subjects {}, from the code: review it",
+        d.data_use,
+        d.data_subjects.join(", ")
+    )];
+    notes.extend(d.basis.iter().cloned());
+    Node::noted(notes, Node::Map(m))
 }
 
 /// A Fides dataset: collections and fields, classified fields cited.
