@@ -1,5 +1,5 @@
 {
-  "description": "What `piiflow datamap` must write for dotnet/eShop at the commit eshop.expected.json pins: its systems (exactly), datasets with the named collections and fields, and edges between systems. Field paths nest with dots (`Address.Street`).",
+  "description": "What `piiflow datamap` must write for dotnet/eShop at the commit eshop.expected.json pins: its systems (exactly), datasets with the named collections and fields, and edges between systems, and exactly which destinations stay unresolved. Field paths nest with dots (`Address.Street`).",
   "systems": [
     "basket_api",
     "catalog_api",
@@ -51,5 +51,11 @@
   ],
   "no_system_edges_from": [
     { "path": "src/Webhooks.API/Services/WebhooksSender.cs", "why": "A subscriber's URL: a destination outside the repository." }
+  ],
+  "unresolved": [
+    { "class": "http", "path": "src/ClientApp/Services/RequestProvider/RequestProvider.cs", "why": "The mobile app's endpoints are the ones the user sets in its settings." },
+    { "class": "http", "path": "src/Webhooks.API/Services/WebhooksSender.cs", "why": "A subscriber's URL." },
+    { "class": "llm", "path": "src/Catalog.API/Services/CatalogAI.cs", "why": "The embedding generator is injected; the app host chooses its provider at run time (Foundry or Ollama)." },
+    { "class": "llm", "path": "src/WebApp/Components/Chatbot/ChatState.cs", "why": "The chat client is injected; its provider is chosen at run time." }
   ]
 }

@@ -86,6 +86,7 @@ fn class_label(class: &str) -> &str {
         "llm" => "LLM",
         "error_tracking" => "error-tracking",
         "browser_storage" => "browser-storage",
+        "device_storage" => "device-storage",
         "third_party" => "third-party",
         c => c,
     }

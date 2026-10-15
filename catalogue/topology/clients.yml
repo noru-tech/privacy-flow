@@ -6,10 +6,20 @@
 #   calls:      API path globs of the registering call
 #   client:     `type_arg`: the registered class is the call's type argument, and requests
 #               sent by that class through a value of an `injects` type are bound;
-#               `result`: requests sent through the call's result are bound
-#   configure:  where the base address is: `lambda_fields` (stored on the lambda's first
-#               parameter), `arg` + `fields` (fields of an object argument), `keyword`
+#               `result`: requests sent through the call's result are bound;
+#               `named`: the string argument `name_arg` names the client, and requests sent
+#               through a client one of the `creates` calls makes by that name are bound
+#   configure:  where the base address is: `lambda_fields` (stored on a parameter of a lambda
+#               argument), `arg` + `fields` (fields of an object argument), `keyword`
+#   chained:    calls on the registration's result that configure it too (`ConfigureHttpClient`)
 #   wrappers:   constructors the address may be wrapped in (`new Uri("…")`)
+#
+# A base address is a literal, or a configuration read (`configuration`): a service discovery
+# key (`services:catalog-api:https:0`) or connection string names the host; any other key is
+# resolved through an orchestrator's `environment` call that sets it to another resource's
+# endpoint (`.WithEnvironment("Billing__Url", billing.GetEndpoint("https"))`). `scan` uses the
+# bindings too (ADR 0022): a request whose base address names a system of the repository is an
+# internal call, not a PF006 finding.
 
 version: "0.1.0"
 
@@ -20,8 +30,19 @@ clients:
     client: type_arg
     injects: ["System.Net.Http.HttpClient"]
     configure: { lambda_fields: [BaseAddress] }
+    chained: ["**.ConfigureHttpClient"]
     wrappers: ["System.Uri{,()}"]
     citation: "Typed clients, https://learn.microsoft.com/dotnet/core/extensions/httpclient-factory#typed-clients"
+  - id: cs.httpclient.named
+    language: csharp
+    calls: ["**.AddHttpClient"]
+    client: named
+    name_arg: 0
+    creates: ["System.Net.Http.IHttpClientFactory.CreateClient"]
+    configure: { lambda_fields: [BaseAddress] }
+    chained: ["**.ConfigureHttpClient"]
+    wrappers: ["System.Uri{,()}"]
+    citation: "Named clients, https://learn.microsoft.com/dotnet/core/extensions/httpclient-factory#named-clients"
   - id: js.axios.create
     language: javascript
     calls: ["axios:create", "axios:default.create"]
@@ -46,3 +67,21 @@ clients:
     client: result
     configure: { keyword: base_url, arg: 0 }
     citation: "aiohttp ClientSession base_url, https://docs.aiohttp.org/en/stable/client_reference.html"
+
+configuration:
+  - id: cs.configuration
+    language: csharp
+    objects: ["**.{Configuration,IConfiguration,IConfigurationRoot,IConfigurationManager,ConfigurationManager}"]
+    calls: ["**.{Configuration,IConfiguration,IConfigurationRoot,IConfigurationManager,ConfigurationManager}.GetValue"]
+    connection_strings: ["**.{Configuration,IConfiguration,IConfigurationRoot,IConfigurationManager,ConfigurationManager}.GetConnectionString"]
+    services_section: services
+    citation: "Configuration keys and service discovery, https://learn.microsoft.com/dotnet/core/extensions/service-discovery"
+
+environment:
+  - id: cs.aspire.environment
+    language: csharp
+    calls: ["**.WithEnvironment"]
+    name_arg: 0
+    value_arg: 1
+    endpoints: ["**.GetEndpoint"]
+    citation: ".NET Aspire WithEnvironment and endpoint references, https://learn.microsoft.com/dotnet/aspire/fundamentals/app-host-overview#reference-resources"

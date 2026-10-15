@@ -9,11 +9,13 @@ gives an existing one), scans it twice (one thread and eight), and checks:
 - both runs exit 0 or 4 and write the same bytes (determinism), within the time budget;
 - the findings the expectations require are there, with the required categories, and the ones
   they forbid are not;
-- the required flows are there;
+- the required flows are there, and requests through registered clients go where expected;
+- the named gaps have the expected impact, and the ones that should be sinks are not gaps;
 - coverage gaps are of the allowed kinds and within the limits, and no C# or Razor file is an
   unsupported language;
 - `piiflow datamap` writes the same map with one thread and eight, with the systems, datasets
-  and edges `tests/smoke/eshop.datamap.expected.json` requires, and a second run with
+  and edges `tests/smoke/eshop.datamap.expected.json` requires (and exactly its unresolved
+  destinations), and a second run with
   `--check` finds it up to date.
 
 The fetch happens here, in the test, never in piiflow, which makes no network calls. Standard
@@ -116,6 +118,10 @@ def check_map(topo: dict, sinks: dict, want: dict) -> list[str]:
             problems.append(f"missing edge {e['from']} -> {e['to']}")
         elif not set(e.get("categories", [])) <= set().union(*(h[2] for h in hits)):
             problems.append(f"edge {e['from']} -> {e['to']} lacks {e.get('categories')}")
+    unresolved = sorted({(e["to"]["class"], e["to"]["path"]) for e in topo["edges"] if e["to"]["kind"] == "unresolved"})
+    expected = sorted((u["class"], u["path"]) for u in want["unresolved"])
+    if unresolved != expected:
+        problems.append(f"unresolved destinations {unresolved}, expected {expected}")
     for m in want["no_system_edges_from"]:
         for frm, to, _, e in edges:
             if to and any(sinks[s]["location"]["path"] == m["path"] for s in e["sinks"]):
@@ -176,7 +182,25 @@ def check(doc: dict, want: dict) -> list[str]:
                 f'missing flow {m["source"]["path"]}:{m["source"]["line"]} -> '
                 f'{m["sink"]["path"]}:{m["sink"]["line"]} {m.get("category", "")}'
             )
+    for m in want["must_destinations"]:
+        got = [
+            s.get("destination")
+            for s in doc["sinks"]
+            if (s["location"]["path"], s["location"]["line"]) == (m["path"], m["line"])
+        ]
+        if not any(d and d["kind"] == m["kind"] and d["targets"] == m["targets"] for d in got):
+            problems.append(f'sink at {m["path"]}:{m["line"]} has destination {got}, expected {m["kind"]} {m["targets"]}')
     gaps = doc["coverage"]["gaps"]
+    by_detail = {g["detail"]: g for g in gaps}
+    for m in want["gap_impacts"]:
+        g = by_detail.get(m["detail"])
+        if g is None:
+            problems.append(f'no gap {m["detail"]}')
+        elif g["impact"] != m["impact"]:
+            problems.append(f'gap {m["detail"]} has impact {g["impact"]}, expected {m["impact"]}')
+    for detail in want["absent_gaps"]:
+        if detail in by_detail:
+            problems.append(f"unexpected gap {detail}")
     if len(gaps) > want["max_gaps"]:
         problems.append(f'{len(gaps)} gaps, more than {want["max_gaps"]}')
     parse_errors = 0

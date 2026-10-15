@@ -1,0 +1,38 @@
+# Calls that only present data in the app's own user interface: a dialog, a navigation, a
+# bindable property of a control, an animation. A coverage gap at one of these is still a gap
+# (PFC01), but its impact is `low`: the value is shown to the user on the device and is not
+# stored or sent by the call (ADR 0023).
+#
+#   calls:  API path globs, matched against the gap's detail. MAUI projects import their
+#           namespaces implicitly, which the SDK table in src/resolve.rs does not list, so the
+#           bare type names are spelled too.
+#   why:    what the call does with the value, as the gap's impact reason says it
+
+version: "0.1.0"
+
+presentation:
+  - id: cs.maui.dialogs
+    language: csharp
+    calls:
+      - "{Microsoft.Maui.Controls.,}{Shell,Page}{,.Current}.{DisplayAlert,DisplayAlertAsync,DisplayActionSheet,DisplayActionSheetAsync,DisplayPromptAsync}"
+    why: "shows a dialog on the device"
+    citation: "Display pop-ups, https://learn.microsoft.com/dotnet/maui/user-interface/pop-ups"
+  - id: cs.maui.navigation
+    language: csharp
+    calls:
+      - "{Microsoft.Maui.Controls.,}Shell{,.Current}.GoToAsync"
+    why: "navigates to another page of the app; the parameters stay in the app"
+    citation: "Shell navigation, https://learn.microsoft.com/dotnet/maui/fundamentals/shell/navigation"
+  - id: cs.maui.bindable
+    language: csharp
+    calls:
+      - "{Microsoft.Maui.Controls.,}BindableObject.SetValue"
+    why: "sets a bindable property of a control"
+    citation: "Bindable properties, https://learn.microsoft.com/dotnet/maui/fundamentals/bindable-properties"
+  - id: cs.maui.animation
+    language: csharp
+    calls:
+      - "{Microsoft.Maui.Controls.,}Animation{,()}.Commit"
+      - "**.AbortAnimation"
+    why: "runs or stops an animation of a view"
+    citation: "Custom animation, https://learn.microsoft.com/dotnet/maui/user-interface/animation/custom"

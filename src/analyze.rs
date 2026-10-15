@@ -412,7 +412,31 @@ pub fn analyze(
         analysis,
         file_digests: &digests,
     };
-    let document = report::build(&program, &facts, &reaches, &ctx)?;
+    let mut document = report::build(&program, &facts, &reaches, &ctx)?;
+    // Requests through a registered client go where its base address says (ADR 0022).
+    let texts: Vec<(String, String)> = kept
+        .iter()
+        .filter(|f| crate::topology::wants(f))
+        .filter_map(|f| tree.read_text(f).map(|t| (f.clone(), t)))
+        .collect();
+    let bound = crate::topology::destinations(
+        &mut document,
+        &crate::topology::Inputs {
+            program: &program,
+            facts: &facts,
+            resolver: &resolver,
+            files: &kept,
+            config,
+            catalogue: &catalogue,
+            topo: crate::topology::catalogue::TopologyCatalogue::shared(),
+            classifier: &classifier,
+            texts: &texts,
+        },
+    );
+    if bound {
+        report::derive(&mut document, &classifier)?;
+        report::seal(&mut document)?;
+    }
     let report_ms = t4.elapsed().as_millis();
     Ok(Run {
         document,

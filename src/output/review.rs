@@ -89,7 +89,7 @@ pub fn render(doc: &Document) -> String {
         out.push('\n');
     }
 
-    let gaps: Vec<&crate::report::FindingRec> = doc
+    let mut gaps: Vec<&crate::report::FindingRec> = doc
         .findings
         .iter()
         .filter(|f| f.rule_id == "PFC01")
@@ -106,6 +106,13 @@ pub fn render(doc: &Document) -> String {
             .iter()
             .map(|g| (g.id.as_str(), g))
             .collect();
+        // Gaps on a personal-data path first (ADR 0023).
+        gaps.sort_by_key(|f| {
+            f.gap
+                .as_deref()
+                .and_then(|id| by_gap.get(id))
+                .map_or(usize::MAX, |g| crate::report::impact_rank(&g.impact))
+        });
         for f in gaps {
             let Some(g) = f.gap.as_deref().and_then(|id| by_gap.get(id)) else {
                 continue;
@@ -116,7 +123,8 @@ pub fn render(doc: &Document) -> String {
             });
             let _ = writeln!(
                 out,
-                "- [ ] `{}` {} — {} ({} location(s){}) — finding `{}`",
+                "- [ ] **{}** `{}` {} — {} ({} location(s){}) — {} — finding `{}`",
+                g.impact,
                 g.kind,
                 g.detail,
                 first.unwrap_or_default(),
@@ -126,6 +134,7 @@ pub fn render(doc: &Document) -> String {
                 } else {
                     format!(", reached by {} source(s)", g.sources.len())
                 },
+                g.impact_reason,
                 f.id
             );
         }

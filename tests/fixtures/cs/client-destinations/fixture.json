@@ -1,0 +1,9 @@
+{
+  "complete": true,
+  "topology": true,
+  "destinations": {
+    "Shop/Program.cs:15": "internal billing",
+    "Shop/Invoices.cs:10": "internal billing",
+    "Shop/Program.cs:17": "processor api.crm.example"
+  }
+}

@@ -33,6 +33,10 @@ pub const FILES: &[(&str, &str)] = &[
         "dispatchers.yml",
         include_str!("../catalogue/dispatchers.yml"),
     ),
+    (
+        "presentation.yml",
+        include_str!("../catalogue/presentation.yml"),
+    ),
     ("sinks.yml", include_str!("../catalogue/sinks.yml")),
     ("sources.yml", include_str!("../catalogue/sources.yml")),
 ];
@@ -47,6 +51,8 @@ pub enum SinkClass {
     Llm,
     Http,
     BrowserStorage,
+    /// Storage on the user's device by a native app (.NET MAUI `SecureStorage`, `Preferences`).
+    DeviceStorage,
     /// Other third-party SDKs: payments, CRM and support, cloud storage, search, queues.
     ThirdParty,
 }
@@ -61,13 +67,17 @@ impl SinkClass {
             SinkClass::Llm => "llm",
             SinkClass::Http => "http",
             SinkClass::BrowserStorage => "browser_storage",
+            SinkClass::DeviceStorage => "device_storage",
             SinkClass::ThirdParty => "third_party",
         }
     }
 
     /// Data leaves the system's own boundary: a vendor or another host.
     pub fn is_external(self) -> bool {
-        !matches!(self, SinkClass::Log | SinkClass::BrowserStorage)
+        !matches!(
+            self,
+            SinkClass::Log | SinkClass::BrowserStorage | SinkClass::DeviceStorage
+        )
     }
 }
 
@@ -468,6 +478,20 @@ struct CatalogueFile {
     contextual: Vec<ContextualDef>,
     #[serde(default)]
     entity_identifiers: Vec<EntityIdentifiersDef>,
+    #[serde(default)]
+    presentation: Vec<PresentationDef>,
+}
+
+/// Calls that only present data in the app's user interface (`catalogue/presentation.yml`): a
+/// coverage gap at one is low impact.
+#[derive(Clone, Debug, Default, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct PresentationDef {
+    pub id: String,
+    pub language: String,
+    pub calls: Vec<String>,
+    pub why: String,
+    pub citation: String,
 }
 
 /// A name the classification table classifies whose category holds only in context
@@ -578,6 +602,7 @@ pub struct Catalogue {
     pub metadata_types: BTreeMap<String, Vec<String>>,
     pub contextual: Vec<ContextualDef>,
     pub entity_identifiers: Vec<EntityIdentifiersDef>,
+    pub presentation: Vec<PresentationDef>,
 }
 
 /// Entries a project adds in `.privacy-flow.yml`.
@@ -638,6 +663,7 @@ impl Catalogue {
             merged.dispatchers.extend(file.dispatchers);
             merged.contextual.extend(file.contextual);
             merged.entity_identifiers.extend(file.entity_identifiers);
+            merged.presentation.extend(file.presentation);
             for (lang, fields) in file.non_propagating_fields {
                 merged
                     .non_propagating_fields
@@ -662,6 +688,17 @@ impl Catalogue {
                     .or_default()
                     .extend(fields);
             }
+        }
+        // `scan` binds requests to client registrations and names systems with these (ADR 0022),
+        // so its output depends on them too.
+        for (name, text) in crate::topology::catalogue::FILES
+            .iter()
+            .filter(|(n, _)| ["clients.yml", "systems.yml"].contains(n))
+        {
+            hasher_input.push_str("topology/");
+            hasher_input.push_str(name);
+            hasher_input.push('\n');
+            hasher_input.push_str(text);
         }
         let mut ids = BTreeSet::new();
         let mut check_id = |id: &str, lang: &str| -> Result<()> {
@@ -777,6 +814,13 @@ impl Catalogue {
                 origin,
             });
         }
+        for def in &merged.presentation {
+            check_id(&def.id, &def.language)?;
+            compile(&def.calls, "call", &def.id)?;
+            if def.citation.trim().len() < 3 {
+                bail!("catalogue entry {:?} needs a citation", def.id);
+            }
+        }
         let non_propagating_fields = merged
             .non_propagating_fields
             .into_iter()
@@ -807,6 +851,7 @@ impl Catalogue {
             metadata_types: merged.metadata_types,
             contextual: merged.contextual,
             entity_identifiers: merged.entity_identifiers,
+            presentation: merged.presentation,
         })
     }
 

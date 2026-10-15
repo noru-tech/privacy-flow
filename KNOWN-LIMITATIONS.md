@@ -202,12 +202,28 @@ Request input is a source only in frameworks whose request objects are modelled
 - **A sink's result carries nothing.** **Silent:** a send call's response that echoes the
   recipient (an SMTP rejection that names the address) is not personal data when it is logged.
 - **Outbound HTTP:** a host is known when the URL is a literal, a template or concatenation that
-  starts with one, or a constant holding one. In `scan`, a client's base URL (axios instances,
-  `httpx.Client`, typed `HttpClient`s) is not followed, so calls on such clients have a dynamic
-  host (PF006); [`datamap`](docs/datamap.md) binds them to their registration.
-- **Browser storage** (`localStorage`, `sessionStorage`, `document.cookie`, js-cookie) is reported
-  as flows, not egress; no rule fires on it in v0.1. `window.parent.postMessage` and
-  `window.open` are gaps, not sinks.
+  starts with one, or a constant holding one.
+  - **Clients with a base address.** A call through one (axios instances, `httpx.Client`, typed and
+    named `HttpClient`s) is bound to its registration
+    ([ADR 0022](docs/adr/0022-client-destinations.md)). A base address that names a system of
+    the repository makes the call internal; one that names an outside host names the processor.
+  - **Still dynamic (PF006):**
+    - an unregistered client;
+    - a base address that is a local or unknown host (`localhost:11632`);
+    - a configuration key no orchestrator sets;
+    - a value from another class's field;
+    - `AddHttpClient<TClient, TImplementation>`, whose two type arguments the C# lowering does not
+      keep;
+    - an `HttpClient` registered as a plain service (`AddSingleton(new HttpClient { … })`).
+  - **Several destinations.** A client registered against a system in one service and an outside
+    host in another keeps PF006.
+- **Browser and device storage** (`localStorage`, `sessionStorage`, `document.cookie`, js-cookie;
+  .NET MAUI `SecureStorage` and `Preferences`) are reported as flows, not egress; no rule fires
+  on them. MAUI's implicit namespaces are not modelled: its storage types are matched by their
+  bare names too. `window.parent.postMessage` and `window.open` are gaps, not sinks.
+- **Gap impact** ([ADR 0023](docs/adr/0023-gap-impact.md)): `high` means personal data reaches the
+  call, not that the call sends it anywhere. Only .NET MAUI's presentation calls are listed as
+  `low`; other UI frameworks' calls rank by the data that reaches them.
 - **Not sinks:** writing to the system's own databases, caches, queues on its own infrastructure,
   and files; rendering data into the application's own HTML or JSON responses. What a system
   stores is described by its ORM models in the [data map](docs/datamap.md), not by flows.
@@ -240,10 +256,12 @@ Request input is a source only in frameworks whose request objects are modelled
   dependency injection or an interface) is reported as a note, not an edge. A library's flow
   belongs to every system that links the library, used or not.
 - **Edges between systems** are resolved through client registrations whose base address is a
-  literal, and names an orchestrator (.NET Aspire), docker-compose or `systems: hosts:` gives.
-  Not resolved:
-  - gRPC clients and named `HttpClient`s;
-  - Aspire environment URLs read from configuration;
+  literal or a configuration key, and names an orchestrator (.NET Aspire), docker-compose or
+  `systems: hosts:` gives. Named `HttpClient`s, service discovery keys and Aspire environment URLs
+  (`WithEnvironment(key, project.GetEndpoint(…))`) resolve. Not resolved:
+  - gRPC clients;
+  - configuration read through a project's own helper (`GetRequiredValue`) or a section
+    (`GetSection("A")["B"]`);
   - message buses (an integration event's publisher and its consumers);
   - a slug match between a service name and a project name.
 - **Datasets** come from Entity Framework Core, Django, SQLAlchemy and Prisma models.

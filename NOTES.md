@@ -820,3 +820,89 @@ finding already there (addresses, card number). `_user.Claims` reaching the chat
 to the Identity API's and the web app's ingress and declarations, and the chatbot's unresolved
 LLM destination, which had no category, now has `user`. Benchmark corpus (no C# application):
 flows and findings identical on all twelve, so the narrowing rule changes nothing there.
+
+## 2026-10-15 — HTTP destinations in `scan`, and gaps ranked by impact (ADRs 0022, 0023)
+
+**Why.** A tester ran 0.4.0 on dotnet/eShop and their counts matched a local run exactly. Two of
+their five points were:
+
+- tell internal service calls from transfers to processors, by resolving where `HttpClient`, DI
+  and internal API calls go;
+- rank coverage gaps by whether they can interrupt a real flow of personal data, rather than
+  treating every unresolved call alike.
+
+Fideslang validity, finding grouping and identifier classification are handled in other
+sessions.
+
+**Done.**
+
+- **`scan` runs the client bindings** that `datamap` already had (ADR 0022). A sink with a
+  dynamic host gains a `destination`:
+  - `internal`: every binding names systems of the repository;
+  - `processor`: they all name one outside host.
+
+  PF006 fires only without one. An internal call is not external, and a processor host feeds
+  PF002 like a literal host.
+- **More clients bound:**
+  - named `HttpClient`s with `CreateClient("name")`;
+  - `ConfigureHttpClient` chained on a registration;
+  - base addresses from configuration: service discovery keys, connection strings, and keys the
+    Aspire app host sets with `WithEnvironment(key, project.GetEndpoint(…))`.
+
+  Two entries from the previous entry's "Not done" are done (named HttpClients, Aspire
+  environment URLs).
+- **Gaps have an impact** (ADR 0023):
+  - `high`: personal data reaches the call;
+  - `medium`: only values that need review reach it, or the gap exists whatever the data;
+  - `low`: the call only presents data (`catalogue/presentation.yml`, MAUI for now), reported at
+    `info`.
+
+  Gaps are listed most urgent first in the document, the table and the review checklist.
+- **Device storage is a sink.** MAUI `SecureStorage.SetAsync` and `Preferences.Set` are sinks of a
+  new class, `device_storage`, not gaps.
+- **Tests.** New fixtures `cs/client-destinations` and `cs/gap-impact`, and `fixture.json` can
+  state `destinations` and `gap_impacts`. The eShop smoke test checks destinations, impacts and
+  the absent storage gaps. The data map expectation now names exactly the five destinations that
+  stay unresolved.
+
+**Found on the way.**
+
+- **`py/multi-service` and `ts/multi-service`.** Both expected PF006 on a client whose base
+  address names a compose service. They are internal now, which is the point.
+- **Two type arguments.** `AddHttpClient<TClient, TImplementation>` cannot bind: the C# lowering
+  keeps a call's type argument only when there is one. Recording both would type the builder as
+  the client. Left for a side table.
+- **MAUI's implicit namespaces** are missing from `src/resolve.rs`, so its types stay bare
+  (`SecureStorage.SetAsync`). The catalogue spells the bare names. Adding the namespaces would
+  change how much of the client app is qualified, so it is left for its own change.
+- **Strange categories in the client app.** Its `user.location.precise` and the `handle` of
+  `MauiApplication(handle, …)` read as a username. Both are classification questions for the
+  identifier work.
+
+**Measured** (eShop at `dc7ea499`, Apple M3 Pro, one thread). Before is `main` with the
+exposures of ADR 0020 and the identifier changes of ADR 0021; after is this change on top.
+
+| | Before | After |
+| --- | --- | --- |
+| Flows | 208 | 221 (13 to device storage) |
+| PF001 / PF003 findings | 28 / 4 | 28 / 4 |
+| PF006 findings (flows) | 5 (35) | 3 (10) |
+| PFC01 (gaps) | 27 | 25: 16 high, 4 medium, 5 low |
+| Internal sinks | — | 2: `web_app → ordering_api`, `webhook_client → webhooks_api` |
+| Data map | 11 systems, 6 edges, 4 unresolved | unchanged |
+| `scan` time | 0.57 s | 0.58 s |
+| 100k-line synthetic C# service, report step (measured on 0.4.0) | 373–436 ms | 408–415 ms |
+
+The three PF006 findings left have hosts the code does not hold:
+
+- two exposures in the mobile app's `RequestProvider` (endpoints the user sets), one personal
+  and one for review;
+- one in the webhook sender (a subscriber's URL), for review.
+
+**Not done.**
+
+- `AddHttpClient<TClient, TImplementation>`.
+- `HttpClient`s registered as plain services.
+- `GetSection` keys, and configuration read through a project's own helper.
+- Presentation entries for UI frameworks other than MAUI.
+- gRPC clients and message buses, as before.

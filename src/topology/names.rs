@@ -5,7 +5,7 @@
 use std::collections::{BTreeMap, BTreeSet};
 
 use crate::glob::api_matches_any;
-use crate::program::{GKind, Program};
+use crate::program::{GCallee, GKind, Program, VarId};
 use crate::resolve::{Resolver, normalize};
 use crate::topology::catalogue::TopologyCatalogue;
 use crate::topology::model::{NoteRec, SystemRec};
@@ -67,7 +67,44 @@ pub fn is_local(host: &str) -> bool {
 pub struct Names {
     /// Host name (lowercase) → system key.
     pub by_host: BTreeMap<String, String>,
+    /// (system key, configuration key) → the system whose endpoint an orchestrator sets the
+    /// key to in that system's environment. Keys are lowercase with `:` separators.
+    pub env: BTreeMap<(String, String), String>,
     pub notes: Vec<NoteRec>,
+}
+
+/// A configuration key as .NET reads it: case-insensitive, `__` in environment variable names
+/// meaning `:`.
+pub fn config_key(k: &str) -> String {
+    k.replace("__", ":").to_ascii_lowercase()
+}
+
+/// The orchestrator call a resource builder comes from, through copies and chained calls
+/// (`builder.AddProject("web", …).WithReference(orders)` → the `AddProject` call).
+fn resource_of(
+    p: &Program,
+    defs: &Defs,
+    resources: &BTreeMap<u32, String>,
+    var: VarId,
+    depth: u32,
+) -> Option<String> {
+    if depth > 16 {
+        return None;
+    }
+    for &d in defs.of(var) {
+        let found = match &p.stmts[d as usize].kind {
+            GKind::Copy { src, .. } => resource_of(p, defs, resources, *src, depth + 1),
+            GKind::Call { callee, .. } => resources.get(&d).cloned().or_else(|| match callee {
+                GCallee::Method { recv, .. } => resource_of(p, defs, resources, *recv, depth + 1),
+                _ => None,
+            }),
+            _ => None,
+        };
+        if found.is_some() {
+            return found;
+        }
+    }
+    None
 }
 
 pub struct Inputs<'a> {
@@ -83,6 +120,8 @@ pub struct Inputs<'a> {
 pub fn collect(inp: &Inputs, systems: &mut [SystemRec]) -> Names {
     let p = inp.program;
     let mut found: Vec<(String, String, String)> = Vec::new(); // (host, system key, evidence)
+    // Orchestrator call → the system it adds.
+    let mut resources: BTreeMap<u32, String> = BTreeMap::new();
     let mut notes = Vec::new();
     let by_root: BTreeMap<String, String> = systems
         .iter()
@@ -163,11 +202,14 @@ pub fn collect(inp: &Inputs, systems: &mut [SystemRec]) -> Names {
                 });
             }
             match target {
-                Some(key) => found.push((
-                    name.to_ascii_lowercase(),
-                    key,
-                    format!("{}:{}", file, st.pos.line),
-                )),
+                Some(key) => {
+                    resources.insert(i as u32, key.clone());
+                    found.push((
+                        name.to_ascii_lowercase(),
+                        key,
+                        format!("{}:{}", file, st.pos.line),
+                    ))
+                }
                 None => notes.push(NoteRec {
                     kind: "orchestrated_resource_unresolved".into(),
                     detail: format!(
@@ -179,6 +221,81 @@ pub fn collect(inp: &Inputs, systems: &mut [SystemRec]) -> Names {
             }
         }
     }
+
+    // `.WithEnvironment("Billing__Url", billing.GetEndpoint("https"))` on a project's builder.
+    let mut env: BTreeMap<(String, String), BTreeSet<String>> = BTreeMap::new();
+    for (i, st) in p.stmts.iter().enumerate() {
+        let GKind::Call {
+            callee: GCallee::Method { recv, .. },
+            args,
+            ..
+        } = &st.kind
+        else {
+            continue;
+        };
+        let lang = p.files[st.file as usize].lang.family();
+        let paths: Vec<String> = p
+            .calls
+            .get(&(i as u32))
+            .map(|t| t.apis.iter().map(|s| p.syms.str(*s).to_string()).collect())
+            .unwrap_or_default();
+        for e in &inp.topo.environment {
+            if e.language != lang || !paths.iter().any(|a| api_matches_any(&e.calls, a)) {
+                continue;
+            }
+            let Some(name) = args
+                .get(e.name_arg)
+                .and_then(|a| inp.defs.literal_prefix(p, a.var))
+                .and_then(|(s, whole)| whole.then_some(s))
+            else {
+                continue;
+            };
+            let Some(sender) = resource_of(p, inp.defs, &resources, *recv, 0) else {
+                continue;
+            };
+            let Some(value) = args.get(e.value_arg) else {
+                continue;
+            };
+            // The value is an endpoint of another resource, perhaps through a variable.
+            let mut target = None;
+            let mut var = value.var;
+            for _ in 0..8 {
+                let Some(&d) = inp.defs.of(var).first() else {
+                    break;
+                };
+                match &p.stmts[d as usize].kind {
+                    GKind::Copy { src, .. } => var = *src,
+                    GKind::Call {
+                        callee: GCallee::Method { recv: r, .. },
+                        ..
+                    } => {
+                        let endpoint = p
+                            .calls
+                            .get(&d)
+                            .into_iter()
+                            .flat_map(|t| t.apis.iter())
+                            .any(|a| api_matches_any(&e.endpoints, p.syms.str(*a)));
+                        if endpoint {
+                            target = resource_of(p, inp.defs, &resources, *r, 0);
+                        }
+                        break;
+                    }
+                    _ => break,
+                }
+            }
+            if let Some(t) = target {
+                env.entry((sender, config_key(&name)))
+                    .or_default()
+                    .insert(t);
+            }
+        }
+    }
+    // A key set to two systems names neither.
+    let env: BTreeMap<(String, String), String> = env
+        .into_iter()
+        .filter(|(_, t)| t.len() == 1)
+        .map(|(k, t)| (k, t.into_iter().next().expect("one")))
+        .collect();
 
     for (path, text) in inp.compose {
         let Ok(v) = serde_saphyr::from_str::<serde_json::Value>(text) else {
@@ -284,12 +401,16 @@ pub fn collect(inp: &Inputs, systems: &mut [SystemRec]) -> Names {
         s.evidence.sort();
         s.evidence.dedup();
     }
-    Names { by_host, notes }
+    Names {
+        by_host,
+        env,
+        notes,
+    }
 }
 
 #[cfg(test)]
 mod tests {
-    use super::{authority_of, is_local};
+    use super::{authority_of, config_key, is_local};
 
     #[test]
     fn authorities() {
@@ -308,5 +429,15 @@ mod tests {
         );
         assert!(is_local("localhost") && is_local("10.1.2.3") && is_local("172.20.0.1"));
         assert!(!is_local("orders-api") && !is_local("8.8.8.8"));
+    }
+
+    #[test]
+    fn configuration_keys() {
+        // An environment variable's `__` is `:`, and keys compare case-insensitively.
+        assert_eq!(config_key("Billing__Url"), "billing:url");
+        assert_eq!(
+            config_key("services:Billing:https:0"),
+            "services:billing:https:0"
+        );
     }
 }

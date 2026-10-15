@@ -209,7 +209,7 @@
       "properties": {
         "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9_.-]*$" },
         "language": { "$ref": "#/$defs/language" },
-        "class": { "enum": ["log", "error_tracking", "analytics", "messaging", "llm", "http", "browser_storage", "third_party"] },
+        "class": { "enum": ["log", "error_tracking", "analytics", "messaging", "llm", "http", "browser_storage", "device_storage", "third_party"] },
         "processor": { "type": ["string", "null"] },
         "description": { "type": "string" },
         "calls": { "$ref": "#/$defs/patterns" },

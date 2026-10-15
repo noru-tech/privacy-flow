@@ -108,12 +108,12 @@
     },
     {
       "rule": "PF006",
-      "path": "src/WebApp/Services/OrderingService.cs",
-      "line": 17,
+      "path": "src/ClientApp/Services/RequestProvider/RequestProvider.cs",
+      "line": 43,
       "categories": ["user.contact.address.street", "user.financial.credit_card"],
-      "findings": 1,
+      "findings": 2,
       "min_flows": 9,
-      "why": "The checkout form's address and card go to the ordering API, whose base address is configured elsewhere."
+      "why": "The mobile app sends the order to endpoints the user sets in its settings (stored in Preferences): the host is not in the code. Two exposures: the personal data, and values whose category needs review."
     }
   ],
   "must_flows": [
@@ -132,9 +132,47 @@
       "sink": {"path": "src/Basket.API/Grpc/BasketService.cs", "line": 23},
       "category": "user.unique_id.pseudonymous",
       "why": "The user's subject identifier is logged: a flow, but not a PF001 finding on its own (ADR 0015)."
+    },
+    {
+      "source": {"path": "src/ClientApp/Services/Settings/SettingsService.cs", "line": 35},
+      "sink": {"path": "src/ClientApp/Services/Settings/SettingsService.cs", "line": 37},
+      "category": "user.authorization.credentials",
+      "why": "The access token is stored with SecureStorage.SetAsync: a device-storage sink, not a coverage gap (ADR 0023)."
     }
   ],
+  "must_destinations": [
+    {
+      "path": "src/WebApp/Services/OrderingService.cs",
+      "line": 17,
+      "kind": "internal",
+      "targets": ["ordering_api"],
+      "why": "OrderingService's typed client is registered with https+http://ordering-api, which the Aspire app host names (ADR 0022)."
+    },
+    {
+      "path": "src/WebhookClient/Services/WebHooksClient.cs",
+      "line": 7,
+      "kind": "internal",
+      "targets": ["webhooks_api"],
+      "why": "Registered with http://webhooks-api."
+    }
+  ],
+  "gap_impacts": [
+    {"detail": "OidcClient.RefreshTokenAsync", "impact": "high", "why": "The refresh token goes to the identity provider through an SDK the catalogue does not know."},
+    {"detail": "Shell.Current.GoToAsync", "impact": "low", "why": "In-app navigation."},
+    {"detail": "BindableObject.SetValue", "impact": "low", "why": "A control's bindable property."}
+  ],
+  "absent_gaps": ["SecureStorage.SetAsync", "Preferences.Set"],
   "must_not": [
+    {
+      "rule": "PF006",
+      "path": "src/WebApp/Services/OrderingService.cs",
+      "why": "The typed client's base address, https+http://ordering-api, names the Ordering API: an internal call (ADR 0022)."
+    },
+    {
+      "rule": "PF006",
+      "path": "src/WebhookClient/Services/WebHooksClient.cs",
+      "why": "The typed client's base address, http://webhooks-api, names the Webhooks API."
+    },
     {
       "rule": "PF001",
       "path": "src/Ordering.API/Apis/OrdersApi.cs",
