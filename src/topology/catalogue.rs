@@ -45,6 +45,8 @@ struct File {
 pub enum StoreKind {
     EntityFramework,
     Django,
+    Sqlalchemy,
+    Prisma,
 }
 
 /// How ORM models of one kind say what is stored (`catalogue/topology/stores.yml`).
@@ -93,6 +95,25 @@ pub struct StoreDef {
     pub relations: Vec<String>,
     #[serde(default)]
     pub column_keyword: Option<String>,
+    /// The positional argument that names the column (`Column("email_address", …)`).
+    #[serde(default)]
+    pub column_arg: Option<usize>,
+    /// Declared types that make an attribute a column with no value (`Mapped[str]`).
+    #[serde(default)]
+    pub annotation_columns: Vec<String>,
+    /// The class attribute that names the table; a class without it is not mapped.
+    #[serde(default)]
+    pub table_member: Option<String>,
+    /// The class attribute that makes a model abstract.
+    #[serde(default)]
+    pub abstract_member: Option<String>,
+    // prisma
+    /// Schema file globs.
+    #[serde(default)]
+    pub files: Vec<String>,
+    /// Modules whose import links a system to the schema's dataset.
+    #[serde(default)]
+    pub used_by_imports: Vec<String>,
     #[serde(default)]
     pub inherited: Vec<Inherited>,
     pub citation: String,

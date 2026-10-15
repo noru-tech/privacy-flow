@@ -1,0 +1,5 @@
+{
+  "name": "@shop/db",
+  "main": "src/index.ts",
+  "dependencies": { "@prisma/client": "^5.20.0" }
+}

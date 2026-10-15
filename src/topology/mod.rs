@@ -5,6 +5,7 @@ pub mod catalogue;
 pub mod clients;
 pub mod model;
 pub mod names;
+pub mod prisma;
 pub mod stores;
 pub mod systems;
 
@@ -24,15 +25,17 @@ pub struct Inputs<'a> {
     pub catalogue: &'a crate::catalogue::Catalogue,
     pub topo: &'a catalogue::TopologyCatalogue,
     pub classifier: &'a crate::classify::Classifier,
-    /// docker-compose files: (path, text).
-    pub compose: &'a [(String, String)],
+    /// The files [`wants`] selects: (path, text).
+    pub texts: &'a [(String, String)],
 }
 
-/// Whether a listed file is a docker-compose file `build` needs.
+/// Whether a listed file is one `build` reads besides the analysed sources: docker-compose
+/// files and Prisma schemas.
 pub fn wants(path: &str) -> bool {
     let name = path.rsplit('/').next().unwrap_or(path);
-    (name.starts_with("docker-compose") || name.starts_with("compose"))
-        && (name.ends_with(".yml") || name.ends_with(".yaml"))
+    ((name.starts_with("docker-compose") || name.starts_with("compose"))
+        && (name.ends_with(".yml") || name.ends_with(".yaml")))
+        || name.ends_with(".prisma")
 }
 
 /// Detect the systems, bind requests to client registrations, attribute every flow, and
@@ -53,7 +56,7 @@ pub fn build(doc: &mut Document, inp: &Inputs) {
             defs: &defs,
             resolver: inp.resolver,
             topo: inp.topo,
-            compose: inp.compose,
+            compose: inp.texts,
         },
         &mut sys.recs,
     );
@@ -85,6 +88,7 @@ pub fn build(doc: &mut Document, inp: &Inputs) {
         .map(|((r, c), o)| (r.key.clone(), c.as_slice(), o.as_slice()))
         .collect();
     let stores = stores::datasets(&stores::Inputs {
+        texts: inp.texts,
         program: inp.program,
         defs: &defs,
         classifier: inp.classifier,

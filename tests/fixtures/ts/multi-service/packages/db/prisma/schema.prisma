@@ -1,0 +1,25 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Member {
+  id       Int      @id @default(autoincrement())
+  email    String   @unique @map("email_address")
+  phone    String?
+  address  Address?
+  orders   Order[]
+
+  @@map("members")
+}
+
+model Order {
+  id       Int    @id
+  member   Member @relation(fields: [memberId], references: [id])
+  memberId Int    @map("member_id")
+  total    Int
+}
+
+type Address {
+  street String
+  city   String
+}

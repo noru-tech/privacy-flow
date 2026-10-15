@@ -13,6 +13,8 @@ use crate::topology::model::{CollectionRec, DatasetRec, FieldRec, NoteRec};
 use crate::values::{Defs, api_paths};
 
 pub struct Inputs<'a> {
+    /// Schema files the stores read (`.prisma`): (path, text).
+    pub texts: &'a [(String, String)],
     pub program: &'a Program,
     pub defs: &'a Defs,
     pub classifier: &'a Classifier,
@@ -239,7 +241,8 @@ pub fn datasets(inp: &Inputs) -> Stores {
     for d in &inp.topo.stores {
         match d.kind {
             StoreKind::EntityFramework => entity_framework(inp, &ctx, d, &mut out),
-            StoreKind::Django => django(inp, &ctx, d, &mut out),
+            StoreKind::Django | StoreKind::Sqlalchemy => class_models(inp, &ctx, d, &mut out),
+            StoreKind::Prisma => prisma(inp, d, &mut out),
         }
     }
     out.datasets.sort_by(|a, b| a.key.cmp(&b.key));
@@ -793,9 +796,10 @@ fn entity_fields(
     out
 }
 
-// ------------------------------------------------------------------ Django
+// ------------------------------------------------------------------ class models
 
-fn django(inp: &Inputs, ctx: &Ctx, d: &StoreDef, out: &mut Stores) {
+/// Django and SQLAlchemy: model classes whose class attributes declare the columns.
+fn class_models(inp: &Inputs, ctx: &Ctx, d: &StoreDef, out: &mut Stores) {
     let p = inp.program;
     let is_model = |c: ClassId| {
         p.files[p.classes[c as usize].file as usize].lang.family() == d.language
@@ -803,69 +807,111 @@ fn django(inp: &Inputs, ctx: &Ctx, d: &StoreDef, out: &mut Stores) {
                 .iter()
                 .any(|a| api_matches_any(&d.models, a))
     };
-    // The `Meta` class nested in a model: its literal attributes.
-    let meta = |c: ClassId, attr: &str| -> Option<String> {
-        let name = d.meta_class.as_deref()?;
-        let mc = p
-            .classes
-            .iter()
-            .find(|mc| mc.outer == Some(c) && mc.name == name)?;
-        let m = mc.members.iter().find(|m| m.name == attr)?;
-        let v = m.value?;
-        // `abstract = True`: a constant is a literal with no string value; its text says it.
+    // A literal class attribute, or its text for a constant (`True`).
+    let value_text = |v: VarId| -> Option<String> {
         literal(p, ctx.defs, v).or_else(|| match ctx.defs.of(v) {
             [d] => Some(p.stmts[*d as usize].text.clone()),
             _ => None,
         })
     };
+    let member_text = |c: ClassId, attr: &str| -> Option<String> {
+        let m = p.classes[c as usize]
+            .members
+            .iter()
+            .find(|m| m.name == attr)?;
+        value_text(m.value?)
+    };
+    // The `Meta` class nested in a model: its attributes.
+    let meta = |c: ClassId, attr: &str| -> Option<String> {
+        let name = d.meta_class.as_deref()?;
+        let k = p
+            .classes
+            .iter()
+            .position(|mc| mc.outer == Some(c) && mc.name == name)?;
+        member_text(k as ClassId, attr)
+    };
+    let truthy = |v: Option<String>| v.is_some_and(|v| v == "True" || v == "true");
     let mut by_system: BTreeMap<String, Vec<CollectionRec>> = BTreeMap::new();
     let mut first_loc: BTreeMap<String, String> = BTreeMap::new();
     for c in 0..p.classes.len() as ClassId {
         if !is_model(c) {
             continue;
         }
-        if meta(c, "abstract").is_some_and(|v| v == "True" || v == "true") {
+        if truthy(meta(c, "abstract"))
+            || d.abstract_member
+                .as_deref()
+                .is_some_and(|m| truthy(member_text(c, m)))
+        {
             continue;
         }
         let class = &p.classes[c as usize];
         let file = class.file as usize;
-        let app = dir_of(&p.files[file].path)
-            .rsplit('/')
-            .next()
-            .unwrap_or("")
-            .to_string();
-        let table = meta(c, "db_table").unwrap_or_else(|| {
-            if app.is_empty() {
-                class.name.to_lowercase()
-            } else {
-                format!("{app}_{}", class.name.to_lowercase())
-            }
-        });
+        let table = match (&d.table_member, &d.meta_class) {
+            (Some(m), _) => match member_text(c, m) {
+                Some(t) => t,
+                // Not mapped: a declarative base or a mixin.
+                None => continue,
+            },
+            (None, _) => meta(c, "db_table").unwrap_or_else(|| {
+                let app = dir_of(&p.files[file].path)
+                    .rsplit('/')
+                    .next()
+                    .unwrap_or("")
+                    .to_string();
+                if app.is_empty() {
+                    class.name.to_lowercase()
+                } else {
+                    format!("{app}_{}", class.name.to_lowercase())
+                }
+            }),
+        };
         let mut rows: Vec<(String, Option<String>, Option<String>)> = Vec::new();
         let mut seen: BTreeSet<String> = BTreeSet::new();
         for k in p.lineage(c) {
             let kc = &p.classes[k as usize];
             for m in &kc.members {
-                let Some(v) = m.value else { continue };
-                if !seen.insert(m.name.clone()) {
+                if m.name.starts_with("__") || seen.contains(&m.name) {
                     continue;
                 }
-                let paths: Vec<String> = api_paths(p, v).collect();
-                let column_kw = d.column_keyword.as_deref().and_then(|kw| {
-                    ctx.defs.defining_call(p, v).and_then(|(args, _)| {
+                let paths: Vec<String> = m
+                    .value
+                    .map(|v| api_paths(p, v).collect())
+                    .unwrap_or_default();
+                let call_args = m
+                    .value
+                    .and_then(|v| ctx.defs.defining_call(p, v))
+                    .map(|(a, _)| a);
+                let named = call_args.as_ref().and_then(|args| {
+                    let kw = d.column_keyword.as_deref().and_then(|kw| {
                         args.iter()
                             .find(|a| matches!(&a.kind, GArgKind::Keyword(n) if n == kw))
                             .and_then(|a| literal(p, ctx.defs, a.var))
+                    });
+                    kw.or_else(|| {
+                        let i = d.column_arg?;
+                        args.iter()
+                            .filter(|a| matches!(a.kind, GArgKind::Positional))
+                            .nth(i)
+                            .and_then(|a| literal(p, ctx.defs, a.var))
                     })
                 });
+                let annotated = m.ty.as_ref().is_some_and(|t| {
+                    d.annotation_columns
+                        .iter()
+                        .any(|x| t.text.trim_start().starts_with(x.as_str()))
+                });
                 let at = Some(loc(p, kc.file, m.pos.line));
+                let excluded = paths.iter().any(|a| api_matches_any(&d.not_columns, a));
                 if paths.iter().any(|a| api_matches_any(&d.relations, a)) {
-                    let col = column_kw.unwrap_or_else(|| format!("{}_id", m.name));
+                    seen.insert(m.name.clone());
+                    let col = named.unwrap_or_else(|| format!("{}_id", m.name));
                     rows.push((col, Some(m.name.clone()), at));
-                } else if paths.iter().any(|a| api_matches_any(&d.columns, a))
-                    && !paths.iter().any(|a| api_matches_any(&d.not_columns, a))
+                } else if !excluded
+                    && (paths.iter().any(|a| api_matches_any(&d.columns, a))
+                        || (annotated && m.value.is_none()))
                 {
-                    let col = column_kw.unwrap_or_else(|| m.name.clone());
+                    seen.insert(m.name.clone());
+                    let col = named.unwrap_or_else(|| m.name.clone());
                     rows.push((col, Some(m.name.clone()), at));
                 }
             }
@@ -908,8 +954,7 @@ fn django(inp: &Inputs, ctx: &Ctx, d: &StoreDef, out: &mut Stores) {
             fields,
         });
     }
-    for (system, mut collections) in by_system {
-        collections.sort_by(|a, b| a.name.cmp(&b.name));
+    for (system, collections) in by_system {
         let key = format!("{system}_db");
         if inp.systems.iter().any(|(k, _, _)| *k == system) {
             out.links
@@ -917,14 +962,197 @@ fn django(inp: &Inputs, ctx: &Ctx, d: &StoreDef, out: &mut Stores) {
                 .or_default()
                 .insert(key.clone());
         }
-        out.datasets.push(DatasetRec {
-            key,
-            name: format!("{system} database"),
-            store: d.id.clone(),
-            location: first_loc.remove(&system).unwrap_or_default(),
-            database: None,
-            schema: None,
-            collections,
-        });
+        add_dataset(
+            out,
+            DatasetRec {
+                key,
+                name: format!("{system} database"),
+                store: d.id.clone(),
+                location: first_loc.remove(&system).unwrap_or_default(),
+                database: None,
+                schema: None,
+                collections,
+            },
+        );
     }
+}
+
+/// Add a dataset, merging it into one of the same key (two ORMs on one system's database).
+fn add_dataset(out: &mut Stores, mut ds: DatasetRec) {
+    if let Some(existing) = out.datasets.iter_mut().find(|x| x.key == ds.key) {
+        for c in ds.collections.drain(..) {
+            if !existing.collections.iter().any(|x| x.name == c.name) {
+                existing.collections.push(c);
+            }
+        }
+        existing.collections.sort_by(|a, b| a.name.cmp(&b.name));
+        if !existing.store.split(", ").any(|s| s == ds.store) {
+            existing.store = format!("{}, {}", existing.store, ds.store);
+        }
+        return;
+    }
+    ds.collections.sort_by(|a, b| a.name.cmp(&b.name));
+    out.datasets.push(ds);
+}
+
+// ------------------------------------------------------------------ Prisma
+
+fn prisma(inp: &Inputs, d: &StoreDef, out: &mut Stores) {
+    let p = inp.program;
+    let globs: Vec<crate::glob::Glob> = d
+        .files
+        .iter()
+        .filter_map(|g| crate::glob::Glob::path(g).ok())
+        .collect();
+    // One dataset per package: its schema files (multi-file schemas) together.
+    let mut by_pkg: BTreeMap<String, Vec<(&str, &str)>> = BTreeMap::new();
+    for (path, text) in inp.texts {
+        if !globs.iter().any(|g| g.is_match(path)) {
+            continue;
+        }
+        let pkg = ancestors_of(path)
+            .find(|dir| inp.resolver.manifests.contains_key(*dir))
+            .unwrap_or_else(|| dir_of(path))
+            .to_string();
+        by_pkg.entry(pkg).or_default().push((path, text));
+    }
+    for (pkg, files) in by_pkg {
+        let blocks: Vec<(&str, crate::topology::prisma::Block)> = files
+            .iter()
+            .flat_map(|(path, text)| {
+                crate::topology::prisma::parse(text)
+                    .into_iter()
+                    .map(move |b| (*path, b))
+            })
+            .collect();
+        let models: BTreeSet<&str> = blocks
+            .iter()
+            .filter(|(_, b)| b.kind != "type")
+            .map(|(_, b)| b.name.as_str())
+            .collect();
+        let types: BTreeMap<&str, &crate::topology::prisma::Block> = blocks
+            .iter()
+            .filter(|(_, b)| b.kind == "type")
+            .map(|(_, b)| (b.name.as_str(), b))
+            .collect();
+        let mut collections = Vec::new();
+        for (path, b) in blocks.iter().filter(|(_, b)| b.kind != "type") {
+            collections.push(CollectionRec {
+                name: b.table.clone().unwrap_or_else(|| b.name.clone()),
+                entity: b.name.clone(),
+                location: format!("{path}:{}", b.line),
+                fields: prisma_fields(inp, path, b, &models, &types, 0),
+            });
+        }
+        let name = inp
+            .resolver
+            .manifests
+            .get(&pkg)
+            .and_then(|m| m.name.clone())
+            .unwrap_or_else(|| {
+                if pkg.is_empty() {
+                    "schema".to_string()
+                } else {
+                    pkg.rsplit('/').next().unwrap_or(&pkg).to_string()
+                }
+            });
+        let base = snake(&name);
+        let key = if base == "db" || base.ends_with("_db") {
+            base
+        } else {
+            format!("{base}_db")
+        };
+        // Systems rooted above the schema, and those whose code in the package imports the
+        // client.
+        for (sys, closure, own) in inp.systems {
+            let rooted = files.iter().any(|(path, _)| {
+                p.files
+                    .iter()
+                    .enumerate()
+                    .any(|(i, f)| own[i] && dir_of(&f.path) == dir_of(path))
+            });
+            let imports = p.imports.iter().any(|imp| {
+                d.used_by_imports.contains(&imp.module)
+                    && closure[imp.file as usize]
+                    && (pkg.is_empty()
+                        || p.files[imp.file as usize]
+                            .path
+                            .starts_with(&format!("{pkg}/")))
+            });
+            if rooted || imports {
+                out.links
+                    .entry(sys.clone())
+                    .or_default()
+                    .insert(key.clone());
+            }
+        }
+        let first = files
+            .first()
+            .map(|(p, _)| p.to_string())
+            .unwrap_or_default();
+        add_dataset(
+            out,
+            DatasetRec {
+                key,
+                name,
+                store: d.id.clone(),
+                location: first,
+                database: None,
+                schema: None,
+                collections,
+            },
+        );
+    }
+}
+
+fn prisma_fields(
+    inp: &Inputs,
+    path: &str,
+    b: &crate::topology::prisma::Block,
+    models: &BTreeSet<&str>,
+    types: &BTreeMap<&str, &crate::topology::prisma::Block>,
+    depth: u32,
+) -> Vec<FieldRec> {
+    let rows: Vec<&crate::topology::prisma::Field> = b
+        .fields
+        .iter()
+        .filter(|f| !f.relation && !models.contains(f.ty.as_str()))
+        .collect();
+    let siblings: Vec<String> = rows
+        .iter()
+        .map(|f| f.column.clone().unwrap_or_else(|| f.name.clone()))
+        .collect();
+    let mut out: Vec<FieldRec> = rows
+        .iter()
+        .map(|f| {
+            let column = f.column.clone().unwrap_or_else(|| f.name.clone());
+            let mut rec = field(
+                inp,
+                &b.name,
+                &siblings,
+                &column,
+                Some(&f.name),
+                Some(format!("{path}:{}", f.line)),
+            );
+            if let Some(t) = types.get(f.ty.as_str()).filter(|_| depth < 2) {
+                rec.fields = prisma_fields(inp, path, t, models, types, depth + 1);
+                rec.categories.clear();
+                rec.needs_review = false;
+                rec.classified_by = None;
+            }
+            rec
+        })
+        .collect();
+    out.sort_by(|a, b| a.name.cmp(&b.name));
+    out
+}
+
+/// `a/b/c.prisma` → `a/b`, `a`, `""`.
+fn ancestors_of(path: &str) -> impl Iterator<Item = &str> {
+    let mut next = Some(dir_of(path));
+    std::iter::from_fn(move || {
+        let d = next?;
+        next = (!d.is_empty()).then(|| dir_of(d));
+        Some(d)
+    })
 }

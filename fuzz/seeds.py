@@ -66,6 +66,9 @@ def seeds() -> dict[str, list[bytes]]:
                 out["lower"].append(bytes([LOWER_EXT[path.suffix]]) + path.read_bytes())
             elif path.name == ".privacy-flow.yml":
                 out["config"].append(path.read_bytes())
+            elif path.suffix == ".prisma":
+                # The datamap target reads a Prisma schema when the first byte is 2 (mod 3).
+                out["datamap"].append(b"\x02" + path.read_bytes())
         # One scan seed per fixture: the directories that hold a fixture.json, and the demo.
         for marker in sorted(tree.rglob("fixture.json")):
             if seed := scan_seed(marker.parent):

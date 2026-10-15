@@ -3,6 +3,29 @@
 # Keys starting with unresolved_ are destinations the code does not name: replace each with
 # the receiving system's key, or declare it in .privacy-flow.yml and run again.
 dataset:
+  #: py.sqlalchemy at notifier/app/models.py:9
+  - fides_key: "notifier_db"
+    name: "notifier database"
+    collections:
+      #: notifier/app/models.py:9 (Subscriber)
+      - name: "subscribers"
+        fields:
+          #: notifier/app/models.py:15; classified by classification-table
+          - name: "city"
+            data_categories:
+              - "user.contact.address.city"
+          #: notifier/app/models.py:13 (email); classified by classification-table
+          - name: "email_address"
+            data_categories:
+              - "user.contact.email"
+          #: notifier/app/models.py:14; classified by classification-table
+          - name: "full_name"
+            data_categories:
+              - "user.name"
+          #: notifier/app/models.py:12; classified by catalogue:person-record-id
+          - name: "id"
+            data_categories:
+              - "user.unique_id.pseudonymous"
   #: py.django at shop/accounts/models.py:12
   - fides_key: "shop_db"
     name: "shop database"
@@ -61,6 +84,8 @@ system:
   - fides_key: "notifier"
     name: "notifier"
     system_type: "Service"
+    dataset_references:
+      - "notifier_db"
     ingress:
       - fides_key: "shop"
         type: "system"

@@ -19,6 +19,13 @@
 #   only lend their fields). A class attribute whose value matches `columns` (and not
 #   `not_columns`: a many-to-many relation is a table of its own) is a column, `relations` a
 #   foreign key (`<name>_id`); `inherited` lists the fields of library bases.
+# sqlalchemy: classes deriving from `models` with a `table_member` are mapped (`__abstract__`
+#   ones only lend columns). A class attribute whose value matches `columns`, or that is only
+#   annotated with one of `annotation_columns` (`Mapped[str]`), is a column; its name is the
+#   call's `column_arg` string or `column_keyword`, else the attribute's.
+# prisma: `model` (and `view`) blocks of the schema `files` are collections, `type` blocks
+#   nested fields; relation fields are left out. A system uses the schema's dataset when it is
+#   rooted beside it, or its code in the schema's package imports `used_by_imports`.
 
 version: "0.1.0"
 
@@ -84,3 +91,30 @@ stores:
       - base: "django.contrib.auth.{models,base_user}.AbstractBaseUser"
         fields: [password, last_login]
     citation: "Django models, https://docs.djangoproject.com/en/stable/topics/db/models/"
+
+  - id: py.sqlalchemy
+    language: python
+    kind: sqlalchemy
+    models:
+      - "sqlalchemy.orm.DeclarativeBase"
+      - "sqlalchemy.orm.decl_api.DeclarativeBase"
+      - "sqlalchemy.orm.{declarative_base,decl_api.declarative_base}()"
+      - "sqlalchemy.ext.declarative.declarative_base()"
+      - "flask_sqlalchemy.SQLAlchemy().Model"
+    table_member: __tablename__
+    abstract_member: __abstract__
+    columns:
+      - "sqlalchemy.{Column,schema.Column}()"
+      - "sqlalchemy.orm.mapped_column()"
+      - "flask_sqlalchemy.SQLAlchemy().Column()"
+    column_arg: 0
+    column_keyword: name
+    annotation_columns: ["Mapped["]
+    citation: "SQLAlchemy declarative mapping, https://docs.sqlalchemy.org/en/20/orm/declarative_tables.html"
+
+  - id: js.prisma
+    language: javascript
+    kind: prisma
+    files: ["**/*.prisma"]
+    used_by_imports: ["@prisma/client"]
+    citation: "Prisma schema, https://www.prisma.io/docs/orm/prisma-schema/data-model/models"

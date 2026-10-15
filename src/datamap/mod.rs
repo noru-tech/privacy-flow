@@ -21,7 +21,7 @@ pub fn document(
     config: &Config,
     topo: &TopologyCatalogue,
 ) -> Result<Document> {
-    let compose: Vec<(String, String)> = run
+    let texts: Vec<(String, String)> = run
         .files
         .iter()
         .filter(|f| crate::topology::wants(f))
@@ -39,7 +39,7 @@ pub fn document(
             catalogue: &run.catalogue,
             topo,
             classifier: &run.classifier,
-            compose: &compose,
+            texts: &texts,
         },
     );
     report::seal(&mut doc)?;
