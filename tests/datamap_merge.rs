@@ -180,3 +180,33 @@ fn an_unreadable_map_is_invalid_input_and_nothing_is_written() {
     assert_eq!(map(d), "system: [\n");
     assert!(!d.join(".fides/datamap.lock.json").exists());
 }
+
+#[test]
+fn privacy_datamap_decisions_win() {
+    let tmp = copy_fixture("ts/multi-service");
+    let d = tmp.path();
+    std::fs::create_dir_all(d.join(".noru")).unwrap();
+    std::fs::write(
+        d.join(".noru/privacy-datamap.yml"),
+        "version: 0.1.0\npiece: privacy-datamap\ndataset:\n  - fides_key: app_postgres\n    collections:\n      - name: members\n        interpretation: { owner: Dana Okafor, decided_at: \"2026-08-20\", expires_at: \"2027-02-20\" }\n        non_personal_fields: [phone]\n        fields:\n          - name: email_address\n            data_categories: [user.contact.email]\n            refs: [\"db/0001.sql:4\"]\nsystem:\n  - fides_key: apps_api\n    privacy_declarations:\n      - name: Operate the account\n        data_use: essential.service\n        data_subjects: [customer]\n        data_categories: [user.contact.email]\n        interpretation: { owner: Dana Okafor, decided_at: \"2026-08-20\" }\n",
+    )
+    .unwrap();
+    assert_eq!(datamap(d, &[]), 0);
+    let text = map(d);
+    assert!(!text.contains("user.contact.phone_number"), "{text}");
+    let api = system(&text, "shop_api");
+    assert!(api.contains("name: \"Operate the account\""), "{api}");
+    assert!(
+        !text.contains("refs:") && !text.contains("interpretation"),
+        "{text}"
+    );
+    // An edit of a decided value does not stick: the manifest decides.
+    edit(
+        &d.join(".fides/datamap.yml"),
+        "        data_use: \"essential.service\"\n        data_subjects:\n          - \"customer\"\n        data_categories:\n          - \"user.contact.email\"\n      ",
+        "        data_use: \"marketing.communications\"\n        data_subjects:\n          - \"customer\"\n        data_categories:\n          - \"user.contact.email\"\n      ",
+    );
+    assert_eq!(datamap(d, &[]), 0);
+    assert!(!system(&map(d), "shop_api").contains("marketing.communications"));
+    assert_eq!(datamap(d, &["--check"]), 0);
+}

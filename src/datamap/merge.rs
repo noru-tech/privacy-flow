@@ -697,15 +697,6 @@ fn tidy(mut root: Node, report: &mut Report) -> Node {
     root
 }
 
-impl Node {
-    fn bare_mut(&mut self) -> &mut Node {
-        match self {
-            Node::Noted(_, n) => n.bare_mut(),
-            n => n,
-        }
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::merge;

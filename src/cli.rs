@@ -119,6 +119,16 @@ pub struct DatamapArgs {
     /// Write nothing; print the merged map to stdout.
     #[arg(long)]
     pub dry_run: bool,
+    /// A privacy-datamap manifest whose decisions win (default: .noru/privacy-datamap.yml in the
+    /// directory, if there is one).
+    #[arg(long, conflicts_with = "no_manifest")]
+    pub manifest: Option<PathBuf>,
+    /// Read no privacy-datamap manifest.
+    #[arg(long)]
+    pub no_manifest: bool,
+    /// The date expired manifest decisions are reported against (YYYY-MM-DD; default: none).
+    #[arg(long)]
+    pub as_of: Option<String>,
     /// Also write the flow-facts document, with its topology, to this file (JSON).
     #[arg(long)]
     pub facts: Option<PathBuf>,
@@ -559,10 +569,49 @@ fn datamap(a: DatamapArgs, quiet: bool) -> Outcome {
             );
         }
     }
-    let generated = crate::datamap::generate::generate(&doc);
-    let (merged, report) =
+    let manifest_path = if a.no_manifest {
+        None
+    } else {
+        a.manifest.clone().or_else(|| {
+            let p = root.join(crate::datamap::manifest::DEFAULT_PATH);
+            p.is_file().then_some(p)
+        })
+    };
+    let manifest = match &manifest_path {
+        Some(p) => {
+            let t =
+                std::fs::read_to_string(p).map_err(|e| invalid(anyhow!("{}: {e}", p.display())))?;
+            Some(
+                crate::datamap::yaml::parse(&t)
+                    .map_err(|e| invalid(anyhow!("{}: {e}", p.display())))?,
+            )
+        }
+        None => None,
+    };
+    let roots: Vec<(String, String)> = doc
+        .topology
+        .iter()
+        .flat_map(|t| t.systems.iter())
+        .map(|s| {
+            (
+                crate::datamap::manifest::key_for_root(&s.root),
+                s.key.clone(),
+            )
+        })
+        .collect();
+    let mut generated = crate::datamap::generate::generate(&doc);
+    let mut manifest_notes = Vec::new();
+    if let Some(m) = &manifest {
+        manifest_notes =
+            crate::datamap::manifest::apply(&mut generated, m, &roots, a.as_of.as_deref());
+    }
+    let (mut merged, report) =
         crate::datamap::merge::merge(base.as_ref(), existing.as_ref(), &generated);
-    for line in report.lines() {
+    // The manifest's decisions win over edits of the map too.
+    if let Some(m) = &manifest {
+        crate::datamap::manifest::apply(&mut merged, m, &roots, a.as_of.as_deref());
+    }
+    for line in report.lines().into_iter().chain(manifest_notes) {
         status(quiet, format!("note: {line}"));
     }
     for problem in crate::datamap::validate::check(&merged) {

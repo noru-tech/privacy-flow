@@ -4,6 +4,7 @@
 pub mod generate;
 pub mod ingest;
 pub mod lock;
+pub mod manifest;
 pub mod merge;
 pub mod validate;
 pub mod yaml;

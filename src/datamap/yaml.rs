@@ -42,6 +42,14 @@ impl Node {
         }
     }
 
+    /// The node under its notes, mutably.
+    pub fn bare_mut(&mut self) -> &mut Node {
+        match self {
+            Node::Noted(_, n) => n.bare_mut(),
+            n => n,
+        }
+    }
+
     fn notes(&self) -> &[String] {
         match self {
             Node::Noted(n, _) => n,
