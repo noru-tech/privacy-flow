@@ -25,6 +25,7 @@ pub mod program;
 pub mod report;
 pub mod resolve;
 pub mod rules;
+pub mod values;
 
 /// Process exit codes. They are part of the public interface: a code's meaning never changes,
 /// and a new condition gets a new code. See `docs/exit-codes.md`.
