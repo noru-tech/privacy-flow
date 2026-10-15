@@ -1,9 +1,13 @@
 //! The Fideslang 3.1.3 rules a merged data map must keep, checked offline: required fields,
 //! DataFlow types, and declarations that name only their system's own DataFlows. CI checks the
 //! goldens with fideslang itself.
+//!
+//! A declaration without a name or a data use is not filled in: it is moved out of
+//! `privacy_declarations` into the system's `meta.privacy_flow.proposals`, for a person.
 
 use std::collections::BTreeSet;
 
+use crate::datamap::merge::{privacy_flow_mut, same};
 use crate::datamap::yaml::Node;
 
 fn get<'a>(n: &'a Node, key: &str) -> Option<&'a Node> {
@@ -85,6 +89,9 @@ pub fn check(root: &Node) -> Vec<String> {
         }
         for d in list(get(sys, "privacy_declarations")) {
             let name = str_of(get(d, "name")).unwrap_or("");
+            if name.trim().is_empty() {
+                out.push(format!("system {key}: a declaration has no name"));
+            }
             if !str_of(get(d, "data_use")).is_some_and(is_key) {
                 out.push(format!(
                     "system {key}: declaration {name:?}: data_use is required"
@@ -115,4 +122,147 @@ pub fn check(root: &Node) -> Vec<String> {
         }
     }
     out
+}
+
+/// What a declaration lacks to be one: a name and a data use. None when it has both.
+fn lacks(d: &Node) -> Option<&'static str> {
+    let named = str_of(get(d, "name")).is_some_and(|s| !s.trim().is_empty());
+    let used = str_of(get(d, "data_use")).is_some_and(is_key);
+    match (named, used) {
+        (true, true) => None,
+        (false, true) => Some("no name"),
+        (true, false) => Some("no data use"),
+        (false, false) => Some("no name and no data use"),
+    }
+}
+
+/// Moves each declaration without a name or a data use into its system's
+/// `meta.privacy_flow.proposals`, and out of `needs_review`. What moved, as notes.
+pub fn quarantine(root: &mut Node) -> Vec<String> {
+    let mut notes = Vec::new();
+    let Node::Map(r) = root.bare_mut() else {
+        return notes;
+    };
+    let Some((_, systems)) = r.iter_mut().find(|(k, _)| k == "system") else {
+        return notes;
+    };
+    let Node::List(systems) = systems.bare_mut() else {
+        return notes;
+    };
+    for sys in systems.iter_mut() {
+        let key = str_of(get(sys, "fides_key")).unwrap_or("").to_string();
+        let had = get(sys, "meta")
+            .and_then(|m| get(m, "privacy_flow"))
+            .and_then(|p| get(p, "proposals"))
+            .is_some();
+        let Node::Map(sm) = sys.bare_mut() else {
+            continue;
+        };
+        let mut moved = Vec::new();
+        if let Some((_, decls)) = sm.iter_mut().find(|(k, _)| k == "privacy_declarations")
+            && let Node::List(decls) = decls.bare_mut()
+        {
+            let kept;
+            (kept, moved) = std::mem::take(decls)
+                .into_iter()
+                .partition(|d| lacks(d).is_none());
+            *decls = kept;
+        }
+        if moved.is_empty() && !had {
+            continue;
+        }
+        let names: Vec<String> = moved
+            .iter()
+            .filter_map(|d| str_of(get(d, "name")).map(str::to_string))
+            .collect();
+        let Some(pf) = privacy_flow_mut(sm) else {
+            continue;
+        };
+        if let Some((_, Node::List(review))) = pf.iter_mut().find(|(k, _)| k == "needs_review") {
+            review
+                .retain(|n| !str_of(Some(n.bare())).is_some_and(|s| names.iter().any(|x| x == s)));
+        }
+        pf.retain(|(k, v)| {
+            k != "needs_review" || !matches!(v.bare(), Node::List(l) if l.is_empty())
+        });
+        if !pf.iter().any(|(k, _)| k == "proposals") {
+            pf.push(("proposals".into(), Node::List(Vec::new())));
+        }
+        let Some((_, Node::List(proposals))) = pf.iter_mut().find(|(k, _)| k == "proposals") else {
+            continue;
+        };
+        for d in moved {
+            let why = lacks(&d).unwrap_or_default();
+            let name = str_of(get(&d, "name")).unwrap_or("");
+            notes.push(format!(
+                "system {key}: declaration {name:?} has {why}; moved to meta.privacy_flow.proposals for review"
+            ));
+            if !proposals.iter().any(|p| same(p, &d)) {
+                proposals.push(d.bare().clone());
+            }
+        }
+        // Each run says what each proposal lacks: a person's file has no `#:` notes to read back.
+        for p in proposals.iter_mut() {
+            let note = match lacks(p) {
+                Some(why) => format!(
+                    "INCOMPLETE: {why}, so not a Fideslang declaration; complete it and move it to privacy_declarations"
+                ),
+                None => "complete: move it to privacy_declarations".to_string(),
+            };
+            *p = Node::noted(vec![note], p.bare().clone());
+        }
+    }
+    notes
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{check, quarantine};
+    use crate::datamap::yaml::{parse, render};
+
+    const MAP: &str = "system:\n  - fides_key: crm\n    system_type: Service\n    meta:\n      privacy_flow:\n        needs_review: [Sync contacts, Send mail]\n    privacy_declarations:\n      - name: Sync contacts\n        data_use: essential.service\n        data_categories: [user.contact.email]\n      - name: Send mail\n        data_use: \"\"\n        data_categories: [user.contact.email]\n      - name: \"\"\n        data_use: \"\"\n        data_categories: [user.name]\n";
+
+    #[test]
+    fn a_declaration_needs_a_name_and_a_data_use() {
+        let problems = check(&parse(MAP).unwrap());
+        assert!(
+            problems.iter().any(|p| p.contains("has no name")),
+            "{problems:?}"
+        );
+        assert!(
+            problems.iter().any(|p| p.contains("data_use is required")),
+            "{problems:?}"
+        );
+    }
+
+    #[test]
+    fn incomplete_declarations_become_proposals_and_leave_review() {
+        let mut tree = parse(MAP).unwrap();
+        let notes = quarantine(&mut tree);
+        assert_eq!(notes.len(), 2, "{notes:?}");
+        assert!(check(&tree).is_empty(), "{:?}", check(&tree));
+        let text = render(&[], &tree);
+        let (meta, decls) = text.split_once("privacy_declarations:").unwrap();
+        assert!(
+            decls.contains("Sync contacts") && !decls.contains("Send mail"),
+            "{text}"
+        );
+        assert!(
+            meta.contains("proposals:") && meta.contains("Send mail"),
+            "{text}"
+        );
+        assert!(meta.contains("INCOMPLETE: no data use"), "{text}");
+        assert!(
+            meta.contains("INCOMPLETE: no name and no data use"),
+            "{text}"
+        );
+        let review = &meta[meta.find("needs_review:").unwrap()..meta.find("proposals:").unwrap()];
+        assert!(
+            review.contains("Sync contacts") && !review.contains("Send mail"),
+            "{text}"
+        );
+        // Idempotent: nothing left to move, nothing added twice.
+        assert!(quarantine(&mut tree).is_empty());
+        assert_eq!(render(&[], &tree), text);
+    }
 }

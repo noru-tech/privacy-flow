@@ -40,6 +40,16 @@ All notable changes to this project are documented here. The format is based on
   single claim looked up by type is still classified by the type (`FindFirst("email")`), and a
   claim read off the list into a classified field is reported as that field.
 
+### Fixed
+
+- `piiflow datamap` no longer writes privacy declarations with an empty name or data use, which
+  Fides rejects. They came from privacy-datamap manifest systems the code does not have: their
+  declarations were copied in whole, including ones nobody had decided. A declaration without a
+  name or a data use now goes to its system's `meta.privacy_flow.proposals` for review, and is
+  never filled in. Undecided declarations of such systems are listed in `needs_review`.
+- `piiflow datamap` no longer writes a map that fails its Fideslang checks. It exits 3 and names
+  each problem; before, it only warned. A declaration without a name is now one of those problems.
+
 ## [0.4.0] - 2026-10-15
 
 `piiflow datamap` writes and maintains a full Fides data map of a repository: its systems, what
