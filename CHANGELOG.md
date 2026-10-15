@@ -6,6 +6,21 @@ All notable changes to this project are documented here. The format is based on
 
 ## [Unreleased]
 
+### Changed
+
+- A finding whose only category is `unknown` is uncertain under every rule: `info`,
+  `needs_review: true`, and a message that starts `uncertain: data of undetermined category`.
+  Request input the analysis cannot name (`req.body`, a query parameter) kept the rule's
+  severity before, so a logged request body failed the default policy; its classified fields
+  still do ([ADR 0020](docs/adr/0020-uncertain-findings-and-identifiers-of-things.md)).
+- Identifiers of things are not personal data: names made of entity words and an identifier
+  suffix (`item_id`, `catalogItemId`, `BrandIds`, `item_type_id`) are never classified, request
+  input under such a name (Blazor `[Parameter]` and `[SupplyParameterFromQuery]` properties,
+  FastAPI path parameters) is not a source, and request input read through one
+  (`Request.Query["itemId"]`) is not reported. The words are in
+  `catalogue/classification.yml`. Person identifiers (`user_id`, `customer_id`) are unchanged.
+- A project's `not_personal` names also stop request input under that name.
+
 ## [0.4.0] - 2026-10-15
 
 `piiflow datamap` writes and maintains a full Fides data map of a repository: its systems, what

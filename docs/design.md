@@ -144,7 +144,8 @@ results from both, and `scan --engine datalog` runs both and fails on any disagr
   (calls into callees are spliced in from their summaries);
 - **subsumption**: a flow whose source is a hop of a longer flow to the same sink and category is
   dropped (a typed parameter and the read of that field further down the same path are one datum),
-  and `unknown` request input is dropped where a classified field read on its way names it;
+  and `unknown` request input is dropped where a classified field read on its way names it, or
+  where it is read through the identifier of a thing (`query["itemId"]`);
 - **coverage**: static gaps, and reached gap hits aggregated per normalized detail;
 - **findings, egress, summary**, derived by a pure function of the above, the policy and the
   declared processors, which is what `validate` re-runs;

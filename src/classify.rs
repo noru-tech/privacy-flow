@@ -56,6 +56,10 @@ pub struct Classifier {
     suppressed: HashSet<String>,
     /// Table names whose category holds only in context (`catalogue/classification.yml`).
     contextual: Vec<ContextRule>,
+    /// Words naming things, not people, and the suffixes that make an identifier of one
+    /// (`catalogue/classification.yml`): `item_id` is not personal data.
+    entities: HashSet<String>,
+    entity_suffixes: Vec<String>,
 }
 
 struct ContextRule {
@@ -154,7 +158,61 @@ impl Classifier {
             extra: BTreeMap::new(),
             suppressed: HashSet::new(),
             contextual: Vec::new(),
+            entities: HashSet::new(),
+            entity_suffixes: Vec::new(),
         })
+    }
+
+    /// Names of identifiers of things (`item_id`, `BrandIds`): not personal data.
+    pub fn add_entity_identifiers(&mut self, def: &crate::catalogue::EntityIdentifiersDef) {
+        self.entities
+            .extend(def.entities.iter().map(|e| table_key(&snake(e))));
+        for x in &def.suffixes {
+            let k = table_key(x);
+            if !self.entity_suffixes.contains(&k) {
+                self.entity_suffixes.push(k);
+            }
+        }
+    }
+
+    /// True when a table key is entity words followed by an identifier suffix: `item_id`,
+    /// `catalog_item_id`, `item_type_ids`, `productid`. A word that is not an entity anywhere in
+    /// the name (`user_type_id`, `blood_type_id`) leaves it alone.
+    fn entity_identifier(&self, key: &str) -> bool {
+        fn covered(words: &[&str], entities: &HashSet<String>) -> bool {
+            words.is_empty()
+                || (1..=words.len()).any(|n| {
+                    entities.contains(&words[..n].join("_")) && covered(&words[n..], entities)
+                })
+        }
+        let words: Vec<&str> = key.split('_').collect();
+        let Some((last, prefix)) = words.split_last() else {
+            return false;
+        };
+        self.entity_suffixes.iter().any(|sfx| {
+            if last == sfx {
+                !prefix.is_empty() && covered(prefix, &self.entities)
+            } else if let Some(stem) = last.strip_suffix(sfx.as_str())
+                && !stem.is_empty()
+            {
+                let mut ws = prefix.to_vec();
+                ws.push(stem);
+                covered(&ws, &self.entities)
+            } else {
+                false
+            }
+        })
+    }
+
+    /// True when a name is not personal data whatever it holds: a project's `not_personal`, or
+    /// an identifier of a thing (`item_id`). A project's own `fields` still classify it. Request
+    /// input under such a name is not a source either.
+    pub fn not_personal_name(&self, name: &str) -> bool {
+        let ks = keys(name);
+        !ks.iter().any(|k| self.extra.contains_key(k))
+            && ks
+                .iter()
+                .any(|k| self.suppressed.contains(k) || self.entity_identifier(k))
     }
 
     /// Keep table names to the context where their category holds.
@@ -239,10 +297,9 @@ impl Classifier {
         if !out.is_empty() {
             return out;
         }
-        if ks
-            .iter()
-            .any(|k| self.operational.contains(k) || self.suppressed.contains(k))
-        {
+        if ks.iter().any(|k| {
+            self.operational.contains(k) || self.suppressed.contains(k) || self.entity_identifier(k)
+        }) {
             return out;
         }
         // Names the catalogue adds (identifiers), where their context holds.
@@ -365,6 +422,56 @@ mod tests {
         let maybe = c.classify("address");
         assert_eq!(maybe[0].category, UNKNOWN);
         assert!(maybe[0].needs_review);
+    }
+
+    #[test]
+    fn identifiers_of_things_are_not_personal() {
+        let mut c = Classifier::new().unwrap();
+        c.add_entity_identifiers(&crate::catalogue::EntityIdentifiersDef {
+            id: "entity-identifiers".into(),
+            description: None,
+            entities: vec![
+                "item".into(),
+                "brand".into(),
+                "type".into(),
+                "catalog".into(),
+                "order_line".into(),
+            ],
+            suffixes: vec!["id".into(), "ids".into()],
+        });
+        for name in [
+            "ItemId",
+            "item_id",
+            "itemid",
+            "BrandIds",
+            "TypeIds",
+            "ItemTypeId",
+            "catalogItemId",
+            "order_line_id",
+        ] {
+            assert!(c.not_personal_name(name), "{name}");
+        }
+        // A word that is not a thing anywhere in the name keeps it out.
+        for name in [
+            "user_id",
+            "UserTypeId",
+            "blood_type_id",
+            "order_id",
+            "id",
+            "valid",
+            "type",
+        ] {
+            assert!(!c.not_personal_name(name), "{name}");
+        }
+        assert!(c.classify("item_id").is_empty());
+        // A project's own `fields` still classify it.
+        c.add("item_id", "user.unique_id.pseudonymous", "config")
+            .unwrap();
+        assert!(!c.not_personal_name("item_id"));
+        assert_eq!(c.classify("item_id").len(), 1);
+        // A project's `not_personal` is the same declaration.
+        c.not_personal("payload");
+        assert!(c.not_personal_name("payload"));
     }
 
     #[test]

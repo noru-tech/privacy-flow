@@ -29,10 +29,18 @@ LLM provider is PF002 and PF003): they are different obligations.
 
 Two adjustments apply to every rule:
 
-- **Review queue.** When the source is a name the classification table marks as *maybe* personal
-  (`name`, `payload`, `title`, `value` …), the finding is `info` and `needs_review: true`.
-  Record names that are not personal in your codebase under
-  [`not_personal`](../configuration.md#not_personal), with a citation.
+- **Uncertain findings.** When the flow's category is `unknown` (request input the analysis
+  cannot name, such as `req.body` or a query parameter, or a name the classification table marks
+  as *maybe* personal: `name`, `payload`, `title`, `value` …), the finding is `info`,
+  `needs_review: true`, and its message starts `uncertain: data of undetermined category`. It is
+  the review queue: never dropped, never reported as personal data
+  ([ADR 0020](../adr/0020-uncertain-findings-and-identifiers-of-things.md)). Record names that are
+  not personal in your codebase under [`not_personal`](../configuration.md#not_personal), with a
+  citation, and names that are under `fields`.
+- **Identifiers of things.** Names made of entity words and an identifier suffix (`item_id`,
+  `catalogItemId`, `BrandIds`, `item_type_id`) are not personal data: never classified, and
+  request input under such a name is not a source. The words are in
+  [`catalogue/classification.yml`](../../catalogue/classification.yml).
 - **Heuristic sinks.** A logger recognised only by its receiver's name (`this.logger.info(...)`
   where the logger was injected) is marked `heuristic: true`; the finding keeps its severity.
 

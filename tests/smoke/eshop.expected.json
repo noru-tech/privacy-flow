@@ -129,6 +129,37 @@
       "line": 32,
       "min_severity": "medium",
       "why": "The webhook payload carries order and stock events, not personal data."
+    },
+    {
+      "rule": "PF006",
+      "path": "src/WebAppComponents/Services/CatalogService.cs",
+      "line": 14,
+      "why": "The route parameter `ItemId` identifies a catalogue item, not a person (ADR 0020)."
+    },
+    {
+      "rule": "PF006",
+      "path": "src/WebAppComponents/Services/CatalogService.cs",
+      "line": 20,
+      "why": "The query parameters `BrandIds` and `TypeIds` identify brands and item types."
+    },
+    {
+      "rule": "PF006",
+      "path": "src/HybridApp/Services/CatalogService.cs",
+      "line": 16,
+      "why": "`ItemId` again, in the MAUI app."
+    },
+    {
+      "rule": "PF006",
+      "path": "src/HybridApp/Services/CatalogService.cs",
+      "line": 22,
+      "why": "`BrandId` and `ItemTypeId` again, in the MAUI app."
+    },
+    {
+      "rule": "PF001",
+      "path": "src/Catalog.API/Apis/CatalogApi.cs",
+      "line": 319,
+      "min_severity": "warning",
+      "why": "Search text whose category is undetermined: an uncertain finding at info, for review, never a personal-data finding."
     }
   ]
 }

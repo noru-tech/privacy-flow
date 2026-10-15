@@ -1993,6 +1993,7 @@ impl<'a, 'p> Builder<'a, 'p> {
                         .collect();
                     if cats.is_empty()
                         && let Some(w) = &rule.whole
+                        && !self.inp.classifier.not_personal_name(field)
                     {
                         cats.push((w.clone(), false, src_id.clone()));
                     }
@@ -2037,11 +2038,13 @@ impl<'a, 'p> Builder<'a, 'p> {
                     }
                     narrowed |= !cs.is_empty();
                 }
-                // A number or a GUID is request input only when its name says what it is.
+                // A number or a GUID is request input only when its name says what it is, and
+                // nothing named for a thing (`item_id`) is.
                 let scalar = annot
                     .as_ref()
                     .is_some_and(|a| api_matches_any(&rule.classify_only_types, a));
-                if let (Some(whole), false, false) = (&rule.whole, narrowed, scalar) {
+                let thing = self.inp.classifier.not_personal_name(name);
+                if let (Some(whole), false, false, false) = (&rule.whole, narrowed, scalar, thing) {
                     let s = self.param_seed(
                         *var,
                         TOP,
@@ -2298,7 +2301,10 @@ impl<'a, 'p> Builder<'a, 'p> {
                         {
                             narrowed = self.typed_seeds(fv, &a, SeedKind::Request, &src.def.id);
                         }
-                        if !narrowed && let Some(w) = &rule.whole {
+                        if !narrowed
+                            && let Some(w) = &rule.whole
+                            && !self.inp.classifier.not_personal_name(field)
+                        {
                             let s = self.param_seed(
                                 fv,
                                 TOP,

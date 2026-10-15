@@ -712,3 +712,32 @@ way on 2026-10-14 (DOI `10.5281/zenodo.23377449`).
 - Analysing each system separately.
 - The `--input` and `--report` options the plan listed.
 - Hand-written comments in the map are not kept.
+
+## 2026-10-15 — Uncertain findings and identifiers of things (ADR 0020)
+
+**Why.** A tester ran 0.4.0 on eShop: `ItemId`, `BrandId` and the other catalogue IDs were
+reported as `unknown` data sent to a run-time host (six of 41 PF006), and 21 of the 58 findings
+whose only category was `unknown` were medium or warning. `unknown` from a maybe-personal name
+was `info` for review (ADR 0004); `unknown` request input kept the rule's severity, so the same
+word read as personal data.
+
+**Done.** A finding whose only category is `unknown` is uncertain under every rule: `info`,
+needs review, message `uncertain: data of undetermined category …`. `catalogue/classification.yml`
+lists entity words and identifier suffixes: `item_id`, `catalogItemId`, `BrandIds`,
+`item_type_id` are never classified, request input under such a name is not a source, and
+request input read through one (`Request.Query["itemId"]`, `args.get("product_id")`) is dropped.
+One non-entity word keeps a name out (`user_type_id`, `blood_type_id`); orders, accounts, teams
+and tenants are not entities. Config `not_personal` also stops request input now. Fixtures
+`cs/entity-identifiers`, `py/entity-identifiers`; the fixture test checks every unknown-only
+finding; eShop smoke expectations forbid the catalogue-ID findings. Reverses PF001's "request
+input keeps the rule's severity".
+
+**Measured** (against `ac10149`). eShop: 214 → 208 flows; PF006 41 → 35; unknown-only findings
+58 → 52, all `info`. The data map loses `web_app → catalog_api`, whose only flows were those IDs.
+Benchmark: R1 sampled sinks found 59 → 59 of 114; Polar −7 flows (a request `product_id`);
+1,075 findings to `info` (Polar 894, Ghost's 66 high PF002 of whole `req` objects to Stripe,
+PrivateGPT 50, Redash 38, the Vercel chatbot's 15 PF003, CTFd 11). Time unchanged.
+
+**Next.** A category for claims lists (`User.Claims`), which hold personal data and are uncertain
+until they get one. Edges for bound clients that carry no personal data, if the data map should
+show every call between systems.
