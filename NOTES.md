@@ -639,3 +639,76 @@ The test becomes: if it answers *where does the data go, and how do we know*, or
 be for, cited, without deciding*, it is open. If it answers *why is that allowed*, it is Noru's.
 piiflow never proposes a legal basis, and a privacy-datamap manifest's signed decisions win over
 its proposals (ADR 0019).
+
+## 2026-10-15 — The data map (ADRs 0018, 0019); v0.4.0 released
+
+**Why.** Running the privacy-taxonomy skill (now privacy-datamap, in noru-grc-engineering) gives
+a full Fides data map through an agent. The owner asked for the same from piiflow: one binary,
+no agent, piiflow standalone, with an existing privacy-datamap manifest read as input. The scope
+covered systems per service, datasets from models, proposed declarations, and merging into the
+map a person keeps. Before, `scan -f fides` wrote only one system's egress. On eShop that was 41
+HTTP flows to "a destination the code does not name" until 0.3.1 (#35) listed them as
+placeholders.
+
+**Done** (#36, nine commits, one per plan step).
+
+- **Systems.** One per deployable unit (`catalogue/topology/systems.yml`), or as declared under
+  `systems:`. Each system's closure covers its references, compiled-in files and imports, and a
+  flow belongs to every system whose closure holds all its hops.
+- **Bindings.** Requests through registered clients are bound to their registrations
+  (`clients.yml`) and resolved by Aspire and docker-compose names. Each system's ingress includes
+  its handlers' input from users.
+- **Datasets.** Read from EF Core, Django, SQLAlchemy and Prisma models (`stores.yml`), through a
+  members side table the lowerings now keep.
+- **Proposed declarations.** One per data use (`purposes.yml`), always under review, never with a
+  legal basis.
+- **Merging.** A three-way merge over a lock keeps people's edits. `--check` exits 5 (new), and
+  privacy-datamap manifest decisions win.
+- **Tests.** CI loads every data map golden with fideslang 3.1.3, and the eShop smoke test checks
+  the map.
+- **Decision.** The open/closed line moved (entry above).
+
+**Found on the way.**
+
+- **Namespace guess.** eShop's `IEntityTypeConfiguration` is lowered as
+  `MediatR.IEntityTypeConfiguration`: ADR 0016's wildcard guess picks the first namespace in using
+  order. Store entries match such types by name; fixing the guess would change `scan` output.
+- **Binding cost.** Binding scanned every statement per sink, 312 ms on eShop; an index made it
+  2 ms.
+- **Feedback loop.** Reading a maintained map back as classification input made a run without
+  the lock differ from the next. Such a map is not ingested any more.
+
+**Measured** (Apple M3 Pro).
+
+| | |
+| --- | --- |
+| eShop systems | 11, the Aspire app host's projects |
+| eShop datasets | 4 (orders with the owned Address, `paymentmethods.CardNumber`, Identity's `AspNetUsers`) |
+| eShop edges | 8: `web_app → ordering_api` (card number, address), `web_app → catalog_api`, `webhook_client → webhooks_api`; the webhook sender stays unresolved |
+| eShop declarations | 11 proposed |
+| eShop time | 0.65 s against 0.64 s for `scan`, one thread |
+| 100k-line synthetic C# service | 1.95 s against 1.87 s |
+
+Every generated map loads with fideslang, and `scan` output is byte-identical to 0.3.1.
+
+**Released.** `v0.4.0` was tagged at `1c77a27` (#37, merged by auto-merge once CI passed). The
+release workflow built the four archives and published the Homebrew formula and the crate. Zenodo
+archived the release (DOI `10.5281/zenodo.23391931`). Verified as a user would:
+
+- `gh attestation verify` on the aarch64 macOS archive passes, with the release workflow at the
+  tag as signer (source commit `1c77a27`);
+- the checksum matches;
+- the binary reports `piiflow 0.4.0` and has `datamap`;
+- crates.io and the Homebrew formula are at 0.4.0.
+
+0.3.1 (#35), the Fides placeholder and processor-name fixes, was released and verified the same
+way on 2026-10-14 (DOI `10.5281/zenodo.23377449`).
+
+**Not done.**
+
+- gRPC clients, named HttpClients and Aspire environment URLs.
+- Message buses between services.
+- TypeORM, SQLModel, Mongoose, Sequelize and Drizzle.
+- Analysing each system separately.
+- The `--input` and `--report` options the plan listed.
+- Hand-written comments in the map are not kept.
