@@ -712,3 +712,88 @@ way on 2026-10-14 (DOI `10.5281/zenodo.23377449`).
 - Analysing each system separately.
 - The `--input` and `--report` options the plan listed.
 - Hand-written comments in the map are not kept.
+
+## 2026-10-15 — HTTP destinations in `scan`, and gaps ranked by impact (ADRs 0022, 0023)
+
+**Why.** A tester ran 0.4.0 on dotnet/eShop and their counts matched a local run exactly. Two of
+their five points were:
+
+- tell internal service calls from transfers to processors, by resolving where `HttpClient`, DI
+  and internal API calls go;
+- rank coverage gaps by whether they can interrupt a real flow of personal data, rather than
+  treating every unresolved call alike.
+
+Fideslang validity, finding grouping and identifier classification are handled in other
+sessions.
+
+**Done.**
+
+- **`scan` runs the client bindings** that `datamap` already had (ADR 0022). A sink with a
+  dynamic host gains a `destination`:
+  - `internal`: every binding names systems of the repository;
+  - `processor`: they all name one outside host.
+
+  PF006 fires only without one. An internal call is not external, and a processor host feeds
+  PF002 like a literal host.
+- **More clients bound:**
+  - named `HttpClient`s with `CreateClient("name")`;
+  - `ConfigureHttpClient` chained on a registration;
+  - base addresses from configuration: service discovery keys, connection strings, and keys the
+    Aspire app host sets with `WithEnvironment(key, project.GetEndpoint(…))`.
+
+  Two entries from the previous entry's "Not done" are done (named HttpClients, Aspire
+  environment URLs).
+- **Gaps have an impact** (ADR 0023):
+  - `high`: personal data reaches the call;
+  - `medium`: only values that need review reach it, or the gap exists whatever the data;
+  - `low`: the call only presents data (`catalogue/presentation.yml`, MAUI for now), reported at
+    `info`.
+
+  Gaps are listed most urgent first in the document, the table and the review checklist.
+- **Device storage is a sink.** MAUI `SecureStorage.SetAsync` and `Preferences.Set` are sinks of a
+  new class, `device_storage`, not gaps.
+- **Tests.** New fixtures `cs/client-destinations` and `cs/gap-impact`, and `fixture.json` can
+  state `destinations` and `gap_impacts`. The eShop smoke test checks destinations, impacts and
+  the absent storage gaps. The data map expectation now names exactly the five destinations that
+  stay unresolved.
+
+**Found on the way.**
+
+- **`py/multi-service` and `ts/multi-service`.** Both expected PF006 on a client whose base
+  address names a compose service. They are internal now, which is the point.
+- **Two type arguments.** `AddHttpClient<TClient, TImplementation>` cannot bind: the C# lowering
+  keeps a call's type argument only when there is one. Recording both would type the builder as
+  the client. Left for a side table.
+- **MAUI's implicit namespaces** are missing from `src/resolve.rs`, so its types stay bare
+  (`SecureStorage.SetAsync`). The catalogue spells the bare names. Adding the namespaces would
+  change how much of the client app is qualified, so it is left for its own change.
+- **Strange categories in the client app.** Its `user.location.precise` and the `handle` of
+  `MauiApplication(handle, …)` read as a username. Both are classification questions for the
+  identifier work.
+
+**Measured** (eShop at `dc7ea499`, Apple M3 Pro, one thread).
+
+| | Before | After |
+| --- | --- | --- |
+| Flows | 214 | 227 (13 to device storage) |
+| PF001 / PF003 | 134 / 12 | 134 / 12 |
+| PF006 | 41 | 13 |
+| PFC01 (gaps) | 27 | 25: 16 high, 4 medium, 5 low |
+| Internal sinks | — | 4: `web_app → ordering_api`, `web_app → catalog_api` (2), `webhook_client → webhooks_api` |
+| Data map | 11 systems, 8 edges, 5 unresolved | unchanged |
+| `scan` time | 0.58 s | 0.59 s |
+| 100k-line synthetic C# service, report step | 373–436 ms | 408–415 ms |
+
+The 13 PF006 findings left have hosts the code does not hold:
+
+- 9 in the mobile app's `RequestProvider` (endpoints the user sets);
+- 3 in the hybrid app (`localhost:11632`, a development address no system is named by);
+- 1 in the webhook sender (a subscriber's URL).
+
+**Not done.**
+
+- `AddHttpClient<TClient, TImplementation>`.
+- `HttpClient`s registered as plain services.
+- `GetSection` keys, and configuration read through a project's own helper.
+- Presentation entries for UI frameworks other than MAUI.
+- gRPC clients and message buses, as before.

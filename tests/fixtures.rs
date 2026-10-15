@@ -50,6 +50,29 @@ fn every_fixture_matches_its_markers() {
                 failures.push(format!("{name}: expected a {kind} gap"));
             }
         }
+        for (detail, impact) in &expect.gap_impacts {
+            match doc.coverage.gaps.iter().find(|g| &g.detail == detail) {
+                Some(g) if &g.impact == impact => {}
+                Some(g) => failures.push(format!(
+                    "{name}: gap {detail} has impact {}, expected {impact}",
+                    g.impact
+                )),
+                None => failures.push(format!("{name}: no gap {detail}")),
+            }
+        }
+        for (at, want) in &expect.destinations {
+            let got = doc
+                .sinks
+                .iter()
+                .filter(|s| &format!("{}:{}", s.location.path, s.location.line) == at)
+                .find_map(|s| s.destination.as_ref())
+                .map(|d| format!("{} {}", d.kind, d.targets.join(" ")));
+            if got.as_ref() != Some(want) {
+                failures.push(format!(
+                    "{name}: sink at {at} has destination {got:?}, expected {want}"
+                ));
+            }
+        }
         let sinks: BTreeSet<(String, u32)> = doc
             .flows
             .iter()

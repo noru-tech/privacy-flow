@@ -1,0 +1,121 @@
+# A Fides data map (Fideslang 3.1.3) of this repository, written by `piiflow datamap`.
+# Systems, datasets, egress and ingress come from the code; lines starting with "#:" say where.
+# Keys starting with unresolved_ are destinations the code does not name: replace each with
+# the receiving system's key, or declare it in .privacy-flow.yml and run again.
+# Privacy declarations are PROPOSALS: their data use and data subjects are suggested from the
+# evidence, and each system lists them under meta.privacy_flow.needs_review until a person
+# decides. No legal basis is proposed.
+system:
+  #: third-party processor api.crm.example
+  - fides_key: "api.crm.example"
+    name: "api.crm.example"
+    system_type: "Third Party"
+    ingress:
+      #: also data of unknown category (request input not narrowed by a type): review
+      - fides_key: "shop"
+        type: "system"
+        data_categories:
+          - "user.contact.email"
+    privacy_declarations: []
+  #: service rooted at Billing (cs.web: Billing/Billing.csproj)
+  #: reached as billing (AppHost/Program.cs:3)
+  - fides_key: "billing"
+    name: "Billing"
+    system_type: "Service"
+    meta:
+      privacy_flow:
+        needs_review:
+          - "Essential for Service"
+    ingress:
+      #: also data of unknown category (request input not narrowed by a type): review
+      - fides_key: "shop"
+        type: "system"
+        data_categories:
+          - "user.contact.email"
+    privacy_declarations:
+      #: PROPOSED essential.service with data subjects customer, from the code: review it
+      #: purposes.yml#evidence.internal: exchanged with another service of this repository
+      - name: "Essential for Service"
+        data_use: "essential.service"
+        data_subjects:
+          - "customer"
+        data_categories:
+          - "user.contact.email"
+        ingress:
+          - "shop"
+  #: service rooted at Shop (cs.web: Shop/Shop.csproj)
+  #: reached as shop (AppHost/Program.cs:5)
+  - fides_key: "shop"
+    name: "Shop"
+    system_type: "Service"
+    meta:
+      privacy_flow:
+        needs_review:
+          - "Essential for Service"
+          - "Third Party Sharing"
+    egress:
+      #: api.crm.example via http (undeclared): Shop/Program.cs:17
+      #: also data of unknown category (request input not narrowed by a type): review
+      - fides_key: "api.crm.example"
+        type: "system"
+        data_categories:
+          - "user.contact.email"
+      #: to billing over HTTP: Shop/Invoices.cs:10, Shop/Program.cs:15
+      #: also data of unknown category (request input not narrowed by a type): review
+      - fides_key: "billing"
+        type: "system"
+        data_categories:
+          - "user.contact.email"
+      #: unresolved HTTP destination, sent from Shop/Program.cs:19
+      #: also data of unknown category (request input not narrowed by a type): review
+      - fides_key: "unresolved_http_program"
+        type: "system"
+        data_categories:
+          - "user.contact.email"
+    ingress:
+      #: request input to its handlers: Shop/Program.cs:15, Shop/Program.cs:16, Shop/Program.cs:17, Shop/Program.cs:19 and more
+      #: also data of unknown category (request input not narrowed by a type): review
+      - fides_key: "user"
+        type: "user"
+        data_categories:
+          - "user.contact.email"
+    privacy_declarations:
+      #: PROPOSED essential.service with data subjects customer, from the code: review it
+      #: purposes.yml#evidence.internal: exchanged with another service of this repository
+      #: purposes.yml#evidence.unresolved: sent to a destination the code does not name
+      #: purposes.yml#evidence.user_ingress: collected from users through request input
+      - name: "Essential for Service"
+        data_use: "essential.service"
+        data_subjects:
+          - "customer"
+        data_categories:
+          - "user.contact.email"
+        egress:
+          - "billing"
+          - "unresolved_http_program"
+        ingress:
+          - "user"
+      #: PROPOSED third_party_sharing with data subjects customer, from the code: review it
+      #: purposes.yml#by_class.http: data sent to an outside host
+      - name: "Third Party Sharing"
+        data_use: "third_party_sharing"
+        data_subjects:
+          - "customer"
+        data_categories:
+          - "user.contact.email"
+        egress:
+          - "api.crm.example"
+  #: HTTP destination the code does not name, sent from Shop/Program.cs:19
+  - fides_key: "unresolved_http_program"
+    name: "Unresolved HTTP destination"
+    system_type: "Unresolved destination"
+    meta:
+      privacy_flow:
+        unresolved: true
+    ingress:
+      #: also data of unknown category (request input not narrowed by a type): review
+      - fides_key: "shop"
+        type: "system"
+        data_categories:
+          - "user.contact.email"
+    privacy_declarations: []

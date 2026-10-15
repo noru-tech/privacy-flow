@@ -154,8 +154,9 @@ pub fn render(doc: &Document) -> String {
             };
             let _ = writeln!(
                 out,
-                "  {} {}: {} — {}{}",
+                "  {} [{}] {}: {} — {}{}",
                 g.id,
+                g.impact,
                 g.kind,
                 g.detail,
                 loc.unwrap_or_default(),

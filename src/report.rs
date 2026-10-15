@@ -156,9 +156,26 @@ pub struct SinkRec {
     pub processor: Option<String>,
     pub heuristic: bool,
     pub host: Option<HostRec>,
+    /// Where a request with a dynamic host goes, when the client it is sent through names it
+    /// (ADR 0022).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub destination: Option<DestinationRec>,
     pub function: String,
     pub location: Loc,
     pub text: String,
+}
+
+/// The destination of a request sent through a registered client: the base address its
+/// registration sets resolves to systems of the repository (`internal`) or to one host outside
+/// it (`processor`).
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord)]
+#[serde(deny_unknown_fields)]
+pub struct DestinationRec {
+    pub kind: String,
+    /// The system keys, or the processor's host.
+    pub targets: Vec<String>,
+    /// `path:line` of the registrations that set the base address.
+    pub via: Vec<String>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
@@ -194,6 +211,67 @@ pub struct GapRec {
     pub locations: Vec<GapLoc>,
     /// Sources whose data reached the gap (empty for gaps that exist whatever the data).
     pub sources: Vec<String>,
+    /// Whether the gap can hide personal data on its way somewhere (ADR 0023): `high` when
+    /// personal data reaches it, `medium` when only values that need review do or when it exists
+    /// whatever the data, `low` when the call only presents data in the app's interface.
+    pub impact: String,
+    pub impact_reason: String,
+}
+
+/// Gap impacts, most urgent first.
+pub const IMPACTS: [&str; 3] = ["high", "medium", "low"];
+
+pub(crate) fn impact_rank(impact: &str) -> usize {
+    IMPACTS
+        .iter()
+        .position(|i| *i == impact)
+        .unwrap_or(IMPACTS.len())
+}
+
+const STATIC_IMPACT: &str = "it exists whatever the data, so what it hides is not known";
+
+/// The impact of a gap that data reached: what reached it, and whether the call only presents
+/// it in the app's interface.
+fn reached_impact(
+    cat: &Catalogue,
+    kind: GapKind,
+    detail: &str,
+    lang: Option<&str>,
+    reached: &[(&str, bool)],
+) -> (String, String) {
+    if matches!(
+        kind,
+        GapKind::UnresolvedCallee | GapKind::UnresolvedMethod | GapKind::DynamicCall
+    ) && let Some(def) = cat.presentation.iter().find(|d| {
+        Some(d.language.as_str()) == lang && crate::glob::api_matches_any(&d.calls, detail)
+    }) {
+        return (
+            "low".into(),
+            format!(
+                "the call only presents the value: it {} ({})",
+                def.why, def.id
+            ),
+        );
+    }
+    let personal: BTreeSet<&str> = reached
+        .iter()
+        .filter(|(c, review)| !review && *c != UNKNOWN)
+        .map(|(c, _)| *c)
+        .collect();
+    if personal.is_empty() {
+        return (
+            "medium".into(),
+            "only values whose category needs review reach it".into(),
+        );
+    }
+    let mut shown: Vec<&str> = personal.iter().take(3).copied().collect();
+    if personal.len() > 3 {
+        shown.push("…");
+    }
+    (
+        "high".into(),
+        format!("personal data reaches its arguments: {}", shown.join(", ")),
+    )
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
@@ -621,6 +699,7 @@ pub fn build(p: &Program, f: &Facts, reaches: &[Reach], ctx: &Context) -> Result
                 processor: def.processor.clone(),
                 heuristic: *heuristic,
                 host: host_rec(host),
+                destination: None,
                 function: a.func_name_of_stmt(h.stmt),
                 location: a.loc_of_stmt(h.stmt),
                 text: p.stmts[h.stmt as usize].text.clone(),
@@ -639,6 +718,19 @@ pub fn build(p: &Program, f: &Facts, reaches: &[Reach], ctx: &Context) -> Result
             .map(|&s| seed_ids[s as usize].clone())
             .collect();
         sources.sort();
+        let lang = locs
+            .iter()
+            .next()
+            .and_then(|l| crate::files::language_of(&l.path))
+            .map(|l| l.family());
+        let categories: Vec<(&str, bool)> = seeds
+            .iter()
+            .map(|&s| {
+                let seed = &f.seeds[s as usize];
+                (seed.category.as_str(), seed.needs_review)
+            })
+            .collect();
+        let (impact, impact_reason) = reached_impact(cat, kind, &detail, lang, &categories);
         gaps.push(GapRec {
             id: format!(
                 "gap-{}",
@@ -648,11 +740,15 @@ pub fn build(p: &Program, f: &Facts, reaches: &[Reach], ctx: &Context) -> Result
             detail,
             locations: locs.into_iter().collect(),
             sources,
+            impact,
+            impact_reason,
         });
     }
+    // Gaps that can hide personal data come first.
     gaps.sort_by(|a, b| {
-        a.kind
-            .cmp(&b.kind)
+        impact_rank(&a.impact)
+            .cmp(&impact_rank(&b.impact))
+            .then(a.kind.cmp(&b.kind))
             .then(a.detail.cmp(&b.detail))
             .then(a.id.cmp(&b.id))
     });
@@ -794,6 +890,8 @@ fn static_gap(g: &StaticGap) -> GapRec {
             })
             .collect(),
         sources: Vec::new(),
+        impact: "medium".into(),
+        impact_reason: STATIC_IMPACT.into(),
     }
 }
 
@@ -986,11 +1084,18 @@ pub(crate) fn processor_declared<'a>(
         {
             return true;
         }
-        if let Some(HostRec {
-            kind,
-            value: Some(h),
-        }) = &sink.host
-            && kind == "literal"
+        let host = match (&sink.host, &sink.destination) {
+            (
+                Some(HostRec {
+                    kind,
+                    value: Some(h),
+                }),
+                _,
+            ) if kind == "literal" => Some(h),
+            (_, Some(dest)) if dest.kind == "processor" => dest.targets.first(),
+            _ => None,
+        };
+        if let Some(h) = host
             && d.hosts
                 .iter()
                 .any(|x| h == x || h.ends_with(&format!(".{x}")))
@@ -1001,11 +1106,16 @@ pub(crate) fn processor_declared<'a>(
     })
 }
 
-/// The processor a flow to `sink` reaches, if it reaches one: the catalogue's vendor, or the
-/// literal host of an outbound HTTP call.
+/// The processor a flow to `sink` reaches, if it reaches one: the catalogue's vendor, the
+/// literal host of an outbound HTTP call, or the host its client's base address names.
 pub(crate) fn processor_of(sink: &SinkRec) -> Option<String> {
     if let Some(p) = &sink.processor {
         return Some(p.clone());
+    }
+    if let Some(d) = &sink.destination
+        && d.kind == "processor"
+    {
+        return d.targets.first().cloned();
     }
     match &sink.host {
         Some(HostRec {
@@ -1018,6 +1128,13 @@ pub(crate) fn processor_of(sink: &SinkRec) -> Option<String> {
 
 pub(crate) fn is_first_party(sink: &SinkRec) -> bool {
     sink.class == SinkClass::Http && sink.host.as_ref().is_some_and(|h| h.kind == "relative")
+}
+
+/// A request to another system of the repository, through a client whose base address names it.
+pub(crate) fn is_internal(sink: &SinkRec) -> bool {
+    sink.destination
+        .as_ref()
+        .is_some_and(|d| d.kind == "internal")
 }
 
 type EgressKey = (Option<String>, SinkClass, Option<HostRec>);
@@ -1054,7 +1171,7 @@ pub fn derive(doc: &mut Document, classifier: &Classifier) -> Result<()> {
         let echoed = fl.path.iter().any(|h| h.kind == "error");
         let credential = Classifier::is_credential(cat);
         let special = classifier.is_special(cat);
-        let external = snk.class.is_external() && !is_first_party(snk);
+        let external = snk.class.is_external() && !is_first_party(snk) && !is_internal(snk);
         let processor = processor_of(snk);
         let declared = processor_declared(&doc.processors, snk);
         let mut fire = |rule_id: &str, message: String, proc: Option<String>| {
@@ -1159,6 +1276,7 @@ pub fn derive(doc: &mut Document, classifier: &Classifier) -> Result<()> {
         }
         if snk.class == SinkClass::Http
             && snk.host.as_ref().is_some_and(|h| h.kind == "dynamic")
+            && snk.destination.is_none()
             && !(credential && as_auth_header)
         {
             fire(
@@ -1178,12 +1296,22 @@ pub fn derive(doc: &mut Document, classifier: &Classifier) -> Result<()> {
                     column: l.column.unwrap_or(1),
                 })
             });
+            // A gap at a call that only presents data is reported at `info` at most, as a
+            // finding that needs review is.
+            let severity = if g.impact == "low" {
+                s.severity.min(Severity::Info)
+            } else {
+                s.severity
+            };
             findings.push(FindingRec {
                 disposition: previous.get(&id).cloned().flatten(),
                 id,
                 rule_id: "PFC01".into(),
-                severity: s.severity,
-                message: format!("coverage gap ({}): {}", g.kind, g.detail),
+                severity,
+                message: format!(
+                    "coverage gap ({}, {} impact): {}",
+                    g.kind, g.impact, g.detail
+                ),
                 flow: None,
                 gap: Some(g.id.clone()),
                 categories: Vec::new(),
@@ -1206,7 +1334,7 @@ pub fn derive(doc: &mut Document, classifier: &Classifier) -> Result<()> {
     let mut egress: BTreeMap<EgressKey, EgressAcc> = BTreeMap::new();
     for fl in &doc.flows {
         let snk = sinks[fl.sink.as_str()];
-        if !snk.class.is_external() || is_first_party(snk) {
+        if !snk.class.is_external() || is_first_party(snk) || is_internal(snk) {
             continue;
         }
         // A declaration names the processor, also when it matched by sink ID or host and the

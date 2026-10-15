@@ -144,6 +144,17 @@
           "processor": { "type": ["string", "null"] },
           "heuristic": { "type": "boolean" },
           "host": { "oneOf": [{ "$ref": "#/$defs/host" }, { "type": "null" }] },
+          "destination": {
+            "type": "object",
+            "description": "Where a request with a dynamic host goes, when the base address of the client it is sent through names it (ADR 0022). Absent otherwise.",
+            "additionalProperties": false,
+            "required": ["kind", "targets", "via"],
+            "properties": {
+              "kind": { "enum": ["internal", "processor"] },
+              "targets": { "type": "array", "minItems": 1, "items": { "type": "string" }, "description": "System keys of the repository, or the processor's host." },
+              "via": { "type": "array", "items": { "type": "string" }, "description": "path:line of the client registrations." }
+            }
+          },
           "function": { "type": "string" },
           "location": { "$ref": "#/$defs/loc" },
           "text": { "type": "string" }
@@ -194,7 +205,7 @@
           "items": {
             "type": "object",
             "additionalProperties": false,
-            "required": ["id", "kind", "detail", "locations", "sources"],
+            "required": ["id", "kind", "detail", "locations", "sources", "impact", "impact_reason"],
             "properties": {
               "id": { "type": "string", "pattern": "^gap-[0-9a-f]{16}$" },
               "kind": {
@@ -217,7 +228,9 @@
                   }
                 }
               },
-              "sources": { "type": "array", "items": { "type": "string", "pattern": "^src-[0-9a-f]{16}$" } }
+              "sources": { "type": "array", "items": { "type": "string", "pattern": "^src-[0-9a-f]{16}$" } },
+              "impact": { "enum": ["high", "medium", "low"], "description": "Whether the gap can hide personal data on its way somewhere (ADR 0023)." },
+              "impact_reason": { "type": "string" }
             }
           }
         }
@@ -522,7 +535,7 @@
     "severity": { "enum": ["info", "warning", "medium", "high"] },
     "rule_id": { "enum": ["PF001", "PF002", "PF003", "PF004", "PF005", "PF006", "PFC01"] },
     "category": { "type": "string", "pattern": "^(unknown|[a-z0-9_]+(\\.[a-z0-9_]+)*)$" },
-    "sink_class": { "enum": ["log", "error_tracking", "analytics", "messaging", "llm", "http", "browser_storage", "third_party"] },
+    "sink_class": { "enum": ["log", "error_tracking", "analytics", "messaging", "llm", "http", "browser_storage", "device_storage", "third_party"] },
     "loc": {
       "type": "object",
       "additionalProperties": false,

@@ -39,6 +39,18 @@ The first five are raised only when personal data actually reaches the gap; the 
 whatever the data. Gaps are aggregated: one gap per API path (repeated chains collapsed) or per
 language or framework, listing every location.
 
+Each gap has an impact, so that the ones that can hide personal data on its way somewhere are
+reviewed first ([ADR 0023](../adr/0023-gap-impact.md)):
+
+| Impact | When | Severity |
+| --- | --- | --- |
+| `high` | personal data (a category that needs no review) reaches the call's arguments | the policy's |
+| `medium` | only values whose category needs review reach it, or the gap exists whatever the data | the policy's |
+| `low` | the call only presents data in the app's interface: a dialog, a navigation, a control's property, an animation ([`catalogue/presentation.yml`](../../catalogue/presentation.yml)) | `info` at most |
+
+The message names the impact (`coverage gap (unresolved_callee, high impact): …`), the document
+lists gaps most urgent first, and every gap still makes coverage incomplete.
+
 ## Controls
 
 PFC01 is about the analysis, not about a control: it maps to none. It supports every other mapping by making their absence of findings meaningful.
@@ -54,7 +66,7 @@ Fixture: [`tests/fixtures/ts/pfc01-fail/`](../../tests/fixtures/ts/pfc01-fail/).
 
 ```console
 $ piiflow -q scan tests/fixtures/ts/pfc01-fail -f json | jq -r '.findings[] | "\(.rule_id) \(.severity) | \(.message)"'
-PFC01 warning | coverage gap (unresolved_callee): acme-mailer:deliver
+PFC01 warning | coverage gap (unresolved_callee, high impact): acme-mailer:deliver
 ```
 
 `piiflow explain <finding ID>` prints the full chain of hops from the source to the sink, with the

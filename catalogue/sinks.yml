@@ -841,6 +841,30 @@ sinks:
       `RestService.For` or `AddRefitClient`.
     decorated: ["Refit.{GetAttribute,PostAttribute,PutAttribute,PatchAttribute,DeleteAttribute,HeadAttribute}{,()}"]
 
+  # ------------------------------------------------------------------ C#: device storage
+  # .NET MAUI (and Xamarin.Essentials) store values on the device. MAUI projects import
+  # `Microsoft.Maui.Storage` implicitly, which the SDK table in src/resolve.rs does not list, so
+  # the bare type names are spelled too.
+  - id: cs.maui.secure-storage
+    language: csharp
+    class: device_storage
+    description: >-
+      `SecureStorage`: the value is stored on the device, encrypted by the platform's keychain
+      or keystore.
+    calls:
+      - "{Microsoft.Maui.Storage.,Xamarin.Essentials.,}SecureStorage{,.Default}.SetAsync"
+      - "Microsoft.Maui.Storage.ISecureStorage.SetAsync"
+    args: [1]
+
+  - id: cs.maui.preferences
+    language: csharp
+    class: device_storage
+    description: "`Preferences`: the value is stored on the device in plain application settings."
+    calls:
+      - "{Microsoft.Maui.Storage.,Xamarin.Essentials.,}Preferences{,.Default}.Set"
+      - "Microsoft.Maui.Storage.IPreferences.Set"
+    args: [1]
+
   # ------------------------------------------------------------------ C#: error tracking
   - id: cs.sentry
     language: csharp

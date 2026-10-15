@@ -60,7 +60,7 @@ of segments, `**.` also matches none (`posthog-js:**.capture` matches `posthog-j
 - id: js.posthog                # stable; findings and declarations refer to it
   language: javascript          # javascript (also TypeScript), python or csharp
   class: analytics              # log, error_tracking, analytics, messaging, llm, http,
-                                # browser_storage, third_party
+                                # browser_storage, device_storage, third_party
   processor: PostHog            # the vendor that receives the data, if there is one
   calls: ["{posthog-node,posthog-js}:**.{capture,identify,alias}"]
   assigns: []                   # property writes that are sinks (`document.cookie`)
@@ -213,6 +213,26 @@ what an object holds rather than an attribute (`claim.Value`), which are not cla
 and `metadata_types` lists types whose values describe code (`System.Type`), whose fields are not
 personal data.
 
+`browser_storage` and `device_storage` (a native app's storage on the phone: .NET MAUI
+`SecureStorage` and `Preferences`) are not external: their flows are reported, and no rule fires
+on them.
+
+## Presentation (`catalogue/presentation.yml`)
+
+Calls that only present data in the app's own interface: a dialog, a navigation, a control's
+bindable property, an animation ([ADR 0023](adr/0023-gap-impact.md)). A coverage gap at one is
+still a gap, with impact `low`, and its PFC01 finding is reported at `info` at most.
+
+```yaml
+- id: cs.maui.dialogs
+  language: csharp
+  calls: ["{Microsoft.Maui.Controls.,}{Shell,Page}{,.Current}.{DisplayAlert,DisplayActionSheet}"]
+  why: "shows a dialog on the device"     # the gap's impact reason quotes it
+  citation: "Display pop-ups, https://learn.microsoft.com/dotnet/maui/user-interface/pop-ups"
+```
+
+The globs are matched against the gap's detail, the call's API path.
+
 ## Frameworks (`catalogue/frameworks.yml`)
 
 Each web framework, by the modules that identify it, and whether its request input is modelled.
@@ -246,12 +266,14 @@ method by its class's qualified name (`Shop.Events.Bus.Publish`).
 ## The data map's catalogue (`catalogue/topology/`)
 
 What [`piiflow datamap`](datamap.md) needs besides flows is data too, versioned and digested apart
-from the flow catalogue, so `scan` output does not depend on it:
+from the flow catalogue. `scan` uses `systems.yml` and `clients.yml` to say where a request
+through a registered client goes ([ADR 0022](adr/0022-client-destinations.md)), so the flow
+catalogue's digest covers those two as well:
 
 | File | What it says |
 | --- | --- |
 | [`systems.yml`](../catalogue/topology/systems.yml) | What a deployable unit is (C# SDKs and output types, packages with a server framework or a `start` script, Django projects, Python app objects, Dockerfiles), what never is (app hosts, test projects), and orchestrator calls that name the projects they run (.NET Aspire) |
-| [`clients.yml`](../catalogue/topology/clients.yml) | Client registrations and where their base address is (typed `AddHttpClient<T>`, `axios.create`, `ky`, `httpx`, `aiohttp`) |
+| [`clients.yml`](../catalogue/topology/clients.yml) | Client registrations and where their base address is (typed `AddHttpClient<T>`, named `AddHttpClient("name")` with `CreateClient("name")`, `axios.create`, `ky`, `httpx`, `aiohttp`); configuration reads a base address may come from (service discovery keys, connection strings); and orchestrator calls that set a configuration key to another resource's endpoint (Aspire `WithEnvironment`) |
 | [`stores.yml`](../catalogue/topology/stores.yml) | How ORM models declare what is stored: Entity Framework Core, Django, SQLAlchemy, Prisma |
 | [`purposes.yml`](../catalogue/topology/purposes.yml) | The data use proposed per sink class, processor and kind of evidence, with the reason; proposals, never decisions |
 

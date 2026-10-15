@@ -8,9 +8,9 @@ use crate::facts::{Facts, HitKind};
 use crate::glob::api_matches_any;
 use crate::program::{ClassId, GArgKind, GCallee, GKind, Program, Prov, VarId};
 use crate::report::{SinkRec, fides_slug};
-use crate::topology::catalogue::{ClientDef, ClientKind, TopologyCatalogue};
+use crate::topology::catalogue::{ClientDef, ClientKind, ConfigDef, TopologyCatalogue};
 use crate::topology::model::{BindingRec, Endpoint, NoteRec};
-use crate::topology::names::{Names, authority_of, is_local};
+use crate::topology::names::{Names, authority_of, config_key, is_local};
 use crate::values::{Defs, api_paths};
 
 pub struct Inputs<'a> {
@@ -41,15 +41,39 @@ fn call_paths(p: &Program, stmt: u32) -> Vec<String> {
     out
 }
 
-/// The literal strings a value may be: through copies, and through the arguments of the
-/// wrapper constructors (`new Uri("…")`, a target-typed `new("…")`).
-fn literals(
+/// A base address as the code sets it.
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
+enum Base {
+    Literal(String),
+    /// A configuration key, as written (`Billing:Url`, `services:billing:https:0`).
+    Config(String),
+}
+
+impl Base {
+    fn text(&self) -> String {
+        match self {
+            Base::Literal(s) => s.clone(),
+            Base::Config(k) => format!("config:{k}"),
+        }
+    }
+}
+
+/// The literal string a value is, when it is one.
+fn literal(p: &Program, defs: &Defs, var: VarId) -> Option<String> {
+    defs.literal_prefix(p, var)
+        .and_then(|(s, whole)| whole.then_some(s))
+}
+
+/// What a value may be: literal strings through copies and the arguments of the wrapper
+/// constructors (`new Uri("…")`, a target-typed `new("…")`), and configuration reads.
+fn values(
     p: &Program,
     defs: &Defs,
     var: VarId,
     wrappers: &[String],
+    config: &[&ConfigDef],
     depth: u32,
-    out: &mut BTreeSet<String>,
+    out: &mut BTreeSet<Base>,
 ) {
     if depth > 8 {
         return;
@@ -57,17 +81,49 @@ fn literals(
     for &d in defs.of(var) {
         match &p.stmts[d as usize].kind {
             GKind::Lit { value: Some(v), .. } => {
-                out.insert(v.clone());
+                out.insert(Base::Literal(v.clone()));
             }
-            GKind::Copy { src, .. } => literals(p, defs, *src, wrappers, depth + 1, out),
+            GKind::Copy { src, .. } => values(p, defs, *src, wrappers, config, depth + 1, out),
+            // `configuration["Billing:Url"]`
+            GKind::Load {
+                obj,
+                field: Some(f),
+                ..
+            } if api_paths(p, *obj)
+                .any(|a| config.iter().any(|c| api_matches_any(&c.objects, &a))) =>
+            {
+                out.insert(Base::Config(p.syms.str(*f).to_string()));
+            }
             GKind::Call { args, is_new, .. } => {
-                let wrapped = call_paths(p, d).iter().any(|a| {
+                let paths = call_paths(p, d);
+                let first = args
+                    .iter()
+                    .find(|a| matches!(a.kind, GArgKind::Positional))
+                    .and_then(|a| literal(p, defs, a.var));
+                if let Some(k) = &first {
+                    if config
+                        .iter()
+                        .any(|c| paths.iter().any(|a| api_matches_any(&c.calls, a)))
+                    {
+                        out.insert(Base::Config(k.clone()));
+                        continue;
+                    }
+                    if config.iter().any(|c| {
+                        paths
+                            .iter()
+                            .any(|a| api_matches_any(&c.connection_strings, a))
+                    }) {
+                        out.insert(Base::Config(format!("ConnectionStrings:{k}")));
+                        continue;
+                    }
+                }
+                let wrapped = paths.iter().any(|a| {
                     api_matches_any(wrappers, a) || api_matches_any(wrappers, &format!("{a}()"))
                 });
-                if (wrapped || (*is_new && call_paths(p, d).is_empty()))
+                if (wrapped || (*is_new && paths.is_empty()))
                     && let Some(a) = args.first()
                 {
-                    literals(p, defs, a.var, wrappers, depth + 1, out);
+                    values(p, defs, a.var, wrappers, config, depth + 1, out);
                 }
             }
             _ => {}
@@ -83,6 +139,10 @@ struct Index {
     this_stores: BTreeMap<VarId, Vec<VarId>>,
     /// Declared variable → type values (`TypeRef`).
     type_refs: BTreeMap<VarId, Vec<VarId>>,
+    /// Receiver → the method calls made on it.
+    by_recv: BTreeMap<VarId, Vec<u32>>,
+    /// Source → the variables copied from it.
+    copies: BTreeMap<VarId, Vec<VarId>>,
 }
 
 impl Index {
@@ -91,9 +151,16 @@ impl Index {
             stores: BTreeMap::new(),
             this_stores: BTreeMap::new(),
             type_refs: BTreeMap::new(),
+            by_recv: BTreeMap::new(),
+            copies: BTreeMap::new(),
         };
-        for s in &p.stmts {
+        for (i, s) in p.stmts.iter().enumerate() {
             match &s.kind {
+                GKind::Call {
+                    callee: GCallee::Method { recv, .. },
+                    ..
+                } => ix.by_recv.entry(*recv).or_default().push(i as u32),
+                GKind::Copy { dst, src } => ix.copies.entry(*src).or_default().push(*dst),
                 GKind::Store {
                     obj,
                     field: Some(f),
@@ -121,9 +188,17 @@ fn stored(p: &Program, defs: &Defs, ix: &Index, obj: VarId, fields: &[String]) -
         .collect()
 }
 
-/// The base addresses a registering call sets.
-fn bases(p: &Program, defs: &Defs, ix: &Index, def: &ClientDef, stmt: u32) -> BTreeSet<String> {
-    let GKind::Call { args, .. } = &p.stmts[stmt as usize].kind else {
+/// The base addresses a registering call sets, in its own arguments or in the calls chained on
+/// its result (`AddHttpClient("billing").ConfigureHttpClient(c => …)`).
+fn bases(
+    p: &Program,
+    defs: &Defs,
+    ix: &Index,
+    def: &ClientDef,
+    config: &[&ConfigDef],
+    stmt: u32,
+) -> BTreeSet<Base> {
+    let GKind::Call { args, dst, .. } = &p.stmts[stmt as usize].kind else {
         return BTreeSet::new();
     };
     let c = &def.configure;
@@ -150,19 +225,44 @@ fn bases(p: &Program, defs: &Defs, ix: &Index, def: &ClientDef, stmt: u32) -> BT
         }
     }
     if !c.lambda_fields.is_empty() {
-        for a in args {
-            for pr in &p.prov[a.var as usize] {
+        // The registration's own lambdas, and those of the calls chained on its result.
+        let mut lambda_args: Vec<VarId> = args.iter().map(|a| a.var).collect();
+        let mut frontier = vec![*dst];
+        for _ in 0..4 {
+            let mut next = Vec::new();
+            for v in frontier {
+                let mut recvs = vec![v];
+                recvs.extend(ix.copies.get(&v).into_iter().flatten().copied());
+                for r in recvs {
+                    for &call in ix.by_recv.get(&r).into_iter().flatten() {
+                        let GKind::Call { dst, args, .. } = &p.stmts[call as usize].kind else {
+                            continue;
+                        };
+                        if call_paths(p, call)
+                            .iter()
+                            .any(|a| api_matches_any(&def.chained, a))
+                        {
+                            lambda_args.extend(args.iter().map(|a| a.var));
+                        }
+                        next.push(*dst);
+                    }
+                }
+            }
+            frontier = next;
+        }
+        for a in lambda_args {
+            for pr in &p.prov[a as usize] {
                 let Prov::Func(f) = pr else { continue };
-                let Some(param) = p.funcs[*f as usize].params.first() else {
-                    continue;
-                };
-                srcs.extend(stored(p, defs, ix, param.var, &c.lambda_fields));
+                // `c => c.BaseAddress = …`, `(sp, c) => c.BaseAddress = …`
+                for param in &p.funcs[*f as usize].params {
+                    srcs.extend(stored(p, defs, ix, param.var, &c.lambda_fields));
+                }
             }
         }
     }
     let mut out = BTreeSet::new();
     for s in srcs {
-        literals(p, defs, s, &def.wrappers, 0, &mut out);
+        values(p, defs, s, &def.wrappers, config, 0, &mut out);
     }
     out
 }
@@ -214,30 +314,126 @@ fn type_arg_classes(p: &Program, ix: &Index, stmt: u32) -> BTreeSet<ClassId> {
 
 pub struct Bindings {
     pub recs: Vec<BindingRec>,
+    /// Sink → every endpoint its requests are bound to, in any system, including the system
+    /// that sends them (which `recs` leaves out: it is no edge).
+    pub resolved: BTreeMap<String, BTreeSet<(Endpoint, String)>>,
     pub notes: Vec<NoteRec>,
+}
+
+/// Where a base address goes, from the system that sends through it.
+fn resolve(
+    inp: &Inputs,
+    config: &[&ConfigDef],
+    base: &Base,
+    system: &str,
+    registration: &str,
+    notes: &mut BTreeSet<NoteRec>,
+) -> Option<Endpoint> {
+    match base {
+        Base::Literal(url) => {
+            let host = authority_of(url)?;
+            if let Some(k) = inp.names.by_host.get(&host) {
+                return Some(Endpoint::System { key: k.clone() });
+            }
+            if is_local(&host) || !host.contains('.') {
+                notes.insert(NoteRec {
+                    kind: "unknown_host".into(),
+                    detail: format!(
+                        "{url} names no system of the repository; declare it under systems: hosts:"
+                    ),
+                    paths: vec![registration.to_string()],
+                });
+                return None;
+            }
+            Some(Endpoint::Processor {
+                name: host.clone(),
+                fides_key: fides_slug(&host),
+            })
+        }
+        Base::Config(key) => {
+            let k = config_key(key);
+            let segs: Vec<&str> = k.split(':').collect();
+            let section = |s: &str| {
+                config.iter().any(|c| {
+                    c.services_section
+                        .as_deref()
+                        .is_some_and(|x| x.eq_ignore_ascii_case(s))
+                })
+            };
+            // Service discovery (`services:billing:https:0`) and connection strings name the
+            // resource; any other key is what an orchestrator sets in this system's environment.
+            let named = (segs.len() >= 2 && (section(segs[0]) || segs[0] == "connectionstrings"))
+                .then(|| inp.names.by_host.get(segs[1]))
+                .flatten();
+            match named.or_else(|| inp.names.env.get(&(system.to_string(), k.clone()))) {
+                Some(t) => Some(Endpoint::System { key: t.clone() }),
+                None => {
+                    notes.insert(NoteRec {
+                        kind: "unresolved_configuration".into(),
+                        detail: format!(
+                            "the base address is read from configuration ({key}), which no orchestrator sets to a system of the repository"
+                        ),
+                        paths: vec![registration.to_string()],
+                    });
+                    None
+                }
+            }
+        }
+    }
 }
 
 pub fn bind(inp: &Inputs, sinks: &[SinkRec]) -> Bindings {
     let p = inp.program;
     let defs = inp.defs;
     let ix = Index::build(p);
-    // Registrations: (client entry, statement, registered classes, base addresses).
-    let mut regs: Vec<(&ClientDef, u32, BTreeSet<ClassId>, BTreeSet<String>)> = Vec::new();
+    // Registrations: (client entry, statement, registered classes, client name, base addresses).
+    type Reg<'a> = (
+        &'a ClientDef,
+        u32,
+        BTreeSet<ClassId>,
+        Option<String>,
+        BTreeSet<Base>,
+    );
+    let mut regs: Vec<Reg> = Vec::new();
     for (i, st) in p.stmts.iter().enumerate() {
-        if !matches!(st.kind, GKind::Call { .. }) {
+        let GKind::Call { args, .. } = &st.kind else {
             continue;
-        }
+        };
         let lang = p.files[st.file as usize].lang.family();
         let paths = call_paths(p, i as u32);
+        let config: Vec<&ConfigDef> = inp
+            .topo
+            .configuration
+            .iter()
+            .filter(|c| c.language == lang)
+            .collect();
         for c in &inp.topo.clients {
-            if c.language == lang && paths.iter().any(|a| api_matches_any(&c.calls, a)) {
-                let classes = match c.client {
-                    ClientKind::TypeArg => type_arg_classes(p, &ix, i as u32),
-                    ClientKind::Result => BTreeSet::new(),
-                };
-                let found = bases(p, defs, &ix, c, i as u32);
-                regs.push((c, i as u32, classes, found));
+            if c.language != lang || !paths.iter().any(|a| api_matches_any(&c.calls, a)) {
+                continue;
             }
+            let (classes, name) = match c.client {
+                ClientKind::TypeArg => (type_arg_classes(p, &ix, i as u32), None),
+                ClientKind::Result => (BTreeSet::new(), None),
+                ClientKind::Named => {
+                    let positional: Vec<&crate::program::GArg> = args
+                        .iter()
+                        .filter(|a| matches!(a.kind, GArgKind::Positional))
+                        .collect();
+                    let Some(name) = c
+                        .name_arg
+                        .and_then(|k| positional.get(k))
+                        .and_then(|a| literal(p, defs, a.var))
+                    else {
+                        continue;
+                    };
+                    (BTreeSet::new(), Some(name))
+                }
+            };
+            if c.client == ClientKind::TypeArg && classes.is_empty() {
+                continue;
+            }
+            let found = bases(p, defs, &ix, c, &config, i as u32);
+            regs.push((c, i as u32, classes, name, found));
         }
     }
     // The statements of each sink record, by place and catalogue entry.
@@ -259,6 +455,7 @@ pub fn bind(inp: &Inputs, sinks: &[SinkRec]) -> Bindings {
     }
 
     let mut recs: BTreeSet<BindingRec> = BTreeSet::new();
+    let mut resolved: BTreeMap<String, BTreeSet<(Endpoint, String)>> = BTreeMap::new();
     let mut notes: BTreeSet<NoteRec> = BTreeSet::new();
     for snk in sinks {
         if snk.class != SinkClass::Http || snk.host.as_ref().is_none_or(|h| h.kind != "dynamic") {
@@ -292,13 +489,34 @@ pub fn bind(inp: &Inputs, sinks: &[SinkRec]) -> Bindings {
                 None
             });
             let recv_apis: Vec<String> = api_paths(p, *recv).collect();
-            for (def, reg, classes, found) in &regs {
+            let config: Vec<&ConfigDef> = inp
+                .topo
+                .configuration
+                .iter()
+                .filter(|c| c.language == p.files[st.file as usize].lang.family())
+                .collect();
+            for (def, reg, classes, name, found) in &regs {
                 let applies = match def.client {
                     ClientKind::Result => from.contains(reg),
                     ClientKind::TypeArg => {
                         recv_apis.iter().any(|a| api_matches_any(&def.injects, a))
                             && class.is_some_and(|c| classes.contains(&c))
                     }
+                    // `factory.CreateClient("billing")`
+                    ClientKind::Named => from.iter().any(|&c| {
+                        let GKind::Call { args, .. } = &p.stmts[c as usize].kind else {
+                            return false;
+                        };
+                        call_paths(p, c)
+                            .iter()
+                            .any(|a| api_matches_any(&def.creates, a))
+                            && args
+                                .iter()
+                                .find(|a| matches!(a.kind, GArgKind::Positional))
+                                .and_then(|a| literal(p, defs, a.var))
+                                .as_ref()
+                                == name.as_ref()
+                    }),
                 };
                 if !applies {
                     continue;
@@ -306,31 +524,20 @@ pub fn bind(inp: &Inputs, sinks: &[SinkRec]) -> Bindings {
                 let reg_st = &p.stmts[*reg as usize];
                 let reg_file = reg_st.file as usize;
                 let registration = format!("{}:{}", p.files[reg_file].path, reg_st.pos.line);
-                for base in found {
-                    let Some(host) = authority_of(base) else {
+                for (system, closure) in inp.systems {
+                    if !closure[reg_file] || !closure[st.file as usize] {
                         continue;
-                    };
-                    let to = if let Some(k) = inp.names.by_host.get(&host) {
-                        Endpoint::System { key: k.clone() }
-                    } else if is_local(&host) || !host.contains('.') {
-                        notes.insert(NoteRec {
-                            kind: "unknown_host".into(),
-                            detail: format!(
-                                "{base} names no system of the repository; declare it under systems: hosts:"
-                            ),
-                            paths: vec![registration.clone()],
-                        });
-                        continue;
-                    } else {
-                        Endpoint::Processor {
-                            name: host.clone(),
-                            fides_key: fides_slug(&host),
-                        }
-                    };
-                    for (system, closure) in inp.systems {
-                        if !closure[reg_file] || !closure[st.file as usize] {
+                    }
+                    for base in found {
+                        let Some(to) =
+                            resolve(inp, &config, base, system, &registration, &mut notes)
+                        else {
                             continue;
-                        }
+                        };
+                        resolved
+                            .entry(snk.id.clone())
+                            .or_default()
+                            .insert((to.clone(), registration.clone()));
                         if matches!(&to, Endpoint::System { key } if key == system) {
                             continue;
                         }
@@ -339,8 +546,8 @@ pub fn bind(inp: &Inputs, sinks: &[SinkRec]) -> Bindings {
                             system: system.clone(),
                             client: def.id.clone(),
                             registration: registration.clone(),
-                            base: base.clone(),
-                            to: to.clone(),
+                            base: base.text(),
+                            to,
                         });
                     }
                 }
@@ -349,6 +556,7 @@ pub fn bind(inp: &Inputs, sinks: &[SinkRec]) -> Bindings {
     }
     Bindings {
         recs: recs.into_iter().collect(),
+        resolved,
         notes: notes.into_iter().collect(),
     }
 }

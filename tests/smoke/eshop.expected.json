@@ -18,54 +18,71 @@
       "rule": "PF001",
       "path": "src/Ordering.API/Apis/OrdersApi.cs",
       "line": 134,
-      "categories": ["user.financial.credit_card", "user.contact.address.street"],
+      "categories": [
+        "user.financial.credit_card",
+        "user.contact.address.street"
+      ],
       "why": "The whole CreateOrderRequest (card number, address) is logged, four lines below the comment saying it must not be."
     },
     {
       "rule": "PF001",
       "path": "src/Ordering.API/Apis/OrdersApi.cs",
       "line": 148,
-      "categories": ["user.financial.credit_card"],
+      "categories": [
+        "user.financial.credit_card"
+      ],
       "why": "The identified command carrying the order command is logged whole."
     },
     {
       "rule": "PF001",
       "path": "src/Ordering.API/Application/Behaviors/LoggingBehavior.cs",
       "line": 9,
-      "categories": ["user.financial.credit_card"],
+      "categories": [
+        "user.financial.credit_card"
+      ],
       "why": "MediatR's pipeline behavior logs every command with {@Command}; it is reached only through dispatch."
     },
     {
       "rule": "PF001",
       "path": "src/Ordering.API/Application/Behaviors/ValidatorBehavior.cs",
       "line": 30,
-      "categories": ["user.financial.credit_card"]
+      "categories": [
+        "user.financial.credit_card"
+      ]
     },
     {
       "rule": "PF001",
       "path": "src/Ordering.API/Application/Behaviors/TransactionBehavior.cs",
       "line": 41,
-      "categories": ["user.financial.credit_card"],
+      "categories": [
+        "user.financial.credit_card"
+      ],
       "why": "Logged inside a lambda handed to EF Core's execution strategy."
     },
     {
       "rule": "PF001",
       "path": "src/Ordering.API/Application/Commands/IdentifiedCommandHandler.cs",
       "line": 79,
-      "categories": ["user.financial.credit_card"]
+      "categories": [
+        "user.financial.credit_card"
+      ]
     },
     {
       "rule": "PF001",
       "path": "src/Identity.API/Quickstart/Account/AccountController.cs",
       "line": 99,
-      "categories": ["user.account.username"],
+      "categories": [
+        "user.account.username"
+      ],
       "why": "A Duende IdentityServer event with the user name, written to the log."
     },
     {
       "rule": "PF001",
       "path": "src/Identity.API/Quickstart/Account/AccountController.cs",
       "line": 130,
-      "categories": ["user.account.username"]
+      "categories": [
+        "user.account.username"
+      ]
     },
     {
       "rule": "PF003",
@@ -80,29 +97,111 @@
     },
     {
       "rule": "PF006",
-      "path": "src/WebApp/Services/OrderingService.cs",
-      "line": 17,
-      "categories": ["user.contact.address.street", "user.financial.credit_card"],
-      "why": "The checkout form's address and card go to the ordering API, whose base address is configured elsewhere."
+      "path": "src/ClientApp/Services/RequestProvider/RequestProvider.cs",
+      "line": 43,
+      "categories": [
+        "user.financial.credit_card"
+      ],
+      "why": "The mobile app sends the order to endpoints the user sets in its settings (stored in Preferences): the host is not in the code."
     }
   ],
   "must_flows": [
     {
-      "source": {"path": "src/WebApp/Components/Chatbot/Chatbot.razor", "line": 72},
-      "sink": {"path": "src/WebApp/Components/Chatbot/ChatState.cs", "line": 78},
+      "source": {
+        "path": "src/WebApp/Components/Chatbot/Chatbot.razor",
+        "line": 72
+      },
+      "sink": {
+        "path": "src/WebApp/Components/Chatbot/ChatState.cs",
+        "line": 78
+      },
       "why": "What the user types into the chatbot (@bind) reaches the chat model."
     },
     {
-      "source": {"path": "src/WebApp/Components/Pages/Checkout/Checkout.razor", "line": 68},
-      "sink": {"path": "src/WebApp/Services/OrderingService.cs", "line": 17},
+      "source": {
+        "path": "src/WebApp/Components/Pages/Checkout/Checkout.razor",
+        "line": 68
+      },
+      "sink": {
+        "path": "src/WebApp/Services/OrderingService.cs",
+        "line": 17
+      },
       "why": "The [SupplyParameterFromForm] checkout model reaches the outbound order request."
     },
     {
-      "source": {"path": "src/Basket.API/Extensions/ServerCallContextIdentityExtensions.cs", "line": 7},
-      "sink": {"path": "src/Basket.API/Grpc/BasketService.cs", "line": 23},
+      "source": {
+        "path": "src/Basket.API/Extensions/ServerCallContextIdentityExtensions.cs",
+        "line": 7
+      },
+      "sink": {
+        "path": "src/Basket.API/Grpc/BasketService.cs",
+        "line": 23
+      },
       "category": "user.unique_id.pseudonymous",
       "why": "The user's subject identifier is logged: a flow, but not a PF001 finding on its own (ADR 0015)."
+    },
+    {
+      "source": {
+        "path": "src/ClientApp/Services/Settings/SettingsService.cs",
+        "line": 35
+      },
+      "sink": {
+        "path": "src/ClientApp/Services/Settings/SettingsService.cs",
+        "line": 37
+      },
+      "category": "user.authorization.credentials",
+      "why": "The access token is stored with SecureStorage.SetAsync: a device-storage sink, not a coverage gap."
     }
+  ],
+  "must_destinations": [
+    {
+      "path": "src/WebApp/Services/OrderingService.cs",
+      "line": 17,
+      "kind": "internal",
+      "targets": [
+        "ordering_api"
+      ],
+      "why": "OrderingService's typed client is registered with https+http://ordering-api, which the Aspire app host names."
+    },
+    {
+      "path": "src/WebAppComponents/Services/CatalogService.cs",
+      "line": 14,
+      "kind": "internal",
+      "targets": [
+        "catalog_api"
+      ],
+      "why": "The shared CatalogService is registered by WebApp with https+http://catalog-api."
+    },
+    {
+      "path": "src/WebhookClient/Services/WebHooksClient.cs",
+      "line": 7,
+      "kind": "internal",
+      "targets": [
+        "webhooks_api"
+      ],
+      "why": "Registered with http://webhooks-api."
+    }
+  ],
+  "gap_impacts": [
+    {
+      "detail": "OidcClient.RefreshTokenAsync",
+      "impact": "high",
+      "why": "The refresh token goes to the identity provider through an SDK the catalogue does not know."
+    },
+    {
+      "detail": "Shell.Current.GoToAsync",
+      "impact": "low",
+      "why": "In-app navigation."
+    },
+    {
+      "detail": "BindableObject.SetValue",
+      "impact": "low",
+      "why": "A control's bindable property."
+    }
+  ],
+  "absent_gaps": [
+    "SecureStorage.SetAsync",
+    "Preferences.Set"
   ],
   "must_not": [
     {
@@ -129,6 +228,21 @@
       "line": 32,
       "min_severity": "medium",
       "why": "The webhook payload carries order and stock events, not personal data."
+    },
+    {
+      "rule": "PF006",
+      "path": "src/WebApp/Services/OrderingService.cs",
+      "why": "The typed client's base address, https+http://ordering-api, names the Ordering API: an internal call (ADR 0022)."
+    },
+    {
+      "rule": "PF006",
+      "path": "src/WebAppComponents/Services/CatalogService.cs",
+      "why": "WebApp registers the typed client with https+http://catalog-api: an internal call."
+    },
+    {
+      "rule": "PF006",
+      "path": "src/WebhookClient/Services/WebHooksClient.cs",
+      "why": "The typed client's base address, http://webhooks-api, names the Webhooks API."
     }
   ]
 }

@@ -1,5 +1,5 @@
 {
-  "description": "What `piiflow datamap` must write for dotnet/eShop at the commit eshop.expected.json pins: its systems (exactly), datasets with the named collections and fields, and edges between systems. Field paths nest with dots (`Address.Street`).",
+  "description": "What `piiflow datamap` must write for dotnet/eShop at the commit eshop.expected.json pins: its systems (exactly), datasets with the named collections and fields, and edges between systems. Field paths nest with dots (`Address.Street`), and exactly which destinations stay unresolved.",
   "systems": [
     "basket_api",
     "catalog_api",
@@ -24,8 +24,20 @@
       "used_by": "ordering_api",
       "database": "orderingdb",
       "fields": {
-        "orders": { "Address.Street": ["user.contact.address.street"], "Address.City": ["user.contact.address.city"], "PaymentMethodId": [] },
-        "paymentmethods": { "CardNumber": ["user.financial.credit_card"] }
+        "orders": {
+          "Address.Street": [
+            "user.contact.address.street"
+          ],
+          "Address.City": [
+            "user.contact.address.city"
+          ],
+          "PaymentMethodId": []
+        },
+        "paymentmethods": {
+          "CardNumber": [
+            "user.financial.credit_card"
+          ]
+        }
       },
       "why": "The order's owned Address is nested; paymentmethods maps the private _cardNumber as CardNumber."
     },
@@ -33,24 +45,89 @@
       "key": "application_db_context",
       "used_by": "identity_api",
       "fields": {
-        "AspNetUsers": { "CardNumber": ["user.financial.credit_card"], "Email": ["user.contact.email"], "PasswordHash": ["user.authorization.password"] }
+        "AspNetUsers": {
+          "CardNumber": [
+            "user.financial.credit_card"
+          ],
+          "Email": [
+            "user.contact.email"
+          ],
+          "PasswordHash": [
+            "user.authorization.password"
+          ]
+        }
       },
       "why": "ApplicationUser's own fields join IdentityUser's in AspNetUsers."
     },
-    { "key": "catalog_context", "used_by": "catalog_api", "fields": { "Catalog": {} } },
-    { "key": "webhooks_context", "used_by": "webhooks_api", "fields": { "Subscriptions": { "UserId": ["user.unique_id.pseudonymous"] } } }
+    {
+      "key": "catalog_context",
+      "used_by": "catalog_api",
+      "fields": {
+        "Catalog": {}
+      }
+    },
+    {
+      "key": "webhooks_context",
+      "used_by": "webhooks_api",
+      "fields": {
+        "Subscriptions": {
+          "UserId": [
+            "user.unique_id.pseudonymous"
+          ]
+        }
+      }
+    }
   ],
   "edges": [
     {
       "from": "web_app",
       "to": "ordering_api",
-      "categories": ["user.financial.credit_card", "user.contact.address.street"],
+      "categories": [
+        "user.financial.credit_card",
+        "user.contact.address.street"
+      ],
       "why": "OrderingService's typed client, registered with https+http://ordering-api, sends the order with its card number."
     },
-    { "from": "web_app", "to": "catalog_api" },
-    { "from": "webhook_client", "to": "webhooks_api" }
+    {
+      "from": "web_app",
+      "to": "catalog_api"
+    },
+    {
+      "from": "webhook_client",
+      "to": "webhooks_api"
+    }
   ],
   "no_system_edges_from": [
-    { "path": "src/Webhooks.API/Services/WebhooksSender.cs", "why": "A subscriber's URL: a destination outside the repository." }
+    {
+      "path": "src/Webhooks.API/Services/WebhooksSender.cs",
+      "why": "A subscriber's URL: a destination outside the repository."
+    }
+  ],
+  "unresolved": [
+    {
+      "class": "http",
+      "path": "src/ClientApp/Services/RequestProvider/RequestProvider.cs",
+      "why": "The mobile app's endpoints are the ones the user sets in its settings."
+    },
+    {
+      "class": "http",
+      "path": "src/HybridApp/Services/CatalogService.cs",
+      "why": "The typed client's base address is a development address (localhost:11632, the mobile BFF's port) that names no system: the app host does not give the port."
+    },
+    {
+      "class": "http",
+      "path": "src/Webhooks.API/Services/WebhooksSender.cs",
+      "why": "A subscriber's URL."
+    },
+    {
+      "class": "llm",
+      "path": "src/Catalog.API/Services/CatalogAI.cs",
+      "why": "The embedding generator is injected; the app host chooses its provider at run time (Foundry or Ollama)."
+    },
+    {
+      "class": "llm",
+      "path": "src/WebApp/Components/Chatbot/ChatState.cs",
+      "why": "The chat client is injected; its provider is chosen at run time."
+    }
   ]
 }

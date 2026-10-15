@@ -1,6 +1,7 @@
 //! `catalogue/topology/`: what the data map needs to know about deployables, clients, stores and
-//! purposes. Versioned and digested apart from the flow catalogue, so `scan` output does not
-//! depend on it.
+//! purposes. Versioned and digested apart from the flow catalogue; `scan` uses `clients.yml`
+//! and `systems.yml` to bind requests to client registrations (ADR 0022), so the flow
+//! catalogue's digest covers those two as well.
 
 use std::collections::BTreeMap;
 
@@ -40,6 +41,10 @@ struct File {
     orchestrators: Vec<Orchestrator>,
     #[serde(default)]
     clients: Vec<ClientDef>,
+    #[serde(default)]
+    configuration: Vec<ConfigDef>,
+    #[serde(default)]
+    environment: Vec<EnvironmentDef>,
     #[serde(default)]
     stores: Vec<StoreDef>,
     #[serde(default)]
@@ -226,7 +231,16 @@ pub struct ClientDef {
     pub client: ClientKind,
     #[serde(default)]
     pub injects: Vec<String>,
+    /// `named`: the positional argument that names the client.
+    #[serde(default)]
+    pub name_arg: Option<usize>,
+    /// `named`: the calls that create a client by its name (`IHttpClientFactory.CreateClient`).
+    #[serde(default)]
+    pub creates: Vec<String>,
     pub configure: Configure,
+    /// Calls on the registration's result that configure it further (`ConfigureHttpClient`).
+    #[serde(default)]
+    pub chained: Vec<String>,
     #[serde(default)]
     pub wrappers: Vec<String>,
     pub citation: String,
@@ -237,6 +251,44 @@ pub struct ClientDef {
 pub enum ClientKind {
     TypeArg,
     Result,
+    Named,
+}
+
+/// Configuration reads a base address may come from: `configuration["Billing:Url"]`,
+/// `GetValue<string>("services:billing:https:0")`.
+#[derive(Clone, Debug, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct ConfigDef {
+    pub id: String,
+    pub language: String,
+    /// Configuration objects whose indexer reads a key.
+    #[serde(default)]
+    pub objects: Vec<String>,
+    /// Calls that read the key in their first argument.
+    #[serde(default)]
+    pub calls: Vec<String>,
+    /// Calls that read a connection string by name (the key `ConnectionStrings:<name>`).
+    #[serde(default)]
+    pub connection_strings: Vec<String>,
+    /// The section service discovery reads endpoints from (`services:<name>:<endpoint>:<n>`).
+    #[serde(default)]
+    pub services_section: Option<String>,
+    pub citation: String,
+}
+
+/// An orchestrator call that sets a variable in a project's environment to another resource's
+/// endpoint: `.WithEnvironment("Billing__Url", billing.GetEndpoint("https"))`.
+#[derive(Clone, Debug, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct EnvironmentDef {
+    pub id: String,
+    pub language: String,
+    pub calls: Vec<String>,
+    pub name_arg: usize,
+    pub value_arg: usize,
+    /// Calls on a resource that give its endpoint.
+    pub endpoints: Vec<String>,
+    pub citation: String,
 }
 
 #[derive(Clone, Debug, Default, Deserialize)]
@@ -304,6 +356,8 @@ pub struct TopologyCatalogue {
     pub never: Vec<Deployable>,
     pub orchestrators: Vec<Orchestrator>,
     pub clients: Vec<ClientDef>,
+    pub configuration: Vec<ConfigDef>,
+    pub environment: Vec<EnvironmentDef>,
     pub stores: Vec<StoreDef>,
     pub purposes: Purposes,
 }
@@ -346,6 +400,8 @@ impl TopologyCatalogue {
         let mut never = Vec::new();
         let mut orchestrators = Vec::new();
         let mut clients = Vec::new();
+        let mut configuration = Vec::new();
+        let mut environment = Vec::new();
         let mut stores = Vec::new();
         let mut purposes = Purposes::default();
         for (name, text) in FILES {
@@ -366,6 +422,8 @@ impl TopologyCatalogue {
             never.extend(file.never);
             orchestrators.extend(file.orchestrators);
             clients.extend(file.clients);
+            configuration.extend(file.configuration);
+            environment.extend(file.environment);
             stores.extend(file.stores);
             purposes
                 .default_data_subjects
@@ -380,6 +438,8 @@ impl TopologyCatalogue {
             .map(|d| (&d.id, &d.citation))
             .chain(orchestrators.iter().map(|o| (&o.id, &o.citation)))
             .chain(clients.iter().map(|c| (&c.id, &c.citation)))
+            .chain(configuration.iter().map(|c| (&c.id, &c.citation)))
+            .chain(environment.iter().map(|c| (&c.id, &c.citation)))
             .chain(stores.iter().map(|c| (&c.id, &c.citation)));
         for (id, citation) in citations {
             if citation.trim().len() < 3 {
@@ -417,6 +477,8 @@ impl TopologyCatalogue {
             never,
             orchestrators,
             clients,
+            configuration,
+            environment,
             stores,
             purposes,
         })

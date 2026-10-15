@@ -1,0 +1,9 @@
+{
+  "complete": false,
+  "gaps": ["unresolved_callee"],
+  "gap_impacts": {
+    "Uploader.Upload": "high",
+    "Uploader.Tag": "medium",
+    "Shell.Current.DisplayAlert": "low"
+  }
+}

@@ -99,6 +99,7 @@ pub fn render(doc: &Document) -> Value {
                 }
                 r["properties"]["gap"] = json!(g.id);
                 r["properties"]["gap_kind"] = json!(g.kind);
+                r["properties"]["gap_impact"] = json!(g.impact);
             } else if let Some(Loc { path, line, column }) = &f.location {
                 locations.push(json!({ "physicalLocation": physical(path, Some(*line), Some(*column)) }));
             }

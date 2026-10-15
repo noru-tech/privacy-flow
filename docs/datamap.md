@@ -62,12 +62,20 @@ systems:
   an egress DataFlow to a system of type "Third Party".
 - **To other systems.** A request sent through a registered client reaches the system its base
   address names ([`catalogue/topology/clients.yml`](../catalogue/topology/clients.yml)). The
-  client can be a typed `AddHttpClient<T>`, `axios.create({ baseURL })`, or an `httpx.Client` or
-  `aiohttp.ClientSession` with `base_url`. The address resolves to a system by the host names
-  systems are reached by:
-  - .NET Aspire `AddProject`/`AddDotnetProject` names;
+  client can be a typed `AddHttpClient<T>`, a named `AddHttpClient("billing", …)` used through
+  `CreateClient("billing")`, `axios.create({ baseURL })`, or an `httpx.Client` or
+  `aiohttp.ClientSession` with `base_url`. The base address can be set in the registration or a
+  `ConfigureHttpClient` chained on it. It is a literal, or a configuration key. The address
+  resolves to a system by the host names systems are reached by:
+  - .NET Aspire `AddProject`/`AddDotnetProject` names, also in a service discovery key
+    (`services:billing:https:0`) or a connection string;
+  - a key the Aspire app host sets to a project's endpoint in the sending project's environment
+    (`.WithEnvironment("Billing__Url", billing.GetEndpoint("https"))`);
   - docker-compose services (by their build context);
   - `systems: hosts:`.
+
+  `scan` uses the same bindings: such a request is internal, not a PF006 finding
+  ([ADR 0022](adr/0022-client-destinations.md)).
 - **To a destination the code does not name.** It gets a placeholder system,
   `unresolved_<class>_<file>`. Replace the key in your system's egress with the receiving
   system's, or declare the host; the placeholder then goes.

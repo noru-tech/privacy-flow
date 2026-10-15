@@ -1,5 +1,6 @@
 //! The repository's systems and the edges between them and their processors, for
-//! `piiflow datamap` (ADR 0018). `scan` and `diff` never run this: their output is unchanged.
+//! `piiflow datamap` (ADR 0018). `scan` runs only the client bindings, to say where requests
+//! through a registered client go ([`destinations`], ADR 0022).
 
 pub mod catalogue;
 pub mod clients;
@@ -38,9 +39,12 @@ pub fn wants(path: &str) -> bool {
         || name.ends_with(".prisma")
 }
 
-/// Detect the systems, bind requests to client registrations, attribute every flow, and
-/// derive the edges into `doc.topology`.
-pub fn build(doc: &mut Document, inp: &Inputs) {
+/// The systems with their aliases, and the requests bound to client registrations.
+fn bind(
+    inp: &Inputs,
+    defs: &crate::values::Defs,
+    sinks: &[report::SinkRec],
+) -> (systems::Systems, names::Names, clients::Bindings) {
     let mut sys = systems::detect(&systems::Inputs {
         program: inp.program,
         resolver: inp.resolver,
@@ -49,11 +53,10 @@ pub fn build(doc: &mut Document, inp: &Inputs) {
         catalogue: inp.catalogue,
         topo: inp.topo,
     });
-    let defs = crate::values::Defs::build(inp.program);
     let names = names::collect(
         &names::Inputs {
             program: inp.program,
-            defs: &defs,
+            defs,
             resolver: inp.resolver,
             topo: inp.topo,
             compose: inp.texts,
@@ -70,15 +73,67 @@ pub fn build(doc: &mut Document, inp: &Inputs) {
         &clients::Inputs {
             program: inp.program,
             facts: inp.facts,
-            defs: &defs,
+            defs,
             catalogue: inp.catalogue,
             topo: inp.topo,
             names: &names,
             systems: &closures,
         },
-        &doc.sinks,
+        sinks,
     );
     drop(closures);
+    (sys, names, bindings)
+}
+
+/// Record on each HTTP sink with a dynamic host where its client's base address sends it: to
+/// systems of the repository when every binding names one, or to one processor. A sink bound
+/// to both, or to two processors, keeps no destination. Returns whether any sink changed.
+pub fn destinations(doc: &mut Document, inp: &Inputs) -> bool {
+    let defs = crate::values::Defs::build(inp.program);
+    let (_, _, bindings) = bind(inp, &defs, &doc.sinks);
+    let mut changed = false;
+    for snk in &mut doc.sinks {
+        let Some(found) = bindings.resolved.get(&snk.id) else {
+            continue;
+        };
+        let mut systems: BTreeSet<String> = BTreeSet::new();
+        let mut processors: BTreeSet<String> = BTreeSet::new();
+        for (to, _) in found {
+            match to {
+                Endpoint::System { key } => {
+                    systems.insert(key.clone());
+                }
+                Endpoint::Processor { name, .. } => {
+                    processors.insert(name.clone());
+                }
+                Endpoint::Unresolved { .. } => {}
+            }
+        }
+        let (kind, targets) = match (systems.is_empty(), processors.len()) {
+            (false, 0) => ("internal", systems),
+            (true, 1) => ("processor", processors),
+            _ => continue,
+        };
+        snk.destination = Some(report::DestinationRec {
+            kind: kind.into(),
+            targets: targets.into_iter().collect(),
+            via: found
+                .iter()
+                .map(|(_, r)| r.clone())
+                .collect::<BTreeSet<_>>()
+                .into_iter()
+                .collect(),
+        });
+        changed = true;
+    }
+    changed
+}
+
+/// Detect the systems, bind requests to client registrations, attribute every flow, and
+/// derive the edges into `doc.topology`.
+pub fn build(doc: &mut Document, inp: &Inputs) {
+    let defs = crate::values::Defs::build(inp.program);
+    let (mut sys, names, bindings) = bind(inp, &defs, &doc.sinks);
     user_input(inp, &mut sys);
     let with_own: Vec<(String, &[bool], &[bool])> = sys
         .recs

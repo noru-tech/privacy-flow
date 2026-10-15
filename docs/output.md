@@ -14,9 +14,9 @@ The document separates **facts** from **judgements derived from them**:
 | `analysis` | Engine, `max_call_depth`, data maps ingested |
 | `policy`, `system`, `processors` | The effective policy and the declarations from `.privacy-flow.yml`, embedded so that `check` and `validate` need nothing else |
 | `sources` | Every source that starts a reported flow: kind, category, `needs_review`, the name it was classified by and by what, function, location, text, and for typed objects where the field is declared |
-| `sinks` | Every sink a reported flow ends at: catalogue ID, class, processor, `heuristic`, host (`literal`, `relative` or `dynamic`), function, location, text |
+| `sinks` | Every sink a reported flow ends at: catalogue ID, class, processor, `heuristic`, host (`literal`, `relative` or `dynamic`), function, location, text. A request with a dynamic host sent through a registered client whose base address names its destination also has a `destination`: `internal` with the system keys of the repository, or `processor` with the host, and `via`, the registrations ([ADR 0022](adr/0022-client-destinations.md)) |
 | `flows` | **Facts.** One per (source, sink, category): the call depth and the full `path` of hops, each with `kind` (`source`, `read`, `write`, `assign`, `concat`, `call`, `return`, `throw`, `error`, `sink`; `error` is a library call's error that may quote its arguments, and makes the finding one for review), `path`, `line`, `column` (Unicode code points, 1-based), the source text, the field a read or write touches, and a note |
-| `coverage` | **Facts.** `complete`, and every gap with its kind, detail, locations and the sources whose data reached it |
+| `coverage` | **Facts.** `complete`, and every gap with its kind, detail, locations, the sources whose data reached it, and its `impact` (`high`, `medium` or `low`) with the reason; gaps that can hide personal data come first ([ADR 0023](adr/0023-gap-impact.md)) |
 | `findings` | **Derived.** One per rule a flow or gap triggers: rule, severity, message, the flow or gap it is about, categories, processor, `needs_review`, `heuristic`, location, and the human `disposition` |
 | `egress` | **Derived.** Per processor (or dynamic host) and sink class: categories, whether declared, the citation, the flows |
 | `summary` | **Derived.** Counts by rule and severity, processors reached |
@@ -89,7 +89,7 @@ finding's disposition accepts that gap at every location it lists.
 | `--format` | File name inferred from | What |
 | --- | --- | --- |
 | `json` | `*.json` | The document above |
-| `table` | `*.txt` | A summary for terminals and CI logs; `info` findings counted, not listed |
+| `table` | `*.txt` | A summary for terminals and CI logs; `info` findings counted, not listed; gaps with their impact, most urgent first |
 | `sarif` | `*.sarif` | SARIF 2.1.0: one result per finding, `codeFlows` with every hop, `helpUri` to the rule page, `partialFingerprints` with the finding ID, dispositions as suppressions |
 | `fides` | `*.yml`, `*.yaml` | System `egress` declarations to merge into a Fides data map ([fides.md](fides.md)) |
 | `in-toto` | `*.intoto.json` | An unsigned in-toto Statement v1 over the scanned commit ([in-toto.md](in-toto.md)) |

@@ -23,6 +23,7 @@ by_class:
   http: { data_use: third_party_sharing, why: "data sent to an outside host" }
   third_party: { data_use: essential.service, why: "a service provider's SDK" }
   browser_storage: { data_use: functional.storage, why: "stored on the user's device" }
+  device_storage: { data_use: functional.storage, why: "stored on the user's device" }
 
 by_processor:
   SendGrid: { data_use: essential.service.notifications.email, why: "transactional email" }

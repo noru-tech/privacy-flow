@@ -6,6 +6,38 @@ All notable changes to this project are documented here. The format is based on
 
 ## [Unreleased]
 
+### Changed
+
+- **`scan` resolves requests through registered clients** ([ADR 0022](docs/adr/0022-client-destinations.md)).
+  It uses the bindings `datamap` already made: an HTTP call whose client's base address names a
+  system of the repository is internal, not a PF006 finding. One that names an outside host names
+  that processor. Sinks gain an optional `destination` (`internal` or `processor`, with the
+  registrations).
+  - **More clients bound:** named `HttpClient`s (`AddHttpClient("name", …)` with
+    `CreateClient("name")`), `ConfigureHttpClient` chained on a registration, and base addresses
+    read from configuration: service discovery keys, connection strings, and keys the .NET Aspire
+    app host sets to another project's endpoint (`WithEnvironment`).
+  - **Catalogue digest.** The flow catalogue's digest now covers `catalogue/topology/clients.yml`
+    and `systems.yml`.
+- **Coverage gaps have an impact** ([ADR 0023](docs/adr/0023-gap-impact.md)).
+  - **Levels:** `high` when personal data reaches the call, `medium` when only values that need
+    review do or when the gap exists whatever the data, `low` when the call only presents data in
+    the app's interface (`catalogue/presentation.yml`: .NET MAUI dialogs, navigation, bindable
+    properties, animations).
+  - **Where it shows:** gaps are listed most urgent first, the PFC01 message names the impact, a
+    low-impact gap is reported at `info` at most, and SARIF results carry `gap_impact`.
+  - **Schema:** gaps gain `impact` and `impact_reason`.
+- On dotnet/eShop:
+  - PF006 41 → 13: the web app's order and catalog calls and the webhook client's are internal;
+  - PFC01 27 → 25;
+  - flows 214 → 227.
+
+### Added
+
+- `device_storage`, a sink class for a native app's storage on the device: .NET MAUI (and
+  Xamarin.Essentials) `SecureStorage.SetAsync` and `Preferences.Set`, which were coverage gaps.
+  Like browser storage, its flows are reported and no rule fires on them.
+
 ## [0.4.0] - 2026-10-15
 
 `piiflow datamap` writes and maintains a full Fides data map of a repository: its systems, what

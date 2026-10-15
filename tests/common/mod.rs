@@ -3,7 +3,7 @@
 
 #![allow(dead_code)]
 
-use std::collections::BTreeSet;
+use std::collections::{BTreeMap, BTreeSet};
 use std::path::{Path, PathBuf};
 
 use privacy_flow::analyze::{self, EngineKind, Run, Tree};
@@ -76,6 +76,10 @@ pub struct Expect {
     pub flows: BTreeSet<(String, u32)>,
     pub complete: bool,
     pub gaps: Vec<String>,
+    /// Gap detail → its impact (`high`, `medium`, `low`).
+    pub gap_impacts: BTreeMap<String, String>,
+    /// `path:line` of a sink → `kind target…` of its destination.
+    pub destinations: BTreeMap<String, String>,
 }
 
 /// Read `expect: PF001 PF002` and `expect-flow` markers from every file, and fixture.json.
@@ -112,5 +116,17 @@ pub fn expectations(dir: &Path) -> Expect {
             .as_array()
             .map(|a| a.iter().map(|g| g.as_str().unwrap().to_string()).collect())
             .unwrap_or_default(),
+        gap_impacts: strings(&meta["gap_impacts"]),
+        destinations: strings(&meta["destinations"]),
     }
+}
+
+fn strings(v: &serde_json::Value) -> BTreeMap<String, String> {
+    v.as_object()
+        .map(|o| {
+            o.iter()
+                .map(|(k, v)| (k.clone(), v.as_str().unwrap().to_string()))
+                .collect()
+        })
+        .unwrap_or_default()
 }
