@@ -78,16 +78,16 @@ Try it on the demo in this repository, a sign-up function that logs, tracks and 
 
 ```console
 $ piiflow scan examples/demo -f table
-PF001  medium   pf-117ae3a9dc330b87  src/users.ts:14:3
+PF001  medium   pf-f9eecf0af7d241bc  src/users.ts:14:3
                 user.contact.email from `user.email (user: User)` (src/users.ts:12) reaches a log sink (js.pino) at src/users.ts:14
-PF002  high     pf-1951d7a5885d783b  src/users.ts:15:3
-                user.contact.email from `user.email (user: User)` (src/users.ts:12) reaches PostHog, a processor not declared in .privacy-flow.yml, at src/users.ts:15
-PF002  high     pf-25e5133d96887c7f  src/users.ts:17:9
+PF002  high     pf-fc2d508c092dd964  src/users.ts:15:3
+                user.contact.email, user.unique_id.pseudonymous from `user.id (user: User)` (src/users.ts:12) and 1 other source reaches PostHog, a processor not declared in .privacy-flow.yml, at src/users.ts:15
+PF002  high     pf-b636117398064a06  src/users.ts:17:9
                 user.contact.phone_number from `user.phone_number (user: User)` (src/users.ts:12) reaches OpenAI, a processor not declared in .privacy-flow.yml, at src/users.ts:17
-PF003  medium   pf-a064859c05ad24b5  src/users.ts:17:9
+PF003  medium   pf-309131a80c57fa82  src/users.ts:17:9
                 user.contact.phone_number from `user.phone_number (user: User)` (src/users.ts:12) reaches OpenAI through a model call at src/users.ts:17
 
-3 flow(s) from 2 source(s) to 3 sink(s); findings: PF001 1, PF002 2, PF003 1
+5 flow(s) from 3 source(s) to 4 sink(s); findings: PF001 1, PF002 2, PF003 1
 processors reached: OpenAI, PostHog
 coverage: complete
 ```
@@ -126,8 +126,8 @@ chain: `piiflow` does that for TypeScript, JavaScript, Python and C#, offline an
 and reports each path as a chain of `file:line:column` hops from the source to the sink.
 
 ```console
-$ piiflow explain pf-a064859c05ad24b5
-pf-a064859c05ad24b5 PF003 medium: user.contact.phone_number from `user.phone_number (user: User)` (src/users.ts:12) reaches OpenAI through a model call at src/users.ts:17
+$ piiflow explain pf-309131a80c57fa82
+pf-309131a80c57fa82 PF003 medium: user.contact.phone_number from `user.phone_number (user: User)` (src/users.ts:12) reaches OpenAI through a model call at src/users.ts:17
 flow-1b97b0cc5aa9541b (user.contact.phone_number, call depth 2):
    1. source  src/users.ts:12:30
       user.contact.phone_number (typed_object: User.phone_number, field declared at src/users.ts:10; classified by classification-table)

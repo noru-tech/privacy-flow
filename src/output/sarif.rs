@@ -1,4 +1,5 @@
-//! SARIF 2.1.0 with one code flow per finding: every hop from source to sink.
+//! SARIF 2.1.0, one result per finding: a code flow per flow of its exposure, with every hop from
+//! source to sink, and its sources as related locations.
 
 use serde_json::{Value, json};
 
@@ -87,12 +88,31 @@ pub fn render(doc: &Document) -> Value {
                 }
             });
             let mut locations = Vec::new();
-            if let Some(flow) = f.flow.as_deref().and_then(|id| flows.get(id)) {
+            let evidence: Vec<&crate::report::FlowRec> =
+                f.flows.iter().filter_map(|id| flows.get(id.as_str()).copied()).collect();
+            if let Some(flow) = evidence.first() {
                 if let Some(last) = flow.path.last() {
                     locations.push(json!({ "physicalLocation": physical(&last.path, Some(last.line), Some(last.column)) }));
                 }
-                r["codeFlows"] = json!([{ "threadFlows": [{ "locations": flow.path.iter().map(hop_location).collect::<Vec<_>>() }] }]);
-                r["properties"]["flow"] = json!(flow.id);
+                r["codeFlows"] = json!(evidence.iter().map(|fl| json!({
+                    "message": { "text": format!("{} ({})", fl.id, fl.category) },
+                    "threadFlows": [{ "locations": fl.path.iter().map(hop_location).collect::<Vec<_>>() }]
+                })).collect::<Vec<_>>());
+                // Each source once, in the order its first flow cites it.
+                let mut seen = std::collections::BTreeSet::new();
+                let related: Vec<Value> = evidence
+                    .iter()
+                    .filter_map(|fl| fl.path.first())
+                    .filter(|h| seen.insert((h.path.as_str(), h.line, h.column)))
+                    .enumerate()
+                    .map(|(i, h)| json!({
+                        "id": i,
+                        "physicalLocation": physical(&h.path, Some(h.line), Some(h.column)),
+                        "message": { "text": format!("source: {}", h.text) }
+                    }))
+                    .collect();
+                r["relatedLocations"] = json!(related);
+                r["properties"]["flows"] = json!(f.flows);
             } else if let Some(g) = f.gap.as_deref().and_then(|id| gaps.get(id)) {
                 if let Some(l) = g.locations.first() {
                     locations.push(json!({ "physicalLocation": physical(&l.path, l.line, l.column) }));

@@ -229,7 +229,7 @@ fn every_format_renders_and_infers_from_the_file_name() {
     let tmp = copy_fixture("py/pf004-fail");
     for (name, needle) in [
         ("out.sarif", "\"version\":\"2.1.0\""),
-        ("out.json", "\"schema_version\":\"0.1\""),
+        ("out.json", "\"schema_version\":\"0.2\""),
         ("out.yml", "egress:"),
     ] {
         let path = tmp.path().join(name);
@@ -284,18 +284,116 @@ fn in_toto_statement_names_the_commit_and_validates() {
 }
 
 #[test]
-fn diff_reports_only_introduced_findings() {
+fn one_finding_per_exposure_and_dispositions_follow_its_evidence() {
     let tmp = tempfile::tempdir().unwrap();
     let dir = tmp.path();
     std::fs::create_dir_all(dir.join("src")).unwrap();
-    std::fs::write(
-        dir.join("src/a.ts"),
-        "export function f(u: { email: string }) {\n  console.log(u.email);\n}\n",
-    )
-    .unwrap();
+    let path = dir.join(".privacy-flow/flows.json");
+    // The log call stays the same; what reaches it changes.
+    let write = |extra: &str| {
+        std::fs::write(
+            dir.join("src/a.ts"),
+            format!("export function f(u: {{ email: string; phone: string; first_name: string }}) {{\n  const extra = {extra};\n  console.log(u.email, extra);\n}}\n"),
+        )
+        .unwrap()
+    };
+    let scan = || -> serde_json::Value {
+        piiflow()
+            .args(["scan", "-q", "--walk"])
+            .arg(dir)
+            .assert()
+            .code(0);
+        serde_json::from_str(&std::fs::read_to_string(&path).unwrap()).unwrap()
+    };
+    let save = |doc: &serde_json::Value| {
+        std::fs::write(&path, serde_json::to_string_pretty(doc).unwrap()).unwrap()
+    };
+    let accepted = serde_json::json!({
+        "status": "accepted", "owner": "privacy@example.com", "decided_at": "2026-09-01",
+        "expires_at": null, "rationale": "the log is redacted at the collector", "remediated_at": null
+    });
+
+    // One log call, two fields: one finding, both categories, both flows as its evidence.
+    write("u.phone");
+    let mut doc = scan();
+    assert_eq!(doc["findings"].as_array().unwrap().len(), 1, "{doc}");
+    let finding = &doc["findings"][0];
+    assert_eq!(
+        finding["categories"],
+        serde_json::json!(["user.contact.email", "user.contact.phone_number"])
+    );
+    assert_eq!(finding["flows"].as_array().unwrap().len(), 2);
+    let first = finding["id"].clone();
+    doc["findings"][0]["disposition"] = accepted.clone();
+    save(&doc);
+    piiflow().arg("validate").arg(&path).assert().code(0);
+
+    // The same exposure keeps its ID and its decision.
+    let doc = scan();
+    assert_eq!(doc["findings"][0]["id"], first);
+    assert_eq!(doc["findings"][0]["disposition"], accepted);
+
+    // Fewer categories: a new ID, and the decision still covers it.
+    write("\"n/a\"");
+    let doc = scan();
+    assert_ne!(doc["findings"][0]["id"], first);
+    assert_eq!(doc["findings"][0]["disposition"], accepted);
+
+    // A category the decision did not cover: the exposure is open again.
+    write("u.first_name");
+    let doc = scan();
+    assert_eq!(doc["findings"].as_array().unwrap().len(), 1, "{doc}");
+    assert_eq!(doc["findings"][0]["disposition"], serde_json::Value::Null);
+
+    // A document of schema 0.1 had one finding per flow. Decisions on every flow of an exposure
+    // carry to it; one flow left open leaves it open.
+    write("u.phone");
+    let doc = scan();
+    let legacy = |open: Option<usize>| {
+        let mut old = doc.clone();
+        old["schema_version"] = "0.1".into();
+        old["findings"] = doc["flows"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .enumerate()
+            .map(|(i, fl)| {
+                serde_json::json!({
+                    "id": format!("pf-{i:016x}"), "rule_id": "PF001", "flow": fl["id"],
+                    "gap": null, "categories": [fl["category"]],
+                    "disposition": if open == Some(i) { serde_json::Value::Null } else { accepted.clone() }
+                })
+            })
+            .collect();
+        old
+    };
+    save(&legacy(None));
+    assert_eq!(scan()["findings"][0]["disposition"], accepted);
+    save(&legacy(Some(1)));
+    assert_eq!(
+        scan()["findings"][0]["disposition"],
+        serde_json::Value::Null
+    );
+}
+
+#[test]
+fn diff_reports_introduced_and_changed_findings() {
+    let tmp = tempfile::tempdir().unwrap();
+    let dir = tmp.path();
+    std::fs::create_dir_all(dir.join("src")).unwrap();
+    let a = |extra: &str| {
+        std::fs::write(
+            dir.join("src/a.ts"),
+            format!("export function f(u: {{ email: string; phone: string }}) {{\n  const extra = {extra};\n  console.log(u.email, extra);\n}}\n"),
+        )
+        .unwrap()
+    };
+    a("\"n/a\"");
     git(dir, &["init", "-q", "-b", "main"]);
     git(dir, &["add", "."]);
     git(dir, &["commit", "-q", "-m", "base"]);
+    // The log call gains a category (a changed exposure); PostHog is new (an introduced one).
+    a("u.phone");
     std::fs::write(
         dir.join("src/b.ts"),
         "import { PostHog } from 'posthog-node';\nconst ph = new PostHog('k');\nexport function g(u: { email: string }) {\n  ph.capture({ distinctId: 'x', event: 'e', properties: { email: u.email } });\n}\n",
@@ -319,8 +417,14 @@ fn diff_reports_only_introduced_findings() {
         .iter()
         .map(|f| f["rule_id"].as_str().unwrap())
         .collect();
-    assert_eq!(rules, vec!["PF002"], "only the new flow is reported: {doc}");
+    assert_eq!(
+        rules,
+        vec!["PF001", "PF002"],
+        "unchanged findings are left out: {doc}"
+    );
     assert_eq!(doc["diff"]["introduced"], 1);
+    assert_eq!(doc["diff"]["changed"], 1);
+    assert_eq!(doc["diff"]["removed"], 0);
     piiflow().arg("validate").arg(&out).assert().code(0);
     // Against the working tree, and a bad range.
     piiflow()
@@ -516,14 +620,19 @@ fn explain_works_for_every_finding_of_every_fixture() {
                         .is_some_and(|(n, _)| n.parse::<u32>().is_ok())
                 })
                 .count();
-            match finding["flow"].as_str() {
-                Some(flow) => assert_eq!(
+            let evidence = finding["flows"].as_array().unwrap();
+            match evidence.is_empty() {
+                // Every flow of the exposure, hop by hop.
+                false => assert_eq!(
                     shown,
-                    flows[flow],
-                    "{}: {id} must show one source line per hop:\n{text}",
+                    evidence
+                        .iter()
+                        .map(|f| flows[f.as_str().unwrap()])
+                        .sum::<usize>(),
+                    "{}: {id} must show one source line per hop of each flow:\n{text}",
                     dir.display()
                 ),
-                None => assert!(
+                true => assert!(
                     shown >= 1,
                     "{}: {id} must cite at least one location:\n{text}",
                     dir.display()

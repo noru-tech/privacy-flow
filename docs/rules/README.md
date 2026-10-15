@@ -20,12 +20,20 @@ except PFC01: an open coverage gap always makes `check` exit 4, whatever the thr
 
 ## How findings come from flows
 
-A finding is a judgement about a **flow**: one source (where personal data enters a value), one
-sink (where it leaves), one category, and the full chain of `file:line:column` hops between them.
-The rules read only the flow facts in the output document, the embedded policy and the declared
-processors, so `piiflow validate` recomputes every finding and rejects a document whose findings
-do not follow. One flow can produce more than one finding (an email address sent to an undeclared
-LLM provider is PF002 and PF003): they are different obligations.
+A rule judges each **flow**: one source (where personal data enters a value), one sink (where it
+leaves), one category, and the full chain of `file:line:column` hops between them. The rules read
+only the flow facts in the output document, the embedded policy and the declared processors, so
+`piiflow validate` recomputes every finding and rejects a document whose findings do not follow.
+One flow can fire more than one rule (an email address sent to an undeclared LLM provider is PF002
+and PF003): they are different obligations.
+
+A finding is an **exposure**: one rule at one sink ([ADR 0020](../adr/0020-findings-by-exposure.md)).
+Every flow the rule fires on at that sink is evidence for the same finding, which lists them
+in `flows` and carries all their categories; its severity is the highest of theirs. A log call
+that receives a whole address is one PF001 finding with five categories, not five findings. Flows
+that need review (`needs_review`) are a finding of their own at the same sink, so a decision about
+data that is certainly personal is never mixed with one about names that only may be. The same
+data reaching another log call is another exposure, and another finding.
 
 Two adjustments apply to every rule:
 
