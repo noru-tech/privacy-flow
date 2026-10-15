@@ -132,6 +132,15 @@ pub fn load_datamaps(tree: &Tree, config: &Config, listing: &Listing) -> Result<
             .get(&p)
             .with_context(|| format!("data map {p} not found"))?;
         let text = String::from_utf8(bytes).with_context(|| format!("{p} is not UTF-8"))?;
+        // A data map `piiflow datamap` maintains is its own output: reading it back would feed
+        // the analysis what it generated. Decisions for the analysis go in `fields:`.
+        if text
+            .lines()
+            .take(3)
+            .any(|l| l.contains(crate::datamap::generate::MARKER))
+        {
+            continue;
+        }
         out.push(Datamap::parse(&p, &text)?);
     }
     Ok(out)

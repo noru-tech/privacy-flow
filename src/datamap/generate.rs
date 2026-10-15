@@ -63,6 +63,9 @@ impl Flow {
     }
 }
 
+/// What marks a data map as one `piiflow datamap` maintains (its first header line).
+pub const MARKER: &str = "written by `piiflow datamap`";
+
 /// The comment at the top of a generated data map.
 pub const HEADER: &[&str] = &[
     "A Fides data map (Fideslang 3.1.3) of this repository, written by `piiflow datamap`.",

@@ -105,9 +105,20 @@ pub struct DatamapArgs {
     /// Directory to analyse.
     #[arg(default_value = ".")]
     pub path: PathBuf,
-    /// The data map to write (default: .fides/datamap.yml in the directory).
+    /// The data map to maintain (default: .fides/datamap.yml in the directory). An existing map
+    /// is merged into: your changes stay, untouched values follow the code.
     #[arg(short, long)]
     pub output: Option<PathBuf>,
+    /// What piiflow generated last, the base of the merge (default: beside the map,
+    /// `<name>.lock.json`). Commit it with the map.
+    #[arg(long)]
+    pub lock: Option<PathBuf>,
+    /// Write nothing; exit 5 if the map or its lock would change.
+    #[arg(long, conflicts_with = "dry_run")]
+    pub check: bool,
+    /// Write nothing; print the merged map to stdout.
+    #[arg(long)]
+    pub dry_run: bool,
     /// Also write the flow-facts document, with its topology, to this file (JSON).
     #[arg(long)]
     pub facts: Option<PathBuf>,
@@ -495,27 +506,130 @@ fn datamap(a: DatamapArgs, quiet: bool) -> Outcome {
     if let Some(f) = a.facts {
         emit(&doc, Some(f), Some(Format::Json), PathBuf::new(), quiet)?;
     }
-    let text = crate::datamap::render_generated(&doc);
     let out = a.output.unwrap_or_else(|| root.join(DEFAULT_DATAMAP));
+    let lock_path = a
+        .lock
+        .unwrap_or_else(|| crate::datamap::lock::path_for(&out));
+    let existing_text = std::fs::read_to_string(&out).ok();
+    let existing = match &existing_text {
+        Some(t) => Some(
+            crate::datamap::yaml::parse(t)
+                .map_err(|e| invalid(anyhow!("{}: {e}", out.display())))?,
+        ),
+        None => None,
+    };
+    let lock_text = std::fs::read_to_string(&lock_path).ok();
+    let base = match (&lock_text, &existing) {
+        // A lock without its map: start again.
+        (Some(t), Some(_)) => Some(
+            crate::datamap::lock::parse(t)
+                .map_err(|e| invalid(anyhow!("{}: {e}", lock_path.display())))?,
+        ),
+        _ => None,
+    };
+    if existing.is_some() && base.is_none() {
+        status(
+            quiet,
+            format!(
+                "warning: {} has no lock ({}): your file is kept as it is and nothing it holds is updated; commit the lock this run writes",
+                out.display(),
+                lock_path.display()
+            ),
+        );
+    }
+    if let Some(t) = &existing_text {
+        let hand = t
+            .lines()
+            .filter(|l| {
+                let l = l.trim_start();
+                l.starts_with('#') && !l.starts_with("#:")
+            })
+            .filter(|l| {
+                let body = l.trim_start().trim_start_matches('#').trim();
+                !crate::datamap::generate::HEADER.contains(&body) && !body.is_empty()
+            })
+            .count();
+        if hand > 0 {
+            status(
+                quiet,
+                format!(
+                    "warning: {hand} comment line(s) in {} are not kept; use a description field",
+                    out.display()
+                ),
+            );
+        }
+    }
+    let generated = crate::datamap::generate::generate(&doc);
+    let (merged, report) =
+        crate::datamap::merge::merge(base.as_ref(), existing.as_ref(), &generated);
+    for line in report.lines() {
+        status(quiet, format!("note: {line}"));
+    }
+    for problem in crate::datamap::validate::check(&merged) {
+        status(quiet, format!("warning: not valid Fideslang: {problem}"));
+    }
+    let header: Vec<String> = crate::datamap::generate::HEADER
+        .iter()
+        .map(|s| s.to_string())
+        .collect();
+    let text = crate::datamap::yaml::render(&header, &merged);
+    let new_lock = crate::datamap::lock::render(&generated).map_err(invalid)?;
+    let coverage = if doc.coverage.complete {
+        Exit::Ok
+    } else {
+        Exit::CoverageIncomplete
+    };
+    if a.check {
+        let normal = |t: &str| -> String {
+            t.replace("\r\n", "\n")
+                .lines()
+                .filter(|l| !l.trim_start().starts_with("#:"))
+                .collect::<Vec<_>>()
+                .join("\n")
+        };
+        let map_drift = existing_text
+            .as_deref()
+            .is_none_or(|t| normal(t) != normal(&text));
+        let lock_drift = lock_text.as_deref() != Some(new_lock.as_str());
+        if map_drift || lock_drift {
+            status(
+                quiet,
+                format!(
+                    "{} is out of date{}: run `piiflow datamap` and commit the map and its lock",
+                    out.display(),
+                    match (map_drift, lock_drift) {
+                        (true, true) => " (map and lock)",
+                        (true, false) => " (map)",
+                        _ => " (lock)",
+                    }
+                ),
+            );
+            return Ok(Exit::OutOfDate);
+        }
+        status(quiet, format!("{} is up to date", out.display()));
+        return Ok(coverage);
+    }
+    if a.dry_run {
+        print!("{text}");
+        return Ok(coverage);
+    }
     write_output(Some(&out), &text).map_err(invalid)?;
+    write_output(Some(&lock_path), &new_lock).map_err(invalid)?;
     if let Some(t) = &doc.topology {
         status(
             quiet,
             format!(
-                "wrote {}: {} system(s) in the repository ({}), {} edge(s); {}",
+                "wrote {} and its lock: {} system(s) in the repository ({}), {} dataset(s), {} declaration(s) to review; {}",
                 out.display(),
                 t.systems.len(),
                 t.mode,
-                t.edges.len(),
+                t.datasets.len(),
+                t.declarations.len(),
                 summary_line(&doc)
             ),
         );
     }
-    Ok(if doc.coverage.complete {
-        Exit::Ok
-    } else {
-        Exit::CoverageIncomplete
-    })
+    Ok(coverage)
 }
 
 // ------------------------------------------------------------------------------- diff

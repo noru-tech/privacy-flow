@@ -3,6 +3,9 @@
 
 pub mod generate;
 pub mod ingest;
+pub mod lock;
+pub mod merge;
+pub mod validate;
 pub mod yaml;
 
 pub use ingest::*;
