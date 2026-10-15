@@ -60,7 +60,8 @@ error: expected BASE..HEAD or BASE.., got "HEAD"
 An input could not be used: `.privacy-flow.yml` is not valid YAML, does not conform to
 [its schema](../schemas/config.schema.json) (a missing citation, an unknown key, `PFC01`
 disabled), or names a category that is not in the vendored Fideslang taxonomy; a data map is
-missing or malformed; or a flow-facts document does not validate (schema, digest, findings that
+missing or malformed, or `datamap` would write one that is not valid Fideslang; or a flow-facts
+document does not validate (schema, digest, findings that
 do not follow from its flows, a malformed disposition). No output is written for invalid input.
 
 ```console

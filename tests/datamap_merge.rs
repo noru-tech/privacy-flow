@@ -210,3 +210,68 @@ fn privacy_datamap_decisions_win() {
     assert!(!system(&map(d), "shop_api").contains("marketing.communications"));
     assert_eq!(datamap(d, &["--check"]), 0);
 }
+
+#[test]
+fn incomplete_declarations_are_proposals_not_declarations() {
+    let tmp = copy_fixture("ts/multi-service");
+    let d = tmp.path();
+    std::fs::create_dir_all(d.join(".noru")).unwrap();
+    std::fs::write(
+        d.join(".noru/privacy-datamap.yml"),
+        "version: 0.1.0\npiece: privacy-datamap\nsystem:\n  - fides_key: crm\n    name: CRM\n    system_type: Service\n    privacy_declarations:\n      - name: \"\"\n        data_use: \"\"\n        data_categories: [user.financial.credit_card]\n      - name: Sync contacts\n        data_use: essential.service\n        data_categories: [user.contact.email]\n        needs_review: true\n",
+    )
+    .unwrap();
+    assert_eq!(datamap(d, &[]), 0);
+    let crm = system(&map(d), "crm").to_string();
+    let (meta, decls) = crm.split_once("privacy_declarations:").unwrap();
+    assert!(
+        meta.contains("proposals:") && meta.contains("user.financial.credit_card"),
+        "{crm}"
+    );
+    assert!(!decls.contains("name: \"\""), "{crm}");
+    // A manifest declaration nobody decided stays under review.
+    assert!(decls.contains("Sync contacts"), "{crm}");
+    assert!(
+        meta.contains("needs_review:\n          - \"Sync contacts\""),
+        "{crm}"
+    );
+    assert_eq!(datamap(d, &["--check"]), 0);
+
+    // A data use a person emptied: a proposal, kept across runs.
+    edit(
+        &d.join(".fides/datamap.yml"),
+        "data_use: \"analytics.reporting\"",
+        "data_use: \"\"",
+    );
+    assert_eq!(datamap(d, &[]), 0);
+    let api = system(&map(d), "shop_api").to_string();
+    let (meta, decls) = api.split_once("privacy_declarations:").unwrap();
+    assert!(meta.contains("INCOMPLETE: no data use"), "{api}");
+    assert!(!decls.contains("Analytics for Reporting"), "{api}");
+    let text = map(d);
+    assert_eq!(datamap(d, &[]), 0);
+    assert_eq!(map(d), text);
+    assert_eq!(datamap(d, &["--check"]), 0);
+}
+
+#[test]
+fn a_map_that_would_not_be_valid_fideslang_is_not_written() {
+    let tmp = copy_fixture("ts/multi-service");
+    let d = tmp.path();
+    assert_eq!(datamap(d, &[]), 0);
+    let m = d.join(".fides/datamap.yml");
+    edit(&m, "    system_type: \"Service\"\n", "");
+    let edited = map(d);
+    let out = Command::new(env!("CARGO_BIN_EXE_piiflow"))
+        .args(["datamap", "--walk"])
+        .arg(d)
+        .output()
+        .unwrap();
+    assert_eq!(out.status.code(), Some(3));
+    let err = String::from_utf8_lossy(&out.stderr);
+    assert!(
+        err.contains("would not be valid Fideslang") && err.contains("system_type is required"),
+        "{err}"
+    );
+    assert_eq!(map(d), edited);
+}
