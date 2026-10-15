@@ -45,7 +45,7 @@ DOI for the corpus. See the protocol in [docs/benchmark.md](docs/benchmark.md#pr
   [ADR 0019](docs/adr/0019-datamap-merge.md)): `piiflow datamap` writes and maintains a full
   Fides data map. Next:
   - gRPC clients, and `AddHttpClient<TClient, TImplementation>` (named clients and Aspire
-    environment URLs resolve since [ADR 0022](docs/adr/0022-client-destinations.md));
+    environment URLs resolve since 0.5.0, [ADR 0022](docs/adr/0022-client-destinations.md));
   - message buses between services;
   - TypeORM and SQLModel, then Mongoose, Sequelize and Drizzle;
   - an option to analyse each system separately.
