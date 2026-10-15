@@ -605,17 +605,32 @@ fn datamap(a: DatamapArgs, quiet: bool) -> Outcome {
         manifest_notes =
             crate::datamap::manifest::apply(&mut generated, m, &roots, a.as_of.as_deref());
     }
+    // Incomplete declarations are proposals, never filled in: in the lock too.
+    let mut moved = crate::datamap::validate::quarantine(&mut generated);
     let (mut merged, report) =
         crate::datamap::merge::merge(base.as_ref(), existing.as_ref(), &generated);
     // The manifest's decisions win over edits of the map too.
     if let Some(m) = &manifest {
         crate::datamap::manifest::apply(&mut merged, m, &roots, a.as_of.as_deref());
     }
-    for line in report.lines().into_iter().chain(manifest_notes) {
+    moved.extend(crate::datamap::validate::quarantine(&mut merged));
+    moved.sort();
+    moved.dedup();
+    for line in report
+        .lines()
+        .into_iter()
+        .chain(manifest_notes)
+        .chain(moved)
+    {
         status(quiet, format!("note: {line}"));
     }
-    for problem in crate::datamap::validate::check(&merged) {
-        status(quiet, format!("warning: not valid Fideslang: {problem}"));
+    let problems = crate::datamap::validate::check(&merged);
+    if !problems.is_empty() {
+        return Err(invalid(anyhow!(
+            "{} would not be valid Fideslang, so nothing is written:\n  {}",
+            out.display(),
+            problems.join("\n  ")
+        )));
     }
     let header: Vec<String> = crate::datamap::generate::HEADER
         .iter()

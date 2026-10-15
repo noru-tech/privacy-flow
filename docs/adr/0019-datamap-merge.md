@@ -84,3 +84,20 @@ Decisions for the analysis go in `fields:`.
   purposes, legal bases, RoPA, and topology across repositories stay closed.
 - **Limitations:** hand-written comments are not kept; proposals are coarse; logs are not
   declared; `customer` is the default subject; rename detection needs the evidence unchanged.
+
+## Amendment, 2026-10-15: incomplete declarations are proposals; an invalid map is not written
+
+A v0.4.0 run on eShop produced declarations with an empty `name` and `data_use`, which Fides
+rejects. They came from a privacy-datamap manifest. Its systems that the code does not have were
+copied in whole, including declarations nobody had decided. The validator only warned.
+
+- **A declaration without a name or a data use is not one.** It is moved to its system's
+  `meta.privacy_flow.proposals`, and out of `needs_review`, with a `#: INCOMPLETE: …` comment.
+  This happens in the generation (so the lock agrees) and in the merged map (so it covers a
+  person's edits). The proposals list merges as one value. Nothing is filled in: a placeholder
+  purpose is the judgement this ADR keeps from the tool.
+- **Undecided manifest declarations stay under review** when their system is one only the
+  manifest has.
+- **The map is valid or it is not written.** If the merged map still breaks a rule `validate`
+  checks, `datamap` exits 3 and names each problem. Such a problem can only come from a person's
+  edits. The checks include a declaration's name.

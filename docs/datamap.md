@@ -121,6 +121,25 @@ changes (a new category, a new egress), it goes back under review. Logs give no 
 logging is not a purpose. Legal bases, retention and the rest are yours to add; piiflow keeps
 them.
 
+A declaration needs a name and a data use. piiflow never makes them up, whether the declaration
+comes from a privacy-datamap manifest or from your edits. A declaration without them is moved out
+of `privacy_declarations` into the system's `meta.privacy_flow.proposals`, and out of
+`needs_review`:
+
+```yaml
+    meta:
+      privacy_flow:
+        proposals:
+          #: INCOMPLETE: no data use, so not a Fideslang declaration; complete it and move it to privacy_declarations
+          - name: "Send receipts"
+            data_use: ""
+            data_categories:
+              - "user.contact.email"
+    privacy_declarations: []
+```
+
+To keep it, give it a name and a data use and move it back into `privacy_declarations`.
+
 ## Re-runs: your edits stay
 
 The lock, `.fides/datamap.lock.json`, holds what piiflow generated last. Commit it with the map.
@@ -155,7 +174,9 @@ decision is a collection or declaration with an `interpretation` and no `needs_r
 - **Declarations.** A decided declaration replaces its system's proposal and leaves the review
   list. Systems match by key, or by privacy-datamap's root-path key (`apps/api` →
   `apps_api`).
-- **What only the manifest has.** Its datasets and systems are included.
+- **What only the manifest has.** Its datasets and systems are included. Declarations of such a
+  system that are not decided are listed in its `needs_review`. A declaration with no name or no
+  data use is listed as a proposal (see [Privacy declarations](#privacy-declarations)).
 - **Expired decisions** still apply, and are reported against `--as-of`.
 - **Read-only.** piiflow never writes the manifest; `--no-manifest` ignores it.
 
@@ -189,7 +210,8 @@ runs it with `datamap-check: true`.
 | `--facts FILE` | | Also write the flow-facts document, with its [`topology`](output.md) |
 | `--config`, `--walk` | | As for `scan` |
 
-Exit codes: 0, 3 (a map, lock or manifest that cannot be read: nothing is written), 4
+Exit codes: 0, 3 (a map, lock or manifest that cannot be read, or a merged map that would not
+be valid Fideslang: nothing is written), 4
 (coverage incomplete), 5 (`--check`: out of date). See [exit codes](exit-codes.md).
 
 ## Fides compatibility
@@ -200,10 +222,13 @@ Exit codes: 0, 3 (a map, lock or manifest that cannot be read: nothing is writte
   - DataFlow types, and the key `user` with the type `user`;
   - declarations that name only their system's own DataFlows.
 
-  Problems in what you added are reported as warnings. CI loads every generated golden with
+  A map that would break these rules is not written: piiflow exits 3 and names each problem,
+  which is always in what you edited or added. Declarations without a name or a data use are
+  moved to proposals first, so they never stop a run. CI loads every generated golden with
   `fideslang` itself.
 - **Machine-readable markers.** These live under `meta.privacy_flow`: `needs_review` on systems
-  and datasets, and `unresolved` on placeholder systems.
+  and datasets, `proposals` (incomplete declarations) on systems, and `unresolved` on
+  placeholder systems.
 - **Merging into another data map.** The receiving systems are referenced by key, and the Fides
   server expects them to exist in the data map you push.
 

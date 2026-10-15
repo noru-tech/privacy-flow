@@ -62,6 +62,8 @@ fn identity(list_key: &str, item: &Node) -> Option<String> {
     match list_key {
         "dataset" | "system" => get("fides_key"),
         "collections" | "fields" | "privacy_declarations" => get("name"),
+        // Incomplete declarations have no name to tell them apart: the list is one value.
+        "proposals" => None,
         "egress" | "ingress" => Some(format!(
             "{}:{}",
             get("type").unwrap_or_default(),
@@ -564,7 +566,36 @@ fn accept(
     (theirs, back)
 }
 
-fn set_needs_review(sm: &mut Vec<(String, Node)>, names: Vec<String>) {
+/// A system's `meta.privacy_flow`, made if it is not there.
+pub(crate) fn privacy_flow_mut(sm: &mut Vec<(String, Node)>) -> Option<&mut Vec<(String, Node)>> {
+    let mi = match sm.iter().position(|(k, _)| k == "meta") {
+        Some(i) => i,
+        None => {
+            let at = sm
+                .iter()
+                .position(|(k, _)| k == "system_type")
+                .map_or(sm.len(), |i| i + 1);
+            sm.insert(at, ("meta".into(), Node::Map(Vec::new())));
+            at
+        }
+    };
+    let Node::Map(mm) = sm[mi].1.bare_mut() else {
+        return None;
+    };
+    let pi = match mm.iter().position(|(k, _)| k == "privacy_flow") {
+        Some(i) => i,
+        None => {
+            mm.push(("privacy_flow".into(), Node::Map(Vec::new())));
+            mm.len() - 1
+        }
+    };
+    match mm[pi].1.bare_mut() {
+        Node::Map(pm) => Some(pm),
+        _ => None,
+    }
+}
+
+pub(crate) fn set_needs_review(sm: &mut Vec<(String, Node)>, names: Vec<String>) {
     let list = Node::strs(names.clone());
     let pf = Node::Map(vec![("needs_review".into(), list)]);
     match sm.iter_mut().find(|(k, _)| k == "meta") {
@@ -572,10 +603,17 @@ fn set_needs_review(sm: &mut Vec<(String, Node)>, names: Vec<String>) {
             if let Node::Map(mm) = meta.bare_mut() {
                 match mm.iter_mut().find(|(k, _)| k == "privacy_flow") {
                     Some((_, p)) => {
+                        // In place: the keys keep their order across runs.
                         if let Node::Map(pm) = p.bare_mut() {
-                            pm.retain(|(k, _)| k != "needs_review");
-                            if !names.is_empty() {
-                                pm.push(("needs_review".into(), Node::strs(names)));
+                            match pm.iter().position(|(k, _)| k == "needs_review") {
+                                Some(i) if names.is_empty() => {
+                                    pm.remove(i);
+                                }
+                                Some(i) => pm[i].1 = Node::strs(names),
+                                None if !names.is_empty() => {
+                                    pm.push(("needs_review".into(), Node::strs(names)))
+                                }
+                                None => {}
                             }
                         }
                     }
