@@ -32,29 +32,33 @@ pub fn render(doc: &Document) -> String {
             .unwrap_or("an uncommitted tree")
     );
 
-    // Names that are only maybe personal, grouped by name.
+    // Names that are only maybe personal, grouped by name. A finding gathers every flow of its
+    // exposure, so it is listed under each name its sources have.
     let mut by_name: std::collections::BTreeMap<String, Vec<&crate::report::FindingRec>> =
         Default::default();
+    let mut queued = 0;
     for f in doc
         .findings
         .iter()
         .filter(|f| f.rule_id != "PFC01" && f.needs_review)
         .filter(open)
     {
-        let name = f
-            .flow
-            .as_deref()
-            .and_then(|id| flows.get(id))
-            .and_then(|fl| sources.get(fl.source.as_str()))
+        queued += 1;
+        let names: std::collections::BTreeSet<String> = f
+            .flows
+            .iter()
+            .filter_map(|id| flows.get(id.as_str()))
+            .filter_map(|fl| sources.get(fl.source.as_str()))
             .map(|s| s.name.clone())
-            .unwrap_or_default();
-        by_name.entry(name).or_default().push(f);
+            .collect();
+        if names.is_empty() {
+            by_name.entry(String::new()).or_default().push(f);
+        }
+        for name in names {
+            by_name.entry(name).or_default().push(f);
+        }
     }
-    let _ = writeln!(
-        out,
-        "## Data that may be personal ({} finding(s))\n",
-        by_name.values().map(Vec::len).sum::<usize>()
-    );
+    let _ = writeln!(out, "## Data that may be personal ({queued} finding(s))\n");
     if by_name.is_empty() {
         out.push_str("None.\n\n");
     } else {

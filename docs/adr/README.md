@@ -24,5 +24,7 @@ what follows. Records are never rewritten; a reversal is a new record that super
 | [0017](0017-dispatch.md) | Dispatchers: library calls that reach the project's handlers | Accepted |
 | [0018](0018-systems-and-datasets.md) | Systems and datasets within a repository | Accepted |
 | [0019](0019-datamap-merge.md) | A full data map, merged in place, with proposals as data | Accepted |
+| [0020](0020-findings-by-exposure.md) | A finding is an exposure, and its flows are the evidence | Accepted |
+| [0021](0021-uncertain-findings-and-identifiers-of-things.md) | Data of undetermined category is uncertain, and identifiers of things are not personal data | Accepted |
 | [0022](0022-client-destinations.md) | `scan` resolves requests through registered clients | Accepted |
 | [0023](0023-gap-impact.md) | Coverage gaps are ranked by impact; device storage is a sink | Accepted |

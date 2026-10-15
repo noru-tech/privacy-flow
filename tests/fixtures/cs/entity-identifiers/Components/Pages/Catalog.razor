@@ -1,0 +1,23 @@
+@page "/catalog/{ItemId:int}"
+@inject CatalogService Catalog
+
+@code {
+    [Parameter]
+    public int ItemId { get; set; }
+
+    [SupplyParameterFromQuery(Name = "brand")]
+    public int[]? BrandIds { get; set; }
+
+    [SupplyParameterFromQuery(Name = "type")]
+    public int? ItemTypeId { get; set; }
+
+    [SupplyParameterFromQuery(Name = "q")]
+    public string? Search { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await Catalog.GetItem(ItemId);
+        await Catalog.Find(BrandIds, ItemTypeId);
+        await Catalog.Search(Search);
+    }
+}

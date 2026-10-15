@@ -80,6 +80,9 @@ eShop at `dc7ea499`:
 | `low` | — | 5 (navigation, dialog, bindable property, two animation calls), at `info` |
 | Flows | 214 | 227 (13 to device storage) |
 
+Measured on 0.4.0. With ADRs 0020 and 0021 the gaps and their impacts are the same, and flows
+go from 208 to 221.
+
 ## Consequences
 
 - `tests/fixtures/cs/gap-impact` has a gap of each impact and two device-storage sinks.

@@ -105,6 +105,9 @@ pub fn classifier_for(config: &Config, catalogue: &Catalogue) -> Result<Classifi
     for def in &catalogue.contextual {
         c.add_contextual(def)?;
     }
+    for def in &catalogue.entity_identifiers {
+        c.add_entity_identifiers(def);
+    }
     for src in &catalogue.sources {
         if src.def.kind == SourceKind::Field {
             for (name, cat) in &src.def.fields {

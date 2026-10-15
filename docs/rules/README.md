@@ -20,19 +20,36 @@ except PFC01: an open coverage gap always makes `check` exit 4, whatever the thr
 
 ## How findings come from flows
 
-A finding is a judgement about a **flow**: one source (where personal data enters a value), one
-sink (where it leaves), one category, and the full chain of `file:line:column` hops between them.
-The rules read only the flow facts in the output document, the embedded policy and the declared
-processors, so `piiflow validate` recomputes every finding and rejects a document whose findings
-do not follow. One flow can produce more than one finding (an email address sent to an undeclared
-LLM provider is PF002 and PF003): they are different obligations.
+A rule judges each **flow**: one source (where personal data enters a value), one sink (where it
+leaves), one category, and the full chain of `file:line:column` hops between them. The rules read
+only the flow facts in the output document, the embedded policy and the declared processors, so
+`piiflow validate` recomputes every finding and rejects a document whose findings do not follow.
+One flow can fire more than one rule (an email address sent to an undeclared LLM provider is PF002
+and PF003): they are different obligations.
 
-Two adjustments apply to every rule:
+A finding is an **exposure**: one rule at one sink ([ADR 0020](../adr/0020-findings-by-exposure.md)).
+Every flow the rule fires on at that sink is evidence for the same finding, which lists them
+in `flows` and carries all their categories; its severity is the highest of theirs. A log call
+that receives a whole address is one PF001 finding with five categories, not five findings. Flows
+that need review (`needs_review`) are a finding of their own at the same sink, so a decision about
+data that is certainly personal is never mixed with one about names that only may be. The same
+data reaching another log call is another exposure, and another finding.
 
-- **Review queue.** When the source is a name the classification table marks as *maybe* personal
-  (`name`, `payload`, `title`, `value` …), the finding is `info` and `needs_review: true`.
-  Record names that are not personal in your codebase under
-  [`not_personal`](../configuration.md#not_personal), with a citation.
+These adjustments apply to every rule:
+
+- **Uncertain findings.** A flow whose category is `unknown` (request input the analysis cannot
+  name, such as `req.body` or a query parameter, or a name the classification table marks as
+  *maybe* personal: `name`, `payload`, `title`, `value` …) counts at `info` and needs review, so
+  it joins its sink's review finding. A finding whose only category is `unknown` is `info` and
+  its message starts `uncertain: data of undetermined category`. It is the review queue: never
+  dropped, never reported as personal data
+  ([ADR 0021](../adr/0021-uncertain-findings-and-identifiers-of-things.md)). Record names that are
+  not personal in your codebase under [`not_personal`](../configuration.md#not_personal), with a
+  citation, and names that are under `fields`.
+- **Identifiers of things.** Names made of entity words and an identifier suffix (`item_id`,
+  `catalogItemId`, `BrandIds`, `item_type_id`) are not personal data: never classified, and
+  request input under such a name is not a source. The words are in
+  [`catalogue/classification.yml`](../../catalogue/classification.yml).
 - **Heuristic sinks.** A logger recognised only by its receiver's name (`this.logger.info(...)`
   where the logger was injected) is marked `heuristic: true`; the finding keeps its severity.
 

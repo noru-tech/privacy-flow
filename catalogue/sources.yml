@@ -255,15 +255,12 @@ sources:
     language: csharp
     kind: read
     description: >-
-      The signed-in user's claims. With a literal claim type (or a `ClaimTypes` constant) the
-      value is classified by the type: `sub` is a pseudonymous identifier, `email` an email
-      address.
+      The signed-in user's claims, looked up by type. With a literal claim type (or a
+      `ClaimTypes` constant) the value is classified by the type: `sub` is a pseudonymous
+      identifier, `email` an email address. A type the analysis cannot read is uncertain.
     calls:
       - "System.Security.Claims.{ClaimsPrincipal,ClaimsIdentity}{,()}**.{FindFirst,FindFirstValue,FindAll}"
       - "{Microsoft.AspNetCore,Grpc}.**.{User,Principal}.{FindFirst,FindFirstValue,FindAll}"
-    reads:
-      - "System.Security.Claims.{ClaimsPrincipal,ClaimsIdentity}{,()}**.Claims"
-      - "{Microsoft.AspNetCore,Grpc}.**.{User,Principal}.Claims"
     arg_category:
       index: 0
       classify: true
@@ -289,6 +286,18 @@ sources:
         streetaddress: user.contact.address.street
         dateofbirth: user.demographic.date_of_birth
     category: unknown
+
+  - id: cs.claims.list
+    language: csharp
+    kind: read
+    description: >-
+      The signed-in user's claims as a whole (`User.Claims`, `result.Principal.Claims`): the
+      subject, name, email and whatever else the identity provider asserted, together. Its
+      category is `user`, the key that covers all of them.
+    reads:
+      - "System.Security.Claims.{ClaimsPrincipal,ClaimsIdentity}{,()}**.Claims"
+      - "{Microsoft.AspNetCore,Grpc}.**.{User,Principal}.Claims"
+    category: user
 
   - id: cs.claims.identity-name
     language: csharp

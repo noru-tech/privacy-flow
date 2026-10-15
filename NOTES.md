@@ -713,6 +713,114 @@ way on 2026-10-14 (DOI `10.5281/zenodo.23377449`).
 - The `--input` and `--report` options the plan listed.
 - Hand-written comments in the map are not kept.
 
+## 2026-10-15 — Findings grouped by exposure (ADR 0020)
+
+**Why.** A tester ran 0.4.0 on dotnet/eShop; their counts matched a local run exactly (214
+findings: PF001 134, PF003 12, PF006 41, PFC01 27) and they read most as duplicates. A log call
+that receives an address gave one finding per field, and the order request's seven fields
+repeated at every handler and MediatR behaviour that logs it.
+
+**Done.** A finding is one rule at one sink, with the flows that need review as a second
+finding there. Its flows are listed in `findings[].flows` as evidence; its ID hashes the rule,
+the sink, `needs_review` and the categories. Schema version 0.2. Dispositions carry by ID, or by
+shared flows when those cover every category, which also carries decisions from 0.1 documents.
+SARIF has a code flow per flow and the sources as related locations; `explain` prints every
+flow; `diff` counts a grown or re-keyed exposure as changed, not as removed and introduced.
+
+**Measured** (Apple M3 Pro, release build; flows unchanged everywhere).
+
+| | Findings before | after | of which coverage gaps |
+| --- | --- | --- | --- |
+| eShop | 214 (PF001 134, PF003 12, PF006 41) | 67 (PF001 28, PF003 3, PF006 9) | 27 |
+| Polar | 9,304 | 1,394 | 844 |
+| PrivateGPT | 1,543 | 473 | 215 |
+| Ghost | 1,276 | 705 | 599 |
+| Redash | 497 | 303 | 151 |
+| Umami | 435 | 339 | 323 |
+| Hoppscotch | 279 | 151 | 133 |
+| CTFd | 137 | 100 | 85 |
+| Vercel chatbot | 136 | 64 | 45 |
+| Open SaaS | 50 | 46 | 32 |
+| Healthchecks | 35 | 31 | 25 |
+| Taxonomy | 10 | 8 | 5 |
+| FastAPI template | 3 | 3 | 3 |
+| Benchmark corpus (12) | 13,705 | 3,617 | 2,460 |
+
+Without coverage gaps the corpus goes from 11,245 to 1,157 findings. The ADR compares four other
+keys on the same runs. The report phase takes the same time (Polar 0.73 s before, 0.71 s after),
+and Polar's document shrinks from 81.0 MB to 77.5 MB. One thread and eight give the same bytes on
+eShop.
+
+**Not done.**
+
+- `benchmark/sheets.py` samples per-flow findings of 0.1 documents. Labelling a 0.2 run needs a
+  protocol deviation saying how an exposure is sampled.
+- A finding's message names the first source and a count, not the object its fields belong to:
+  typed objects have no line-free anchor in the document.
+
+## 2026-10-15 — Uncertain findings and identifiers of things (ADR 0021)
+
+**Why.** A tester ran 0.4.0 on eShop: `ItemId`, `BrandId` and the other catalogue IDs were
+reported as `unknown` data sent to a run-time host (six of 41 PF006), and 21 of the 58 findings
+whose only category was `unknown` were medium or warning. `unknown` from a maybe-personal name
+was `info` for review (ADR 0004); `unknown` request input kept the rule's severity, so the same
+word read as personal data.
+
+**Done.** A finding whose only category is `unknown` is uncertain under every rule: `info`,
+needs review, message `uncertain: data of undetermined category …`. `catalogue/classification.yml`
+lists entity words and identifier suffixes: `item_id`, `catalogItemId`, `BrandIds`,
+`item_type_id` are never classified, request input under such a name is not a source, and
+request input read through one (`Request.Query["itemId"]`, `args.get("product_id")`) is dropped.
+One non-entity word keeps a name out (`user_type_id`, `blood_type_id`); orders, accounts, teams
+and tenants are not entities. Config `not_personal` also stops request input now. Fixtures
+`cs/entity-identifiers`, `py/entity-identifiers`; the fixture test checks every unknown-only
+finding; eShop smoke expectations forbid the catalogue-ID findings. Reverses PF001's "request
+input keeps the rule's severity".
+
+**Measured** (against `ac10149`). eShop: 214 → 208 flows; PF006 41 → 35; unknown-only findings
+58 → 52, all `info`. The data map loses `web_app → catalog_api`, whose only flows were those IDs.
+Benchmark: R1 sampled sinks found 59 → 59 of 114; Polar −7 flows (a request `product_id`);
+1,075 findings to `info` (Polar 894, Ghost's 66 high PF002 of whole `req` objects to Stripe,
+PrivateGPT 50, Redash 38, the Vercel chatbot's 15 PF003, CTFd 11). Time unchanged.
+
+**Next.** A category for claims lists (`User.Claims`), which hold personal data and are uncertain
+until they get one. Edges for bound clients that carry no personal data, if the data map should
+show every call between systems.
+
+## 2026-10-15 — A category for claims lists
+
+**Why.** After ADR 0021, a claims list was data of undetermined category: `cs.claims` classified
+a single claim by its type (`FindFirst("sub")`) but gave the whole list (`User.Claims`)
+`unknown`. On eShop that moved three real findings to `info`: the chatbot's `GetUserInfo` tool
+returning the user's claims to the model (`ChatState.cs:78`, PF003) and the external login's
+claims logged (`ExternalController.cs:76` and `:120`, PF001).
+
+**Done.** A new catalogue source, `cs.claims.list`, takes the `.Claims` reads with category
+`user`; `cs.claims` keeps the lookups by type, and a type it cannot read stays `unknown`. `user`
+is the narrowest key that covers what a list holds together: subject (`user.unique_id`), name
+(`user.name`), email (`user.contact`), and whatever else the provider asserts. Not
+`user.account` (registration data; it does not cover name or email in the taxonomy), and not
+`user.authorization`, which piiflow treats as credentials (PF005, no PF001), while a claims list
+is not a secret. Request input of a broad category is now narrowed by a classified read under
+it, as `unknown` input was: eShop's checkout reads `address_city` off `User.Claims` into
+`Info.City`, which is reported as the address, not again as `user` (it would have been a new
+PF006 at `OrderingService.cs:17`). Other languages have no identity objects in the catalogue.
+`cs/identity` gains `ProfileController.cs` (logged and model-bound claims lists, a claim read
+into a classified field); eShop's smoke expectations require the three findings at `user`.
+`:120` is reached through the tuple `FindUserFromExternalProviderAsync` returns, whose elements
+the analysis does not tell apart: what reaches the event is the provisioned user and the
+provider's user ID, both taken from the claims, not the list itself.
+
+**Measured** (against #40, ADR 0021). eShop: the claims flows leave the uncertain findings.
+`ExternalController.cs:76` (PF001) and `ChatState.cs:78` (PF003) each get a `medium` finding at
+`user`; the chat input stays uncertain at `:78`. At `:120` the claims flow joins the `medium`
+finding already there (addresses, card number). `_user.Claims` reaching the chatbot's error log
+(`ChatState.cs:88`) is `user` at `info`, as an exception path is. Findings 63 → 64 (PF003 3 →
+4), medium 14 → 16, flows 208, nothing else changes. The data map adds `user`
+to the Identity API's and the web app's ingress and declarations, and the chatbot's unresolved
+LLM destination, which had no category, now has `user`. Benchmark corpus (no C# application):
+flows and findings identical on all twelve, so the narrowing rule changes nothing there.
+
 ## 2026-10-15 — HTTP destinations in `scan`, and gaps ranked by impact (ADRs 0022, 0023)
 
 **Why.** A tester ran 0.4.0 on dotnet/eShop and their counts matched a local run exactly. Two of
@@ -771,24 +879,25 @@ sessions.
   `MauiApplication(handle, …)` read as a username. Both are classification questions for the
   identifier work.
 
-**Measured** (eShop at `dc7ea499`, Apple M3 Pro, one thread).
+**Measured** (eShop at `dc7ea499`, Apple M3 Pro, one thread). Before is `main` with the
+exposures of ADR 0020 and the identifier changes of ADR 0021; after is this change on top.
 
 | | Before | After |
 | --- | --- | --- |
-| Flows | 214 | 227 (13 to device storage) |
-| PF001 / PF003 | 134 / 12 | 134 / 12 |
-| PF006 | 41 | 13 |
+| Flows | 208 | 221 (13 to device storage) |
+| PF001 / PF003 findings | 28 / 4 | 28 / 4 |
+| PF006 findings (flows) | 5 (35) | 3 (10) |
 | PFC01 (gaps) | 27 | 25: 16 high, 4 medium, 5 low |
-| Internal sinks | — | 4: `web_app → ordering_api`, `web_app → catalog_api` (2), `webhook_client → webhooks_api` |
-| Data map | 11 systems, 8 edges, 5 unresolved | unchanged |
-| `scan` time | 0.58 s | 0.59 s |
-| 100k-line synthetic C# service, report step | 373–436 ms | 408–415 ms |
+| Internal sinks | — | 2: `web_app → ordering_api`, `webhook_client → webhooks_api` |
+| Data map | 11 systems, 6 edges, 4 unresolved | unchanged |
+| `scan` time | 0.57 s | 0.58 s |
+| 100k-line synthetic C# service, report step (measured on 0.4.0) | 373–436 ms | 408–415 ms |
 
-The 13 PF006 findings left have hosts the code does not hold:
+The three PF006 findings left have hosts the code does not hold:
 
-- 9 in the mobile app's `RequestProvider` (endpoints the user sets);
-- 3 in the hybrid app (`localhost:11632`, a development address no system is named by);
-- 1 in the webhook sender (a subscriber's URL).
+- two exposures in the mobile app's `RequestProvider` (endpoints the user sets), one personal
+  and one for review;
+- one in the webhook sender (a subscriber's URL), for review.
 
 **Not done.**
 

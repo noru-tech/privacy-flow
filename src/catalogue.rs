@@ -477,6 +477,8 @@ struct CatalogueFile {
     #[serde(default)]
     contextual: Vec<ContextualDef>,
     #[serde(default)]
+    entity_identifiers: Vec<EntityIdentifiersDef>,
+    #[serde(default)]
     presentation: Vec<PresentationDef>,
 }
 
@@ -512,6 +514,20 @@ pub struct ContextualDef {
     /// function) is context enough.
     #[serde(default)]
     pub siblings: Vec<String>,
+}
+
+/// Identifiers of things, not people (`catalogue/classification.yml`): a name made of entity
+/// words and an identifier suffix (`item_id`, `catalog_item_id`, `BrandIds`) is not personal data.
+#[derive(Clone, Debug, Default, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct EntityIdentifiersDef {
+    pub id: String,
+    #[serde(default)]
+    pub description: Option<String>,
+    /// Words naming a thing (`item`, `brand`) or a compound of them (`order_line`).
+    pub entities: Vec<String>,
+    /// The last word of an identifier's name (`id`, `ids`).
+    pub suffixes: Vec<String>,
 }
 
 /// Where a catalogue entry came from.
@@ -585,6 +601,7 @@ pub struct Catalogue {
     /// (`System.Type`): their fields are not personal data.
     pub metadata_types: BTreeMap<String, Vec<String>>,
     pub contextual: Vec<ContextualDef>,
+    pub entity_identifiers: Vec<EntityIdentifiersDef>,
     pub presentation: Vec<PresentationDef>,
 }
 
@@ -645,6 +662,7 @@ impl Catalogue {
             merged.frameworks.extend(file.frameworks);
             merged.dispatchers.extend(file.dispatchers);
             merged.contextual.extend(file.contextual);
+            merged.entity_identifiers.extend(file.entity_identifiers);
             merged.presentation.extend(file.presentation);
             for (lang, fields) in file.non_propagating_fields {
                 merged
@@ -832,6 +850,7 @@ impl Catalogue {
             accessor_fields,
             metadata_types: merged.metadata_types,
             contextual: merged.contextual,
+            entity_identifiers: merged.entity_identifiers,
             presentation: merged.presentation,
         })
     }

@@ -49,3 +49,19 @@ contextual:
        "member", "*_member", "member_*", "subscriber", "person", "people", "author", "owner",
        "creator", "recipient", "*_recipient", "account_holder", "patient", "student", "employee"]
 
+# ------------------------------------------------------------------ identifiers of things
+# An identifier named for a thing is not personal data: `item_id`, `catalog_item_id`, `BrandIds`,
+# `item_type_id`. The name must be entity words only, then a suffix: `user_type_id` and
+# `blood_type_id` keep whatever classification they have, since a lookup ID beside a person can
+# encode an attribute of that person. Request input under such a name is not a source (a route
+# parameter `ItemId`), and the name is never classified. A project's own `fields` still apply.
+# Orders, accounts, teams and tenants are left out: they belong to people often enough that an
+# unclassified one stays uncertain, for review (ADR 0021).
+entity_identifiers:
+  - id: entity-identifiers
+    description: Identifiers of catalogue items, products, brands, categories and order lines.
+    entities:
+      [item, items, product, products, brand, catalog, catalogue, category, type, kind, sku,
+       variant, price, currency, warehouse, inventory, stock, order_line, order_item, line_item,
+       basket_item, cart_item]
+    suffixes: [id, ids, uuid, guid, sku]

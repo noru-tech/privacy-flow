@@ -8,6 +8,37 @@ All notable changes to this project are documented here. The format is based on
 
 ### Changed
 
+- **A finding is an exposure**: one rule at one sink, with every flow the rule fires on there as
+  its evidence ([ADR 0020](docs/adr/0020-findings-by-exposure.md)). A log call that receives a
+  whole address is one PF001 finding with five categories, not five. Flows that need review are a
+  separate finding at the same sink. On dotnet/eShop 214 findings become 67; on the benchmark
+  corpus 13,705 become 3,617. Flows are unchanged.
+- The flow-facts document is schema version 0.2: `findings[].flow` is now `findings[].flows`, a
+  list. Finding IDs hash the rule, the sink, `needs_review` and the categories, so every finding
+  about flows has a new ID.
+- Dispositions carry forward by ID, or by the flows a new finding shares with decided ones when
+  those covered all its categories. Decisions in a 0.1 document carry to the exposures whose
+  flows were all decided alike.
+- SARIF: a code flow per flow, the sources as `relatedLocations`, the flow IDs in
+  `properties.flows` (was `properties.flow`). `explain` prints every flow of a finding. `diff`
+  counts an exposure that gained a flow or a category as changed.
+- A finding whose only category is `unknown` is uncertain under every rule: `info`,
+  `needs_review: true`, and a message that starts `uncertain: data of undetermined category`.
+  Request input the analysis cannot name (`req.body`, a query parameter) kept the rule's
+  severity before, so a logged request body failed the default policy; its classified fields
+  still do ([ADR 0021](docs/adr/0021-uncertain-findings-and-identifiers-of-things.md)).
+- Identifiers of things are not personal data: names made of entity words and an identifier
+  suffix (`item_id`, `catalogItemId`, `BrandIds`, `item_type_id`) are never classified, request
+  input under such a name (Blazor `[Parameter]` and `[SupplyParameterFromQuery]` properties,
+  FastAPI path parameters) is not a source, and request input read through one
+  (`Request.Query["itemId"]`) is not reported. The words are in
+  `catalogue/classification.yml`. Person identifiers (`user_id`, `customer_id`) are unchanged.
+- A project's `not_personal` names also stop request input under that name.
+- A whole claims list (`User.Claims`, `ClaimsPrincipal.Claims`,
+  `AuthenticateAsync().Principal.Claims`) is personal data of category `user`, no longer
+  `unknown`: logging it, or sending it to a model, is a finding at the rule's severity again. A
+  single claim looked up by type is still classified by the type (`FindFirst("email")`), and a
+  claim read off the list into a classified field is reported as that field.
 - **`scan` resolves requests through registered clients** ([ADR 0022](docs/adr/0022-client-destinations.md)).
   It uses the bindings `datamap` already made: an HTTP call whose client's base address names a
   system of the repository is internal, not a PF006 finding. One that names an outside host names
@@ -27,16 +58,27 @@ All notable changes to this project are documented here. The format is based on
   - **Where it shows:** gaps are listed most urgent first, the PFC01 message names the impact, a
     low-impact gap is reported at `info` at most, and SARIF results carry `gap_impact`.
   - **Schema:** gaps gain `impact` and `impact_reason`.
-- On dotnet/eShop:
-  - PF006 41 → 13: the web app's order and catalog calls and the webhook client's are internal;
-  - PFC01 27 → 25;
-  - flows 214 → 227.
+- On dotnet/eShop, against the exposures above:
+  - PF006 5 → 3 findings (35 → 10 flows): the web app's order request and the webhook client's
+    calls are internal;
+  - PFC01 27 → 25, with 16 high, 4 medium and 5 low;
+  - flows 208 → 221.
 
 ### Added
 
 - `device_storage`, a sink class for a native app's storage on the device: .NET MAUI (and
   Xamarin.Essentials) `SecureStorage.SetAsync` and `Preferences.Set`, which were coverage gaps.
   Like browser storage, its flows are reported and no rule fires on them.
+
+### Fixed
+
+- `piiflow datamap` no longer writes privacy declarations with an empty name or data use, which
+  Fides rejects. They came from privacy-datamap manifest systems the code does not have: their
+  declarations were copied in whole, including ones nobody had decided. A declaration without a
+  name or a data use now goes to its system's `meta.privacy_flow.proposals` for review, and is
+  never filled in. Undecided declarations of such systems are listed in `needs_review`.
+- `piiflow datamap` no longer writes a map that fails its Fideslang checks. It exits 3 and names
+  each problem; before, it only warned. A declaration without a name is now one of those problems.
 
 ## [0.4.0] - 2026-10-15
 

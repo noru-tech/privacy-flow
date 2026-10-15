@@ -150,6 +150,11 @@ def check(doc: dict, want: dict) -> list[str]:
         lacking = [c for c in m.get("categories", []) if c not in cats]
         if lacking:
             problems.append(f"{where} lacks categories {lacking} (has {sorted(cats)})")
+        if "findings" in m and len(hits) != m["findings"]:
+            problems.append(f"{where}: {len(hits)} findings, expected {m['findings']} (one per exposure)")
+        flows = sum(len(f["flows"]) for f in hits)
+        if flows < m.get("min_flows", 0):
+            problems.append(f"{where} cites {flows} flows, expected at least {m['min_flows']}")
     for m in want["must_not"]:
         floor = SEVERITY[m.get("min_severity", "info")]
         hits = [

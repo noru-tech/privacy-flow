@@ -5,7 +5,8 @@
 //! decision. A decided collection's field categories (and `non_personal_fields`) replace the
 //! generated ones of the collection of the same name; a decided declaration replaces the
 //! proposal of its system with the same name or data use, or joins the system. Datasets and
-//! systems only the manifest has are included. Bookkeeping keys are dropped.
+//! systems only the manifest has are included, their undecided declarations under review.
+//! Bookkeeping keys are dropped.
 
 use crate::datamap::yaml::Node;
 
@@ -211,9 +212,22 @@ pub fn apply(
             .iter_mut()
             .find(|s| str_of(get(s, "fides_key")) == Some(key.as_str()))
         else {
+            // Its declarations nobody decided stay under review.
+            let undecided: Vec<String> = items(get(msys, "privacy_declarations"))
+                .into_iter()
+                .filter(|d| !decided(d))
+                .filter_map(|d| str_of(get(d, "name")).map(str::to_string))
+                .filter(|n| !n.trim().is_empty())
+                .collect();
+            let mut sys = strip(msys);
+            if !undecided.is_empty()
+                && let Node::Map(sm) = &mut sys
+            {
+                crate::datamap::merge::set_needs_review(sm, undecided);
+            }
             systems.push(Node::noted(
                 vec!["from the privacy-datamap manifest".into()],
-                strip(msys),
+                sys,
             ));
             notes.push(format!("system {mkey}: from the privacy-datamap manifest"));
             continue;

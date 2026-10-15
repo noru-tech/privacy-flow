@@ -91,7 +91,7 @@ the data map's binding reads it.
 
 ## Measurements
 
-eShop at `dc7ea499` (Apple M3 Pro):
+eShop at `dc7ea499` (Apple M3 Pro), measured on 0.4.0, one finding per flow:
 
 | | Before | After |
 | --- | --- | --- |
@@ -107,6 +107,10 @@ The 13 that remain are hosts the code does not hold:
 - 3 in the hybrid app's catalog client, whose base address is a development address
   (`localhost:11632`) that names no system;
 - 1 in the webhook sender, which posts to a subscriber's URL.
+
+With findings grouped by exposure (ADR 0020) and identifiers of things no longer personal
+(ADR 0021), PF006 goes from 5 findings (35 flows) to 3 (10). The hybrid app's flows are gone
+there: they carried only item IDs. The data map is unchanged.
 
 ## Consequences
 
