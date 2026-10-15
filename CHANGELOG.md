@@ -6,6 +6,16 @@ All notable changes to this project are documented here. The format is based on
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-10-15
+
+Findings a person can act on. A finding is now an exposure: one rule at one sink, with its flows
+as evidence, so the same personal data no longer repeats as one finding per field and hop (on
+dotnet/eShop, 214 findings become 60). Data whose category cannot be determined is reported as
+uncertain, identifiers of things are not personal data, requests through registered clients
+resolve to the system they reach, and coverage gaps are ranked by impact. `piiflow datamap` always
+writes valid Fideslang. The flow-facts document is schema 0.2 and finding IDs change once; see
+Changed.
+
 ### Changed
 
 - **A finding is an exposure**: one rule at one sink, with every flow the rule fires on there as
@@ -326,7 +336,8 @@ No change to the analysis: for the same input, 0.1.1 reports the same flows, fin
   criterion benchmarks, a CI performance budget, and a release pipeline with artifact
   attestations, checksums and an SBOM.
 
-[Unreleased]: https://github.com/noru-tech/privacy-flow/compare/v0.4.0...HEAD
+[Unreleased]: https://github.com/noru-tech/privacy-flow/compare/v0.5.0...HEAD
+[0.5.0]: https://github.com/noru-tech/privacy-flow/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/noru-tech/privacy-flow/compare/v0.3.1...v0.4.0
 [0.3.1]: https://github.com/noru-tech/privacy-flow/compare/v0.3.0...v0.3.1
 [0.3.0]: https://github.com/noru-tech/privacy-flow/compare/v0.2.0...v0.3.0
