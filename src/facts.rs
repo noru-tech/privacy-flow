@@ -198,6 +198,8 @@ pub struct Facts {
     pub static_gaps: Vec<StaticGap>,
     /// Handlers recognised per source id, for `doctor` and coverage notes.
     pub handlers: BTreeMap<String, usize>,
+    /// The functions recognised as handlers, sorted: request input arrives in them.
+    pub handler_funcs: Vec<FuncId>,
     /// The function each return slot belongs to: its return value, and the field variables of
     /// the sites it returns (ADR 0009).
     pub slot_of: Vec<Option<FuncId>>,
@@ -218,7 +220,7 @@ struct Builder<'a, 'p> {
     p: &'p mut Program,
     inp: &'a Inputs<'a>,
     f: Facts,
-    defs: Vec<Vec<u32>>,
+    defs: crate::values::Defs,
     seed_keys: BTreeSet<(VarId, Token, String)>,
     types_by_name: BTreeMap<String, Vec<usize>>,
     /// Each class's `this` and constructor `this`, to its class.
@@ -279,10 +281,11 @@ pub fn build(p: &mut Program, inp: &Inputs) -> Facts {
                 .collect(),
             static_gaps: Vec::new(),
             handlers: BTreeMap::new(),
+            handler_funcs: Vec::new(),
             slot_of: Vec::new(),
             exits: Vec::new(),
         },
-        defs: vec![Vec::new(); nvars],
+        defs: crate::values::Defs::default(),
         seed_keys: BTreeSet::new(),
         types_by_name,
         this_class,
@@ -293,6 +296,9 @@ pub fn build(p: &mut Program, inp: &Inputs) -> Facts {
         dispatch_cache: HashMap::new(),
     };
     let handlers = b.find_handlers();
+    b.f.handler_funcs = handlers.iter().map(|h| h.func).collect();
+    b.f.handler_funcs.sort_unstable();
+    b.f.handler_funcs.dedup();
     if handlers.iter().any(|h| h.provenance.is_some()) {
         for h in &handlers {
             if let Some((var, path)) = &h.provenance {
@@ -311,7 +317,7 @@ pub fn build(p: &mut Program, inp: &Inputs) -> Facts {
                 func.params.iter().skip(skip).map(|q| q.var).collect()
             })
             .collect();
-    b.index_defs();
+    b.defs = crate::values::Defs::build(b.p);
     b.load_fields();
     b.statements();
     b.handler_seeds(&handlers);
@@ -321,7 +327,7 @@ pub fn build(p: &mut Program, inp: &Inputs) -> Facts {
     b.static_gaps();
     let loads = std::mem::take(&mut b.loads);
     let inexact = std::mem::take(&mut b.inexact);
-    let slot_exits = heap::resolve(b.p, &mut b.f, &b.defs, loads, &inexact);
+    let slot_exits = heap::resolve(b.p, &mut b.f, b.defs.all(), loads, &inexact);
     let nvars = b.p.vars.len();
     b.f.slot_of = vec![None; nvars];
     b.f.exits = vec![Vec::new(); nvars];
@@ -392,24 +398,6 @@ struct HandlerParam {
 impl<'a, 'p> Builder<'a, 'p> {
     fn lang(&self, file: FileId) -> &'static str {
         self.p.files[file as usize].lang.family()
-    }
-
-    fn index_defs(&mut self) {
-        for (i, s) in self.p.stmts.iter().enumerate() {
-            let dst = match &s.kind {
-                GKind::Copy { dst, .. }
-                | GKind::Lit { dst, .. }
-                | GKind::Load { dst, .. }
-                | GKind::Concat { dst, .. }
-                | GKind::Call { dst, .. }
-                | GKind::ThisLoad { dst, .. }
-                | GKind::FuncRef { dst, .. }
-                | GKind::ClassRef { dst, .. }
-                | GKind::Global { dst, .. } => *dst,
-                _ => continue,
-            };
-            self.defs[dst as usize].push(i as u32);
-        }
     }
 
     fn load_fields(&mut self) {
@@ -1619,7 +1607,7 @@ impl<'a, 'p> Builder<'a, 'p> {
     /// The name a value spells: a string literal, or the last segment of the API path of a
     /// constant read (`ClaimTypes.Email`).
     fn name_of(&self, var: VarId) -> Option<String> {
-        if let Some((s, true)) = self.literal_prefix(var, 0) {
+        if let Some((s, true)) = self.defs.literal_prefix(self.p, var) {
             return Some(s);
         }
         self.p.prov[var as usize].iter().find_map(|p| match p {
@@ -1629,83 +1617,6 @@ impl<'a, 'p> Builder<'a, 'p> {
             }
             _ => None,
         })
-    }
-
-    /// What a variable was copied from, through single plain copies.
-    fn copy_origin(&self, var: VarId, depth: u32) -> VarId {
-        let defs = &self.defs[var as usize];
-        match (defs.as_slice(), depth < 8) {
-            ([d], true) => match &self.p.stmts[*d as usize].kind {
-                GKind::Copy { src, .. } => self.copy_origin(*src, depth + 1),
-                _ => var,
-            },
-            _ => var,
-        }
-    }
-
-    /// The call that defines a variable, through plain copies: (its arguments, its API paths).
-    fn defining_call(&self, var: VarId, depth: u32) -> Option<(Vec<GArg>, Vec<String>)> {
-        if depth > 8 {
-            return None;
-        }
-        let defs = &self.defs[var as usize];
-        if defs.len() != 1 {
-            return None;
-        }
-        let stmt = defs[0];
-        match &self.p.stmts[stmt as usize].kind {
-            GKind::Copy { src, .. } => self.defining_call(*src, depth + 1),
-            GKind::Call { args, callee, .. } => {
-                let mut paths: Vec<String> = Vec::new();
-                if let Some(t) = self.p.calls.get(&stmt) {
-                    paths.extend(t.apis.iter().map(|s| self.p.syms.str(*s).to_string()));
-                }
-                if let GCallee::Value(v) = callee {
-                    paths.extend(self.api_paths_of(&[*v]));
-                }
-                Some((args.clone(), paths))
-            }
-            _ => None,
-        }
-    }
-
-    /// The literal text a variable is known to start with, and whether that is all of it.
-    fn literal_prefix(&self, var: VarId, depth: u32) -> Option<(String, bool)> {
-        if depth > 8 {
-            return None;
-        }
-        let defs = &self.defs[var as usize];
-        if defs.len() != 1 {
-            return None;
-        }
-        match &self.p.stmts[defs[0] as usize].kind {
-            GKind::Lit { value: Some(v), .. } => Some((v.clone(), true)),
-            GKind::Copy { src, .. } => self.literal_prefix(*src, depth + 1),
-            GKind::Concat { parts, .. } => {
-                let mut out = String::new();
-                for (i, part) in parts.iter().enumerate() {
-                    match part {
-                        GPart::Lit(s) => out.push_str(s),
-                        GPart::Var(v) => match self.literal_prefix(*v, depth + 1) {
-                            Some((s, true)) => out.push_str(&s),
-                            Some((s, false)) => {
-                                out.push_str(&s);
-                                return Some((out, false));
-                            }
-                            None => {
-                                return if i == 0 && out.is_empty() {
-                                    None
-                                } else {
-                                    Some((out, false))
-                                };
-                            }
-                        },
-                    }
-                }
-                Some((out, true))
-            }
-            _ => None,
-        }
     }
 
     fn host(&self, spec: &crate::catalogue::HostSpec, args: &[GArg]) -> Host {
@@ -1731,8 +1642,8 @@ impl<'a, 'p> Builder<'a, 'p> {
         // `SendAsync(new HttpRequestMessage(HttpMethod.Post, url))`: the URL the request was
         // built with.
         if let Some(i) = spec.built_arg
-            && self.literal_prefix(v, 0).is_none()
-            && let Some((args, _)) = self.defining_call(v, 0)
+            && self.defs.literal_prefix(self.p, v).is_none()
+            && let Some((args, _)) = self.defs.defining_call(self.p, v)
             && let Some(a) = args
                 .iter()
                 .filter(|a| matches!(a.kind, GArgKind::Positional))
@@ -1741,12 +1652,12 @@ impl<'a, 'p> Builder<'a, 'p> {
             v = a.var;
         }
         if let Some(field) = &spec.field
-            && self.literal_prefix(v, 0).is_none()
+            && self.defs.literal_prefix(self.p, v).is_none()
         {
             // An options object: `axios({ url: '...' })`, `new HttpRequestMessage { RequestUri =
             // ... }` held in a variable.
             let sym = self.p.syms.get(field);
-            let objs = [v, self.copy_origin(v, 0)];
+            let objs = [v, self.defs.copy_origin(self.p, v)];
             let store = self.p.stmts.iter().find_map(|s| match &s.kind {
                 GKind::Store {
                     obj,
@@ -1763,10 +1674,10 @@ impl<'a, 'p> Builder<'a, 'p> {
         }
         // `new Uri("https://...")`: the URL is the wrapper's argument.
         for _ in 0..4 {
-            if self.literal_prefix(v, 0).is_some() || spec.wrappers.is_empty() {
+            if self.defs.literal_prefix(self.p, v).is_some() || spec.wrappers.is_empty() {
                 break;
             }
-            match self.defining_call(v, 0) {
+            match self.defs.defining_call(self.p, v) {
                 Some((args, paths)) if paths.iter().any(|p| api_matches_any(&spec.wrappers, p)) => {
                     match args.iter().find(|a| matches!(a.kind, GArgKind::Positional)) {
                         Some(a) => v = a.var,
@@ -1776,7 +1687,7 @@ impl<'a, 'p> Builder<'a, 'p> {
                 _ => break,
             }
         }
-        match self.literal_prefix(v, 0) {
+        match self.defs.literal_prefix(self.p, v) {
             Some((prefix, complete)) => match host_of(&prefix, complete) {
                 Host::Relative if spec.base_url => Host::Dynamic,
                 h => h,

@@ -41,6 +41,11 @@ impl Tree<'_> {
             Tree::Revision(files) => files.get(rel).cloned(),
         }
     }
+    /// A file's text, if it can be read.
+    pub fn read_text(&self, rel: &str) -> Option<String> {
+        self.get(rel)
+            .map(|b| String::from_utf8_lossy(&b).into_owned())
+    }
 }
 
 #[derive(Clone, Debug, Default)]
@@ -127,6 +132,15 @@ pub fn load_datamaps(tree: &Tree, config: &Config, listing: &Listing) -> Result<
             .get(&p)
             .with_context(|| format!("data map {p} not found"))?;
         let text = String::from_utf8(bytes).with_context(|| format!("{p} is not UTF-8"))?;
+        // A data map `piiflow datamap` maintains is its own output: reading it back would feed
+        // the analysis what it generated. Decisions for the analysis go in `fields:`.
+        if text
+            .lines()
+            .take(3)
+            .any(|l| l.contains(crate::datamap::generate::MARKER))
+        {
+            continue;
+        }
         out.push(Datamap::parse(&p, &text)?);
     }
     Ok(out)
@@ -214,6 +228,11 @@ pub struct Run {
     pub program: Program,
     pub facts: facts::Facts,
     pub reaches: Vec<engine::Reach>,
+    pub resolver: crate::resolve::Resolver,
+    pub catalogue: Catalogue,
+    pub classifier: Classifier,
+    /// Every listed file the configuration does not exclude, analysed or not.
+    pub files: Vec<String>,
 }
 
 pub fn analyze(
@@ -226,10 +245,12 @@ pub fn analyze(
     let excludes = Excludes::new(&config.exclude, config.default_excludes)?;
     let mut supported: Vec<(String, crate::ir::Lang)> = Vec::new();
     let mut unsupported: Vec<(String, String)> = Vec::new();
+    let mut kept: Vec<String> = Vec::new();
     for f in &listing.files {
         if excludes.excluded(f) {
             continue;
         }
+        kept.push(f.clone());
         if let Some(lang) = files::language_of(f) {
             supported.push((f.clone(), lang));
         } else if let Some(lang) = files::unsupported_language_of(f) {
@@ -404,5 +425,9 @@ pub fn analyze(
         program,
         facts,
         reaches,
+        resolver,
+        catalogue,
+        classifier,
+        files: kept,
     })
 }

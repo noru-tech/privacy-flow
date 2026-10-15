@@ -19,6 +19,8 @@ piiflow scan .                             # writes .privacy-flow/flows.json; ex
 piiflow explain pf-<id>                    # the hop chain, with the source line of each hop
 piiflow check .privacy-flow/flows.json --as-of 2026-10-01    # exit 1 above the policy threshold
 piiflow diff origin/main..HEAD -f sarif -o pr.sarif          # only flows a change introduces
+piiflow datamap .                          # writes/updates .fides/datamap.yml: systems, datasets, flows, proposed declarations
+piiflow datamap --check .                  # exit 5 when the data map is out of date
 ```
 
 ## Docs
@@ -29,6 +31,7 @@ piiflow diff origin/main..HEAD -f sarif -o pr.sarif          # only flows a chan
 - [Configuration](https://github.com/noru-tech/privacy-flow/blob/main/docs/configuration.md): .privacy-flow.yml
 - [Catalogue](https://github.com/noru-tech/privacy-flow/blob/main/docs/catalogue.md): API paths, sinks, sources, sanitisers
 - [Output](https://github.com/noru-tech/privacy-flow/blob/main/docs/output.md): the flow-facts document, IDs, digest, dispositions
+- [Data map](https://github.com/noru-tech/privacy-flow/blob/main/docs/datamap.md): `piiflow datamap`, a full Fides data map merged in place
 - [Design](https://github.com/noru-tech/privacy-flow/blob/main/docs/design.md) and [ADRs](https://github.com/noru-tech/privacy-flow/blob/main/docs/adr/README.md)
 - [GitHub Action](https://github.com/noru-tech/privacy-flow/blob/main/docs/github-action.md)
 - [Known limitations](https://github.com/noru-tech/privacy-flow/blob/main/KNOWN-LIMITATIONS.md)

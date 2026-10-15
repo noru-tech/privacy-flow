@@ -408,6 +408,27 @@ impl<'s> Py<'s> {
 
     // ---------------------------------------------------------------- assignment
 
+    /// A class-body assignment or annotation, for the members side table.
+    fn member(&mut self, name: Node, ty: Option<Node>, value: Option<Var>) {
+        let Some(&c) = self.b.class_stack.last() else {
+            return;
+        };
+        let pos = self.b.pos(name);
+        let member = MemberIr {
+            name: self.text(name).to_string(),
+            pos,
+            kind: MemberKind::Field,
+            is_static: false,
+            ty: ty.map(|t| TypeExpr {
+                text: self.text(t).to_string(),
+                head: None,
+                args: Vec::new(),
+            }),
+            value,
+        };
+        self.b.ir.classes[c as usize].members.push(member);
+    }
+
     fn assignment(&mut self, node: Node) -> Var {
         let left = node.child_by_field_name("left");
         let annot = node
@@ -420,6 +441,7 @@ impl<'s> Py<'s> {
                 // `email: str` in a class body declares a field; elsewhere it binds nothing.
                 if in_class && let Some(l) = left.filter(|l| l.kind() == "identifier") {
                     self.class_field(l);
+                    self.member(l, node.child_by_field_name("type"), None);
                     if let (Some(t), Some(&c)) =
                         (node.child_by_field_name("type"), self.b.class_stack.last())
                     {
@@ -436,6 +458,7 @@ impl<'s> Py<'s> {
         if let Some(l) = left {
             if in_class && l.kind() == "identifier" {
                 self.class_field(l);
+                self.member(l, node.child_by_field_name("type"), Some(v));
                 // Class attributes are read back through instances: `self.x`.
                 if let Some(&c) = self.b.class_stack.last() {
                     let this = self.b.ir.classes[c as usize].this;

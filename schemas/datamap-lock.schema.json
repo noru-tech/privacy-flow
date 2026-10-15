@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/noru-tech/privacy-flow/blob/main/schemas/datamap-lock.schema.json",
+  "title": "privacy-flow data map lock",
+  "description": "What `piiflow datamap` generated last: the base of the next merge into the data map. Commit it beside the map.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["format", "generated"],
+  "properties": {
+    "format": { "const": "0.1" },
+    "generated": {
+      "type": "object",
+      "description": "The generated Fides data map, without comments.",
+      "properties": {
+        "dataset": { "type": "array" },
+        "system": { "type": "array" }
+      }
+    }
+  }
+}

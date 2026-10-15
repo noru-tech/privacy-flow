@@ -1,0 +1,43 @@
+# A Fides data map (Fideslang 3.1.3) of this repository, written by `piiflow datamap`.
+# Systems, datasets, egress and ingress come from the code; lines starting with "#:" say where.
+# Keys starting with unresolved_ are destinations the code does not name: replace each with
+# the receiving system's key, or declare it in .privacy-flow.yml and run again.
+# Privacy declarations are PROPOSALS: their data use and data subjects are suggested from the
+# evidence, and each system lists them under meta.privacy_flow.needs_review until a person
+# decides. No legal basis is proposed.
+system:
+  #: the repository as one system: no deployable service was detected
+  - fides_key: "billing_jobs"
+    name: "Billing jobs"
+    system_type: "Service"
+    meta:
+      privacy_flow:
+        needs_review:
+          - "Analytics for Reporting"
+    egress:
+      #: Mixpanel via analytics (undeclared): export.py:7
+      - fides_key: "mixpanel"
+        type: "system"
+        data_categories:
+          - "user.contact.email"
+    privacy_declarations:
+      #: PROPOSED analytics.reporting with data subjects customer, from the code: review it
+      #: purposes.yml#by_class.analytics: product analytics
+      - name: "Analytics for Reporting"
+        data_use: "analytics.reporting"
+        data_subjects:
+          - "customer"
+        data_categories:
+          - "user.contact.email"
+        egress:
+          - "mixpanel"
+  #: third-party processor Mixpanel
+  - fides_key: "mixpanel"
+    name: "Mixpanel"
+    system_type: "Third Party"
+    ingress:
+      - fides_key: "billing_jobs"
+        type: "system"
+        data_categories:
+          - "user.contact.email"
+    privacy_declarations: []

@@ -6,6 +6,7 @@ pub mod intoto;
 pub mod review;
 pub mod sarif;
 pub mod table;
+pub mod yaml;
 
 use std::path::Path;
 

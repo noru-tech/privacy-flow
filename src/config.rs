@@ -115,6 +115,13 @@ pub struct Config {
     pub version: u32,
     #[serde(default)]
     pub system: Option<SystemDecl>,
+    /// Systems of the repository for `piiflow datamap`, before detected ones.
+    #[serde(default)]
+    pub systems: Vec<SystemsDecl>,
+    /// Detect deployable services (`catalogue/topology/systems.yml`); `false` keeps only the
+    /// declared systems, or the repository as one.
+    #[serde(default = "yes")]
+    pub system_detection: bool,
     #[serde(default)]
     pub exclude: Vec<String>,
     #[serde(default = "yes")]
@@ -143,11 +150,28 @@ pub struct Config {
     pub policy: PolicyDecl,
 }
 
+/// A system of the repository, declared instead of (or besides) the detected ones.
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
+#[serde(deny_unknown_fields)]
+pub struct SystemsDecl {
+    pub fides_key: String,
+    #[serde(default)]
+    pub name: Option<String>,
+    /// Path globs of the files that are this system's own.
+    #[serde(default)]
+    pub paths: Vec<String>,
+    /// Host names other systems reach it by (`orders-api`, `orders.internal.example.com`).
+    #[serde(default)]
+    pub hosts: Vec<String>,
+}
+
 impl Default for Config {
     fn default() -> Self {
         Config {
             version: 1,
             system: None,
+            systems: Vec::new(),
+            system_detection: true,
             exclude: Vec::new(),
             default_excludes: true,
             datamap: None,

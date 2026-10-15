@@ -41,11 +41,19 @@ DOI for the corpus. See the protocol in [docs/benchmark.md](docs/benchmark.md#pr
   ([ADR 0006](docs/adr/0006-sanitisers-and-hashing.md)).
 - **Catalogue growth:** more SDKs, contributed as YAML with a fixture each; a catalogue version
   policy for additions and changes.
+- **Data map** ([ADR 0018](docs/adr/0018-systems-and-datasets.md),
+  [ADR 0019](docs/adr/0019-datamap-merge.md)): `piiflow datamap` writes and maintains a full
+  Fides data map. Next:
+  - gRPC clients, named `HttpClient`s and Aspire environment URLs;
+  - message buses between services;
+  - TypeORM and SQLModel, then Mongoose, Sequelize and Drizzle;
+  - an option to analyse each system separately.
 - **Integrations (outside this repository):** privacy-datamap reads flow facts to fill processor
   and egress fields; ai-inventory reads PF003 facts. The flow-facts schema stays stable for them.
 
 ## Not planned
 
 Runtime analysis, scanning data at rest, security vulnerability rules, any model call or network
-access from the binary, and purpose or legal-basis inference ([NOTES.md](NOTES.md) records the
+access from the binary, deciding purposes (the data map proposes data uses, for review) and
+legal-basis inference ([NOTES.md](NOTES.md) records the
 open/closed line).

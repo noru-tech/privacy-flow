@@ -18,6 +18,25 @@
         "name": { "type": "string" }
       }
     },
+    "systems": {
+      "type": "array",
+      "description": "Systems of the repository for `piiflow datamap`; their files are claimed before detection.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["fides_key", "paths"],
+        "properties": {
+          "fides_key": { "$ref": "#/$defs/fides_key" },
+          "name": { "type": "string" },
+          "paths": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } },
+          "hosts": { "type": "array", "items": { "type": "string", "minLength": 1 } }
+        }
+      }
+    },
+    "system_detection": {
+      "type": "boolean",
+      "description": "Detect deployable services for `piiflow datamap` (default true)."
+    },
     "exclude": {
       "type": "array",
       "description": "File globs to leave out, relative to the scan root (`**/` matches any directories).",

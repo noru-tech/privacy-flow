@@ -1,0 +1,158 @@
+# A Fides data map (Fideslang 3.1.3) of this repository, written by `piiflow datamap`.
+# Systems, datasets, egress and ingress come from the code; lines starting with "#:" say where.
+# Keys starting with unresolved_ are destinations the code does not name: replace each with
+# the receiving system's key, or declare it in .privacy-flow.yml and run again.
+# Privacy declarations are PROPOSALS: their data use and data subjects are suggested from the
+# evidence, and each system lists them under meta.privacy_flow.needs_review until a person
+# decides. No legal basis is proposed.
+dataset:
+  #: js.prisma at packages/db/prisma/schema.prisma
+  - fides_key: "shop_db"
+    name: "@shop/db"
+    collections:
+      #: packages/db/prisma/schema.prisma:15 (Order)
+      - name: "Order"
+        fields:
+          - name: "id"
+          #: packages/db/prisma/schema.prisma:18 (memberId); classified by catalogue:person-identifiers
+          - name: "member_id"
+            data_categories:
+              - "user.unique_id.pseudonymous"
+          - name: "total"
+      #: packages/db/prisma/schema.prisma:5 (Member)
+      - name: "members"
+        fields:
+          - name: "address"
+            fields:
+              #: packages/db/prisma/schema.prisma:24; classified by classification-table
+              - name: "city"
+                data_categories:
+                  - "user.contact.address.city"
+              #: packages/db/prisma/schema.prisma:23; classified by classification-table
+              - name: "street"
+                data_categories:
+                  - "user.contact.address.street"
+          #: packages/db/prisma/schema.prisma:7 (email); classified by classification-table
+          - name: "email_address"
+            data_categories:
+              - "user.contact.email"
+          #: packages/db/prisma/schema.prisma:6; classified by catalogue:person-record-id
+          - name: "id"
+            data_categories:
+              - "user.unique_id.pseudonymous"
+          #: packages/db/prisma/schema.prisma:8; classified by classification-table
+          - name: "phone"
+            data_categories:
+              - "user.contact.phone_number"
+system:
+  #: third-party processor PostHog
+  - fides_key: "posthog"
+    name: "PostHog"
+    system_type: "Third Party"
+    ingress:
+      - fides_key: "shop_api"
+        type: "system"
+        data_categories:
+          - "user.contact.email"
+    privacy_declarations: []
+  #: service rooted at apps/api (js.server: apps/api/package.json)
+  #: reached as api (docker-compose.yml)
+  - fides_key: "shop_api"
+    name: "@shop/api"
+    system_type: "Service"
+    meta:
+      privacy_flow:
+        needs_review:
+          - "Analytics for Reporting"
+          - "Essential for Service"
+    dataset_references:
+      - "shop_db"
+    egress:
+      #: PostHog via analytics (undeclared): packages/shared/src/index.ts:6
+      - fides_key: "posthog"
+        type: "system"
+        data_categories:
+          - "user.contact.email"
+    ingress:
+      - fides_key: "shop_web"
+        type: "system"
+        data_categories:
+          - "user.contact.email"
+          - "user.device.ip_address"
+      #: request input to its handlers: apps/api/src/server.ts:8, apps/api/src/server.ts:9 and more
+      #: also data of unknown category (request input not narrowed by a type): review
+      - fides_key: "user"
+        type: "user"
+        data_categories:
+          - "user.contact.email"
+          - "user.device.ip_address"
+    privacy_declarations:
+      #: PROPOSED analytics.reporting with data subjects customer, from the code: review it
+      #: purposes.yml#by_class.analytics: product analytics
+      - name: "Analytics for Reporting"
+        data_use: "analytics.reporting"
+        data_subjects:
+          - "customer"
+        data_categories:
+          - "user.contact.email"
+        egress:
+          - "posthog"
+      #: PROPOSED essential.service with data subjects customer, from the code: review it
+      #: purposes.yml#evidence.datasets: stored in the service's own database
+      #: purposes.yml#evidence.internal: exchanged with another service of this repository
+      #: purposes.yml#evidence.user_ingress: collected from users through request input
+      - name: "Essential for Service"
+        data_use: "essential.service"
+        data_subjects:
+          - "customer"
+        data_categories:
+          - "user.contact.address.city"
+          - "user.contact.address.street"
+          - "user.contact.email"
+          - "user.contact.phone_number"
+          - "user.device.ip_address"
+          - "user.unique_id.pseudonymous"
+        dataset_references:
+          - "shop_db"
+        ingress:
+          - "shop_web"
+          - "user"
+  #: service rooted at apps/web (js.server: apps/web/package.json)
+  #: reached as web (docker-compose.yml)
+  - fides_key: "shop_web"
+    name: "@shop/web"
+    system_type: "Service"
+    meta:
+      privacy_flow:
+        needs_review:
+          - "Essential for Service"
+    egress:
+      #: to shop_api over HTTP: apps/web/app/api/subscribe/route.ts:7
+      - fides_key: "shop_api"
+        type: "system"
+        data_categories:
+          - "user.contact.email"
+          - "user.device.ip_address"
+    ingress:
+      #: request input to its handlers: apps/web/app/api/subscribe/route.ts:5, apps/web/app/api/subscribe/route.ts:6, apps/web/app/api/subscribe/route.ts:7 and more
+      #: also data of unknown category (request input not narrowed by a type): review
+      - fides_key: "user"
+        type: "user"
+        data_categories:
+          - "user.contact.email"
+          - "user.device.ip_address"
+    privacy_declarations:
+      #: PROPOSED essential.service with data subjects customer, from the code: review it
+      #: purposes.yml#evidence.internal: exchanged with another service of this repository
+      #: purposes.yml#evidence.user_ingress: collected from users through request input
+      - name: "Essential for Service"
+        data_use: "essential.service"
+        data_subjects:
+          - "customer"
+        data_categories:
+          - "user.contact.email"
+          - "user.device.ip_address"
+        egress:
+          - "shop_api"
+        ingress:
+          - "user"

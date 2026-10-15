@@ -6,6 +6,31 @@ All notable changes to this project are documented here. The format is based on
 
 ## [Unreleased]
 
+### Added
+
+- `piiflow datamap`: a full Fides data map of the repository (`.fides/datamap.yml`), maintained
+  in place ([docs](docs/datamap.md), ADRs 0018 and 0019).
+  - **Systems:** one per deployable service: C# web, worker and executable projects; packages with
+    a server or app framework; Django and Python app objects; Dockerfiles. Or as declared under
+    the new `systems:` key of `.privacy-flow.yml`.
+  - **Flows between systems:** requests through registered clients (typed `AddHttpClient<T>`,
+    `axios.create`, `httpx`, `aiohttp`) resolve to the system their base address names, by
+    .NET Aspire project names, docker-compose services and `systems: hosts:`.
+  - **Flows to processors and unnamed destinations,** and each system's input from users.
+  - **Datasets:** from Entity Framework Core, Django, SQLAlchemy and Prisma models, with fields
+    classified like flows.
+  - **Privacy declarations, proposed:** a data use per group of evidence, from
+    `catalogue/topology/purposes.yml`, always listed for review, never with a legal basis.
+  - **Re-runs merge into the file** over the last generation (`.fides/datamap.lock.json`):
+    edits, deletions and additions stay, untouched values follow the code.
+  - **privacy-datamap:** decisions in its manifest win.
+  - **CI:** `--check` exits 5, a new exit code, when the map is out of date. The GitHub Action
+    gains `datamap-check`.
+- On dotnet/eShop: 11 services, 4 datasets (with the order's card number and address), and the
+  web app's request carrying them resolved to the ordering API. The smoke test checks them.
+- The flow-facts document can carry a `topology` section; only `datamap` writes it. `scan` and
+  `diff` output is unchanged.
+
 ## [0.3.1] - 2026-10-14
 
 The Fides fragment lists every destination personal data reaches, including those the code

@@ -10,25 +10,8 @@
 use std::collections::{BTreeMap, BTreeSet};
 use std::fmt::Write;
 
+use crate::output::yaml::{q, snake};
 use crate::report::Document;
-
-/// A YAML double-quoted scalar.
-fn q(s: &str) -> String {
-    let mut out = String::from("\"");
-    for c in s.chars() {
-        match c {
-            '"' => out.push_str("\\\""),
-            '\\' => out.push_str("\\\\"),
-            '\n' => out.push_str("\\n"),
-            c if (c as u32) < 0x20 => {
-                let _ = write!(out, "\\x{:02x}", c as u32);
-            }
-            c => out.push(c),
-        }
-    }
-    out.push('"');
-    out
-}
 
 pub fn render(doc: &Document) -> String {
     let mut out = String::new();
@@ -170,7 +153,7 @@ pub fn render(doc: &Document) -> String {
 
 /// `unresolved_<class>_<file>`, with the file's directories added, innermost first, until the
 /// keys of one class are distinct: `unresolved_http_ordering_service`.
-fn unresolved_keys<'a>(
+pub(crate) fn unresolved_keys<'a>(
     groups: impl Iterator<Item = (&'a str, &'a str)>,
 ) -> BTreeMap<(&'a str, &'a str), String> {
     let groups: Vec<_> = groups.collect();
@@ -215,30 +198,10 @@ fn unresolved_keys<'a>(
     }
 }
 
-/// `OrderingService` → `ordering_service`, `web-hooks.client` → `web_hooks_client`.
-fn snake(s: &str) -> String {
-    let mut out = String::new();
-    let mut prev_lower = false;
-    for c in s.chars() {
-        if c.is_ascii_alphanumeric() {
-            if c.is_ascii_uppercase() && prev_lower {
-                out.push('_');
-            }
-            prev_lower = c.is_ascii_lowercase() || c.is_ascii_digit();
-            out.push(c.to_ascii_lowercase());
-        } else {
-            if !out.is_empty() && !out.ends_with('_') {
-                out.push('_');
-            }
-            prev_lower = false;
-        }
-    }
-    out.trim_end_matches('_').to_string()
-}
-
 #[cfg(test)]
 mod tests {
-    use super::{q, snake, unresolved_keys};
+    use super::unresolved_keys;
+    use crate::output::yaml::{q, snake};
 
     #[test]
     fn unresolved_keys_are_distinct_and_readable() {

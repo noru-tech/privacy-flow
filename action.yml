@@ -71,6 +71,12 @@ inputs:
       before running it. Requires the gh CLI (present on GitHub-hosted runners).
     required: false
     default: "true"
+  datamap-check:
+    description: >-
+      Also check that the data map (`piiflow datamap`, .fides/datamap.yml under `path`) is up to
+      date with the code; out of date (exit 5) fails the step like a finding.
+    required: false
+    default: "false"
   token:
     description: Token for `gh attestation verify` (read-only).
     required: false
@@ -88,6 +94,11 @@ outputs:
   document:
     description: Path of the JSON flow-facts document for the pull request's changes.
     value: ${{ steps.diff.outputs.document }}
+  datamap-exit-code:
+    description: >-
+      `piiflow datamap --check`'s exit code when datamap-check is true: 0 or 4 up to date, 5 out
+      of date.
+    value: ${{ steps.datamap.outputs.exit-code }}
 
 runs:
   using: composite
@@ -188,6 +199,27 @@ runs:
           esac
         } >> "$GITHUB_STEP_SUMMARY"
 
+    - name: Check the data map
+      id: datamap
+      if: ${{ inputs.datamap-check == 'true' }}
+      shell: bash
+      env:
+        PF_PATH: ${{ inputs.path }}
+      run: |
+        set +e -uo pipefail
+        piiflow -q datamap --check "$PF_PATH"
+        code=$?
+        case "$code" in
+          0|4|5) ;;
+          *) echo "::error::piiflow datamap failed with exit code $code" >&2; exit "$code" ;;
+        esac
+        echo "exit-code=$code" >> "$GITHUB_OUTPUT"
+        if [ "$code" -eq 5 ]; then
+          echo "Data map: **out of date** (exit 5) — run \`piiflow datamap\` and commit .fides/datamap.yml and its lock." >> "$GITHUB_STEP_SUMMARY"
+        else
+          echo "Data map: up to date." >> "$GITHUB_STEP_SUMMARY"
+        fi
+
     - name: Upload SARIF
       if: ${{ always() && inputs.upload-sarif == 'true' && inputs.format == 'sarif' && steps.check.outputs.output != '' }}
       uses: github/codeql-action/upload-sarif@2892aa5e19bbd11bc0cff5427e3b750a04d9e3c2 # v4.38.2
@@ -199,8 +231,16 @@ runs:
       shell: bash
       env:
         PF_CODE: ${{ steps.check.outputs.exit-code }}
+        PF_MAP_CODE: ${{ steps.datamap.outputs.exit-code }}
         PF_FAIL: ${{ inputs.fail-on-findings }}
       run: |
+        if [ "${PF_MAP_CODE:-0}" -eq 5 ]; then
+          if [ "$PF_FAIL" = "true" ]; then
+            echo "::error::the data map is out of date: run piiflow datamap and commit it" >&2
+            exit 5
+          fi
+          echo "::warning::the data map is out of date (advisory mode)" >&2
+        fi
         if [ "${PF_CODE:-0}" -ne 0 ]; then
           if [ "$PF_FAIL" = "true" ]; then
             echo "::error::privacy-flow exit code $PF_CODE" >&2

@@ -25,6 +25,8 @@ pub mod program;
 pub mod report;
 pub mod resolve;
 pub mod rules;
+pub mod topology;
+pub mod values;
 
 /// Process exit codes. They are part of the public interface: a code's meaning never changes,
 /// and a new condition gets a new code. See `docs/exit-codes.md`.
@@ -41,6 +43,8 @@ pub enum Exit {
     InvalidInput = 3,
     /// Coverage incomplete: a clean result cannot be claimed (takes precedence over 1).
     CoverageIncomplete = 4,
+    /// The data map is out of date (`datamap --check`; takes precedence over 4).
+    OutOfDate = 5,
 }
 
 #[cfg(test)]
@@ -54,5 +58,6 @@ mod tests {
         assert_eq!(Exit::Usage as u8, 2);
         assert_eq!(Exit::InvalidInput as u8, 3);
         assert_eq!(Exit::CoverageIncomplete as u8, 4);
+        assert_eq!(Exit::OutOfDate as u8, 5);
     }
 }

@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 """Fail on a large performance regression.
 
-Three cases, each scanned with the release binary:
+Four cases, each run with the release binary:
 
 - the 100k-line synthetic TypeScript service (benches/synthetic.py), and its C# counterpart
   (`--lang cs`), against wall time and peak memory;
+- `piiflow datamap` on the C# service, against the same budgets;
 - wide summaries (benches/wide_summaries.py), the shape that made the engine quadratic on
   polarsource/polar, against the engine phase's time (about 0.45 s fixed, 16 s quadratic, on
   an Apple M3 Pro).
@@ -47,13 +48,17 @@ def wide_summaries(binary):
     return None
 
 
-def synthetic(binary, lang):
+def synthetic(binary, lang, command="scan"):
     """The 100k-line synthetic service in one language; returns False when over budget."""
     extra = ["--lang", "cs"] if lang == "cs" else []
-    with tempfile.TemporaryDirectory() as tmp:
+    with tempfile.TemporaryDirectory() as tmp, tempfile.TemporaryDirectory() as out:
         subprocess.run([sys.executable, str(ROOT / "benches/synthetic.py"), tmp, "100000", *extra], check=True)
+        if command == "scan":
+            argv = [binary, "scan", tmp, "--walk", "--timings", "-o", os.devnull]
+        else:
+            argv = [binary, "datamap", tmp, "--walk", "-o", os.path.join(out, "datamap.yml")]
         start = time.monotonic()
-        proc = subprocess.run([binary, "scan", tmp, "--walk", "--timings", "-o", os.devnull], capture_output=True, text=True)
+        proc = subprocess.run(argv, capture_output=True, text=True)
         wall = time.monotonic() - start
     if proc.returncode not in (0, 4):
         print(proc.stderr, file=sys.stderr)
@@ -63,11 +68,12 @@ def synthetic(binary, lang):
     # ru_maxrss is KiB on Linux and bytes on macOS.
     peak_mib = peak / 1024 if sys.platform != "darwin" else peak / (1024 * 1024)
     timings = next((l for l in proc.stderr.splitlines() if l.startswith("timings:")), "")
-    print(f"100k-line synthetic service ({lang}): {wall:.2f} s wall, {peak_mib:.0f} MiB peak")
-    print(timings)
+    print(f"100k-line synthetic service ({lang}, {command}): {wall:.2f} s wall, {peak_mib:.0f} MiB peak")
+    if timings:
+        print(timings)
     ok = True
     if wall > BUDGET_SECONDS:
-        print(f"::error::{lang} scan took {wall:.2f} s, over the {BUDGET_SECONDS:.0f} s budget", file=sys.stderr)
+        print(f"::error::{lang} {command} took {wall:.2f} s, over the {BUDGET_SECONDS:.0f} s budget", file=sys.stderr)
         ok = False
     if peak_mib > BUDGET_MIB:
         print(f"::error::peak memory {peak_mib:.0f} MiB, over the {BUDGET_MIB:.0f} MiB budget", file=sys.stderr)
@@ -79,6 +85,7 @@ def main():
     binary = sys.argv[1] if len(sys.argv) > 1 else str(ROOT / "target/release/piiflow")
     ok = synthetic(binary, "ts")
     ok = synthetic(binary, "cs") and ok
+    ok = synthetic(binary, "cs", "datamap") and ok
     error = wide_summaries(binary)
     if error:
         print(f"::error::{error}", file=sys.stderr)

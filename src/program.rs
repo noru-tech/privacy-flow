@@ -135,6 +135,26 @@ pub struct GClass {
     pub more_ctor_this: Vec<VarId>,
     pub partial_key: Option<String>,
     pub field_attrs: Vec<(String, Vec<VarId>)>,
+    pub members: Vec<GMember>,
+    pub outer: Option<ClassId>,
+}
+
+/// A declared field or property (see [`crate::ir::MemberIr`]).
+#[derive(Clone, Debug)]
+pub struct GMember {
+    pub name: String,
+    pub pos: Pos,
+    pub kind: crate::ir::MemberKind,
+    pub is_static: bool,
+    pub ty: Option<GTypeExpr>,
+    pub value: Option<VarId>,
+}
+
+#[derive(Clone, Debug)]
+pub struct GTypeExpr {
+    pub text: String,
+    pub head: Option<VarId>,
+    pub args: Vec<VarId>,
 }
 
 #[derive(Clone, Debug)]
@@ -568,6 +588,23 @@ impl Program {
                         .iter()
                         .map(|(n, a)| (n.clone(), a.iter().map(|v| v + vo).collect()))
                         .collect(),
+                    members: c
+                        .members
+                        .iter()
+                        .map(|m| GMember {
+                            name: m.name.clone(),
+                            pos: m.pos,
+                            kind: m.kind,
+                            is_static: m.is_static,
+                            ty: m.ty.as_ref().map(|t| GTypeExpr {
+                                text: t.text.clone(),
+                                head: t.head.map(|v| v + vo),
+                                args: t.args.iter().map(|v| v + vo).collect(),
+                            }),
+                            value: m.value.map(|v| v + vo),
+                        })
+                        .collect(),
+                    outer: c.outer.map(|o| o + co),
                 });
             }
             for s in &f.stmts {
@@ -822,6 +859,7 @@ impl Program {
                     more_ctor_this: Vec::new(),
                     partial_key: None,
                     field_attrs: Vec::new(),
+                    members: Vec::new(),
                     ctor_this: None,
                     ..self.classes[k as usize].clone()
                 };
@@ -834,6 +872,7 @@ impl Program {
                 canon_class.implements_args.extend(part.implements_args);
                 canon_class.decorators.extend(part.decorators);
                 canon_class.field_attrs.extend(part.field_attrs);
+                canon_class.members.extend(part.members);
                 for t in part.ctor_this.into_iter().chain(part.more_ctor_this) {
                     if canon_class.ctor_this.is_none() {
                         canon_class.ctor_this = Some(t);

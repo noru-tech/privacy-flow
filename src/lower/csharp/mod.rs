@@ -473,7 +473,9 @@ impl<'s> Cs<'s, '_> {
             .map(|n| self.text(n).to_string())
             .unwrap_or_default();
         let attrs = self.attributes(node);
+        let outer = self.class();
         let c = self.b.new_class(&name, node);
+        self.b.ir.classes[c as usize].outer = outer;
         let pos = self.b.pos(node);
         if let Some(id) = id {
             let def = self.ix.def(id);
@@ -604,7 +606,16 @@ impl<'s> Cs<'s, '_> {
             self.b.store_member(pnode, this, Some(pname.clone()), var);
             if is_record {
                 let p = self.b.pos(pnode);
-                self.b.ir.types[type_index].fields.push((pname, p));
+                self.b.ir.types[type_index].fields.push((pname.clone(), p));
+                let ty = pnode.child_by_field_name("type").map(|t| self.type_expr(t));
+                self.b.ir.classes[c as usize].members.push(MemberIr {
+                    name: pname,
+                    pos: p,
+                    kind: MemberKind::Property,
+                    is_static: false,
+                    ty,
+                    value: None,
+                });
             }
         }
         // `record R(string A) : Base(A)`: the base constructor runs with these arguments.
@@ -743,12 +754,26 @@ impl<'s> Cs<'s, '_> {
                     .into_iter()
                     .find(|k| k.kind() == "variable_declaration")
             {
+                let is_static = modifiers(m, self.b.src)
+                    .iter()
+                    .any(|x| x == "static" || x == "const");
+                let ty = vd.child_by_field_name("type");
                 for d in named_children(vd) {
                     if d.kind() == "variable_declarator"
                         && let Some(n) = d.child_by_field_name("name")
                     {
                         let key = self.text(n).to_string();
                         self.member_attributes(m, c, &key);
+                        let ty = ty.map(|t| self.type_expr(t));
+                        let pos = self.b.pos(d);
+                        self.b.ir.classes[c as usize].members.push(MemberIr {
+                            name: key,
+                            pos,
+                            kind: MemberKind::Field,
+                            is_static,
+                            ty,
+                            value: None,
+                        });
                     }
                 }
             }
@@ -819,6 +844,22 @@ impl<'s> Cs<'s, '_> {
         let key = self.text(n).to_string();
         self.member_attributes(m, c, &key);
         let p = self.b.pos(m);
+        let computed = m
+            .child_by_field_name("value")
+            .is_some_and(|v| v.kind() == "arrow_expression_clause");
+        let ty = m.child_by_field_name("type").map(|t| self.type_expr(t));
+        self.b.ir.classes[c as usize].members.push(MemberIr {
+            name: key.clone(),
+            pos: p,
+            kind: if computed {
+                MemberKind::Computed
+            } else {
+                MemberKind::Property
+            },
+            is_static: modifiers(m, self.b.src).iter().any(|x| x == "static"),
+            ty,
+            value: None,
+        });
         if !self.b.ir.types[type_index]
             .fields
             .iter()
@@ -1200,6 +1241,22 @@ impl<'s> Cs<'s, '_> {
                 Some(self.resolved(ty, res, &fallback))
             }
             _ => None,
+        }
+    }
+
+    /// A declared type for the members side table: its head exactly (`DbSet` of `DbSet<T>`) and
+    /// its type arguments.
+    fn type_expr(&mut self, t: Node) -> TypeExpr {
+        let inner = match t.kind() {
+            "nullable_type" | "ref_type" | "scoped_type" => {
+                t.child_by_field_name("type").unwrap_or(t)
+            }
+            _ => t,
+        };
+        TypeExpr {
+            text: self.text(t).to_string(),
+            head: self.type_value(inner, true),
+            args: self.type_args(inner),
         }
     }
 

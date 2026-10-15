@@ -1,0 +1,173 @@
+# A Fides data map (Fideslang 3.1.3) of this repository, written by `piiflow datamap`.
+# Systems, datasets, egress and ingress come from the code; lines starting with "#:" say where.
+# Keys starting with unresolved_ are destinations the code does not name: replace each with
+# the receiving system's key, or declare it in .privacy-flow.yml and run again.
+# Privacy declarations are PROPOSALS: their data use and data subjects are suggested from the
+# evidence, and each system lists them under meta.privacy_flow.needs_review until a person
+# decides. No legal basis is proposed.
+dataset:
+  #: py.sqlalchemy at notifier/app/models.py:9
+  - fides_key: "notifier_db"
+    name: "notifier database"
+    collections:
+      #: notifier/app/models.py:9 (Subscriber)
+      - name: "subscribers"
+        fields:
+          #: notifier/app/models.py:15; classified by classification-table
+          - name: "city"
+            data_categories:
+              - "user.contact.address.city"
+          #: notifier/app/models.py:13 (email); classified by classification-table
+          - name: "email_address"
+            data_categories:
+              - "user.contact.email"
+          #: notifier/app/models.py:14; classified by classification-table
+          - name: "full_name"
+            data_categories:
+              - "user.name"
+          #: notifier/app/models.py:12; classified by catalogue:person-record-id
+          - name: "id"
+            data_categories:
+              - "user.unique_id.pseudonymous"
+  #: py.django at shop/accounts/models.py:12
+  - fides_key: "shop_db"
+    name: "shop database"
+    collections:
+      #: shop/accounts/models.py:12 (Member)
+      - name: "accounts_member"
+        fields:
+          - name: "date_joined"
+          #: classified by classification-table
+          - name: "email"
+            data_categories:
+              - "user.contact.email"
+          #: classified by classification-table
+          - name: "first_name"
+            data_categories:
+              - "user.name.first"
+          - name: "is_active"
+          - name: "is_staff"
+          - name: "is_superuser"
+          - name: "last_login"
+          #: classified by classification-table
+          - name: "last_name"
+            data_categories:
+              - "user.name.last"
+          #: classified by classification-table
+          - name: "password"
+            data_categories:
+              - "user.authorization.password"
+          #: shop/accounts/models.py:13; classified by classification-table
+          - name: "phone"
+            data_categories:
+              - "user.contact.phone_number"
+          #: classified by classification-table
+          - name: "username"
+            data_categories:
+              - "user.account.username"
+      #: shop/accounts/models.py:16 (Address)
+      - name: "addresses"
+        fields:
+          - name: "created"
+          #: shop/accounts/models.py:17 (member); classified by catalogue:person-identifiers
+          - name: "member_id"
+            data_categories:
+              - "user.unique_id.pseudonymous"
+          #: shop/accounts/models.py:18; classified by classification-table
+          - name: "street"
+            data_categories:
+              - "user.contact.address.street"
+          #: shop/accounts/models.py:19 (postcode); classified by classification-table
+          - name: "zip"
+            data_categories:
+              - "user.contact.address.postal_code"
+system:
+  #: service rooted at notifier (py.app: notifier/pyproject.toml)
+  #: reached as notifier (docker-compose.yml)
+  - fides_key: "notifier"
+    name: "notifier"
+    system_type: "Service"
+    meta:
+      privacy_flow:
+        needs_review:
+          - "Essential for Service"
+    dataset_references:
+      - "notifier_db"
+    ingress:
+      - fides_key: "shop"
+        type: "system"
+        data_categories:
+          - "user.contact.email"
+      #: request input to its handlers: notifier/app/main.py:15, notifier/app/main.py:16
+      - fides_key: "user"
+        type: "user"
+        data_categories:
+          - "user.contact.email"
+    privacy_declarations:
+      #: PROPOSED essential.service with data subjects customer, from the code: review it
+      #: purposes.yml#evidence.datasets: stored in the service's own database
+      #: purposes.yml#evidence.internal: exchanged with another service of this repository
+      #: purposes.yml#evidence.user_ingress: collected from users through request input
+      - name: "Essential for Service"
+        data_use: "essential.service"
+        data_subjects:
+          - "customer"
+        data_categories:
+          - "user.contact.address.city"
+          - "user.contact.email"
+          - "user.name"
+          - "user.unique_id.pseudonymous"
+        dataset_references:
+          - "notifier_db"
+        ingress:
+          - "shop"
+          - "user"
+  #: service rooted at shop (py.django: shop/manage.py)
+  #: reached as shop (docker-compose.yml)
+  - fides_key: "shop"
+    name: "shop"
+    system_type: "Service"
+    meta:
+      privacy_flow:
+        needs_review:
+          - "Essential for Service"
+    dataset_references:
+      - "shop_db"
+    egress:
+      #: to notifier over HTTP: shop/accounts/views.py:9
+      - fides_key: "notifier"
+        type: "system"
+        data_categories:
+          - "user.contact.email"
+    ingress:
+      #: request input to its handlers: shop/accounts/views.py:7, shop/accounts/views.py:8 and more
+      #: also data of unknown category (request input not narrowed by a type): review
+      - fides_key: "user"
+        type: "user"
+        data_categories:
+          - "user.contact.email"
+    privacy_declarations:
+      #: PROPOSED essential.service with data subjects customer, from the code: review it
+      #: purposes.yml#evidence.datasets: stored in the service's own database
+      #: purposes.yml#evidence.internal: exchanged with another service of this repository
+      #: purposes.yml#evidence.user_ingress: collected from users through request input
+      - name: "Essential for Service"
+        data_use: "essential.service"
+        data_subjects:
+          - "customer"
+        data_categories:
+          - "user.account.username"
+          - "user.authorization.password"
+          - "user.contact.address.postal_code"
+          - "user.contact.address.street"
+          - "user.contact.email"
+          - "user.contact.phone_number"
+          - "user.name.first"
+          - "user.name.last"
+          - "user.unique_id.pseudonymous"
+        dataset_references:
+          - "shop_db"
+        egress:
+          - "notifier"
+        ingress:
+          - "user"

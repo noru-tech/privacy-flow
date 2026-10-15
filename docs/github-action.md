@@ -57,6 +57,7 @@ Pin both actions to a commit SHA in production workflows, as this repository doe
 | `upload-sarif` | `true` | Upload to code scanning when the format is SARIF |
 | `fail-on-findings` | `true` | `false` runs in advisory mode |
 | `verify-attestation` | `true` | Verify the release archive's attestation |
+| `datamap-check` | `false` | Also fail when the [data map](datamap.md) is out of date (`piiflow datamap --check`, exit 5); needs a release with `datamap` |
 
 Outputs: `exit-code`, `output`, and `document` (the JSON flow-facts document of the diff).
 

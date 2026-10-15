@@ -1,6 +1,6 @@
 # Exit codes
 
-`piiflow` exits with one of five stable codes. They are part of the public interface: a code's
+`piiflow` exits with one of six stable codes. They are part of the public interface: a code's
 meaning never changes, and a new condition gets a new code rather than reusing one. The codes are
 defined once, in `Exit` in [`src/lib.rs`](../src/lib.rs), and a unit test pins each value.
 
@@ -10,7 +10,8 @@ defined once, in `Exit` in [`src/lib.rs`](../src/lib.rs), and a unit test pins e
 | [1](#1-policy-threshold-exceeded) | Policy threshold exceeded | `check` |
 | [2](#2-invalid-command-line-arguments) | Invalid command-line arguments | every command |
 | [3](#3-invalid-input) | Invalid input: configuration, document or file | every command that reads one |
-| [4](#4-coverage-incomplete) | Coverage incomplete: a clean result cannot be claimed (takes precedence over 1) | `scan`, `diff`, `check` |
+| [4](#4-coverage-incomplete) | Coverage incomplete: a clean result cannot be claimed (takes precedence over 1) | `scan`, `diff`, `check`, `datamap` |
+| [5](#5-data-map-out-of-date) | The data map is out of date (takes precedence over 4) | `datamap --check` |
 
 Findings never change the exit code of `scan` or `diff`: they write their output and exit 0, or
 4 when coverage is incomplete. Only `check` enforces the policy threshold. The
@@ -94,3 +95,17 @@ disposition on its PFC01 finding ([PFC01](rules/PFC01.md)). See
 ---
 
 [Rules](rules/README.md) · [Configuration](configuration.md) · [README](../README.md#output-formats-and-exit-codes)
+
+## 5: Data map out of date
+
+`piiflow datamap --check` found that writing the [data map](datamap.md) would change it or its
+lock: the code shows something the map does not, the map was edited in a way the next run would
+merge, or the lock is missing. Nothing is written. Run `piiflow datamap` and commit
+`.fides/datamap.yml` and `.fides/datamap.lock.json`. It takes precedence over 4, so drift fails
+a CI job even when coverage is incomplete.
+
+```console
+$ piiflow datamap --check; echo $?
+./.fides/datamap.yml is out of date (map): run `piiflow datamap` and commit the map and its lock
+5
+```

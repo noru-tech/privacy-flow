@@ -22,10 +22,11 @@ The document separates **facts** from **judgements derived from them**:
 | `summary` | **Derived.** Counts by rule and severity, processors reached |
 | `cited_files` | SHA-256 of every file a flow or gap cites, so `explain` can tell when a file changed since the scan |
 | `diff` | For `piiflow diff`: base, head, and how many findings were introduced, changed and removed |
+| `topology` | Only in a document `piiflow datamap --facts` writes ([data map](datamap.md)): the repository's systems (with their evidence, aliases, user input and datasets), datasets, which systems each flow belongs to and the requests bound to client registrations (**facts**), and the edges and proposed declarations (**derived**). `scan` and `diff` documents have no `topology`; an older `validate` rejects a document that has one |
 | `digest` | `sha256:` over the canonical bytes of the document with `digest` empty and every `disposition` null |
 
-`piiflow validate FILE` re-checks a document: schema, digest, and that `findings`, `egress` and
-`summary` follow exactly from the facts, the embedded policy and the declared processors (for a
+`piiflow validate FILE` re-checks a document: schema, digest, and that `findings`, `egress`,
+`summary` (and the topology's edges and declarations) follow exactly from the facts, the embedded policy and the declared processors (for a
 `diff` document, that every finding it keeps follows). A document edited anywhere except in a
 disposition fails with exit 3.
 

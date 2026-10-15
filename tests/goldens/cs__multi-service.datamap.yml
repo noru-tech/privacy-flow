@@ -1,0 +1,161 @@
+# A Fides data map (Fideslang 3.1.3) of this repository, written by `piiflow datamap`.
+# Systems, datasets, egress and ingress come from the code; lines starting with "#:" say where.
+# Keys starting with unresolved_ are destinations the code does not name: replace each with
+# the receiving system's key, or declare it in .privacy-flow.yml and run again.
+# Privacy declarations are PROPOSALS: their data use and data subjects are suggested from the
+# evidence, and each system lists them under meta.privacy_flow.needs_review until a person
+# decides. No legal basis is proposed.
+dataset:
+  #: cs.efcore at Orders.Data/OrdersContext.cs:44; database ordersdb; schema sales
+  - fides_key: "orders_context"
+    name: "OrdersContext"
+    collections:
+      #: Orders.Data/OrdersContext.cs:13 (Shop.Orders.Data.Buyer)
+      - name: "Buyers"
+        fields:
+          #: Orders.Data/OrdersContext.cs:16; classified by classification-table
+          - name: "Email"
+            data_categories:
+              - "user.contact.email"
+          - name: "Id"
+          #: Orders.Data/OrdersContext.cs:17 (PhoneNumber); classified by classification-table
+          - name: "phone"
+            data_categories:
+              - "user.contact.phone_number"
+      #: Orders.Data/OrdersContext.cs:24 (Shop.Orders.Data.Order)
+      - name: "orders"
+        fields:
+          - name: "BuyerId"
+          #: Orders.Data/OrdersContext.cs:26 (_cardNumber); classified by classification-table
+          - name: "CardNumber"
+            data_categories:
+              - "user.financial.credit_card"
+          - name: "Id"
+          - name: "ShipTo"
+            fields:
+              #: Orders.Data/OrdersContext.cs:10; classified by classification-table
+              - name: "City"
+                data_categories:
+                  - "user.contact.address.city"
+              #: Orders.Data/OrdersContext.cs:9; classified by classification-table
+              - name: "Street"
+                data_categories:
+                  - "user.contact.address.street"
+system:
+  #: third-party processor legacy.example.com
+  - fides_key: "legacy.example.com"
+    name: "legacy.example.com"
+    system_type: "Third Party"
+    ingress:
+      #: also data of unknown category (request input not narrowed by a type): review
+      - fides_key: "worker"
+        type: "system"
+        data_categories:
+          - "user.contact.email"
+    privacy_declarations: []
+  #: service rooted at Orders.Api (cs.web: Orders.Api/Orders.Api.csproj)
+  #: reached as orders-api (AppHost/Program.cs:3)
+  - fides_key: "orders_api"
+    name: "Orders.Api"
+    system_type: "Service"
+    meta:
+      privacy_flow:
+        needs_review:
+          - "Essential for Service"
+    dataset_references:
+      - "orders_context"
+    ingress:
+      #: also data of unknown category (request input not narrowed by a type): review
+      - fides_key: "web"
+        type: "system"
+        data_categories:
+          - "user.contact.email"
+      #: request input to its handlers: Orders.Api/Program.cs:8, Orders.Api/Program.cs:10, Orders.Api/Program.cs:11 and more
+      - fides_key: "user"
+        type: "user"
+        data_categories:
+          - "user.contact.email"
+          - "user.financial.credit_card"
+    privacy_declarations:
+      #: PROPOSED essential.service with data subjects customer, from the code: review it
+      #: purposes.yml#evidence.datasets: stored in the service's own database
+      #: purposes.yml#evidence.internal: exchanged with another service of this repository
+      #: purposes.yml#evidence.user_ingress: collected from users through request input
+      - name: "Essential for Service"
+        data_use: "essential.service"
+        data_subjects:
+          - "customer"
+        data_categories:
+          - "user.contact.address.city"
+          - "user.contact.address.street"
+          - "user.contact.email"
+          - "user.contact.phone_number"
+          - "user.financial.credit_card"
+        dataset_references:
+          - "orders_context"
+        ingress:
+          - "user"
+          - "web"
+  #: service rooted at Web (cs.web: Web/Web.csproj)
+  #: reached as web (AppHost/Program.cs:4)
+  - fides_key: "web"
+    name: "Web"
+    system_type: "Service"
+    meta:
+      privacy_flow:
+        needs_review:
+          - "Essential for Service"
+    egress:
+      #: to orders_api over HTTP: Shared.Clients/OrdersClient.cs:9
+      #: also data of unknown category (request input not narrowed by a type): review
+      - fides_key: "orders_api"
+        type: "system"
+        data_categories:
+          - "user.contact.email"
+    ingress:
+      #: request input to its handlers: Web/Program.cs:7 and more
+      #: also data of unknown category (request input not narrowed by a type): review
+      - fides_key: "user"
+        type: "user"
+        data_categories:
+          - "user.contact.email"
+    privacy_declarations:
+      #: PROPOSED essential.service with data subjects customer, from the code: review it
+      #: purposes.yml#evidence.internal: exchanged with another service of this repository
+      #: purposes.yml#evidence.user_ingress: collected from users through request input
+      - name: "Essential for Service"
+        data_use: "essential.service"
+        data_subjects:
+          - "customer"
+        data_categories:
+          - "user.contact.email"
+        egress:
+          - "orders_api"
+        ingress:
+          - "user"
+  #: worker rooted at Worker (cs.worker: Worker/Worker.csproj)
+  - fides_key: "worker"
+    name: "Worker"
+    system_type: "Service"
+    meta:
+      privacy_flow:
+        needs_review:
+          - "Third Party Sharing"
+    egress:
+      #: legacy.example.com via http (undeclared): Shared.Clients/OrdersClient.cs:9
+      #: also data of unknown category (request input not narrowed by a type): review
+      - fides_key: "legacy.example.com"
+        type: "system"
+        data_categories:
+          - "user.contact.email"
+    privacy_declarations:
+      #: PROPOSED third_party_sharing with data subjects customer, from the code: review it
+      #: purposes.yml#by_class.http: data sent to an outside host
+      - name: "Third Party Sharing"
+        data_use: "third_party_sharing"
+        data_subjects:
+          - "customer"
+        data_categories:
+          - "user.contact.email"
+        egress:
+          - "legacy.example.com"

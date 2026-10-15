@@ -1,4 +1,5 @@
-//! Fides data maps, as YAML or JSON, parse or return an error. They never panic.
+//! Fides data maps, as YAML or JSON, parse or return an error, and Prisma schemas are read into
+//! models. They never panic.
 //!
 //! The first byte picks the format; the rest is the document.
 
@@ -14,10 +15,9 @@ fuzz_target!(|data: &[u8]| {
     let Ok(text) = std::str::from_utf8(rest) else {
         return;
     };
-    let path = if pick % 2 == 0 {
-        "datamap.yml"
-    } else {
-        "datamap.json"
-    };
-    let _ = Datamap::parse(path, text);
+    match pick % 3 {
+        0 => drop(Datamap::parse("datamap.yml", text)),
+        1 => drop(Datamap::parse("datamap.json", text)),
+        _ => drop(privacy_flow::topology::prisma::parse(text)),
+    }
 });

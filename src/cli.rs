@@ -45,6 +45,9 @@ pub enum Command {
     Scan(ScanArgs),
     /// Report only flows introduced or changed between two revisions (BASE..HEAD).
     Diff(DiffArgs),
+    /// Write the repository's Fides data map: its systems, their egress and ingress, and the
+    /// processors and destinations they reach (default .fides/datamap.yml).
+    Datamap(DatamapArgs),
     /// Print a finding's (or flow's) hop chain with the source line of each hop.
     Explain(ExplainArgs),
     /// Enforce policy and dispositions on a flow-facts document; exit 1 on failure.
@@ -93,6 +96,46 @@ pub struct ScanArgs {
     pub timings: bool,
     /// Enumerate files by a directory walk even inside a Git work tree (untracked files are
     /// then included; the output records the method).
+    #[arg(long)]
+    pub walk: bool,
+}
+
+#[derive(clap::Args)]
+pub struct DatamapArgs {
+    /// Directory to analyse.
+    #[arg(default_value = ".")]
+    pub path: PathBuf,
+    /// The data map to maintain (default: .fides/datamap.yml in the directory). An existing map
+    /// is merged into: your changes stay, untouched values follow the code.
+    #[arg(short, long)]
+    pub output: Option<PathBuf>,
+    /// What piiflow generated last, the base of the merge (default: beside the map,
+    /// `<name>.lock.json`). Commit it with the map.
+    #[arg(long)]
+    pub lock: Option<PathBuf>,
+    /// Write nothing; exit 5 if the map or its lock would change.
+    #[arg(long, conflicts_with = "dry_run")]
+    pub check: bool,
+    /// Write nothing; print the merged map to stdout.
+    #[arg(long)]
+    pub dry_run: bool,
+    /// A privacy-datamap manifest whose decisions win (default: .noru/privacy-datamap.yml in the
+    /// directory, if there is one).
+    #[arg(long, conflicts_with = "no_manifest")]
+    pub manifest: Option<PathBuf>,
+    /// Read no privacy-datamap manifest.
+    #[arg(long)]
+    pub no_manifest: bool,
+    /// The date expired manifest decisions are reported against (YYYY-MM-DD; default: none).
+    #[arg(long)]
+    pub as_of: Option<String>,
+    /// Also write the flow-facts document, with its topology, to this file (JSON).
+    #[arg(long)]
+    pub facts: Option<PathBuf>,
+    /// Configuration file (default: .privacy-flow.yml in the directory).
+    #[arg(long)]
+    pub config: Option<PathBuf>,
+    /// Enumerate files by a directory walk even inside a Git work tree.
     #[arg(long)]
     pub walk: bool,
 }
@@ -215,6 +258,7 @@ pub fn main() -> ExitCode {
     let result = match cli.command {
         Command::Scan(a) => scan(a, quiet),
         Command::Diff(a) => diff(a, quiet),
+        Command::Datamap(a) => datamap(a, quiet),
         Command::Explain(a) => explain(a),
         Command::Check(a) => check(a, quiet),
         Command::Validate(a) => validate_cmd(a, quiet),
@@ -447,6 +491,194 @@ fn scan(a: ScanArgs, quiet: bool) -> Outcome {
     } else {
         Exit::CoverageIncomplete
     })
+}
+
+// ---------------------------------------------------------------------------- datamap
+
+pub const DEFAULT_DATAMAP: &str = ".fides/datamap.yml";
+
+fn datamap(a: DatamapArgs, quiet: bool) -> Outcome {
+    if !a.path.is_dir() {
+        return Err(usage(anyhow!("{} is not a directory", a.path.display())));
+    }
+    let root = a.path.as_path();
+    let tree = Tree::WorkTree(root);
+    let loaded = analyze::load_config(&tree, a.config.as_deref()).map_err(invalid)?;
+    let listing = if a.walk {
+        files::walk(root)
+    } else {
+        files::list(root)
+    }
+    .map_err(invalid)?;
+    let topo = crate::topology::catalogue::TopologyCatalogue::builtin().map_err(invalid)?;
+    let run = analyze::analyze(&tree, &listing, &loaded, EngineKind::Worklist).map_err(invalid)?;
+    let doc = crate::datamap::document(&tree, run, &loaded.config, &topo).map_err(invalid)?;
+    if let Some(f) = a.facts {
+        emit(&doc, Some(f), Some(Format::Json), PathBuf::new(), quiet)?;
+    }
+    let out = a.output.unwrap_or_else(|| root.join(DEFAULT_DATAMAP));
+    let lock_path = a
+        .lock
+        .unwrap_or_else(|| crate::datamap::lock::path_for(&out));
+    let existing_text = std::fs::read_to_string(&out).ok();
+    let existing = match &existing_text {
+        Some(t) => Some(
+            crate::datamap::yaml::parse(t)
+                .map_err(|e| invalid(anyhow!("{}: {e}", out.display())))?,
+        ),
+        None => None,
+    };
+    let lock_text = std::fs::read_to_string(&lock_path).ok();
+    let base = match (&lock_text, &existing) {
+        // A lock without its map: start again.
+        (Some(t), Some(_)) => Some(
+            crate::datamap::lock::parse(t)
+                .map_err(|e| invalid(anyhow!("{}: {e}", lock_path.display())))?,
+        ),
+        _ => None,
+    };
+    if existing.is_some() && base.is_none() {
+        status(
+            quiet,
+            format!(
+                "warning: {} has no lock ({}): your file is kept as it is and nothing it holds is updated; commit the lock this run writes",
+                out.display(),
+                lock_path.display()
+            ),
+        );
+    }
+    if let Some(t) = &existing_text {
+        let hand = t
+            .lines()
+            .filter(|l| {
+                let l = l.trim_start();
+                l.starts_with('#') && !l.starts_with("#:")
+            })
+            .filter(|l| {
+                let body = l.trim_start().trim_start_matches('#').trim();
+                !crate::datamap::generate::HEADER.contains(&body) && !body.is_empty()
+            })
+            .count();
+        if hand > 0 {
+            status(
+                quiet,
+                format!(
+                    "warning: {hand} comment line(s) in {} are not kept; use a description field",
+                    out.display()
+                ),
+            );
+        }
+    }
+    let manifest_path = if a.no_manifest {
+        None
+    } else {
+        a.manifest.clone().or_else(|| {
+            let p = root.join(crate::datamap::manifest::DEFAULT_PATH);
+            p.is_file().then_some(p)
+        })
+    };
+    let manifest = match &manifest_path {
+        Some(p) => {
+            let t =
+                std::fs::read_to_string(p).map_err(|e| invalid(anyhow!("{}: {e}", p.display())))?;
+            Some(
+                crate::datamap::yaml::parse(&t)
+                    .map_err(|e| invalid(anyhow!("{}: {e}", p.display())))?,
+            )
+        }
+        None => None,
+    };
+    let roots: Vec<(String, String)> = doc
+        .topology
+        .iter()
+        .flat_map(|t| t.systems.iter())
+        .map(|s| {
+            (
+                crate::datamap::manifest::key_for_root(&s.root),
+                s.key.clone(),
+            )
+        })
+        .collect();
+    let mut generated = crate::datamap::generate::generate(&doc);
+    let mut manifest_notes = Vec::new();
+    if let Some(m) = &manifest {
+        manifest_notes =
+            crate::datamap::manifest::apply(&mut generated, m, &roots, a.as_of.as_deref());
+    }
+    let (mut merged, report) =
+        crate::datamap::merge::merge(base.as_ref(), existing.as_ref(), &generated);
+    // The manifest's decisions win over edits of the map too.
+    if let Some(m) = &manifest {
+        crate::datamap::manifest::apply(&mut merged, m, &roots, a.as_of.as_deref());
+    }
+    for line in report.lines().into_iter().chain(manifest_notes) {
+        status(quiet, format!("note: {line}"));
+    }
+    for problem in crate::datamap::validate::check(&merged) {
+        status(quiet, format!("warning: not valid Fideslang: {problem}"));
+    }
+    let header: Vec<String> = crate::datamap::generate::HEADER
+        .iter()
+        .map(|s| s.to_string())
+        .collect();
+    let text = crate::datamap::yaml::render(&header, &merged);
+    let new_lock = crate::datamap::lock::render(&generated).map_err(invalid)?;
+    let coverage = if doc.coverage.complete {
+        Exit::Ok
+    } else {
+        Exit::CoverageIncomplete
+    };
+    if a.check {
+        let normal = |t: &str| -> String {
+            t.replace("\r\n", "\n")
+                .lines()
+                .filter(|l| !l.trim_start().starts_with("#:"))
+                .collect::<Vec<_>>()
+                .join("\n")
+        };
+        let map_drift = existing_text
+            .as_deref()
+            .is_none_or(|t| normal(t) != normal(&text));
+        let lock_drift = lock_text.as_deref() != Some(new_lock.as_str());
+        if map_drift || lock_drift {
+            status(
+                quiet,
+                format!(
+                    "{} is out of date{}: run `piiflow datamap` and commit the map and its lock",
+                    out.display(),
+                    match (map_drift, lock_drift) {
+                        (true, true) => " (map and lock)",
+                        (true, false) => " (map)",
+                        _ => " (lock)",
+                    }
+                ),
+            );
+            return Ok(Exit::OutOfDate);
+        }
+        status(quiet, format!("{} is up to date", out.display()));
+        return Ok(coverage);
+    }
+    if a.dry_run {
+        print!("{text}");
+        return Ok(coverage);
+    }
+    write_output(Some(&out), &text).map_err(invalid)?;
+    write_output(Some(&lock_path), &new_lock).map_err(invalid)?;
+    if let Some(t) = &doc.topology {
+        status(
+            quiet,
+            format!(
+                "wrote {} and its lock: {} system(s) in the repository ({}), {} dataset(s), {} declaration(s) to review; {}",
+                out.display(),
+                t.systems.len(),
+                t.mode,
+                t.datasets.len(),
+                t.declarations.len(),
+                summary_line(&doc)
+            ),
+        );
+    }
+    Ok(coverage)
 }
 
 // ------------------------------------------------------------------------------- diff

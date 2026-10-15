@@ -1,0 +1,49 @@
+# A Fides data map (Fideslang 3.1.3) of this repository, written by `piiflow datamap`.
+# Systems, datasets, egress and ingress come from the code; lines starting with "#:" say where.
+# Keys starting with unresolved_ are destinations the code does not name: replace each with
+# the receiving system's key, or declare it in .privacy-flow.yml and run again.
+# Privacy declarations are PROPOSALS: their data use and data subjects are suggested from the
+# evidence, and each system lists them under meta.privacy_flow.needs_review until a person
+# decides. No legal basis is proposed.
+system:
+  #: declared under systems: in .privacy-flow.yml (api/**)
+  #: reached as accounts.internal.example.com
+  - fides_key: "accounts_api"
+    name: "Accounts API"
+    system_type: "Service"
+    meta:
+      privacy_flow:
+        needs_review:
+          - "Essential for Operations"
+    egress:
+      #: Sentry via error_tracking (undeclared): api/handler.ts:4
+      - fides_key: "sentry"
+        type: "system"
+        data_categories:
+          - "user.contact.email"
+    privacy_declarations:
+      #: PROPOSED essential.service.operations with data subjects customer, from the code: review it
+      #: purposes.yml#by_class.error_tracking: error and crash reporting
+      - name: "Essential for Operations"
+        data_use: "essential.service.operations"
+        data_subjects:
+          - "customer"
+        data_categories:
+          - "user.contact.email"
+        egress:
+          - "sentry"
+  #: third-party processor Sentry
+  - fides_key: "sentry"
+    name: "Sentry"
+    system_type: "Third Party"
+    ingress:
+      - fides_key: "accounts_api"
+        type: "system"
+        data_categories:
+          - "user.contact.email"
+    privacy_declarations: []
+  #: declared under systems: in .privacy-flow.yml (web/**)
+  - fides_key: "storefront"
+    name: "Storefront"
+    system_type: "Service"
+    privacy_declarations: []

@@ -1,0 +1,48 @@
+# Client registrations: where an HTTP client's base address is set, so that a request sent
+# through it with a relative URL (or none) reaches a known host. `piiflow datamap` binds such
+# a request to the registrations in the same system and resolves the host to a system of the
+# repository (by the aliases in systems.yml and `systems:`) or to a processor.
+#
+#   calls:      API path globs of the registering call
+#   client:     `type_arg`: the registered class is the call's type argument, and requests
+#               sent by that class through a value of an `injects` type are bound;
+#               `result`: requests sent through the call's result are bound
+#   configure:  where the base address is: `lambda_fields` (stored on the lambda's first
+#               parameter), `arg` + `fields` (fields of an object argument), `keyword`
+#   wrappers:   constructors the address may be wrapped in (`new Uri("…")`)
+
+version: "0.1.0"
+
+clients:
+  - id: cs.httpclient.typed
+    language: csharp
+    calls: ["**.AddHttpClient"]
+    client: type_arg
+    injects: ["System.Net.Http.HttpClient"]
+    configure: { lambda_fields: [BaseAddress] }
+    wrappers: ["System.Uri{,()}"]
+    citation: "Typed clients, https://learn.microsoft.com/dotnet/core/extensions/httpclient-factory#typed-clients"
+  - id: js.axios.create
+    language: javascript
+    calls: ["axios:create", "axios:default.create"]
+    client: result
+    configure: { arg: 0, fields: [baseURL] }
+    citation: "axios.create, https://axios-http.com/docs/instance"
+  - id: js.ky.create
+    language: javascript
+    calls: ["ky:create", "ky:default.create", "ky:extend", "ky:default.extend"]
+    client: result
+    configure: { arg: 0, fields: [prefixUrl] }
+    citation: "ky.create, https://github.com/sindresorhus/ky#kycreatedefaultoptions"
+  - id: py.httpx.client
+    language: python
+    calls: ["httpx.{Client,AsyncClient}"]
+    client: result
+    configure: { keyword: base_url }
+    citation: "httpx base_url, https://www.python-httpx.org/advanced/clients/#merging-of-configuration"
+  - id: py.aiohttp.session
+    language: python
+    calls: ["aiohttp.ClientSession"]
+    client: result
+    configure: { keyword: base_url, arg: 0 }
+    citation: "aiohttp ClientSession base_url, https://docs.aiohttp.org/en/stable/client_reference.html"
