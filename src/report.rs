@@ -540,11 +540,15 @@ pub fn build(p: &Program, f: &Facts, reaches: &[Reach], ctx: &Context) -> Result
             });
             // Request input of unknown category narrowed by a classified field read on its way:
             // `request.form["api_key"]` is credentials, not "unknown", once the field is named.
-            let narrowed = s.category == UNKNOWN
-                && s.kind == crate::facts::SeedKind::Request
+            // So is request input of a broad category by a read of a narrower one under it: a
+            // claims list (`user`) read down to an address (`user.contact.address.city`).
+            let narrowed = s.kind == crate::facts::SeedKind::Request
                 && group.iter().any(|&o| {
                     let other = &raw_flows[o];
-                    f.seeds[other.seed as usize].category != UNKNOWN
+                    let cat = f.seeds[other.seed as usize].category.as_str();
+                    cat != UNKNOWN
+                        && cat != s.category
+                        && (s.category == UNKNOWN || covers(&s.category, cat))
                         && anchor(other.seed).is_some_and(|a| rf.path.contains(&a))
                 });
             // Request input of unknown category read through the identifier of a thing

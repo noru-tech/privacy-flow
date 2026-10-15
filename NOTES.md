@@ -786,3 +786,37 @@ PrivateGPT 50, Redash 38, the Vercel chatbot's 15 PF003, CTFd 11). Time unchange
 **Next.** A category for claims lists (`User.Claims`), which hold personal data and are uncertain
 until they get one. Edges for bound clients that carry no personal data, if the data map should
 show every call between systems.
+
+## 2026-10-15 — A category for claims lists
+
+**Why.** After ADR 0021, a claims list was data of undetermined category: `cs.claims` classified
+a single claim by its type (`FindFirst("sub")`) but gave the whole list (`User.Claims`)
+`unknown`. On eShop that moved three real findings to `info`: the chatbot's `GetUserInfo` tool
+returning the user's claims to the model (`ChatState.cs:78`, PF003) and the external login's
+claims logged (`ExternalController.cs:76` and `:120`, PF001).
+
+**Done.** A new catalogue source, `cs.claims.list`, takes the `.Claims` reads with category
+`user`; `cs.claims` keeps the lookups by type, and a type it cannot read stays `unknown`. `user`
+is the narrowest key that covers what a list holds together: subject (`user.unique_id`), name
+(`user.name`), email (`user.contact`), and whatever else the provider asserts. Not
+`user.account` (registration data; it does not cover name or email in the taxonomy), and not
+`user.authorization`, which piiflow treats as credentials (PF005, no PF001), while a claims list
+is not a secret. Request input of a broad category is now narrowed by a classified read under
+it, as `unknown` input was: eShop's checkout reads `address_city` off `User.Claims` into
+`Info.City`, which is reported as the address, not again as `user` (it would have been a new
+PF006 at `OrderingService.cs:17`). Other languages have no identity objects in the catalogue.
+`cs/identity` gains `ProfileController.cs` (logged and model-bound claims lists, a claim read
+into a classified field); eShop's smoke expectations require the three findings at `user`.
+`:120` is reached through the tuple `FindUserFromExternalProviderAsync` returns, whose elements
+the analysis does not tell apart: what reaches the event is the provisioned user and the
+provider's user ID, both taken from the claims, not the list itself.
+
+**Measured** (against `ba7a120`, ADR 0021). eShop: the claims flows leave the uncertain findings.
+`ExternalController.cs:76` (PF001) and `ChatState.cs:78` (PF003) each get a `medium` finding at
+`user`; the chat input stays uncertain at `:78`. At `:120` the claims flow joins the `medium`
+finding already there (addresses, card number). `_user.Claims` reaching the chatbot's error log
+(`ChatState.cs:88`) is `user` at `info`, as an exception path is. Findings 63 → 64 (PF003 3 →
+4), medium 14 → 16, flows 208, nothing else changes. The data map adds `user`
+to the Identity API's and the web app's ingress and declarations, and the chatbot's unresolved
+LLM destination, which had no category, now has `user`. Benchmark corpus (no C# application):
+flows and findings identical on all twelve, so the narrowing rule changes nothing there.
