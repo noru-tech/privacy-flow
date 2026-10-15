@@ -1,7 +1,8 @@
 name: smoke (eShop)
 
 # The C# analysis against dotnet/eShop at a pinned commit: the findings and flows in
-# tests/smoke/eshop.expected.json, determinism across thread counts, and bounded coverage gaps.
+# tests/smoke/eshop.expected.json, determinism across thread counts, and bounded coverage gaps;
+# and the data map's systems, datasets and edges in tests/smoke/eshop.datamap.expected.json.
 # It needs the network to fetch eShop, so it is not part of `cargo test`.
 
 on:
@@ -14,6 +15,8 @@ on:
       - "src/facts/**"
       - "src/program.rs"
       - "src/resolve.rs"
+      - "src/topology/**"
+      - "src/datamap/**"
       - "catalogue/**"
       - "tests/smoke/**"
       - ".github/scripts/smoke_eshop.py"

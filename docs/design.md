@@ -150,6 +150,17 @@ results from both, and `scan --engine datalog` runs both and fails on any disagr
   declared processors, which is what `validate` re-runs;
 - **IDs** from anchors without line numbers, and the **digest** over RFC 8785 bytes.
 
+### The data map
+
+`piiflow datamap` adds a pass after the report ([ADR 0018](adr/0018-systems-and-datasets.md)):
+[`src/topology/`](../src/topology/) detects the repository's systems, attributes each flow to the
+systems whose code holds all its hops, binds requests to the client registrations that name
+their host, and reads datasets from ORM models, all from the data in
+[`catalogue/topology/`](../catalogue/topology/). The result is the document's `topology`. Its
+edges and proposed declarations are derived like findings, so `validate` re-runs them.
+[`src/datamap/`](../src/datamap/) renders it as a Fides data map and merges it into the file a
+person keeps, over the last generation in the lock ([ADR 0019](adr/0019-datamap-merge.md)).
+
 ## 7. Determinism
 
 Every collection is ordered or sorted before output, parallel work is collected in input order,

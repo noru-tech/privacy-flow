@@ -68,7 +68,24 @@ Always `1`.
 ## `system`
 
 The system this repository is, for the [Fides output](fides.md): `fides_key` and an optional
-`name`. Without it the Fides fragment uses `this_system` and says so.
+`name`. Without it the Fides fragment uses `this_system` and says so. In the
+[data map](datamap.md) it names the only system, when there is one.
+
+## `systems` and `system_detection`
+
+The systems of the repository, for the [data map](datamap.md), claimed before the detected ones:
+`fides_key`, an optional `name`, `paths` (globs of the files that are its own) and `hosts` (the
+names other systems reach it by, which resolve a client's base address to it). A detected system
+whose files are all claimed is dropped. `system_detection: false` keeps only the declared
+systems, or the repository as one.
+
+```yaml
+systems:
+  - fides_key: orders_api
+    name: Orders API
+    paths: ["services/orders/**"]
+    hosts: [orders.internal.example.com]
+```
 
 ## Files: `exclude` and `default_excludes`
 
@@ -92,6 +109,9 @@ reads `.fides/datamap.yml` (a Fides data map, which privacy-datamap renders) and
 list of paths replaces the defaults; `false` turns ingestion off. A field's categories apply to
 reads of that field name anywhere, and to objects typed with a type whose name matches the
 collection (`User` ↔ `users`).
+
+A data map `piiflow datamap` maintains (its header says so) is not read: it is that command's own
+output. Decisions for the analysis go in `fields:` and `not_personal:`.
 
 ## `max_call_depth`
 

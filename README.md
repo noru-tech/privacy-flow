@@ -178,6 +178,7 @@ model: the flow through the helper is computed per argument and per field.
 | **Schemas** — flow-facts document (stable, versioned) and configuration (JSON Schema 2020-12) | [`schemas/`](schemas/) |
 | **Rule pages** — one per rule, with controls, examples, fixes and dispositions | [`docs/rules/`](docs/rules/README.md) |
 | **Outputs** — table, canonical JSON, SARIF 2.1.0 with code flows, Fides egress, in-toto, facts | [docs](docs/output.md) |
+| **Data map** — `piiflow datamap`: a full Fides data map (systems, datasets, flows, proposed declarations), merged in place | [docs](docs/datamap.md) |
 | **GitHub Action** — the flows a pull request introduces, as SARIF and a job summary | [`action.yml`](action.yml), [docs](docs/github-action.md) |
 | **Conformance corpus** — programs with expected flows, and a runner any analyser can use | [`conformance/`](conformance/README.md) |
 | **Design** — how it works, and an ADR per major choice | [design](docs/design.md), [ADRs](docs/adr/README.md) |
@@ -215,6 +216,8 @@ model: the flow through the helper is computed per argument and per field.
 
 It does not find security vulnerabilities, scan data at rest or in databases, observe the running
 system, or decide purposes, legal bases or data subjects: those stay human (or Noru) judgements.
+The [data map](docs/datamap.md) *proposes* data uses from the code's evidence, each marked for
+review, and never a legal basis.
 It never calls a model, makes no network calls, and sends no telemetry. A clean result is a
 statement about the scanned scope, with its gaps listed, not a compliance certification.
 
@@ -250,6 +253,7 @@ lawyer or Noru's compliance lead.
 | --- | --- |
 | `piiflow scan [PATH]` | Analyse and write findings and flow facts (default `.privacy-flow/flows.json`) |
 | `piiflow diff BASE..HEAD [PATH]` | Report only flows introduced or changed between two revisions (`BASE..` compares with the working tree) |
+| `piiflow datamap [PATH]` | Write or update the repository's Fides data map (default `.fides/datamap.yml`): systems, datasets, egress and ingress, proposed declarations; `--check` exits 5 when it is out of date |
 | `piiflow explain ID` | Print a finding's (or flow's, or gap's) hop chain with the source line of each hop |
 | `piiflow check FILE` | Enforce policy and dispositions (`--as-of DATE`, `--fail-on`); exit 1 on failure |
 | `piiflow validate FILE` | Re-check a document or in-toto Statement: schema, digest, derived findings |
@@ -337,9 +341,9 @@ How a release gets from this repository to your machine, and how to check it:
 ## Relationship to Noru
 
 `piiflow` is standalone and needs no Noru account. Parsing, the intermediate representation, the
-flow analysis, the catalogue, the rules and every output format are open, here; purpose and
-legal-basis inference, record-of-processing assembly and cross-repository topology are Noru's
-([NOTES.md](NOTES.md) records the line). privacy-datamap can read the flow facts to fill processor
+flow analysis, the catalogue, the rules, every output format and the data map (with its
+proposals, for review) are open, here; deciding purposes and legal bases, record-of-processing
+assembly and cross-repository topology are Noru's ([NOTES.md](NOTES.md) records the line). privacy-datamap can read the flow facts to fill processor
 and egress fields in a data map, and ai-inventory can read PF003 facts to answer "what data reaches
 the model"; the flow-facts schema is stable and versioned for them.
 

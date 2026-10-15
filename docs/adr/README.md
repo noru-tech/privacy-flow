@@ -22,3 +22,5 @@ what follows. Records are never rewritten; a reversal is a new record that super
 | [0015](0015-identifiers.md) | Identifiers of people are sources, and logging one is not a finding | Accepted |
 | [0016](0016-csharp.md) | C#: a lowering that resolves names against the whole project | Accepted |
 | [0017](0017-dispatch.md) | Dispatchers: library calls that reach the project's handlers | Accepted |
+| [0018](0018-systems-and-datasets.md) | Systems and datasets within a repository | Accepted |
+| [0019](0019-datamap-merge.md) | A full data map, merged in place, with proposals as data | Accepted |

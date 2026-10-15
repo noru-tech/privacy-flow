@@ -612,3 +612,30 @@ run time. Declaring one by `sinks:` exposed two bugs in `src/report.rs`: the ent
 names the processor `?` (the catalogue sink has no processor, and the declaration's name is not
 used), and without a `fides_key` the declared processor falls back to the unkeyed comment instead
 of a slug of its name, as `docs/fides.md` says. For 0.3.1.
+
+## 2026-10-15 — Decision: the data map moves the open/closed line
+
+**Decision** (owner). `piiflow datamap` writes a full Fides data map, deterministically and with
+no agent: systems, datasets, egress and ingress, and privacy declarations. Choosing a
+declaration's data use and data subjects is a judgement, and the 2026-10-02 entry placed purpose
+inference with Noru. That entry stands as written; this one moves the line.
+
+**Now open:**
+
+- *proposing* data uses and data subjects from cited code evidence, as data
+  (`catalogue/topology/purposes.yml`), each proposal marked for review and never applied as a
+  decision;
+- the topology of services *within one repository*;
+- maintaining a Fides data map in place, keeping what people decide in it.
+
+**Still closed (Noru):**
+
+- deciding purposes and legal bases;
+- RoPA assembly;
+- topology *across* repositories;
+- anything that turns flow facts into Article 30 records.
+
+The test becomes: if it answers *where does the data go, and how do we know*, or *what might it
+be for, cited, without deciding*, it is open. If it answers *why is that allowed*, it is Noru's.
+piiflow never proposes a legal basis, and a privacy-datamap manifest's signed decisions win over
+its proposals (ADR 0019).

@@ -1,0 +1,56 @@
+{
+  "description": "What `piiflow datamap` must write for dotnet/eShop at the commit eshop.expected.json pins: its systems (exactly), datasets with the named collections and fields, and edges between systems. Field paths nest with dots (`Address.Street`).",
+  "systems": [
+    "basket_api",
+    "catalog_api",
+    "client_app",
+    "hybrid_app",
+    "identity_api",
+    "order_processor",
+    "ordering_api",
+    "payment_processor",
+    "web_app",
+    "webhook_client",
+    "webhooks_api"
+  ],
+  "aliases": {
+    "ordering_api": "ordering-api",
+    "catalog_api": "catalog-api",
+    "webhooks_api": "webhooks-api"
+  },
+  "datasets": [
+    {
+      "key": "ordering_context",
+      "used_by": "ordering_api",
+      "database": "orderingdb",
+      "fields": {
+        "orders": { "Address.Street": ["user.contact.address.street"], "Address.City": ["user.contact.address.city"], "PaymentMethodId": [] },
+        "paymentmethods": { "CardNumber": ["user.financial.credit_card"] }
+      },
+      "why": "The order's owned Address is nested; paymentmethods maps the private _cardNumber as CardNumber."
+    },
+    {
+      "key": "application_db_context",
+      "used_by": "identity_api",
+      "fields": {
+        "AspNetUsers": { "CardNumber": ["user.financial.credit_card"], "Email": ["user.contact.email"], "PasswordHash": ["user.authorization.password"] }
+      },
+      "why": "ApplicationUser's own fields join IdentityUser's in AspNetUsers."
+    },
+    { "key": "catalog_context", "used_by": "catalog_api", "fields": { "Catalog": {} } },
+    { "key": "webhooks_context", "used_by": "webhooks_api", "fields": { "Subscriptions": { "UserId": ["user.unique_id.pseudonymous"] } } }
+  ],
+  "edges": [
+    {
+      "from": "web_app",
+      "to": "ordering_api",
+      "categories": ["user.financial.credit_card", "user.contact.address.street"],
+      "why": "OrderingService's typed client, registered with https+http://ordering-api, sends the order with its card number."
+    },
+    { "from": "web_app", "to": "catalog_api" },
+    { "from": "webhook_client", "to": "webhooks_api" }
+  ],
+  "no_system_edges_from": [
+    { "path": "src/Webhooks.API/Services/WebhooksSender.cs", "why": "A subscriber's URL: a destination outside the repository." }
+  ]
+}

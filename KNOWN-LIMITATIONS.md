@@ -13,7 +13,9 @@ can tell; the items marked **silent** below are the ones it cannot.
   value; categories come from names, types, frameworks and data maps.
 - **It does not observe the running system.** No runtime or dynamic analysis.
 - **It does not decide purposes, legal bases or data subjects**, and does not produce Article 30
-  records. Those are human (or Noru) judgements ([open/closed line](NOTES.md)).
+  records. Those are human (or Noru) judgements ([open/closed line](NOTES.md)). The
+  [data map](docs/datamap.md) proposes data uses and subjects for review, and never a legal
+  basis.
 - **It calls no model and makes no network call**, and sends no telemetry. It can write a review
   queue (`--format review`) for a human or an agent to work through; it never reads answers back
   from it.
@@ -200,14 +202,15 @@ Request input is a source only in frameworks whose request objects are modelled
 - **A sink's result carries nothing.** **Silent:** a send call's response that echoes the
   recipient (an SMTP rejection that names the address) is not personal data when it is logged.
 - **Outbound HTTP:** a host is known when the URL is a literal, a template or concatenation that
-  starts with one, or a constant holding one; a client's base URL (axios instances, `httpx.Client`)
-  is never followed, so calls on such clients have a dynamic host.
+  starts with one, or a constant holding one. In `scan`, a client's base URL (axios instances,
+  `httpx.Client`, typed `HttpClient`s) is not followed, so calls on such clients have a dynamic
+  host (PF006); [`datamap`](docs/datamap.md) binds them to their registration.
 - **Browser storage** (`localStorage`, `sessionStorage`, `document.cookie`, js-cookie) is reported
   as flows, not egress; no rule fires on it in v0.1. `window.parent.postMessage` and
   `window.open` are gaps, not sinks.
 - **Not sinks:** writing to the system's own databases, caches, queues on its own infrastructure,
-  and files (data at rest is privacy-datamap's domain); rendering data into the application's own
-  HTML or JSON responses.
+  and files; rendering data into the application's own HTML or JSON responses. What a system
+  stores is described by its ORM models in the [data map](docs/datamap.md), not by flows.
 - **Sanitisers:** general-purpose hashing is not one by default (pseudonymised data is personal
   data, [ADR 0006](docs/adr/0006-sanitisers-and-hashing.md)); a sanitiser removes categories, it
   does not transform them.
@@ -226,3 +229,36 @@ Request input is a source only in frameworks whose request objects are modelled
   code contains, such as a hard-coded address in a comment.
 - **Not yet done:** the labels for Polar and PrivateGPT and the Zenodo DOI of the labelled
   benchmark (milestone M6, [benchmark](benchmark/README.md)); the review of the control mapping.
+
+## The data map
+
+[`piiflow datamap`](docs/datamap.md) ([ADR 0018](docs/adr/0018-systems-and-datasets.md),
+[ADR 0019](docs/adr/0019-datamap-merge.md)):
+
+- **Systems** are deployable units of one repository. Topology across repositories is not
+  joined. The program is analysed as one, so a flow that crosses two services' own code (through
+  dependency injection or an interface) is reported as a note, not an edge. A library's flow
+  belongs to every system that links the library, used or not.
+- **Edges between systems** are resolved through client registrations whose base address is a
+  literal, and names an orchestrator (.NET Aspire), docker-compose or `systems: hosts:` gives.
+  Not resolved:
+  - gRPC clients and named `HttpClient`s;
+  - Aspire environment URLs read from configuration;
+  - message buses (an integration event's publisher and its consumers);
+  - a slug match between a service name and a project name.
+- **Datasets** come from Entity Framework Core, Django, SQLAlchemy and Prisma models.
+  - Not read: TypeORM, SQLModel, Mongoose, Sequelize, Drizzle, raw SQL, migrations, and stores
+    without models (Redis).
+  - EF configuration is followed as far as `ApplyConfiguration`, `Entity<T>()` and local
+    methods to depth 3. Value converters, TPH inheritance and configuration passed around are
+    not modelled.
+  - A type the catalogue does not spell is matched by its name (sets, configurations,
+    attributes), since its namespace may be guessed wrong.
+- **Proposals** are coarse: one data use per sink class or processor, `customer` as the data
+  subject, nothing for logs. Every one needs review, and no legal basis is proposed.
+- **Merging:**
+  - hand-written comments are not kept (use `description`);
+  - YAML anchors are expanded;
+  - a renamed declaration is recognised only while its evidence is unchanged;
+  - without the lock, nothing in the file is updated.
+- **Feedback:** a map piiflow maintains is not read back as classification input; use `fields:`.

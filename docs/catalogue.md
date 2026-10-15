@@ -243,6 +243,21 @@ pipeline behavior) receives every value; a value of unknown class reaches every 
 project declares its own bus the same way in `.privacy-flow.yml`; `calls` may then name its own
 method by its class's qualified name (`Shop.Events.Bus.Publish`).
 
+## The data map's catalogue (`catalogue/topology/`)
+
+What [`piiflow datamap`](datamap.md) needs besides flows is data too, versioned and digested apart
+from the flow catalogue, so `scan` output does not depend on it:
+
+| File | What it says |
+| --- | --- |
+| [`systems.yml`](../catalogue/topology/systems.yml) | What a deployable unit is (C# SDKs and output types, packages with a server framework or a `start` script, Django projects, Python app objects, Dockerfiles), what never is (app hosts, test projects), and orchestrator calls that name the projects they run (.NET Aspire) |
+| [`clients.yml`](../catalogue/topology/clients.yml) | Client registrations and where their base address is (typed `AddHttpClient<T>`, `axios.create`, `ky`, `httpx`, `aiohttp`) |
+| [`stores.yml`](../catalogue/topology/stores.yml) | How ORM models declare what is stored: Entity Framework Core, Django, SQLAlchemy, Prisma |
+| [`purposes.yml`](../catalogue/topology/purposes.yml) | The data use proposed per sink class, processor and kind of evidence, with the reason; proposals, never decisions |
+
+Every entry has a citation; every proposed data use and subject must be a key of the vendored
+taxonomy, which loading checks.
+
 ## How a call is decided
 
 For each call, in this order:

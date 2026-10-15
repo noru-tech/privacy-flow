@@ -1,5 +1,9 @@
 # Fides egress declarations
 
+For a full data map of a repository (its systems, datasets, the flows between them and proposed
+privacy declarations, merged into the file you keep), use [`piiflow datamap`](datamap.md). This
+page is about the egress fragment of a single system that `scan` writes.
+
 `piiflow scan --format fides` (or `-o egress.yml`) writes the flows that leave the system as
 **egress declarations** of a Fides `system`, to merge into a Fides data map such as the
 `.fides/datamap.yml` privacy-datamap maintains. privacy-datamap maps what a repository stores;
