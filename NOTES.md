@@ -712,3 +712,48 @@ way on 2026-10-14 (DOI `10.5281/zenodo.23377449`).
 - Analysing each system separately.
 - The `--input` and `--report` options the plan listed.
 - Hand-written comments in the map are not kept.
+
+## 2026-10-15 — Findings grouped by exposure (ADR 0020)
+
+**Why.** A tester ran 0.4.0 on dotnet/eShop; their counts matched a local run exactly (214
+findings: PF001 134, PF003 12, PF006 41, PFC01 27) and they read most as duplicates. A log call
+that receives an address gave one finding per field, and the order request's seven fields
+repeated at every handler and MediatR behaviour that logs it.
+
+**Done.** A finding is one rule at one sink, with the flows that need review as a second
+finding there. Its flows are listed in `findings[].flows` as evidence; its ID hashes the rule,
+the sink, `needs_review` and the categories. Schema version 0.2. Dispositions carry by ID, or by
+shared flows when those cover every category, which also carries decisions from 0.1 documents.
+SARIF has a code flow per flow and the sources as related locations; `explain` prints every
+flow; `diff` counts a grown or re-keyed exposure as changed, not as removed and introduced.
+
+**Measured** (Apple M3 Pro, release build; flows unchanged everywhere).
+
+| | Findings before | after | of which coverage gaps |
+| --- | --- | --- | --- |
+| eShop | 214 (PF001 134, PF003 12, PF006 41) | 67 (PF001 28, PF003 3, PF006 9) | 27 |
+| Polar | 9,304 | 1,394 | 844 |
+| PrivateGPT | 1,543 | 473 | 215 |
+| Ghost | 1,276 | 705 | 599 |
+| Redash | 497 | 303 | 151 |
+| Umami | 435 | 339 | 323 |
+| Hoppscotch | 279 | 151 | 133 |
+| CTFd | 137 | 100 | 85 |
+| Vercel chatbot | 136 | 64 | 45 |
+| Open SaaS | 50 | 46 | 32 |
+| Healthchecks | 35 | 31 | 25 |
+| Taxonomy | 10 | 8 | 5 |
+| FastAPI template | 3 | 3 | 3 |
+| Benchmark corpus (12) | 13,705 | 3,617 | 2,460 |
+
+Without coverage gaps the corpus goes from 11,245 to 1,157 findings. The ADR compares four other
+keys on the same runs. The report phase takes the same time (Polar 0.73 s before, 0.71 s after),
+and Polar's document shrinks from 81.0 MB to 77.5 MB. One thread and eight give the same bytes on
+eShop.
+
+**Not done.**
+
+- `benchmark/sheets.py` samples per-flow findings of 0.1 documents. Labelling a 0.2 run needs a
+  protocol deviation saying how an exposure is sampled.
+- A finding's message names the first source and a count, not the object its fields belong to:
+  typed objects have no line-free anchor in the document.
