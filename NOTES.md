@@ -811,7 +811,7 @@ into a classified field); eShop's smoke expectations require the three findings 
 the analysis does not tell apart: what reaches the event is the provisioned user and the
 provider's user ID, both taken from the claims, not the list itself.
 
-**Measured** (against `ba7a120`, ADR 0021). eShop: the claims flows leave the uncertain findings.
+**Measured** (against #40, ADR 0021). eShop: the claims flows leave the uncertain findings.
 `ExternalController.cs:76` (PF001) and `ChatState.cs:78` (PF003) each get a `medium` finding at
 `user`; the chat input stays uncertain at `:78`. At `:120` the claims flow joins the `medium`
 finding already there (addresses, card number). `_user.Claims` reaching the chatbot's error log
