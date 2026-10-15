@@ -307,7 +307,7 @@
       "type": "object",
       "description": "The repository's systems and their edges. Only `piiflow datamap` writes it; `scan` and `diff` documents do not have it.",
       "additionalProperties": false,
-      "required": ["catalogue", "mode", "systems", "attribution", "bindings", "edges", "notes"],
+      "required": ["catalogue", "mode", "systems", "datasets", "attribution", "bindings", "edges", "notes"],
       "properties": {
         "catalogue": {
           "type": "object",
@@ -321,7 +321,7 @@
           "items": {
             "type": "object",
             "additionalProperties": false,
-            "required": ["key", "name", "kind", "language", "root", "manifest", "declared", "files", "closure_files", "libraries", "evidence", "aliases", "user_input"],
+            "required": ["key", "name", "kind", "language", "root", "manifest", "declared", "files", "closure_files", "libraries", "evidence", "aliases", "user_input", "datasets"],
             "properties": {
               "key": { "$ref": "#/$defs/fides_key" },
               "name": { "type": "string" },
@@ -351,6 +351,37 @@
                   "categories": { "type": "array", "items": { "$ref": "#/$defs/category" } },
                   "sites": { "type": "array", "items": { "type": "string" } },
                   "sources": { "$ref": "#/$defs/count" }
+                }
+              },
+              "datasets": { "type": "array", "items": { "$ref": "#/$defs/fides_key" } }
+            }
+          }
+        },
+        "datasets": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["key", "name", "store", "location", "database", "schema", "collections"],
+            "properties": {
+              "key": { "$ref": "#/$defs/fides_key" },
+              "name": { "type": "string" },
+              "store": { "type": "string" },
+              "location": { "type": "string" },
+              "database": { "type": ["string", "null"] },
+              "schema": { "type": ["string", "null"] },
+              "collections": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["name", "entity", "location", "fields"],
+                  "properties": {
+                    "name": { "type": "string" },
+                    "entity": { "type": "string" },
+                    "location": { "type": "string" },
+                    "fields": { "type": "array", "items": { "$ref": "#/$defs/dataset_field" } }
+                  }
                 }
               }
             }
@@ -422,6 +453,20 @@
   "$defs": {
     "count": { "type": "integer", "minimum": 0, "maximum": 9007199254740991 },
     "fides_key": { "type": "string", "pattern": "^[a-zA-Z0-9_.<>-]+$" },
+    "dataset_field": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "member", "location", "categories", "needs_review", "classified_by", "fields"],
+      "properties": {
+        "name": { "type": "string" },
+        "member": { "type": ["string", "null"] },
+        "location": { "type": ["string", "null"] },
+        "categories": { "type": "array", "items": { "$ref": "#/$defs/category" } },
+        "needs_review": { "type": "boolean" },
+        "classified_by": { "type": ["string", "null"] },
+        "fields": { "type": "array", "items": { "$ref": "#/$defs/dataset_field" } }
+      }
+    },
     "endpoint": {
       "oneOf": [
         {

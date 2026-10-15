@@ -484,6 +484,8 @@ impl<'s> Builder<'s> {
             more_ctor_this: Vec::new(),
             partial_key: None,
             field_attrs: Vec::new(),
+            members: Vec::new(),
+            outer: self.class_stack.last().copied(),
         });
         // `this` is an instance of the class, so `this.method()` resolves.
         self.instance_of(this, idx, pos);

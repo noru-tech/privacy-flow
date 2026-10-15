@@ -38,6 +38,7 @@ pub fn document(
             config,
             catalogue: &run.catalogue,
             topo,
+            classifier: &run.classifier,
             compose: &compose,
         },
     );

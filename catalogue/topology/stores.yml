@@ -1,0 +1,86 @@
+# Stores: how ORM models say what a system keeps, for the data map's Fides datasets. Each store
+# kind has its own reading of the code (src/topology/stores.rs); the names it looks for are
+# here. A field is classified by its column name, then its member name, with the same table
+# as flows (catalogue/classification.yml, `fields` and `not_personal` in .privacy-flow.yml).
+#
+# entity_framework: classes deriving from `contexts` are database contexts. Their entities are
+#   the type arguments of members typed `sets`, the entities of `configurations` classes the
+#   context applies (`ApplyConfiguration(new …)`, or all of them in its project with
+#   `ApplyConfigurationsFromAssembly`), and `Entity<T>()` in `OnModelCreating` and the local
+#   methods it calls. The `fluent` calls on an entity's builder rename tables and columns, map
+#   private fields and shadow properties, ignore members and nest owned types.
+#   `base_collections` are the tables a context base class brings (ASP.NET Core Identity).
+#   `registrations` link a context to the system that registers it, and name its database (their
+#   first string argument, or that of a `database_calls` call in a lambda argument).
+#   A type the catalogue does not spell may be qualified with the wrong namespace when a file's
+#   usings leave it open (ADR 0016: eShop's `IEntityTypeConfiguration` becomes
+#   `MediatR.IEntityTypeConfiguration`), so sets, configurations and attributes match by name.
+# django: classes deriving from `models` are models (abstract ones, `Meta.abstract = True`,
+#   only lend their fields). A class attribute whose value matches `columns` (and not
+#   `not_columns`: a many-to-many relation is a table of its own) is a column, `relations` a
+#   foreign key (`<name>_id`); `inherited` lists the fields of library bases.
+
+version: "0.1.0"
+
+stores:
+  - id: cs.efcore
+    language: csharp
+    kind: entity_framework
+    contexts:
+      - "Microsoft.EntityFrameworkCore.DbContext"
+      - "Microsoft.AspNetCore.Identity.EntityFrameworkCore.{IdentityDbContext,IdentityUserContext}"
+    sets: ["**.DbSet"]
+    configurations: ["**.IEntityTypeConfiguration"]
+    not_mapped: ["**.NotMappedAttribute{,()}"]
+    table_attributes: ["**.TableAttribute{,()}"]
+    column_attributes: ["**.ColumnAttribute{,()}"]
+    owned_attributes: ["**.OwnedAttribute{,()}"]
+    model_method: OnModelCreating
+    fluent:
+      entity: [Entity]
+      table: [ToTable]
+      column: [HasColumnName]
+      property: [Property]
+      ignore: [Ignore]
+      owned: [OwnsOne, OwnsMany]
+      schema: [HasDefaultSchema]
+      apply: [ApplyConfiguration]
+      apply_all: [ApplyConfigurationsFromAssembly]
+    registrations:
+      - "**.{AddDbContext,AddDbContextPool,AddDbContextFactory,AddPooledDbContextFactory}"
+      - "**.{AddNpgsqlDbContext,AddSqlServerDbContext,AddMySqlDbContext,AddSqliteDbContext,AddCosmosDbContext,AddOracleDatabaseDbContext}"
+    database_calls: ["**.GetConnectionString"]
+    base_collections:
+      - context: "Microsoft.AspNetCore.Identity.EntityFrameworkCore.{IdentityDbContext,IdentityUserContext}"
+        collections:
+          - name: AspNetUsers
+            entity_type_arg: 0
+            fields: [Id, UserName, NormalizedUserName, Email, NormalizedEmail, EmailConfirmed, PasswordHash, SecurityStamp, ConcurrencyStamp, PhoneNumber, PhoneNumberConfirmed, TwoFactorEnabled, LockoutEnd, LockoutEnabled, AccessFailedCount]
+          - { name: AspNetUserClaims, fields: [Id, UserId, ClaimType, ClaimValue] }
+          - { name: AspNetUserLogins, fields: [LoginProvider, ProviderKey, ProviderDisplayName, UserId] }
+          - { name: AspNetUserTokens, fields: [UserId, LoginProvider, Name, Value] }
+          - { name: AspNetRoles, fields: [Id, Name, NormalizedName, ConcurrencyStamp] }
+          - { name: AspNetUserRoles, fields: [UserId, RoleId] }
+          - { name: AspNetRoleClaims, fields: [Id, RoleId, ClaimType, ClaimValue] }
+        citation: "ASP.NET Core Identity model, https://learn.microsoft.com/aspnet/core/security/authentication/customize-identity-model#the-identity-model"
+    citation: "EF Core modeling, https://learn.microsoft.com/ef/core/modeling/"
+
+  - id: py.django
+    language: python
+    kind: django
+    models:
+      - "django.db.models.Model"
+      - "django.db.models.base.Model"
+      - "django.contrib.auth.models.{AbstractUser,AbstractBaseUser,User}"
+      - "django.contrib.auth.base_user.AbstractBaseUser"
+    meta_class: Meta
+    columns: ["django.db.models.*Field()", "django.db.models.fields.*Field()", "django.contrib.postgres.fields.*Field()"]
+    not_columns: ["django.db.models.ManyToManyField()"]
+    relations: ["django.db.models.{ForeignKey,OneToOneField}()"]
+    column_keyword: db_column
+    inherited:
+      - base: "django.contrib.auth.models.{AbstractUser,User}"
+        fields: [password, last_login, is_superuser, username, first_name, last_name, email, is_staff, is_active, date_joined]
+      - base: "django.contrib.auth.{models,base_user}.AbstractBaseUser"
+        fields: [password, last_login]
+    citation: "Django models, https://docs.djangoproject.com/en/stable/topics/db/models/"

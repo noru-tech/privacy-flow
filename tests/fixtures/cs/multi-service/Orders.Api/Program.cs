@@ -2,6 +2,7 @@ using Shop.Orders.Data;
 using Shop.Shared;
 
 var builder = WebApplication.CreateBuilder(args);
+builder.AddNpgsqlDbContext<OrdersContext>("ordersdb");
 var app = builder.Build();
 
 app.MapPost("/orders", (CreateOrder order, ILogger<Program> log) =>

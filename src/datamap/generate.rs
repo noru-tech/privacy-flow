@@ -7,7 +7,7 @@ use std::collections::{BTreeMap, BTreeSet};
 use crate::classify::UNKNOWN;
 use crate::datamap::yaml::Node;
 use crate::report::Document;
-use crate::topology::model::{EdgeRec, Endpoint, Topology};
+use crate::topology::model::{DatasetRec, EdgeRec, Endpoint, FieldRec, Topology};
 
 /// What each receiving key is, for its own system entry.
 enum Receiver {
@@ -193,6 +193,12 @@ pub fn generate(doc: &Document) -> Node {
                 let s = systems_by_key[key.as_str()];
                 m.push(("name".into(), Node::str(&s.name)));
                 m.push(("system_type".into(), Node::str("Service")));
+                if !s.datasets.is_empty() {
+                    m.push((
+                        "dataset_references".into(),
+                        Node::strs(s.datasets.iter().cloned()),
+                    ));
+                }
                 let root = if s.root.is_empty() {
                     "the repository root".to_string()
                 } else {
@@ -299,7 +305,111 @@ pub fn generate(doc: &Document) -> Node {
         m.push(("privacy_declarations".into(), Node::List(Vec::new())));
         items.push(Node::noted(notes, Node::Map(m)));
     }
-    Node::Map(vec![("system".into(), Node::List(items))])
+    let mut root = Vec::new();
+    if !topo.datasets.is_empty() {
+        root.push((
+            "dataset".to_string(),
+            Node::List(topo.datasets.iter().map(dataset).collect()),
+        ));
+    }
+    root.push(("system".into(), Node::List(items)));
+    Node::Map(root)
+}
+
+/// A Fides dataset: collections and fields, classified fields cited.
+fn dataset(d: &DatasetRec) -> Node {
+    let mut review: Vec<String> = Vec::new();
+    for c in &d.collections {
+        collect_review(&c.name, &c.fields, &mut review);
+    }
+    let mut m: Vec<(String, Node)> = vec![
+        ("fides_key".into(), Node::str(&d.key)),
+        ("name".into(), Node::str(&d.name)),
+    ];
+    if !review.is_empty() {
+        m.push((
+            "meta".into(),
+            Node::Map(vec![(
+                "privacy_flow".into(),
+                Node::Map(vec![("needs_review".into(), Node::strs(review))]),
+            )]),
+        ));
+    }
+    m.push((
+        "collections".into(),
+        Node::List(
+            d.collections
+                .iter()
+                .map(|c| {
+                    Node::noted(
+                        vec![format!("{} ({})", c.location, c.entity)],
+                        Node::Map(vec![
+                            ("name".into(), Node::str(&c.name)),
+                            ("fields".into(), fields(&c.fields)),
+                        ]),
+                    )
+                })
+                .collect(),
+        ),
+    ));
+    let mut why = vec![format!("{} at {}", d.store, d.location)];
+    if let Some(db) = &d.database {
+        why.push(format!("database {db}"));
+    }
+    if let Some(sc) = &d.schema {
+        why.push(format!("schema {sc}"));
+    }
+    Node::noted(vec![why.join("; ")], Node::Map(m))
+}
+
+fn fields(list: &[FieldRec]) -> Node {
+    Node::List(
+        list.iter()
+            .map(|f| {
+                let mut m: Vec<(String, Node)> = vec![("name".into(), Node::str(&f.name))];
+                if !f.categories.is_empty() {
+                    m.push((
+                        "data_categories".into(),
+                        Node::strs(f.categories.iter().cloned()),
+                    ));
+                }
+                if !f.fields.is_empty() {
+                    m.push(("fields".into(), fields(&f.fields)));
+                }
+                let mut notes = Vec::new();
+                if !f.categories.is_empty() || f.needs_review {
+                    let mut n = f.location.clone().unwrap_or_default();
+                    if let Some(member) = &f.member {
+                        n = format!("{n} ({member})");
+                    }
+                    if let Some(by) = &f.classified_by {
+                        n = format!(
+                            "{}{}{}",
+                            n,
+                            if n.is_empty() { "" } else { "; " },
+                            if f.needs_review {
+                                format!("maybe personal by {by}: review")
+                            } else {
+                                format!("classified by {by}")
+                            }
+                        );
+                    }
+                    notes.push(n.trim().to_string());
+                }
+                Node::noted(notes, Node::Map(m))
+            })
+            .collect(),
+    )
+}
+
+fn collect_review(prefix: &str, list: &[FieldRec], out: &mut Vec<String>) {
+    for f in list {
+        let path = format!("{prefix}.{}", f.name);
+        if f.needs_review {
+            out.push(path.clone());
+        }
+        collect_review(&path, &f.fields, out);
+    }
 }
 
 /// `unresolved_<class>_<file>` for every unresolved endpoint, distinct across the map.

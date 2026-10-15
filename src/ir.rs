@@ -241,6 +241,40 @@ pub struct ClassIr {
     pub partial_key: Option<String>,
     /// Attributes on fields and properties (C# `[Parameter]`), by member name.
     pub field_attrs: Vec<(String, Vec<Var>)>,
+    /// Fields and properties as declared: name, declared type, initial value. A side table for
+    /// the data map's stores; the analysis does not read it.
+    pub members: Vec<MemberIr>,
+    /// The class this one is nested in (Django's `Meta`, C# nested types).
+    pub outer: Option<ClassIdx>,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum MemberKind {
+    Field,
+    /// An auto-property, or a property with accessors.
+    Property,
+    /// A property computed by an expression body (`string Full => …`).
+    Computed,
+}
+
+/// A declared type: its text, the value its head names (exactly: `DbSet` of `DbSet<Order>`),
+/// and the values of its type arguments.
+#[derive(Clone, Debug)]
+pub struct TypeExpr {
+    pub text: String,
+    pub head: Option<Var>,
+    pub args: Vec<Var>,
+}
+
+#[derive(Clone, Debug)]
+pub struct MemberIr {
+    pub name: String,
+    pub pos: Pos,
+    pub kind: MemberKind,
+    pub is_static: bool,
+    pub ty: Option<TypeExpr>,
+    /// The initializer's value (`email = models.EmailField()`).
+    pub value: Option<Var>,
 }
 
 #[derive(Clone, Debug)]

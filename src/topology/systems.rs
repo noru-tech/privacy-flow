@@ -28,6 +28,8 @@ pub struct Systems {
     pub recs: Vec<SystemRec>,
     /// Per system, per program file: in its closure.
     pub closure: Vec<Vec<bool>>,
+    /// Per system, per program file: its own.
+    pub own: Vec<Vec<bool>>,
     pub mode: String,
     pub notes: Vec<NoteRec>,
 }
@@ -396,6 +398,7 @@ pub fn detect(inp: &Inputs) -> Systems {
                 }],
                 aliases: d.hosts.clone(),
                 user_input: Default::default(),
+                datasets: Vec::new(),
             },
             own,
             unit: None,
@@ -442,6 +445,7 @@ pub fn detect(inp: &Inputs) -> Systems {
                 }],
                 aliases: Vec::new(),
                 user_input: Default::default(),
+                datasets: Vec::new(),
             },
             own,
             unit: Some(key.clone()),
@@ -476,6 +480,7 @@ pub fn detect(inp: &Inputs) -> Systems {
                 evidence: Vec::new(),
                 aliases: Vec::new(),
                 user_input: Default::default(),
+                datasets: Vec::new(),
             },
             own: vec![true; nfiles],
             unit: None,
@@ -602,9 +607,11 @@ pub fn detect(inp: &Inputs) -> Systems {
         closure.push(inside);
     }
     notes.sort();
+    let own: Vec<Vec<bool>> = drafts.iter().map(|d| d.own.clone()).collect();
     Systems {
         recs: drafts.into_iter().map(|d| d.rec).collect(),
         closure,
+        own,
         mode,
         notes,
     }

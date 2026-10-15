@@ -75,24 +75,54 @@ fn literals(
     }
 }
 
+/// Statements by what they write, built once.
+struct Index {
+    /// Object → (field, value) stores.
+    stores: BTreeMap<VarId, Vec<(crate::program::Sym, VarId)>>,
+    /// Field variable → values stored into it through `this`.
+    this_stores: BTreeMap<VarId, Vec<VarId>>,
+    /// Declared variable → type values (`TypeRef`).
+    type_refs: BTreeMap<VarId, Vec<VarId>>,
+}
+
+impl Index {
+    fn build(p: &Program) -> Index {
+        let mut ix = Index {
+            stores: BTreeMap::new(),
+            this_stores: BTreeMap::new(),
+            type_refs: BTreeMap::new(),
+        };
+        for s in &p.stmts {
+            match &s.kind {
+                GKind::Store {
+                    obj,
+                    field: Some(f),
+                    src,
+                } => ix.stores.entry(*obj).or_default().push((*f, *src)),
+                GKind::ThisStore { src, var, .. } => {
+                    ix.this_stores.entry(*var).or_default().push(*src)
+                }
+                GKind::TypeRef { dst, ty } => ix.type_refs.entry(*dst).or_default().push(*ty),
+                _ => {}
+            }
+        }
+        ix
+    }
+}
+
 /// The values stored into `field` of `obj` (or of what it was copied from).
-fn stored(p: &Program, defs: &Defs, obj: VarId, fields: &[String]) -> Vec<VarId> {
-    let objs = [obj, defs.copy_origin(p, obj)];
-    p.stmts
-        .iter()
-        .filter_map(|s| match &s.kind {
-            GKind::Store {
-                obj: o,
-                field: Some(f),
-                src,
-            } if objs.contains(o) && fields.iter().any(|x| x == p.syms.str(*f)) => Some(*src),
-            _ => None,
-        })
+fn stored(p: &Program, defs: &Defs, ix: &Index, obj: VarId, fields: &[String]) -> Vec<VarId> {
+    let mut objs = vec![obj, defs.copy_origin(p, obj)];
+    objs.dedup();
+    objs.iter()
+        .flat_map(|o| ix.stores.get(o).into_iter().flatten())
+        .filter(|(f, _)| fields.iter().any(|x| x == p.syms.str(*f)))
+        .map(|(_, src)| *src)
         .collect()
 }
 
 /// The base addresses a registering call sets.
-fn bases(p: &Program, defs: &Defs, def: &ClientDef, stmt: u32) -> BTreeSet<String> {
+fn bases(p: &Program, defs: &Defs, ix: &Index, def: &ClientDef, stmt: u32) -> BTreeSet<String> {
     let GKind::Call { args, .. } = &p.stmts[stmt as usize].kind else {
         return BTreeSet::new();
     };
@@ -115,7 +145,7 @@ fn bases(p: &Program, defs: &Defs, def: &ClientDef, stmt: u32) -> BTreeSet<Strin
             if c.fields.is_empty() {
                 srcs.push(v);
             } else {
-                srcs.extend(stored(p, defs, v, &c.fields));
+                srcs.extend(stored(p, defs, ix, v, &c.fields));
             }
         }
     }
@@ -126,7 +156,7 @@ fn bases(p: &Program, defs: &Defs, def: &ClientDef, stmt: u32) -> BTreeSet<Strin
                 let Some(param) = p.funcs[*f as usize].params.first() else {
                     continue;
                 };
-                srcs.extend(stored(p, defs, param.var, &c.lambda_fields));
+                srcs.extend(stored(p, defs, ix, param.var, &c.lambda_fields));
             }
         }
     }
@@ -138,34 +168,30 @@ fn bases(p: &Program, defs: &Defs, def: &ClientDef, stmt: u32) -> BTreeSet<Strin
 }
 
 /// The calls a receiver comes from, through copies and the field it is held in.
-fn origins(p: &Program, defs: &Defs, var: VarId, depth: u32, out: &mut BTreeSet<u32>) {
+fn origins(p: &Program, defs: &Defs, ix: &Index, var: VarId, depth: u32, out: &mut BTreeSet<u32>) {
     if depth > 8 {
         return;
     }
     for &d in defs.of(var) {
         match &p.stmts[d as usize].kind {
-            GKind::Copy { src, .. } => origins(p, defs, *src, depth + 1, out),
+            GKind::Copy { src, .. } => origins(p, defs, ix, *src, depth + 1, out),
             GKind::Call { .. } => {
                 out.insert(d);
             }
             GKind::ThisLoad { var: field_var, .. } => {
-                origins(p, defs, *field_var, depth + 1, out);
+                origins(p, defs, ix, *field_var, depth + 1, out);
             }
             _ => {}
         }
     }
     // A field variable is defined by the stores into it.
-    for s in &p.stmts {
-        if let GKind::ThisStore { src, var: v, .. } = &s.kind
-            && *v == var
-        {
-            origins(p, defs, *src, depth + 1, out);
-        }
+    for src in ix.this_stores.get(&var).into_iter().flatten() {
+        origins(p, defs, ix, *src, depth + 1, out);
     }
 }
 
 /// The classes a registering call's type argument names.
-fn type_arg_classes(p: &Program, stmt: u32) -> BTreeSet<ClassId> {
+fn type_arg_classes(p: &Program, ix: &Index, stmt: u32) -> BTreeSet<ClassId> {
     let st = &p.stmts[stmt as usize];
     let GKind::Call { dst, .. } = &st.kind else {
         return BTreeSet::new();
@@ -177,16 +203,11 @@ fn type_arg_classes(p: &Program, stmt: u32) -> BTreeSet<ClassId> {
             _ => None,
         })
         .collect();
-    for t in &p.stmts {
-        if let GKind::TypeRef { dst: d, ty } = &t.kind
-            && d == dst
-            && t.file == st.file
-        {
-            out.extend(p.prov[*ty as usize].iter().filter_map(|pr| match pr {
-                Prov::Instance(c) | Prov::Class(c) => Some(*c),
-                _ => None,
-            }));
-        }
+    for ty in ix.type_refs.get(dst).into_iter().flatten() {
+        out.extend(p.prov[*ty as usize].iter().filter_map(|pr| match pr {
+            Prov::Instance(c) | Prov::Class(c) => Some(*c),
+            _ => None,
+        }));
     }
     out
 }
@@ -199,8 +220,9 @@ pub struct Bindings {
 pub fn bind(inp: &Inputs, sinks: &[SinkRec]) -> Bindings {
     let p = inp.program;
     let defs = inp.defs;
-    // Registrations: (client entry, statement, file).
-    let mut regs: Vec<(&ClientDef, u32)> = Vec::new();
+    let ix = Index::build(p);
+    // Registrations: (client entry, statement, registered classes, base addresses).
+    let mut regs: Vec<(&ClientDef, u32, BTreeSet<ClassId>, BTreeSet<String>)> = Vec::new();
     for (i, st) in p.stmts.iter().enumerate() {
         if !matches!(st.kind, GKind::Call { .. }) {
             continue;
@@ -209,7 +231,12 @@ pub fn bind(inp: &Inputs, sinks: &[SinkRec]) -> Bindings {
         let paths = call_paths(p, i as u32);
         for c in &inp.topo.clients {
             if c.language == lang && paths.iter().any(|a| api_matches_any(&c.calls, a)) {
-                regs.push((c, i as u32));
+                let classes = match c.client {
+                    ClientKind::TypeArg => type_arg_classes(p, &ix, i as u32),
+                    ClientKind::Result => BTreeSet::new(),
+                };
+                let found = bases(p, defs, &ix, c, i as u32);
+                regs.push((c, i as u32, classes, found));
             }
         }
     }
@@ -253,7 +280,7 @@ pub fn bind(inp: &Inputs, sinks: &[SinkRec]) -> Bindings {
                 continue;
             };
             let mut from: BTreeSet<u32> = BTreeSet::new();
-            origins(p, defs, *recv, 0, &mut from);
+            origins(p, defs, &ix, *recv, 0, &mut from);
             let class = p.funcs[st.func as usize].class.or_else(|| {
                 let mut f = p.funcs[st.func as usize].parent;
                 while let Some(fi) = f {
@@ -265,12 +292,12 @@ pub fn bind(inp: &Inputs, sinks: &[SinkRec]) -> Bindings {
                 None
             });
             let recv_apis: Vec<String> = api_paths(p, *recv).collect();
-            for (def, reg) in &regs {
+            for (def, reg, classes, found) in &regs {
                 let applies = match def.client {
                     ClientKind::Result => from.contains(reg),
                     ClientKind::TypeArg => {
                         recv_apis.iter().any(|a| api_matches_any(&def.injects, a))
-                            && class.is_some_and(|c| type_arg_classes(p, *reg).contains(&c))
+                            && class.is_some_and(|c| classes.contains(&c))
                     }
                 };
                 if !applies {
@@ -279,8 +306,8 @@ pub fn bind(inp: &Inputs, sinks: &[SinkRec]) -> Bindings {
                 let reg_st = &p.stmts[*reg as usize];
                 let reg_file = reg_st.file as usize;
                 let registration = format!("{}:{}", p.files[reg_file].path, reg_st.pos.line);
-                for base in bases(p, defs, def, *reg) {
-                    let Some(host) = authority_of(&base) else {
+                for base in found {
+                    let Some(host) = authority_of(base) else {
                         continue;
                     };
                     let to = if let Some(k) = inp.names.by_host.get(&host) {

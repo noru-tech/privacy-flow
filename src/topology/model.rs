@@ -15,6 +15,8 @@ pub struct Topology {
     /// deployable found: the repository is one system).
     pub mode: String,
     pub systems: Vec<SystemRec>,
+    /// What the systems store, from their ORM models.
+    pub datasets: Vec<DatasetRec>,
     /// FACT: the systems each flow belongs to, by flow ID.
     pub attribution: Vec<AttributionRec>,
     /// FACT: requests bound to a client registration, per system: where they go.
@@ -48,6 +50,49 @@ pub struct SystemRec {
     pub aliases: Vec<String>,
     /// What its request handlers receive from users.
     pub user_input: UserInput,
+    /// The datasets it uses, by key.
+    pub datasets: Vec<String>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
+#[serde(deny_unknown_fields)]
+pub struct DatasetRec {
+    pub key: String,
+    pub name: String,
+    /// The catalogue entry that read it.
+    pub store: String,
+    /// `path:line` of the context or the first model.
+    pub location: String,
+    /// The database a registration names (`"orderingdb"`).
+    pub database: Option<String>,
+    pub schema: Option<String>,
+    pub collections: Vec<CollectionRec>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
+#[serde(deny_unknown_fields)]
+pub struct CollectionRec {
+    pub name: String,
+    /// The entity or model class.
+    pub entity: String,
+    pub location: String,
+    pub fields: Vec<FieldRec>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
+#[serde(deny_unknown_fields)]
+pub struct FieldRec {
+    /// The column.
+    pub name: String,
+    /// The member it maps, when it is not the column name.
+    pub member: Option<String>,
+    pub location: Option<String>,
+    pub categories: Vec<String>,
+    /// Classified only as maybe personal: no category until reviewed.
+    pub needs_review: bool,
+    pub classified_by: Option<String>,
+    /// Owned or embedded fields.
+    pub fields: Vec<FieldRec>,
 }
 
 /// The data a system's request handlers receive: categories, and where (first five sites).

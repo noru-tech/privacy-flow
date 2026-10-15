@@ -5,6 +5,7 @@ pub mod catalogue;
 pub mod clients;
 pub mod model;
 pub mod names;
+pub mod stores;
 pub mod systems;
 
 use std::collections::{BTreeMap, BTreeSet};
@@ -22,6 +23,7 @@ pub struct Inputs<'a> {
     pub config: &'a crate::config::Config,
     pub catalogue: &'a crate::catalogue::Catalogue,
     pub topo: &'a catalogue::TopologyCatalogue,
+    pub classifier: &'a crate::classify::Classifier,
     /// docker-compose files: (path, text).
     pub compose: &'a [(String, String)],
 }
@@ -75,6 +77,27 @@ pub fn build(doc: &mut Document, inp: &Inputs) {
     );
     drop(closures);
     user_input(inp, &mut sys);
+    let with_own: Vec<(String, &[bool], &[bool])> = sys
+        .recs
+        .iter()
+        .zip(&sys.closure)
+        .zip(&sys.own)
+        .map(|((r, c), o)| (r.key.clone(), c.as_slice(), o.as_slice()))
+        .collect();
+    let stores = stores::datasets(&stores::Inputs {
+        program: inp.program,
+        defs: &defs,
+        classifier: inp.classifier,
+        topo: inp.topo,
+        resolver: inp.resolver,
+        systems: &with_own,
+    });
+    drop(with_own);
+    for r in &mut sys.recs {
+        if let Some(keys) = stores.links.get(&r.key) {
+            r.datasets = keys.iter().cloned().collect();
+        }
+    }
     let path_index: BTreeMap<&str, usize> = inp
         .program
         .files
@@ -85,6 +108,7 @@ pub fn build(doc: &mut Document, inp: &Inputs) {
     let mut attribution = Vec::new();
     let mut notes = sys.notes;
     notes.extend(names.notes);
+    notes.extend(stores.notes);
     notes.extend(bindings.notes);
     for fl in &doc.flows {
         let files: BTreeSet<usize> = fl
@@ -123,6 +147,7 @@ pub fn build(doc: &mut Document, inp: &Inputs) {
         catalogue: inp.topo.reference.clone(),
         mode: sys.mode,
         systems: sys.recs,
+        datasets: stores.datasets,
         attribution,
         bindings: bindings.recs,
         edges: Vec::new(),

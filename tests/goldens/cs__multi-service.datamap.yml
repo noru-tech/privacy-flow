@@ -2,6 +2,42 @@
 # Systems, egress and ingress come from the code; lines starting with "#:" say where.
 # Keys starting with unresolved_ are destinations the code does not name: replace each with
 # the receiving system's key, or declare it in .privacy-flow.yml and run again.
+dataset:
+  #: cs.efcore at Orders.Data/OrdersContext.cs:44; database ordersdb; schema sales
+  - fides_key: "orders_context"
+    name: "OrdersContext"
+    collections:
+      #: Orders.Data/OrdersContext.cs:13 (Shop.Orders.Data.Buyer)
+      - name: "Buyers"
+        fields:
+          #: Orders.Data/OrdersContext.cs:16; classified by classification-table
+          - name: "Email"
+            data_categories:
+              - "user.contact.email"
+          - name: "Id"
+          #: Orders.Data/OrdersContext.cs:17 (PhoneNumber); classified by classification-table
+          - name: "phone"
+            data_categories:
+              - "user.contact.phone_number"
+      #: Orders.Data/OrdersContext.cs:24 (Shop.Orders.Data.Order)
+      - name: "orders"
+        fields:
+          - name: "BuyerId"
+          #: Orders.Data/OrdersContext.cs:26 (_cardNumber); classified by classification-table
+          - name: "CardNumber"
+            data_categories:
+              - "user.financial.credit_card"
+          - name: "Id"
+          - name: "ShipTo"
+            fields:
+              #: Orders.Data/OrdersContext.cs:10; classified by classification-table
+              - name: "City"
+                data_categories:
+                  - "user.contact.address.city"
+              #: Orders.Data/OrdersContext.cs:9; classified by classification-table
+              - name: "Street"
+                data_categories:
+                  - "user.contact.address.street"
 system:
   #: third-party processor legacy.example.com
   - fides_key: "legacy.example.com"
@@ -19,13 +55,15 @@ system:
   - fides_key: "orders_api"
     name: "Orders.Api"
     system_type: "Service"
+    dataset_references:
+      - "orders_context"
     ingress:
       #: also data of unknown category (request input not narrowed by a type): review
       - fides_key: "web"
         type: "system"
         data_categories:
           - "user.contact.email"
-      #: request input to its handlers: Orders.Api/Program.cs:7, Orders.Api/Program.cs:9, Orders.Api/Program.cs:10 and more
+      #: request input to its handlers: Orders.Api/Program.cs:8, Orders.Api/Program.cs:10, Orders.Api/Program.cs:11 and more
       - fides_key: "user"
         type: "user"
         data_categories:

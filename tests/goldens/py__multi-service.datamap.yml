@@ -2,6 +2,59 @@
 # Systems, egress and ingress come from the code; lines starting with "#:" say where.
 # Keys starting with unresolved_ are destinations the code does not name: replace each with
 # the receiving system's key, or declare it in .privacy-flow.yml and run again.
+dataset:
+  #: py.django at shop/accounts/models.py:12
+  - fides_key: "shop_db"
+    name: "shop database"
+    collections:
+      #: shop/accounts/models.py:12 (Member)
+      - name: "accounts_member"
+        fields:
+          - name: "date_joined"
+          #: classified by classification-table
+          - name: "email"
+            data_categories:
+              - "user.contact.email"
+          #: classified by classification-table
+          - name: "first_name"
+            data_categories:
+              - "user.name.first"
+          - name: "is_active"
+          - name: "is_staff"
+          - name: "is_superuser"
+          - name: "last_login"
+          #: classified by classification-table
+          - name: "last_name"
+            data_categories:
+              - "user.name.last"
+          #: classified by classification-table
+          - name: "password"
+            data_categories:
+              - "user.authorization.password"
+          #: shop/accounts/models.py:13; classified by classification-table
+          - name: "phone"
+            data_categories:
+              - "user.contact.phone_number"
+          #: classified by classification-table
+          - name: "username"
+            data_categories:
+              - "user.account.username"
+      #: shop/accounts/models.py:16 (Address)
+      - name: "addresses"
+        fields:
+          - name: "created"
+          #: shop/accounts/models.py:17 (member); classified by catalogue:person-identifiers
+          - name: "member_id"
+            data_categories:
+              - "user.unique_id.pseudonymous"
+          #: shop/accounts/models.py:18; classified by classification-table
+          - name: "street"
+            data_categories:
+              - "user.contact.address.street"
+          #: shop/accounts/models.py:19 (postcode); classified by classification-table
+          - name: "zip"
+            data_categories:
+              - "user.contact.address.postal_code"
 system:
   #: service rooted at notifier (py.app: notifier/pyproject.toml)
   #: reached as notifier (docker-compose.yml)
@@ -24,6 +77,8 @@ system:
   - fides_key: "shop"
     name: "shop"
     system_type: "Service"
+    dataset_references:
+      - "shop_db"
     egress:
       #: to notifier over HTTP: shop/accounts/views.py:9
       - fides_key: "notifier"
