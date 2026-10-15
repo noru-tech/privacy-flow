@@ -165,7 +165,7 @@ application state. A project that means `state` as an address everywhere says so
 in `.privacy-flow.yml`, which always applies.
 
 Identifiers of things are declared apart, by the words that make them up
-([ADR 0020](adr/0020-uncertain-findings-and-identifiers-of-things.md)):
+([ADR 0021](adr/0021-uncertain-findings-and-identifiers-of-things.md)):
 
 ```yaml
 entity_identifiers:

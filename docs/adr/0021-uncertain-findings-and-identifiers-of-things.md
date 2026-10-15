@@ -1,4 +1,4 @@
-# ADR 0020: Data of undetermined category is uncertain, and identifiers of things are not personal data
+# ADR 0021: Data of undetermined category is uncertain, and identifiers of things are not personal data
 
 Status: accepted, 2026-10-15.
 
@@ -24,10 +24,11 @@ properties, FastAPI path parameters, `int[]` and string parameters, and reads by
 
 ## Decision
 
-- **Uncertain findings.** A flow whose category is `unknown` is an uncertain finding under every
-  rule: `info`, `needs_review: true`, and a message that starts `uncertain: data of undetermined
-  category from …`. It is never dropped and never reported as personal data. This replaces
-  PF001's "request input keeps the rule's severity", and extends ADR 0004's review queue to
+- **Uncertain findings.** A flow whose category is `unknown` is uncertain under every rule: it
+  counts at `info` and needs review, so it joins its sink's review finding (ADR 0020). A finding
+  whose only category is `unknown` is `info`, and its message starts `uncertain: data of
+  undetermined category from …`. It is never dropped and never reported as personal data. This
+  replaces PF001's "request input keeps the rule's severity", and extends ADR 0004's review queue to
   request input.
 - **Identifiers of things.** `catalogue/classification.yml` lists entity words (`item`,
   `product`, `brand`, `catalog`, `category`, `type`, `sku`, `variant`, `order_line`, `line_item`
@@ -70,7 +71,8 @@ properties, FastAPI path parameters, `int[]` and string parameters, and reads by
 
 ## Measurements
 
-eShop at `dc7ea499`, against 0.4.0 (`ac10149`):
+eShop at `dc7ea499`, against 0.4.0 (`ac10149`), counted one finding per flow as 0.4.0 did,
+before ADR 0020 grouped findings by exposure:
 
 | | before | after |
 | --- | --- | --- |

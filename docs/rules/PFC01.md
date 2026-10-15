@@ -80,7 +80,7 @@ A finding is never deleted. To record a human decision about it, edit only the f
 `owner`, `decided_at`, `rationale`, and `remediated_at` or an optional `expires_at`), then run
 `piiflow check .privacy-flow/flows.json --as-of YYYY-MM-DD`. The date is required because the
 machine clock is never read. A disposition suppresses the finding from the threshold decision on
-that date and leaves the finding, its flow and the summary intact; the next `scan` carries it over
+that date and leaves the finding, its gap and the summary intact; the next `scan` carries it over
 by finding ID, which does not depend on line numbers. Exact rules:
 [dispositions](../output.md#dispositions).
 

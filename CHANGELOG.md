@@ -8,11 +8,25 @@ All notable changes to this project are documented here. The format is based on
 
 ### Changed
 
+- **A finding is an exposure**: one rule at one sink, with every flow the rule fires on there as
+  its evidence ([ADR 0020](docs/adr/0020-findings-by-exposure.md)). A log call that receives a
+  whole address is one PF001 finding with five categories, not five. Flows that need review are a
+  separate finding at the same sink. On dotnet/eShop 214 findings become 67; on the benchmark
+  corpus 13,705 become 3,617. Flows are unchanged.
+- The flow-facts document is schema version 0.2: `findings[].flow` is now `findings[].flows`, a
+  list. Finding IDs hash the rule, the sink, `needs_review` and the categories, so every finding
+  about flows has a new ID.
+- Dispositions carry forward by ID, or by the flows a new finding shares with decided ones when
+  those covered all its categories. Decisions in a 0.1 document carry to the exposures whose
+  flows were all decided alike.
+- SARIF: a code flow per flow, the sources as `relatedLocations`, the flow IDs in
+  `properties.flows` (was `properties.flow`). `explain` prints every flow of a finding. `diff`
+  counts an exposure that gained a flow or a category as changed.
 - A finding whose only category is `unknown` is uncertain under every rule: `info`,
   `needs_review: true`, and a message that starts `uncertain: data of undetermined category`.
   Request input the analysis cannot name (`req.body`, a query parameter) kept the rule's
   severity before, so a logged request body failed the default policy; its classified fields
-  still do ([ADR 0020](docs/adr/0020-uncertain-findings-and-identifiers-of-things.md)).
+  still do ([ADR 0021](docs/adr/0021-uncertain-findings-and-identifiers-of-things.md)).
 - Identifiers of things are not personal data: names made of entity words and an identifier
   suffix (`item_id`, `catalogItemId`, `BrandIds`, `item_type_id`) are never classified, request
   input under such a name (Blazor `[Parameter]` and `[SupplyParameterFromQuery]` properties,

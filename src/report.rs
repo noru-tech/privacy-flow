@@ -24,7 +24,10 @@ use crate::rules::{RULES, rule};
 
 pub const SCHEMA_ID: &str =
     "https://github.com/noru-tech/privacy-flow/blob/main/schemas/flows.schema.json";
-pub const SCHEMA_VERSION: &str = "0.1";
+pub const SCHEMA_VERSION: &str = "0.2";
+/// The schema version before findings were grouped by exposure (ADR 0020); dispositions in a
+/// document of this version are still carried forward.
+pub const LEGACY_SCHEMA_VERSION: &str = "0.1";
 pub const TOOL: &str = "privacy-flow";
 pub const VERSION: &str = env!("CARGO_PKG_VERSION");
 
@@ -248,7 +251,8 @@ pub struct FindingRec {
     pub rule_id: String,
     pub severity: Severity,
     pub message: String,
-    pub flow: Option<String>,
+    /// The flows that are the exposure's evidence, in document order (empty for a gap).
+    pub flows: Vec<String>,
     pub gap: Option<String>,
     pub categories: Vec<String>,
     pub processor: Option<String>,
@@ -1052,6 +1056,22 @@ pub(crate) fn is_first_party(sink: &SinkRec) -> bool {
     sink.class == SinkClass::Http && sink.host.as_ref().is_some_and(|h| h.kind == "relative")
 }
 
+/// An exposure (ADR 0020): a rule, the sink it fires at, and whether its evidence needs review.
+type ExposureKey = (String, String, bool);
+
+/// What one exposure gathers from its flows before it becomes one finding.
+struct Exposure<'a> {
+    severity: Severity,
+    prefix: String,
+    suffix: String,
+    processor: Option<String>,
+    sink: &'a SinkRec,
+    flows: Vec<String>,
+    categories: BTreeSet<String>,
+    /// (location, ID) of each source, so the first in source order describes the data.
+    sources: BTreeSet<(&'a Loc, &'a String)>,
+}
+
 type EgressKey = (Option<String>, SinkClass, Option<HostRec>);
 /// (categories, flow ids, declaration)
 type EgressAcc<'a> = (
@@ -1072,6 +1092,7 @@ pub fn derive(doc: &mut Document, classifier: &Classifier) -> Result<()> {
         doc.sources.iter().map(|s| (s.id.as_str(), s)).collect();
     let sinks: BTreeMap<&str, &SinkRec> = doc.sinks.iter().map(|s| (s.id.as_str(), s)).collect();
     let mut findings = Vec::new();
+    let mut exposures: BTreeMap<ExposureKey, Exposure> = BTreeMap::new();
     let setting = |rule_id: &str| doc.policy.rules.get(rule_id).copied();
     for fl in &doc.flows {
         let (Some(src), Some(snk)) = (sources.get(fl.source.as_str()), sinks.get(fl.sink.as_str()))
@@ -1092,7 +1113,10 @@ pub fn derive(doc: &mut Document, classifier: &Classifier) -> Result<()> {
         let external = snk.class.is_external() && !is_first_party(snk);
         let processor = processor_of(snk);
         let declared = processor_declared(&doc.processors, snk);
-        let mut fire = |rule_id: &str, message: String, proc: Option<String>| {
+        let needs_review = src.needs_review || snk.heuristic || uncertain || echoed;
+        // A rule fires on the flow; the flow joins its exposure. `message` is the text around
+        // the description of the data, which the exposure writes once it has all its flows.
+        let mut fire = |rule_id: &str, message: (&str, String), proc: Option<String>| {
             let Some(s) = setting(rule_id) else { return };
             if !s.enabled {
                 return;
@@ -1102,32 +1126,22 @@ pub fn derive(doc: &mut Document, classifier: &Classifier) -> Result<()> {
             } else {
                 s.severity
             };
-            let id = format!("pf-{}", short_hash(&serde_json::json!([rule_id, fl.id])));
-            findings.push(FindingRec {
-                disposition: previous.get(&id).cloned().flatten(),
-                id,
-                rule_id: rule_id.to_string(),
-                severity,
-                message,
-                flow: Some(fl.id.clone()),
-                gap: None,
-                categories: vec![fl.category.clone()],
-                processor: proc,
-                needs_review: src.needs_review || snk.heuristic || uncertain || echoed,
-                heuristic: snk.heuristic,
-                location: Some(snk.location.clone()),
-            });
-        };
-        let what = if uncertain {
-            format!(
-                "uncertain: data of undetermined category from `{}` ({}:{})",
-                src.text, src.location.path, src.location.line
-            )
-        } else {
-            format!(
-                "{cat} from `{}` ({}:{})",
-                src.text, src.location.path, src.location.line
-            )
+            let e = exposures
+                .entry((rule_id.to_string(), fl.sink.clone(), needs_review))
+                .or_insert_with(|| Exposure {
+                    severity,
+                    prefix: message.0.to_string(),
+                    suffix: message.1,
+                    processor: proc,
+                    sink: snk,
+                    flows: Vec::new(),
+                    categories: BTreeSet::new(),
+                    sources: BTreeSet::new(),
+                });
+            e.severity = e.severity.max(severity);
+            e.flows.push(fl.id.clone());
+            e.categories.insert(fl.category.clone());
+            e.sources.insert((&src.location, &src.id));
         };
         let at = format!("{}:{}", snk.location.path, snk.location.line);
         // Logging a pseudonymous identifier instead of contact data is the recommended practice:
@@ -1136,7 +1150,10 @@ pub fn derive(doc: &mut Document, classifier: &Classifier) -> Result<()> {
         if snk.class == SinkClass::Log && !credential && !identifier {
             fire(
                 "PF001",
-                format!("{what} reaches a log sink ({}) at {at}", snk.catalogue_id),
+                (
+                    "",
+                    format!(" reaches a log sink ({}) at {at}", snk.catalogue_id),
+                ),
                 None,
             );
         }
@@ -1146,8 +1163,9 @@ pub fn derive(doc: &mut Document, classifier: &Classifier) -> Result<()> {
         {
             fire(
                 "PF002",
-                format!(
-                    "{what} reaches {p}, a processor not declared in .privacy-flow.yml, at {at}"
+                (
+                    "",
+                    format!(" reaches {p}, a processor not declared in .privacy-flow.yml, at {at}"),
                 ),
                 Some(p.clone()),
             );
@@ -1158,16 +1176,16 @@ pub fn derive(doc: &mut Document, classifier: &Classifier) -> Result<()> {
                 .unwrap_or_else(|| "an LLM provider chosen at run time".into());
             fire(
                 "PF003",
-                format!("{what} reaches {p} through a model call at {at}"),
+                ("", format!(" reaches {p} through a model call at {at}")),
                 processor.clone(),
             );
         }
         if special && external {
             fire(
                 "PF004",
-                format!(
-                    "special-category data: {what} reaches an external {} sink at {at}",
-                    snk.class.as_str()
+                (
+                    "special-category data: ",
+                    format!(" reaches an external {} sink at {at}", snk.class.as_str()),
                 ),
                 processor.clone(),
             );
@@ -1192,9 +1210,9 @@ pub fn derive(doc: &mut Document, classifier: &Classifier) -> Result<()> {
         if credential && (snk.class == SinkClass::Log || external) && !as_auth_header {
             fire(
                 "PF005",
-                format!(
-                    "credentials: {what} reach a {} sink at {at}",
-                    snk.class.as_str()
+                (
+                    "credentials: ",
+                    format!(" reach a {} sink at {at}", snk.class.as_str()),
                 ),
                 processor.clone(),
             );
@@ -1205,10 +1223,57 @@ pub fn derive(doc: &mut Document, classifier: &Classifier) -> Result<()> {
         {
             fire(
                 "PF006",
-                format!("{what} is sent over HTTP to a host computed at run time, at {at}"),
+                (
+                    "",
+                    format!(" is sent over HTTP to a host computed at run time, at {at}"),
+                ),
                 None,
             );
         }
+    }
+    for ((rule_id, sink_id, needs_review), e) in exposures {
+        let categories: Vec<String> = e.categories.into_iter().collect();
+        let id = format!(
+            "pf-{}",
+            short_hash(&serde_json::json!([
+                rule_id,
+                sink_id,
+                needs_review,
+                categories
+            ]))
+        );
+        let (loc, first) = e.sources.first().map(|(l, s)| (*l, *s)).expect("a flow");
+        // Data whose category is undetermined is never described as personal data.
+        let data = if categories == [UNKNOWN] {
+            "uncertain: data of undetermined category".to_string()
+        } else {
+            categories.join(", ")
+        };
+        let what = format!(
+            "{data} from `{}` ({}:{}){}",
+            sources[first.as_str()].text,
+            loc.path,
+            loc.line,
+            match e.sources.len() {
+                1 => String::new(),
+                2 => " and 1 other source".to_string(),
+                n => format!(" and {} other sources", n - 1),
+            }
+        );
+        findings.push(FindingRec {
+            disposition: previous.get(&id).cloned().flatten(),
+            id,
+            rule_id,
+            severity: e.severity,
+            message: format!("{}{what}{}", e.prefix, e.suffix),
+            flows: e.flows,
+            gap: None,
+            categories,
+            processor: e.processor,
+            needs_review,
+            heuristic: e.sink.heuristic,
+            location: Some(e.sink.location.clone()),
+        });
     }
     if let Some(s) = setting("PFC01") {
         for g in &doc.coverage.gaps {
@@ -1226,7 +1291,7 @@ pub fn derive(doc: &mut Document, classifier: &Classifier) -> Result<()> {
                 rule_id: "PFC01".into(),
                 severity: s.severity,
                 message: format!("coverage gap ({}): {}", g.kind, g.detail),
-                flow: None,
+                flows: Vec::new(),
                 gap: Some(g.id.clone()),
                 categories: Vec::new(),
                 processor: None,
@@ -1387,20 +1452,117 @@ pub fn seal(doc: &mut Document) -> Result<()> {
     Ok(())
 }
 
-/// Carry dispositions over from a previous document by finding ID. Returns the IDs of
-/// dispositions that no longer have a finding.
-pub fn carry_dispositions(doc: &mut Document, previous: &Document) -> Vec<String> {
-    let mut prev: BTreeMap<&str, &Disposition> = previous
-        .findings
+/// A finding of an earlier document, as far as carrying its disposition forward needs it.
+#[derive(Clone, Debug, PartialEq)]
+pub struct PriorFinding {
+    pub id: String,
+    pub rule_id: String,
+    pub flows: Vec<String>,
+    pub categories: Vec<String>,
+    pub disposition: Option<Disposition>,
+}
+
+pub fn prior_findings(doc: &Document) -> Vec<PriorFinding> {
+    doc.findings
         .iter()
-        .filter_map(|f| f.disposition.as_ref().map(|d| (f.id.as_str(), d)))
-        .collect();
-    for f in &mut doc.findings {
-        if let Some(d) = prev.remove(f.id.as_str()) {
-            f.disposition = Some(d.clone());
+        .map(|f| PriorFinding {
+            id: f.id.clone(),
+            rule_id: f.rule_id.clone(),
+            flows: f.flows.clone(),
+            categories: f.categories.clone(),
+            disposition: f.disposition.clone(),
+        })
+        .collect()
+}
+
+/// The findings of a document of schema version 0.1, one per flow (`flow`), read for their
+/// dispositions only.
+pub fn legacy_prior_findings(doc: &serde_json::Value) -> Result<Vec<PriorFinding>> {
+    let Some(findings) = doc.get("findings").and_then(|f| f.as_array()) else {
+        bail!("no findings");
+    };
+    let text = |v: &serde_json::Value, k: &str| -> Result<String> {
+        match v.get(k).and_then(|x| x.as_str()) {
+            Some(x) => Ok(x.to_string()),
+            None => bail!("a finding has no {k}"),
+        }
+    };
+    findings
+        .iter()
+        .map(|f| {
+            Ok(PriorFinding {
+                id: text(f, "id")?,
+                rule_id: text(f, "rule_id")?,
+                flows: f
+                    .get("flow")
+                    .and_then(|x| x.as_str())
+                    .map(str::to_string)
+                    .into_iter()
+                    .collect(),
+                categories: serde_json::from_value(
+                    f.get("categories").cloned().unwrap_or_default(),
+                )?,
+                disposition: serde_json::from_value(
+                    f.get("disposition").cloned().unwrap_or_default(),
+                )?,
+            })
+        })
+        .collect()
+}
+
+/// Carry dispositions over from a previous document's findings. A finding takes the disposition
+/// of the finding with its ID; failing that, of the earlier findings of its rule that share a flow
+/// with it, when they all record the same disposition and together cover its categories (ADR
+/// 0020): an exposure that lost a category keeps its decision, one that gained a category is
+/// open again. Returns the IDs of dispositions that no longer have a finding.
+pub fn carry_dispositions(doc: &mut Document, prior: &[PriorFinding]) -> Vec<String> {
+    let by_id: BTreeMap<&str, &PriorFinding> = prior.iter().map(|p| (p.id.as_str(), p)).collect();
+    let mut by_flow: BTreeMap<(&str, &str), Vec<&PriorFinding>> = BTreeMap::new();
+    for p in prior {
+        for fl in &p.flows {
+            by_flow
+                .entry((p.rule_id.as_str(), fl.as_str()))
+                .or_default()
+                .push(p);
         }
     }
-    prev.keys().map(|k| k.to_string()).collect()
+    let mut used: BTreeSet<&str> = BTreeSet::new();
+    for f in &mut doc.findings {
+        if let Some(p) = by_id.get(f.id.as_str()) {
+            if let Some(d) = &p.disposition {
+                f.disposition = Some(d.clone());
+                used.insert(p.id.as_str());
+            }
+            continue;
+        }
+        let mut found: BTreeMap<&str, &PriorFinding> = BTreeMap::new();
+        for fl in &f.flows {
+            for p in by_flow
+                .get(&(f.rule_id.as_str(), fl.as_str()))
+                .into_iter()
+                .flatten()
+            {
+                found.insert(p.id.as_str(), p);
+            }
+        }
+        let Some(d) = found.values().next().and_then(|p| p.disposition.as_ref()) else {
+            continue;
+        };
+        let agree = found.values().all(|p| p.disposition.as_ref() == Some(d));
+        let covered: BTreeSet<&str> = found
+            .values()
+            .flat_map(|p| p.categories.iter().map(String::as_str))
+            .collect();
+        if agree && f.categories.iter().all(|c| covered.contains(c.as_str())) {
+            f.disposition = Some(d.clone());
+            used.extend(found.keys());
+        }
+    }
+    prior
+        .iter()
+        .filter(|p| p.disposition.is_some() && !used.contains(p.id.as_str()))
+        .map(|p| p.id.clone())
+        .collect()
 }
 
 /// Validate a disposition's shape (acc's rules). Returns a message per problem.

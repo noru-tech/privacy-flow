@@ -1,5 +1,5 @@
 {
-  "description": "What piiflow must and must not report on dotnet/eShop at a pinned commit. Lines are 1-based; a rule with no line matches any line of the file. `categories` must all be among the finding's categories at that location.",
+  "description": "What piiflow must and must not report on dotnet/eShop at a pinned commit. Lines are 1-based; a rule with no line matches any line of the file. `categories` must all be among the finding's categories at that location. `findings`, when given, is the exact number of findings of that rule at that location (one per exposure, ADR 0020), and `min_flows` the fewest flows they must cite as evidence.",
   "repository": "https://github.com/dotnet/eShop",
   "commit": "dc7ea499cd356924fb6689b3702964a5869dbae9",
   "max_seconds": 120,
@@ -19,6 +19,8 @@
       "path": "src/Ordering.API/Apis/OrdersApi.cs",
       "line": 134,
       "categories": ["user.financial.credit_card", "user.contact.address.street"],
+      "findings": 1,
+      "min_flows": 7,
       "why": "The whole CreateOrderRequest (card number, address) is logged, four lines below the comment saying it must not be."
     },
     {
@@ -26,6 +28,8 @@
       "path": "src/Ordering.API/Apis/OrdersApi.cs",
       "line": 148,
       "categories": ["user.financial.credit_card"],
+      "findings": 1,
+      "min_flows": 7,
       "why": "The identified command carrying the order command is logged whole."
     },
     {
@@ -33,26 +37,34 @@
       "path": "src/Ordering.API/Application/Behaviors/LoggingBehavior.cs",
       "line": 9,
       "categories": ["user.financial.credit_card"],
+      "findings": 1,
+      "min_flows": 7,
       "why": "MediatR's pipeline behavior logs every command with {@Command}; it is reached only through dispatch."
     },
     {
       "rule": "PF001",
       "path": "src/Ordering.API/Application/Behaviors/ValidatorBehavior.cs",
       "line": 30,
-      "categories": ["user.financial.credit_card"]
+      "categories": ["user.financial.credit_card"],
+      "findings": 1,
+      "min_flows": 7
     },
     {
       "rule": "PF001",
       "path": "src/Ordering.API/Application/Behaviors/TransactionBehavior.cs",
       "line": 41,
       "categories": ["user.financial.credit_card"],
+      "findings": 1,
+      "min_flows": 7,
       "why": "Logged inside a lambda handed to EF Core's execution strategy."
     },
     {
       "rule": "PF001",
       "path": "src/Ordering.API/Application/Commands/IdentifiedCommandHandler.cs",
       "line": 79,
-      "categories": ["user.financial.credit_card"]
+      "categories": ["user.financial.credit_card"],
+      "findings": 1,
+      "min_flows": 7
     },
     {
       "rule": "PF001",
@@ -83,6 +95,8 @@
       "path": "src/WebApp/Services/OrderingService.cs",
       "line": 17,
       "categories": ["user.contact.address.street", "user.financial.credit_card"],
+      "findings": 1,
+      "min_flows": 9,
       "why": "The checkout form's address and card go to the ordering API, whose base address is configured elsewhere."
     }
   ],
@@ -134,7 +148,7 @@
       "rule": "PF006",
       "path": "src/WebAppComponents/Services/CatalogService.cs",
       "line": 14,
-      "why": "The route parameter `ItemId` identifies a catalogue item, not a person (ADR 0020)."
+      "why": "The route parameter `ItemId` identifies a catalogue item, not a person (ADR 0021)."
     },
     {
       "rule": "PF006",

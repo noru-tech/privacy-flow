@@ -73,7 +73,7 @@ fn every_fixture_matches_its_markers() {
             }
         }
         // Data of undetermined category is never reported as personal data: an uncertain
-        // finding, at info, for review (ADR 0020).
+        // finding, at info, for review (ADR 0021).
         for f in &doc.findings {
             if f.categories == ["unknown"]
                 && (f.severity != Severity::Info
