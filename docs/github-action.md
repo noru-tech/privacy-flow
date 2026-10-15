@@ -19,7 +19,7 @@ jobs:
       - uses: actions/checkout@v5
         with:
           fetch-depth: 0     # the base commit must be in the checkout
-      - uses: noru-tech/privacy-flow@v0.3.1
+      - uses: noru-tech/privacy-flow@v0.4.0
 ```
 
 Pin both actions to a commit SHA in production workflows, as this repository does.
@@ -46,7 +46,7 @@ Pin both actions to a commit SHA in production workflows, as this repository doe
 
 | Input | Default | |
 | --- | --- | --- |
-| `version` | `0.3.1` | Release to install |
+| `version` | `0.4.0` | Release to install |
 | `path` | `.` | Directory to analyse |
 | `base` | the pull request's base SHA | Base revision |
 | `head` | the pull request's head SHA, or the pushed SHA | Head revision |
@@ -57,7 +57,7 @@ Pin both actions to a commit SHA in production workflows, as this repository doe
 | `upload-sarif` | `true` | Upload to code scanning when the format is SARIF |
 | `fail-on-findings` | `true` | `false` runs in advisory mode |
 | `verify-attestation` | `true` | Verify the release archive's attestation |
-| `datamap-check` | `false` | Also fail when the [data map](datamap.md) is out of date (`piiflow datamap --check`, exit 5); needs a release with `datamap` |
+| `datamap-check` | `false` | Also fail when the [data map](datamap.md) is out of date (`piiflow datamap --check`, exit 5); 0.4.0 and later |
 
 Outputs: `exit-code`, `output`, and `document` (the JSON flow-facts document of the diff).
 

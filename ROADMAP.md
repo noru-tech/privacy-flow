@@ -41,7 +41,7 @@ DOI for the corpus. See the protocol in [docs/benchmark.md](docs/benchmark.md#pr
   ([ADR 0006](docs/adr/0006-sanitisers-and-hashing.md)).
 - **Catalogue growth:** more SDKs, contributed as YAML with a fixture each; a catalogue version
   policy for additions and changes.
-- **Data map** ([ADR 0018](docs/adr/0018-systems-and-datasets.md),
+- **Data map** (0.4.0, [ADR 0018](docs/adr/0018-systems-and-datasets.md),
   [ADR 0019](docs/adr/0019-datamap-merge.md)): `piiflow datamap` writes and maintains a full
   Fides data map. Next:
   - gRPC clients, named `HttpClient`s and Aspire environment URLs;
