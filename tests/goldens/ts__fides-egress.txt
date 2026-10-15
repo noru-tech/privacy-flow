@@ -1,4 +1,4 @@
-privacy-flow 0.3.1 · no commit · typescript 3 files · directory walk
+privacy-flow 0.4.0 · no commit · typescript 3 files · directory walk
 
 PF003  medium   pf-dd844cb32b5c8de2  src/assistant.ts:6:10
                 user.contact.email from `customer.email (customer: Customer)` (src/assistant.ts:5) reaches an LLM provider chosen at run time through a model call at src/assistant.ts:6

@@ -6,6 +6,14 @@ All notable changes to this project are documented here. The format is based on
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-10-15
+
+`piiflow datamap` writes and maintains a full Fides data map of a repository: its systems, what
+they store, where they send personal data and what they receive, and a proposed privacy
+declaration per purpose, from one offline command. Re-runs merge into the map a person keeps.
+`scan` and `diff` output is unchanged: for the same input, 0.4.0 reports the same flows and
+findings as 0.3.1.
+
 ### Added
 
 - `piiflow datamap`: a full Fides data map of the repository (`.fides/datamap.yml`), maintained
@@ -244,7 +252,8 @@ No change to the analysis: for the same input, 0.1.1 reports the same flows, fin
   criterion benchmarks, a CI performance budget, and a release pipeline with artifact
   attestations, checksums and an SBOM.
 
-[Unreleased]: https://github.com/noru-tech/privacy-flow/compare/v0.3.1...HEAD
+[Unreleased]: https://github.com/noru-tech/privacy-flow/compare/v0.4.0...HEAD
+[0.4.0]: https://github.com/noru-tech/privacy-flow/compare/v0.3.1...v0.4.0
 [0.3.1]: https://github.com/noru-tech/privacy-flow/compare/v0.3.0...v0.3.1
 [0.3.0]: https://github.com/noru-tech/privacy-flow/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/noru-tech/privacy-flow/compare/v0.1.1...v0.2.0
