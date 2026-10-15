@@ -19,7 +19,7 @@ use crate::engine::{Reach, Step, Target};
 use crate::facts::{Facts, GapKind, HitKind, Host, StaticGap};
 use crate::files::Method;
 use crate::glob::Glob;
-use crate::program::{GKind, Program};
+use crate::program::{GKind, Program, VarId};
 use crate::rules::{RULES, rule};
 
 pub const SCHEMA_ID: &str =
@@ -490,6 +490,24 @@ pub fn build(p: &Program, f: &Facts, reaches: &[Reach], ctx: &Context) -> Result
     let enters = |rf: &RawFlow, func: u32, formal: u32| {
         rf.path.iter().any(|st| matches!(st, Step::Enter { site, formal: j } if f.sites[*site as usize].func == func && *j == formal))
     };
+    // Variables that hold a read of a field named for a thing (`item_id`).
+    let thing_reads: BTreeSet<VarId> = p
+        .stmts
+        .iter()
+        .filter_map(|st| match &st.kind {
+            GKind::Load {
+                dst,
+                field: Some(k),
+                ..
+            }
+            | GKind::ThisLoad { dst, field: k, .. }
+                if ctx.classifier.not_personal_name(p.syms.str(*k)) =>
+            {
+                Some(*dst)
+            }
+            _ => None,
+        })
+        .collect();
     // Flows only subsume flows to the same sink: work per sink.
     let mut by_hit: BTreeMap<u32, Vec<usize>> = BTreeMap::new();
     for (i, rf) in raw_flows.iter().enumerate() {
@@ -529,7 +547,21 @@ pub fn build(p: &Program, f: &Facts, reaches: &[Reach], ctx: &Context) -> Result
                     f.seeds[other.seed as usize].category != UNKNOWN
                         && anchor(other.seed).is_some_and(|a| rf.path.contains(&a))
                 });
-            if !subsumed && !narrowed {
+            // Request input of unknown category read through the identifier of a thing
+            // (`Request.Query["itemId"]`, `req.query.productId`, `args.get("product_id")`):
+            // what flows is that identifier.
+            let thing = s.category == UNKNOWN
+                && s.kind == crate::facts::SeedKind::Request
+                && rf.path.iter().any(|st| {
+                    let Step::Edge(i) = st else { return false };
+                    match &p.stmts[*i as usize].kind {
+                        GKind::Load { dst, .. }
+                        | GKind::ThisLoad { dst, .. }
+                        | GKind::Call { dst, .. } => thing_reads.contains(dst),
+                        _ => false,
+                    }
+                });
+            if !subsumed && !narrowed && !thing {
                 kept.push(i);
             }
         }
@@ -1073,12 +1105,15 @@ pub fn derive(doc: &mut Document, classifier: &Classifier) -> Result<()> {
         let cat = fl.category.as_str();
         // Through the error of a library call that was given the data: it may echo it, or not.
         let echoed = fl.path.iter().any(|h| h.kind == "error");
+        // Data whose category the analysis could not determine (a request body, a `maybe_pii`
+        // name) is not known to be personal: it is reported for review, at `info`.
+        let uncertain = cat == UNKNOWN;
         let credential = Classifier::is_credential(cat);
         let special = classifier.is_special(cat);
         let external = snk.class.is_external() && !is_first_party(snk);
         let processor = processor_of(snk);
         let declared = processor_declared(&doc.processors, snk);
-        let needs_review = src.needs_review || snk.heuristic || cat == UNKNOWN || echoed;
+        let needs_review = src.needs_review || snk.heuristic || uncertain || echoed;
         // A rule fires on the flow; the flow joins its exposure. `message` is the text around
         // the description of the data, which the exposure writes once it has all its flows.
         let mut fire = |rule_id: &str, message: (&str, String), proc: Option<String>| {
@@ -1086,7 +1121,7 @@ pub fn derive(doc: &mut Document, classifier: &Classifier) -> Result<()> {
             if !s.enabled {
                 return;
             }
-            let severity = if src.needs_review || echoed {
+            let severity = if src.needs_review || echoed || uncertain {
                 s.severity.min(Severity::Info)
             } else {
                 s.severity
@@ -1208,9 +1243,14 @@ pub fn derive(doc: &mut Document, classifier: &Classifier) -> Result<()> {
             ]))
         );
         let (loc, first) = e.sources.first().map(|(l, s)| (*l, *s)).expect("a flow");
+        // Data whose category is undetermined is never described as personal data.
+        let data = if categories == [UNKNOWN] {
+            "uncertain: data of undetermined category".to_string()
+        } else {
+            categories.join(", ")
+        };
         let what = format!(
-            "{} from `{}` ({}:{}){}",
-            categories.join(", "),
+            "{data} from `{}` ({}:{}){}",
             sources[first.as_str()].text,
             loc.path,
             loc.line,

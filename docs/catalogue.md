@@ -164,6 +164,22 @@ or when another field of the same type, or another parameter of the same functio
 application state. A project that means `state` as an address everywhere says so under `fields`
 in `.privacy-flow.yml`, which always applies.
 
+Identifiers of things are declared apart, by the words that make them up
+([ADR 0021](adr/0021-uncertain-findings-and-identifiers-of-things.md)):
+
+```yaml
+entity_identifiers:
+  - id: entity-identifiers
+    entities: [item, product, brand, catalog, category, type, order_line]   # words, or compounds
+    suffixes: [id, ids, uuid]                                               # the last word
+```
+
+A name is an identifier of a thing when its words, camelCase split, are entity words followed by
+a suffix (`item_id`, `catalogItemId`, `BrandIds`, `item_type_id`, `productid`). One other word
+anywhere keeps it out: `user_type_id`, `blood_type_id` and `order_id` are not matched. Such a name
+is never classified, and request input under it (a route parameter `ItemId`, `query["itemId"]`)
+is not a source. A project's `fields` still classify it.
+
 ## Sanitisers (`catalogue/sanitisers.yml`)
 
 ```yaml

@@ -47,7 +47,6 @@
       "categories": ["user.financial.credit_card", "user.contact.address.street"],
       "why": "OrderingService's typed client, registered with https+http://ordering-api, sends the order with its card number."
     },
-    { "from": "web_app", "to": "catalog_api" },
     { "from": "webhook_client", "to": "webhooks_api" }
   ],
   "no_system_edges_from": [

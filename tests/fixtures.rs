@@ -7,6 +7,7 @@ mod common;
 use std::collections::BTreeSet;
 
 use privacy_flow::analyze::EngineKind;
+use privacy_flow::config::Severity;
 use privacy_flow::engine::{self, Options};
 
 #[test]
@@ -68,6 +69,24 @@ fn every_fixture_matches_its_markers() {
                 failures.push(format!(
                     "{name}: flow {} is not a source-to-sink chain",
                     fl.id
+                ));
+            }
+        }
+        // Data of undetermined category is never reported as personal data: an uncertain
+        // finding, at info, for review (ADR 0021).
+        for f in &doc.findings {
+            if f.categories == ["unknown"]
+                && (f.severity != Severity::Info
+                    || !f.needs_review
+                    || !f
+                        .message
+                        .starts_with("uncertain: data of undetermined category"))
+            {
+                failures.push(format!(
+                    "{name}: {} is not an uncertain finding: {} {}",
+                    f.rule_id,
+                    f.severity.as_str(),
+                    f.message
                 ));
             }
         }

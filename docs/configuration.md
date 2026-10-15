@@ -144,7 +144,9 @@ non-alphanumerics collapsed to `_`, and also with camelCase split (`memberRef` â
 
 Field names that are not personal data in this codebase, overriding the table. Typically names the
 table marks *maybe* personal (`payload`, `title`, `name`), whose findings are otherwise reported at
-`info` for review.
+`info` for review. Request input under such a name (a route or query parameter, a bound property)
+is not a source either. Identifiers of things (`item_id`, `BrandIds`) need no entry: the catalogue
+lists the entity words ([ADR 0021](adr/0021-uncertain-findings-and-identifiers-of-things.md)).
 
 ## `sources`, `sinks`, `sanitisers`, `propagators`, `dispatchers`
 

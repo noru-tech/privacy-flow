@@ -25,3 +25,4 @@ what follows. Records are never rewritten; a reversal is a new record that super
 | [0018](0018-systems-and-datasets.md) | Systems and datasets within a repository | Accepted |
 | [0019](0019-datamap-merge.md) | A full data map, merged in place, with proposals as data | Accepted |
 | [0020](0020-findings-by-exposure.md) | A finding is an exposure, and its flows are the evidence | Accepted |
+| [0021](0021-uncertain-findings-and-identifiers-of-things.md) | Data of undetermined category is uncertain, and identifiers of things are not personal data | Accepted |
