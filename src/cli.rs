@@ -383,7 +383,7 @@ fn previous_dispositions(
     explicit: Option<&Path>,
     output: Option<&Path>,
     root: &Path,
-) -> Option<Document> {
+) -> Option<Vec<report::PriorFinding>> {
     let candidates: Vec<PathBuf> = match explicit {
         Some(p) => vec![p.to_path_buf()],
         None => output
@@ -394,11 +394,33 @@ fn previous_dispositions(
     };
     candidates.into_iter().find_map(|p| {
         if p.is_file() {
-            read_document(&p).ok()
+            read_prior_findings(&p).ok()
         } else {
             None
         }
     })
+}
+
+/// The findings of a previous document, for their dispositions: a document of this schema
+/// version, or of 0.1, whose findings were one per flow.
+fn read_prior_findings(path: &Path) -> Result<Vec<report::PriorFinding>> {
+    let text =
+        std::fs::read_to_string(path).with_context(|| format!("reading {}", path.display()))?;
+    let value: serde_json::Value = serde_json::from_str(&text)?;
+    let value = if value.get("_type").is_some() {
+        output::intoto::unwrap(&value)?
+    } else {
+        value
+    };
+    let legacy = value.get("$schema").and_then(|v| v.as_str()) == Some(report::SCHEMA_ID)
+        && value.get("schema_version").and_then(|v| v.as_str())
+            == Some(report::LEGACY_SCHEMA_VERSION);
+    if legacy {
+        return report::legacy_prior_findings(&value);
+    }
+    config::validate_schema(FLOWS_SCHEMA, &value, &path.display().to_string())?;
+    let doc: Document = serde_json::from_value(value)?;
+    Ok(report::prior_findings(&doc))
 }
 
 fn summary_line(doc: &Document) -> String {
@@ -683,20 +705,27 @@ fn datamap(a: DatamapArgs, quiet: bool) -> Outcome {
 
 // ------------------------------------------------------------------------------- diff
 
-/// A finding's identity across revisions: the rule and the flow's (source, sink) anchors, or
-/// the gap.
+/// A finding's identity across revisions: its ID, which names the rule and the exposure (the
+/// sink, and the categories reaching it) or the gap. A new ID at a sink where the base had a
+/// finding of the same rule, or the same ID with more flows or gap locations, is a change.
 fn diff_doc(base: &Document, head: &Document) -> Document {
     let base_findings: BTreeMap<&str, &report::FindingRec> =
         base.findings.iter().map(|f| (f.id.as_str(), f)).collect();
-    let base_flows: BTreeMap<(&str, &str), Vec<&str>> = {
-        let mut m: BTreeMap<(&str, &str), Vec<&str>> = BTreeMap::new();
-        for f in &base.flows {
-            m.entry((f.source.as_str(), f.sink.as_str()))
-                .or_default()
-                .push(f.category.as_str());
-        }
-        m
-    };
+    let base_sink: BTreeMap<&str, &str> = base
+        .flows
+        .iter()
+        .map(|f| (f.id.as_str(), f.sink.as_str()))
+        .collect();
+    let base_exposures: std::collections::BTreeSet<(&str, &str)> = base
+        .findings
+        .iter()
+        .flat_map(|f| {
+            f.flows
+                .iter()
+                .filter_map(|fl| base_sink.get(fl.as_str()))
+                .map(|s| (f.rule_id.as_str(), *s))
+        })
+        .collect();
     let base_gaps: BTreeMap<&str, &report::GapRec> = base
         .coverage
         .gaps
@@ -704,34 +733,36 @@ fn diff_doc(base: &Document, head: &Document) -> Document {
         .map(|g| (g.id.as_str(), g))
         .collect();
     let mut out = head.clone();
-    let flows_by_id: BTreeMap<String, report::FlowRec> = head
+    let head_sink: BTreeMap<&str, &str> = head
         .flows
         .iter()
-        .map(|f| (f.id.clone(), f.clone()))
+        .map(|f| (f.id.as_str(), f.sink.as_str()))
         .collect();
     let mut introduced = 0u32;
     let mut changed = 0u32;
     let mut keep_findings = Vec::new();
     for f in &head.findings {
-        if base_findings.contains_key(f.id.as_str()) {
-            // Same rule and same flow (or gap): changed only if a gap gained locations.
-            if let Some(g) = f.gap.as_deref() {
-                let hg = head.coverage.gaps.iter().find(|x| x.id == g);
-                let bg = base_gaps.get(g);
-                if let (Some(hg), Some(bg)) = (hg, bg)
-                    && hg.locations.iter().any(|l| !bg.locations.contains(l))
-                {
-                    changed += 1;
-                    keep_findings.push(f.clone());
+        if let Some(bf) = base_findings.get(f.id.as_str()) {
+            // Same rule and exposure (or gap): changed only if it gained flows or locations.
+            let grew = match f.gap.as_deref() {
+                Some(g) => {
+                    let hg = head.coverage.gaps.iter().find(|x| x.id == g);
+                    let bg = base_gaps.get(g);
+                    matches!((hg, bg), (Some(hg), Some(bg)) if hg.locations.iter().any(|l| !bg.locations.contains(l)))
                 }
+                None => f.flows.iter().any(|fl| !bf.flows.contains(fl)),
+            };
+            if grew {
+                changed += 1;
+                keep_findings.push(f.clone());
             }
             continue;
         }
-        let is_changed = f
-            .flow
-            .as_deref()
-            .and_then(|id| flows_by_id.get(id))
-            .is_some_and(|fl| base_flows.contains_key(&(fl.source.as_str(), fl.sink.as_str())));
+        let is_changed = f.flows.iter().any(|fl| {
+            head_sink
+                .get(fl.as_str())
+                .is_some_and(|s| base_exposures.contains(&(f.rule_id.as_str(), *s)))
+        });
         if is_changed {
             changed += 1;
         } else {
@@ -741,15 +772,33 @@ fn diff_doc(base: &Document, head: &Document) -> Document {
     }
     let head_ids: std::collections::BTreeSet<&str> =
         head.findings.iter().map(|f| f.id.as_str()).collect();
+    let head_exposures: std::collections::BTreeSet<(&str, &str)> = head
+        .findings
+        .iter()
+        .flat_map(|f| {
+            f.flows
+                .iter()
+                .filter_map(|fl| head_sink.get(fl.as_str()))
+                .map(|s| (f.rule_id.as_str(), *s))
+        })
+        .collect();
+    // An exposure whose ID changed is counted as changed above, not also as removed.
     let removed = base
         .findings
         .iter()
         .filter(|f| !head_ids.contains(f.id.as_str()))
+        .filter(|f| {
+            !f.flows.iter().any(|fl| {
+                base_sink
+                    .get(fl.as_str())
+                    .is_some_and(|s| head_exposures.contains(&(f.rule_id.as_str(), *s)))
+            })
+        })
         .count() as u32;
     // Keep the flows, gaps, sources and sinks the kept findings refer to.
     let flow_ids: std::collections::BTreeSet<String> = keep_findings
         .iter()
-        .filter_map(|f| f.flow.clone())
+        .flat_map(|f| f.flows.iter().cloned())
         .collect();
     let gap_ids: std::collections::BTreeSet<String> =
         keep_findings.iter().filter_map(|f| f.gap.clone()).collect();
@@ -861,17 +910,17 @@ fn explain(a: ExplainArgs) -> Outcome {
         .unwrap_or_else(|| a.root.join(DEFAULT_OUTPUT));
     let doc = read_document(&input).map_err(invalid)?;
     let finding = doc.findings.iter().find(|f| f.id == a.id);
-    let flow_id = match finding {
-        Some(f) => f.flow.clone(),
-        None if a.id.starts_with("flow-") => Some(a.id.clone()),
-        None => None,
+    let flow_ids: Vec<String> = match finding {
+        Some(f) => f.flows.clone(),
+        None if a.id.starts_with("flow-") => vec![a.id.clone()],
+        None => Vec::new(),
     };
     let gap_id = match finding {
         Some(f) => f.gap.clone(),
         None if a.id.starts_with("gap-") => Some(a.id.clone()),
         None => None,
     };
-    if finding.is_none() && flow_id.is_none() && gap_id.is_none() {
+    if finding.is_none() && flow_ids.is_empty() && gap_id.is_none() {
         return Err(usage(anyhow!(
             "no finding, flow or gap {} in {}",
             a.id,
@@ -926,8 +975,11 @@ fn explain(a: ExplainArgs) -> Outcome {
         if let Some(r) = crate::rules::rule(&f.rule_id) {
             let _ = writeln!(out, "rule: {} — {}", r.title, crate::rules::help_uri(r.id));
         }
+        if f.flows.len() > 1 {
+            let _ = writeln!(out, "evidence: {} flows", f.flows.len());
+        }
     }
-    if let Some(fid) = &flow_id {
+    for fid in &flow_ids {
         let Some(flow) = doc.flows.iter().find(|x| &x.id == fid) else {
             return Err(invalid(anyhow!("flow {fid} is not in the document")));
         };

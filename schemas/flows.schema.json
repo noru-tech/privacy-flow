@@ -11,7 +11,7 @@
   ],
   "properties": {
     "$schema": { "const": "https://github.com/noru-tech/privacy-flow/blob/main/schemas/flows.schema.json" },
-    "schema_version": { "const": "0.1" },
+    "schema_version": { "const": "0.2" },
     "tool": {
       "type": "object",
       "additionalProperties": false,
@@ -246,13 +246,13 @@
       "items": {
         "type": "object",
         "additionalProperties": false,
-        "required": ["id", "rule_id", "severity", "message", "flow", "gap", "categories", "processor", "needs_review", "heuristic", "location", "disposition"],
+        "required": ["id", "rule_id", "severity", "message", "flows", "gap", "categories", "processor", "needs_review", "heuristic", "location", "disposition"],
         "properties": {
           "id": { "type": "string", "pattern": "^pf-[0-9a-f]{16}$" },
           "rule_id": { "$ref": "#/$defs/rule_id" },
           "severity": { "$ref": "#/$defs/severity" },
           "message": { "type": "string" },
-          "flow": { "type": ["string", "null"] },
+          "flows": { "description": "The flows that are the exposure's evidence, in document order; empty for a coverage gap (ADR 0020).", "type": "array", "items": { "type": "string" } },
           "gap": { "type": ["string", "null"] },
           "categories": { "type": "array", "items": { "$ref": "#/$defs/category" } },
           "processor": { "type": ["string", "null"] },
