@@ -1,0 +1,34 @@
+# A Fides data map (Fideslang 3.1.3) of this repository, written by `piiflow datamap`.
+# Systems, egress and ingress come from the code; lines starting with "#:" say where.
+# Keys starting with unresolved_ are destinations the code does not name: replace each with
+# the receiving system's key, or declare it in .privacy-flow.yml and run again.
+system:
+  #: service rooted at notifier (py.app: notifier/pyproject.toml)
+  - fides_key: "notifier"
+    name: "notifier"
+    system_type: "Service"
+    privacy_declarations: []
+  #: service rooted at shop (py.django: shop/manage.py)
+  - fides_key: "shop"
+    name: "shop"
+    system_type: "Service"
+    egress:
+      #: unresolved HTTP destination, sent from shop/accounts/views.py:9
+      - fides_key: "unresolved_http_views"
+        type: "system"
+        data_categories:
+          - "user.contact.email"
+    privacy_declarations: []
+  #: HTTP destination the code does not name, sent from shop/accounts/views.py:9
+  - fides_key: "unresolved_http_views"
+    name: "Unresolved HTTP destination"
+    system_type: "Unresolved destination"
+    meta:
+      privacy_flow:
+        unresolved: true
+    ingress:
+      - fides_key: "shop"
+        type: "system"
+        data_categories:
+          - "user.contact.email"
+    privacy_declarations: []

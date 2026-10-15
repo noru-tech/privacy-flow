@@ -1,0 +1,9 @@
+version: 1
+systems:
+  - fides_key: accounts_api
+    name: Accounts API
+    paths: ["api/**"]
+    hosts: [accounts.internal.example.com]
+  - fides_key: storefront
+    name: Storefront
+    paths: ["web/**"]

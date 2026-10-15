@@ -1,0 +1,4 @@
+{
+  "name": "@shop/web",
+  "dependencies": { "next": "^15.0.0", "axios": "^1.7.0" }
+}

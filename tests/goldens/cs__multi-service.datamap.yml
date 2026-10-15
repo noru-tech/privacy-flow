@@ -1,0 +1,53 @@
+# A Fides data map (Fideslang 3.1.3) of this repository, written by `piiflow datamap`.
+# Systems, egress and ingress come from the code; lines starting with "#:" say where.
+# Keys starting with unresolved_ are destinations the code does not name: replace each with
+# the receiving system's key, or declare it in .privacy-flow.yml and run again.
+system:
+  #: service rooted at Orders.Api (cs.web: Orders.Api/Orders.Api.csproj)
+  - fides_key: "orders_api"
+    name: "Orders.Api"
+    system_type: "Service"
+    privacy_declarations: []
+  #: HTTP destination the code does not name, sent from Shared.Clients/OrdersClient.cs:9
+  - fides_key: "unresolved_http_orders_client"
+    name: "Unresolved HTTP destination"
+    system_type: "Unresolved destination"
+    meta:
+      privacy_flow:
+        unresolved: true
+    ingress:
+      #: also data of unknown category (request input not narrowed by a type): review
+      - fides_key: "web"
+        type: "system"
+        data_categories:
+          - "user.contact.email"
+      #: also data of unknown category (request input not narrowed by a type): review
+      - fides_key: "worker"
+        type: "system"
+        data_categories:
+          - "user.contact.email"
+    privacy_declarations: []
+  #: service rooted at Web (cs.web: Web/Web.csproj)
+  - fides_key: "web"
+    name: "Web"
+    system_type: "Service"
+    egress:
+      #: unresolved HTTP destination, sent from Shared.Clients/OrdersClient.cs:9
+      #: also data of unknown category (request input not narrowed by a type): review
+      - fides_key: "unresolved_http_orders_client"
+        type: "system"
+        data_categories:
+          - "user.contact.email"
+    privacy_declarations: []
+  #: worker rooted at Worker (cs.worker: Worker/Worker.csproj)
+  - fides_key: "worker"
+    name: "Worker"
+    system_type: "Service"
+    egress:
+      #: unresolved HTTP destination, sent from Shared.Clients/OrdersClient.cs:9
+      #: also data of unknown category (request input not narrowed by a type): review
+      - fides_key: "unresolved_http_orders_client"
+        type: "system"
+        data_categories:
+          - "user.contact.email"
+    privacy_declarations: []

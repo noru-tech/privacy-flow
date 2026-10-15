@@ -1,0 +1,5 @@
+services:
+  shop:
+    build: ./shop
+  notifier:
+    build: ./notifier

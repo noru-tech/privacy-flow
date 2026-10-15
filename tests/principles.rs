@@ -138,6 +138,39 @@ fn principle_6_rules_are_data() {
 }
 
 #[test]
+fn principle_6_topology_knowledge_is_data() {
+    // Deployables, clients, stores and purposes live in catalogue/topology/; the topology and
+    // data map code only asks it.
+    for dir in ["src/topology", "src/datamap"] {
+        for e in std::fs::read_dir(root().join(dir)).unwrap() {
+            let p = e.unwrap().path();
+            let text = std::fs::read_to_string(&p).unwrap().to_lowercase();
+            for sdk in [
+                "\"microsoft.",
+                "\"system.",
+                "\"aspire",
+                "\"django",
+                "\"fastapi",
+                "\"express",
+                "\"next",
+                "\"posthog",
+                "\"stripe",
+                "\"sendgrid",
+                "\"entityframework",
+                "\"prisma",
+                "\"sqlalchemy",
+            ] {
+                assert!(
+                    !text.contains(sdk),
+                    "{} mentions {sdk}; it belongs in catalogue/topology/",
+                    p.display()
+                );
+            }
+        }
+    }
+}
+
+#[test]
 fn vendored_data_is_unmodified() {
     use sha2::{Digest, Sha256};
     let pins = [

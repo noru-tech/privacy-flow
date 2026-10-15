@@ -46,6 +46,29 @@ pub fn run(dir: &Path, engine: EngineKind) -> Run {
     analyze::analyze(&tree, &listing, &loaded, engine).expect("analysis")
 }
 
+/// The fixture's flow-facts document with its topology, as `piiflow datamap` builds it.
+pub fn datamap_doc(dir: &Path) -> privacy_flow::report::Document {
+    let tree = Tree::WorkTree(dir);
+    let loaded = analyze::load_config(&tree, None).expect("config");
+    let listing = files::walk(dir).expect("walk");
+    let run = analyze::analyze(&tree, &listing, &loaded, EngineKind::Worklist).expect("analysis");
+    let topo = privacy_flow::topology::catalogue::TopologyCatalogue::builtin().expect("catalogue");
+    privacy_flow::datamap::document(run, &loaded.config, &topo).expect("datamap")
+}
+
+/// Fixtures whose fixture.json has `"topology": true`.
+pub fn topology_fixtures() -> Vec<PathBuf> {
+    fixtures()
+        .into_iter()
+        .filter(|d| {
+            let meta: serde_json::Value =
+                serde_json::from_str(&std::fs::read_to_string(d.join("fixture.json")).unwrap())
+                    .unwrap();
+            meta["topology"] == serde_json::Value::Bool(true)
+        })
+        .collect()
+}
+
 pub struct Expect {
     /// (rule, path, line)
     pub findings: BTreeSet<(String, String, u32)>,

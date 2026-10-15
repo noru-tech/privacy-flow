@@ -45,6 +45,9 @@ pub enum Command {
     Scan(ScanArgs),
     /// Report only flows introduced or changed between two revisions (BASE..HEAD).
     Diff(DiffArgs),
+    /// Write the repository's Fides data map: its systems, their egress and ingress, and the
+    /// processors and destinations they reach (default .fides/datamap.yml).
+    Datamap(DatamapArgs),
     /// Print a finding's (or flow's) hop chain with the source line of each hop.
     Explain(ExplainArgs),
     /// Enforce policy and dispositions on a flow-facts document; exit 1 on failure.
@@ -93,6 +96,25 @@ pub struct ScanArgs {
     pub timings: bool,
     /// Enumerate files by a directory walk even inside a Git work tree (untracked files are
     /// then included; the output records the method).
+    #[arg(long)]
+    pub walk: bool,
+}
+
+#[derive(clap::Args)]
+pub struct DatamapArgs {
+    /// Directory to analyse.
+    #[arg(default_value = ".")]
+    pub path: PathBuf,
+    /// The data map to write (default: .fides/datamap.yml in the directory).
+    #[arg(short, long)]
+    pub output: Option<PathBuf>,
+    /// Also write the flow-facts document, with its topology, to this file (JSON).
+    #[arg(long)]
+    pub facts: Option<PathBuf>,
+    /// Configuration file (default: .privacy-flow.yml in the directory).
+    #[arg(long)]
+    pub config: Option<PathBuf>,
+    /// Enumerate files by a directory walk even inside a Git work tree.
     #[arg(long)]
     pub walk: bool,
 }
@@ -215,6 +237,7 @@ pub fn main() -> ExitCode {
     let result = match cli.command {
         Command::Scan(a) => scan(a, quiet),
         Command::Diff(a) => diff(a, quiet),
+        Command::Datamap(a) => datamap(a, quiet),
         Command::Explain(a) => explain(a),
         Command::Check(a) => check(a, quiet),
         Command::Validate(a) => validate_cmd(a, quiet),
@@ -442,6 +465,52 @@ fn scan(a: ScanArgs, quiet: bool) -> Outcome {
         );
     }
     emit(&doc, a.output, a.format, root.join(DEFAULT_OUTPUT), quiet)?;
+    Ok(if doc.coverage.complete {
+        Exit::Ok
+    } else {
+        Exit::CoverageIncomplete
+    })
+}
+
+// ---------------------------------------------------------------------------- datamap
+
+pub const DEFAULT_DATAMAP: &str = ".fides/datamap.yml";
+
+fn datamap(a: DatamapArgs, quiet: bool) -> Outcome {
+    if !a.path.is_dir() {
+        return Err(usage(anyhow!("{} is not a directory", a.path.display())));
+    }
+    let root = a.path.as_path();
+    let tree = Tree::WorkTree(root);
+    let loaded = analyze::load_config(&tree, a.config.as_deref()).map_err(invalid)?;
+    let listing = if a.walk {
+        files::walk(root)
+    } else {
+        files::list(root)
+    }
+    .map_err(invalid)?;
+    let topo = crate::topology::catalogue::TopologyCatalogue::builtin().map_err(invalid)?;
+    let run = analyze::analyze(&tree, &listing, &loaded, EngineKind::Worklist).map_err(invalid)?;
+    let doc = crate::datamap::document(run, &loaded.config, &topo).map_err(invalid)?;
+    if let Some(f) = a.facts {
+        emit(&doc, Some(f), Some(Format::Json), PathBuf::new(), quiet)?;
+    }
+    let text = crate::datamap::render_generated(&doc);
+    let out = a.output.unwrap_or_else(|| root.join(DEFAULT_DATAMAP));
+    write_output(Some(&out), &text).map_err(invalid)?;
+    if let Some(t) = &doc.topology {
+        status(
+            quiet,
+            format!(
+                "wrote {}: {} system(s) in the repository ({}), {} edge(s); {}",
+                out.display(),
+                t.systems.len(),
+                t.mode,
+                t.edges.len(),
+                summary_line(&doc)
+            ),
+        );
+    }
     Ok(if doc.coverage.complete {
         Exit::Ok
     } else {

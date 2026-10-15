@@ -57,6 +57,33 @@ pub struct CsProject {
     pub implicit_usings: bool,
     pub usings: Vec<UsingItem>,
     pub root_namespace: Option<String>,
+    /// `<OutputType>` (`Exe`, `WinExe`, `Library`), conditions ignored.
+    pub output_type: Option<String>,
+    pub assembly_name: Option<String>,
+    /// `<ProjectReference>` targets: normalised `.csproj` paths.
+    pub project_refs: Vec<String>,
+    /// `<PackageReference>` package names.
+    pub package_refs: Vec<String>,
+    /// Every simple property of the project's `<PropertyGroup>`s (and the
+    /// `Directory.Build.props` above it), the last value winning; conditions ignored.
+    pub properties: BTreeMap<String, String>,
+}
+
+/// A `package.json`: what makes a package deployable or a workspace.
+#[derive(Clone, Debug, Default, PartialEq)]
+pub struct Manifest {
+    pub path: String,
+    pub name: Option<String>,
+    /// `dependencies` and `devDependencies` names.
+    pub dependencies: Vec<String>,
+    pub scripts: Vec<String>,
+}
+
+/// A `pyproject.toml`: its `[project] name` (or `[tool.poetry] name`).
+#[derive(Clone, Debug, Default, PartialEq)]
+pub struct PyProject {
+    pub path: String,
+    pub name: Option<String>,
 }
 
 impl CsProject {
@@ -124,6 +151,12 @@ pub struct Resolver {
     pub csprojs: BTreeMap<String, CsProject>,
     /// Files a C# project compiles from outside its directory → that project's directory.
     pub cs_links: BTreeMap<String, String>,
+    /// The same, keeping every project that compiles the file (shared sources).
+    pub cs_links_all: BTreeMap<String, Vec<String>>,
+    /// `package.json` directory → manifest (named or not).
+    pub manifests: BTreeMap<String, Manifest>,
+    /// `pyproject.toml` directory → project.
+    pub pyprojects: BTreeMap<String, PyProject>,
 }
 
 fn dir_of(p: &str) -> &str {
@@ -157,11 +190,12 @@ fn is_config(path: &str) -> bool {
     (name.starts_with("tsconfig") && name.ends_with(".json")) || name == "jsconfig.json"
 }
 
-/// The files a resolver needs: every `package.json`, `tsconfig*.json` and `jsconfig.json`, and
-/// every `.csproj` and `Directory.Build.props`.
+/// The files a resolver needs: every `package.json`, `pyproject.toml`, `tsconfig*.json` and
+/// `jsconfig.json`, and every `.csproj` and `Directory.Build.props`.
 pub fn wants(path: &str) -> bool {
     let name = path.rsplit('/').next().unwrap_or(path);
     name == "package.json"
+        || name == "pyproject.toml"
         || is_config(path)
         || name.ends_with(".csproj")
         || name == "Directory.Build.props"
@@ -182,6 +216,25 @@ impl Resolver {
             let Ok(v) = serde_json::from_str::<serde_json::Value>(text) else {
                 continue;
             };
+            let keys = |field: &str| -> Vec<String> {
+                v.get(field)
+                    .and_then(|d| d.as_object())
+                    .map(|m| m.keys().cloned().collect())
+                    .unwrap_or_default()
+            };
+            let mut dependencies = keys("dependencies");
+            dependencies.extend(keys("devDependencies"));
+            dependencies.sort();
+            dependencies.dedup();
+            r.manifests.insert(
+                dir_of(path).to_string(),
+                Manifest {
+                    path: path.to_string(),
+                    name: v.get("name").and_then(|n| n.as_str()).map(str::to_string),
+                    dependencies,
+                    scripts: keys("scripts"),
+                },
+            );
             let Some(name) = v.get("name").and_then(|n| n.as_str()) else {
                 continue;
             };
@@ -235,6 +288,17 @@ impl Resolver {
             r.tsconfigs.insert(dir, aliases);
         }
         r.load_csprojs(&texts);
+        for (path, text) in &texts {
+            if path.rsplit('/').next() == Some("pyproject.toml") {
+                r.pyprojects.insert(
+                    dir_of(path).to_string(),
+                    PyProject {
+                        path: path.to_string(),
+                        name: toml_project_name(text),
+                    },
+                );
+            }
+        }
         r
     }
 
@@ -279,11 +343,33 @@ impl Resolver {
                     project.root_namespace = Some(v);
                 }
                 project.usings.extend(using_items(&t));
+                for (k, v) in properties(&t) {
+                    project.properties.insert(k, v);
+                }
                 for inc in compile_includes(&t) {
                     let target = join(&dir, &inc.replace('\\', "/"));
-                    self.cs_links.entry(target).or_insert_with(|| dir.clone());
+                    self.cs_links
+                        .entry(target.clone())
+                        .or_insert_with(|| dir.clone());
+                    let all = self.cs_links_all.entry(target).or_default();
+                    if !all.contains(&dir) {
+                        all.push(dir.clone());
+                    }
+                }
+                for inc in item_includes(&t, "ProjectReference") {
+                    let target = join(&dir, &inc.replace('\\', "/"));
+                    if !project.project_refs.contains(&target) {
+                        project.project_refs.push(target);
+                    }
+                }
+                for inc in item_includes(&t, "PackageReference") {
+                    if !project.package_refs.contains(&inc) {
+                        project.package_refs.push(inc);
+                    }
                 }
             }
+            project.output_type = project.properties.get("OutputType").cloned();
+            project.assembly_name = project.properties.get("AssemblyName").cloned();
             self.csprojs.insert(dir, project);
         }
     }
@@ -504,6 +590,60 @@ fn compile_includes(t: &str) -> Vec<String> {
         .collect()
 }
 
+/// The `Include` of every `<Kind ...>` item: `<ProjectReference Include="..\\A\\A.csproj" />`.
+fn item_includes(t: &str, kind: &str) -> Vec<String> {
+    let Ok(re) = regex::Regex::new(&format!(r"<{kind}\b[^>]*>")) else {
+        return Vec::new();
+    };
+    re.find_iter(t)
+        .filter_map(|m| xml_attr(m.as_str(), "Include"))
+        .filter(|p| !p.contains(['*', '$']))
+        .collect()
+}
+
+/// The simple properties of every `<PropertyGroup>`: `<OutputType>Exe</OutputType>`.
+fn properties(t: &str) -> Vec<(String, String)> {
+    let (Ok(group), Ok(prop)) = (
+        regex::Regex::new(r"(?s)<PropertyGroup\b[^>]*>(.*?)</PropertyGroup>"),
+        regex::Regex::new(r"<([A-Za-z_][\w.]*)(?:\s[^>]*)?>([^<]*)</([A-Za-z_][\w.]*)>"),
+    ) else {
+        return Vec::new();
+    };
+    let mut out = Vec::new();
+    for g in group.captures_iter(t) {
+        for c in prop.captures_iter(&g[1]) {
+            if c[1] == c[3] {
+                out.push((c[1].to_string(), c[2].trim().to_string()));
+            }
+        }
+    }
+    out
+}
+
+/// `name = "x"` in `[project]` or `[tool.poetry]` of a `pyproject.toml`.
+fn toml_project_name(t: &str) -> Option<String> {
+    let mut table = "";
+    for line in t.lines() {
+        let line = line.trim();
+        if let Some(h) = line.strip_prefix('[').and_then(|l| l.strip_suffix(']')) {
+            table = h.trim();
+            continue;
+        }
+        if table != "project" && table != "tool.poetry" {
+            continue;
+        }
+        if let Some(rest) = line.strip_prefix("name")
+            && let Some(v) = rest.trim_start().strip_prefix('=')
+        {
+            let v = v.trim().trim_matches(['"', '\'']);
+            if !v.is_empty() {
+                return Some(v.to_string());
+            }
+        }
+    }
+    None
+}
+
 fn split_package(spec: &str) -> (&str, &str) {
     let mut idx = spec.find('/');
     if spec.starts_with('@') {
@@ -632,5 +772,47 @@ mod tests {
             Some("src/Api/Api.csproj")
         );
         assert!(r.csproj_for("tools/x.cs").is_none());
+    }
+
+    #[test]
+    fn project_facts_for_topology() {
+        let r = Resolver::from_files(&files(&[
+            (
+                "src/Web/Web.csproj",
+                r#"<Project Sdk="Microsoft.NET.Sdk">
+                  <PropertyGroup Condition="'$(X)' == 'y'"><OutputType>Exe</OutputType></PropertyGroup>
+                  <PropertyGroup><AssemblyName>Shop.Web</AssemblyName><IsAspireHost>true</IsAspireHost></PropertyGroup>
+                  <ItemGroup>
+                    <ProjectReference Include="..\Lib\Lib.csproj" />
+                    <PackageReference Include="Npgsql" Version="8.0.0" />
+                    <Compile Include="..\Shared\A.cs" />
+                  </ItemGroup>
+                </Project>"#,
+            ),
+            (
+                "src/Api/Api.csproj",
+                r#"<Project Sdk="Microsoft.NET.Sdk.Web"><ItemGroup><Compile Include="..\Shared\A.cs" /></ItemGroup></Project>"#,
+            ),
+            (
+                "apps/web/package.json",
+                r#"{ "scripts": { "start": "next start" }, "dependencies": { "next": "15" }, "devDependencies": { "vitest": "2" } }"#,
+            ),
+            (
+                "svc/pyproject.toml",
+                "[build-system]\nrequires = [\"x\"]\n\n[project]\nname = \"notifier\"\n",
+            ),
+        ]));
+        let web = &r.csprojs["src/Web"];
+        assert_eq!(web.output_type.as_deref(), Some("Exe"));
+        assert_eq!(web.assembly_name.as_deref(), Some("Shop.Web"));
+        assert_eq!(web.project_refs, ["src/Lib/Lib.csproj"]);
+        assert_eq!(web.package_refs, ["Npgsql"]);
+        assert_eq!(web.properties["IsAspireHost"], "true");
+        assert_eq!(r.cs_links_all["src/Shared/A.cs"], ["src/Api", "src/Web"]);
+        let m = &r.manifests["apps/web"];
+        assert_eq!(m.name, None);
+        assert_eq!(m.dependencies, ["next", "vitest"]);
+        assert_eq!(m.scripts, ["start"]);
+        assert_eq!(r.pyprojects["svc"].name.as_deref(), Some("notifier"));
     }
 }

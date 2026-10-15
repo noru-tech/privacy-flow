@@ -214,6 +214,11 @@ pub struct Run {
     pub program: Program,
     pub facts: facts::Facts,
     pub reaches: Vec<engine::Reach>,
+    pub resolver: crate::resolve::Resolver,
+    pub catalogue: Catalogue,
+    pub classifier: Classifier,
+    /// Every listed file the configuration does not exclude, analysed or not.
+    pub files: Vec<String>,
 }
 
 pub fn analyze(
@@ -226,10 +231,12 @@ pub fn analyze(
     let excludes = Excludes::new(&config.exclude, config.default_excludes)?;
     let mut supported: Vec<(String, crate::ir::Lang)> = Vec::new();
     let mut unsupported: Vec<(String, String)> = Vec::new();
+    let mut kept: Vec<String> = Vec::new();
     for f in &listing.files {
         if excludes.excluded(f) {
             continue;
         }
+        kept.push(f.clone());
         if let Some(lang) = files::language_of(f) {
             supported.push((f.clone(), lang));
         } else if let Some(lang) = files::unsupported_language_of(f) {
@@ -404,5 +411,9 @@ pub fn analyze(
         program,
         facts,
         reaches,
+        resolver,
+        catalogue,
+        classifier,
+        files: kept,
     })
 }

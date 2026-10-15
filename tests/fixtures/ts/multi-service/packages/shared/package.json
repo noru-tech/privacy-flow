@@ -1,0 +1,5 @@
+{
+  "name": "@shop/shared",
+  "main": "src/index.ts",
+  "dependencies": { "posthog-node": "^4.0.0" }
+}

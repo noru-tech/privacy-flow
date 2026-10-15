@@ -310,6 +310,9 @@ pub struct Document {
     pub summary: Summary,
     pub cited_files: Vec<CitedFile>,
     pub diff: Option<DiffInfo>,
+    /// Systems and their edges; only `piiflow datamap` writes it.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub topology: Option<crate::topology::model::Topology>,
     pub digest: String,
 }
 
@@ -711,6 +714,7 @@ pub fn build(p: &Program, f: &Facts, reaches: &[Reach], ctx: &Context) -> Result
         },
         cited_files,
         diff: None,
+        topology: None,
         digest: String::new(),
     };
     sort_facts(&mut doc);
@@ -966,7 +970,10 @@ fn sort_facts(doc: &mut Document) {
     doc.flows = keyed.into_iter().map(|(_, f)| f).collect();
 }
 
-fn processor_declared<'a>(procs: &'a [ProcessorDecl], sink: &SinkRec) -> Option<&'a ProcessorDecl> {
+pub(crate) fn processor_declared<'a>(
+    procs: &'a [ProcessorDecl],
+    sink: &SinkRec,
+) -> Option<&'a ProcessorDecl> {
     procs.iter().find(|d| {
         if let Some(p) = &sink.processor
             && d.name.eq_ignore_ascii_case(p)
@@ -996,7 +1003,7 @@ fn processor_declared<'a>(procs: &'a [ProcessorDecl], sink: &SinkRec) -> Option<
 
 /// The processor a flow to `sink` reaches, if it reaches one: the catalogue's vendor, or the
 /// literal host of an outbound HTTP call.
-fn processor_of(sink: &SinkRec) -> Option<String> {
+pub(crate) fn processor_of(sink: &SinkRec) -> Option<String> {
     if let Some(p) = &sink.processor {
         return Some(p.clone());
     }
@@ -1009,7 +1016,7 @@ fn processor_of(sink: &SinkRec) -> Option<String> {
     }
 }
 
-fn is_first_party(sink: &SinkRec) -> bool {
+pub(crate) fn is_first_party(sink: &SinkRec) -> bool {
     sink.class == SinkClass::Http && sink.host.as_ref().is_some_and(|h| h.kind == "relative")
 }
 
@@ -1257,6 +1264,7 @@ pub fn derive(doc: &mut Document, classifier: &Classifier) -> Result<()> {
         .collect();
     doc.coverage.complete = doc.coverage.gaps.is_empty();
     doc.findings = findings;
+    crate::topology::derive(doc);
     Ok(())
 }
 

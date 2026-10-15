@@ -303,10 +303,128 @@
         }
       ]
     },
+    "topology": {
+      "type": "object",
+      "description": "The repository's systems and their edges. Only `piiflow datamap` writes it; `scan` and `diff` documents do not have it.",
+      "additionalProperties": false,
+      "required": ["catalogue", "mode", "systems", "attribution", "edges", "notes"],
+      "properties": {
+        "catalogue": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["version", "digest"],
+          "properties": { "version": { "type": "string" }, "digest": { "$ref": "#/$defs/digest" } }
+        },
+        "mode": { "enum": ["detected", "config", "mixed", "repository"] },
+        "systems": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["key", "name", "kind", "language", "root", "manifest", "declared", "files", "closure_files", "libraries", "evidence"],
+            "properties": {
+              "key": { "$ref": "#/$defs/fides_key" },
+              "name": { "type": "string" },
+              "kind": { "type": "string" },
+              "language": { "type": ["string", "null"] },
+              "root": { "type": "string" },
+              "manifest": { "type": ["string", "null"] },
+              "declared": { "type": "boolean" },
+              "files": { "$ref": "#/$defs/count" },
+              "closure_files": { "$ref": "#/$defs/count" },
+              "libraries": { "type": "array", "items": { "type": "string" } },
+              "evidence": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["rule", "path"],
+                  "properties": { "rule": { "type": "string" }, "path": { "type": "string" } }
+                }
+              }
+            }
+          }
+        },
+        "attribution": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["flow", "systems"],
+            "properties": {
+              "flow": { "type": "string" },
+              "systems": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/fides_key" } }
+            }
+          }
+        },
+        "edges": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["from", "to", "class", "categories", "flows", "sinks", "declared", "citation"],
+            "properties": {
+              "from": { "$ref": "#/$defs/fides_key" },
+              "to": { "$ref": "#/$defs/endpoint" },
+              "class": { "$ref": "#/$defs/sink_class" },
+              "categories": { "type": "array", "items": { "$ref": "#/$defs/category" } },
+              "flows": { "type": "array", "items": { "type": "string" } },
+              "sinks": { "type": "array", "items": { "type": "string" } },
+              "declared": { "type": "boolean" },
+              "citation": { "type": ["string", "null"] }
+            }
+          }
+        },
+        "notes": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["kind", "detail", "paths"],
+            "properties": {
+              "kind": { "type": "string" },
+              "detail": { "type": "string" },
+              "paths": { "type": "array", "items": { "type": "string" } }
+            }
+          }
+        }
+      }
+    },
     "digest": { "$ref": "#/$defs/digest" }
   },
   "$defs": {
     "count": { "type": "integer", "minimum": 0, "maximum": 9007199254740991 },
+    "fides_key": { "type": "string", "pattern": "^[a-zA-Z0-9_.<>-]+$" },
+    "endpoint": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "key"],
+          "properties": { "kind": { "const": "system" }, "key": { "$ref": "#/$defs/fides_key" } }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "name", "fides_key"],
+          "properties": {
+            "kind": { "const": "processor" },
+            "name": { "type": "string" },
+            "fides_key": { "$ref": "#/$defs/fides_key" }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "class", "path"],
+          "properties": {
+            "kind": { "const": "unresolved" },
+            "class": { "$ref": "#/$defs/sink_class" },
+            "path": { "type": "string" }
+          }
+        }
+      ]
+    },
     "digest": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" },
     "severity": { "enum": ["info", "warning", "medium", "high"] },
     "rule_id": { "enum": ["PF001", "PF002", "PF003", "PF004", "PF005", "PF006", "PFC01"] },

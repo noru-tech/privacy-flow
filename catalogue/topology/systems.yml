@@ -1,0 +1,99 @@
+# What a deployable service is, for `piiflow datamap`: each one becomes a Fides system.
+#
+# A file belongs to the nearest unit above it (a .csproj, a package.json, a pyproject.toml or
+# a marker file). A unit that matches a deployable entry is a system's root; any other unit is
+# a library, whose files belong to every system that references it. With no deployable at all,
+# the repository is one system.
+#
+# Matchers (all lists are alternatives; an entry matches when every matcher it has matches):
+#   project:       a C# project: `sdk` (without version), `output_type`, `package_refs`
+#                  (package name globs), `properties` (MSBuild property values)
+#   package:       a package.json: `dependencies` (names, any of), `framework_dependency`
+#                  (any module of a supported framework of the language in frameworks.yml),
+#                  `scripts` (script names, any of)
+#   marker_files:  a file of this name makes its directory a root
+#   module_values: a module-level value whose API path matches (a Python app object); the
+#                  root is the nearest directory above with one of `root_markers`, else the
+#                  file's own directory
+#
+# `never` entries exclude units that would otherwise match (orchestrators, test projects).
+
+version: "0.1.0"
+
+deployables:
+  - id: cs.web
+    language: csharp
+    kind: service
+    project: { sdk: ["Microsoft.NET.Sdk.Web", "Microsoft.NET.Sdk.BlazorWebAssembly"] }
+    citation: "MSBuild SDKs, https://learn.microsoft.com/dotnet/core/project-sdk/overview"
+  - id: cs.worker
+    language: csharp
+    kind: worker
+    project: { sdk: ["Microsoft.NET.Sdk.Worker"] }
+    citation: "MSBuild SDKs, https://learn.microsoft.com/dotnet/core/project-sdk/overview"
+  - id: cs.exe
+    language: csharp
+    kind: application
+    project: { output_type: [Exe, WinExe] }
+    citation: "OutputType, https://learn.microsoft.com/visualstudio/msbuild/common-msbuild-project-properties"
+  - id: cs.functions
+    language: csharp
+    kind: function
+    project: { package_refs: ["Microsoft.Azure.Functions.Worker"] }
+    citation: "Azure Functions isolated worker, https://learn.microsoft.com/azure/azure-functions/dotnet-isolated-process-guide"
+  - id: js.server
+    language: javascript
+    kind: service
+    package: { framework_dependency: true }
+    citation: "frameworks.yml: a package depending on a server framework serves requests"
+  - id: js.app
+    language: javascript
+    kind: web_client
+    package: { dependencies: [next, nuxt, vite, react-scripts, "@angular/core", "@remix-run/node", "@sveltejs/kit", astro, gatsby] }
+    citation: "Application frameworks' package names"
+  - id: js.start-script
+    language: javascript
+    kind: service
+    package: { scripts: [start] }
+    citation: "npm start, https://docs.npmjs.com/cli/commands/npm-start"
+  - id: py.django
+    language: python
+    kind: service
+    marker_files: [manage.py]
+    citation: "django-admin and manage.py, https://docs.djangoproject.com/en/stable/ref/django-admin/"
+  - id: py.app
+    language: python
+    kind: service
+    module_values:
+      - "fastapi.FastAPI()"
+      - "flask.Flask()"
+      - "starlette.applications.Starlette()"
+      - "celery.Celery()"
+      - "litestar.Litestar()"
+      - "aiohttp.web.Application()"
+    root_markers: [pyproject.toml, setup.py, setup.cfg, requirements.txt, Dockerfile]
+    citation: "The application object of the framework's quickstart"
+  - id: any.dockerfile
+    kind: service
+    marker_files: [Dockerfile]
+    citation: "A directory with a Dockerfile builds an image"
+
+never:
+  - id: cs.aspire-host
+    project: { sdk: ["Aspire.AppHost.Sdk"] }
+    citation: ".NET Aspire app host, https://learn.microsoft.com/dotnet/aspire/fundamentals/app-host-overview"
+  - id: cs.aspire-host-property
+    project: { properties: { IsAspireHost: "true" } }
+    citation: ".NET Aspire app host, https://learn.microsoft.com/dotnet/aspire/fundamentals/app-host-overview"
+  - id: cs.test-project
+    project: { properties: { IsTestProject: "true" } }
+    citation: "IsTestProject, https://learn.microsoft.com/dotnet/core/testing/"
+  - id: cs.test-sdk
+    project: { package_refs: ["Microsoft.NET.Test.Sdk"] }
+    citation: "Microsoft.NET.Test.Sdk, https://learn.microsoft.com/dotnet/core/testing/"
+  - id: cs.mstest-sdk
+    project: { sdk: ["MSTest.Sdk"] }
+    citation: "MSTest SDK, https://learn.microsoft.com/dotnet/core/testing/unit-testing-mstest-sdk"
+  - id: cs.test-frameworks
+    project: { package_refs: ["xunit", "xunit.v3", "NUnit", "MSTest.TestFramework", "TUnit"] }
+    citation: "Test frameworks' packages, https://learn.microsoft.com/dotnet/core/testing/"
