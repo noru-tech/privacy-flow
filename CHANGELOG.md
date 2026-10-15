@@ -34,6 +34,11 @@ All notable changes to this project are documented here. The format is based on
   (`Request.Query["itemId"]`) is not reported. The words are in
   `catalogue/classification.yml`. Person identifiers (`user_id`, `customer_id`) are unchanged.
 - A project's `not_personal` names also stop request input under that name.
+- A whole claims list (`User.Claims`, `ClaimsPrincipal.Claims`,
+  `AuthenticateAsync().Principal.Claims`) is personal data of category `user`, no longer
+  `unknown`: logging it, or sending it to a model, is a finding at the rule's severity again. A
+  single claim looked up by type is still classified by the type (`FindFirst("email")`), and a
+  claim read off the list into a classified field is reported as that field.
 
 ### Fixed
 

@@ -80,6 +80,20 @@
       "categories": ["user.account.username"]
     },
     {
+      "rule": "PF001",
+      "path": "src/Identity.API/Quickstart/Account/ExternalController.cs",
+      "line": 76,
+      "categories": ["user"],
+      "why": "The external provider's claims list (subject, name, email) is logged whole: personal data, not data of undetermined category."
+    },
+    {
+      "rule": "PF001",
+      "path": "src/Identity.API/Quickstart/Account/ExternalController.cs",
+      "line": 120,
+      "categories": ["user"],
+      "why": "Values from the external provider's claims list reach a Duende IdentityServer login event (through the tuple FindUserFromExternalProviderAsync returns)."
+    },
+    {
       "rule": "PF003",
       "path": "src/Catalog.API/Services/CatalogAI.cs",
       "line": 61,
@@ -88,7 +102,9 @@
     {
       "rule": "PF003",
       "path": "src/WebApp/Components/Chatbot/ChatState.cs",
-      "line": 78
+      "line": 78,
+      "categories": ["user"],
+      "why": "The chatbot's GetUserInfo tool returns the signed-in user's name, email and address, read off the claims list, to the model."
     },
     {
       "rule": "PF006",
