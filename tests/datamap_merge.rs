@@ -275,3 +275,97 @@ fn a_map_that_would_not_be_valid_fideslang_is_not_written() {
     );
     assert_eq!(map(d), edited);
 }
+
+const MANIFEST_API: &str = "version: 0.1.0\npiece: privacy-datamap\nsystem:\n  - fides_key: apps_api\n    name: API\n    system_type: Service\n    privacy_declarations:\n      - name: Operate the account\n        data_use: essential.service\n        data_subjects: [customer]\n        data_categories: [user.contact.email]\n        interpretation: { owner: Dana Okafor, decided_at: \"2026-08-20\" }\n";
+
+/// How many elements of `key` (systems or datasets) a rendered map defines.
+fn definitions(text: &str, key: &str) -> usize {
+    let line = format!("  - fides_key: \"{key}\"");
+    text.lines().filter(|l| *l == line).count()
+}
+
+#[test]
+fn a_system_the_manifest_and_the_code_both_have_is_defined_once() {
+    let tmp = copy_fixture("ts/multi-service");
+    let d = tmp.path();
+    std::fs::create_dir_all(d.join(".noru")).unwrap();
+    std::fs::write(d.join(".noru/privacy-datamap.yml"), MANIFEST_API).unwrap();
+    assert_eq!(datamap(d, &[]), 0);
+    assert_eq!(definitions(&map(d), "shop_api"), 1, "{}", map(d));
+    assert_eq!(definitions(&map(d), "apps_api"), 0, "{}", map(d));
+    // A person adopts the manifest's key for the system the code found.
+    let m = d.join(".fides/datamap.yml");
+    std::fs::write(&m, map(d).replace("\"shop_api\"", "\"apps_api\"")).unwrap();
+    assert_eq!(datamap(d, &[]), 0);
+    let text = map(d);
+    assert_eq!(definitions(&text, "apps_api"), 1, "{text}");
+    let api = system(&text, "apps_api");
+    // The code's findings and the manifest's decision, in one definition.
+    assert!(api.contains("- \"shop_db\""), "{api}");
+    assert!(api.contains("fides_key: \"posthog\""), "{api}");
+    assert_eq!(
+        api.matches("name: \"Operate the account\"").count(),
+        1,
+        "{api}"
+    );
+    // Repeated runs: the same map, up to date.
+    assert_eq!(datamap(d, &[]), 0);
+    assert_eq!(map(d), text);
+    assert_eq!(datamap(d, &["--check"]), 0);
+}
+
+#[test]
+fn a_map_with_a_system_defined_twice_is_merged_into_one_without_losing_either() {
+    let tmp = copy_fixture("ts/multi-service");
+    let d = tmp.path();
+    std::fs::create_dir_all(d.join(".noru")).unwrap();
+    std::fs::write(d.join(".noru/privacy-datamap.yml"), MANIFEST_API).unwrap();
+    assert_eq!(datamap(d, &[]), 0);
+    let m = d.join(".fides/datamap.yml");
+    std::fs::write(&m, map(d).replace("\"shop_api\"", "\"apps_api\"")).unwrap();
+    // A second definition of the system, as earlier versions wrote from the manifest, with a
+    // description and a category of its PostHog egress the first does not have.
+    edit(
+        &m,
+        "\nsystem:\n",
+        concat!(
+            "\nsystem:\n",
+            "  - fides_key: \"apps_api\"\n",
+            "    name: \"API\"\n",
+            "    description: \"Accounts and orders\"\n",
+            "    system_type: \"Service\"\n",
+            "    dataset_references:\n      - \"shop_db\"\n",
+            "    egress:\n",
+            "      - fides_key: \"posthog\"\n        type: \"system\"\n",
+            "        data_categories:\n          - \"user.device.ip_address\"\n",
+            "    privacy_declarations:\n",
+            "      - name: \"Operate the account\"\n        data_use: \"essential.service\"\n",
+            "        data_categories:\n          - \"user.contact.email\"\n",
+        ),
+    );
+    assert_eq!(definitions(&map(d), "apps_api"), 2);
+    assert_eq!(datamap(d, &["--check"]), 5);
+    assert_eq!(datamap(d, &[]), 0);
+    let text = map(d);
+    assert_eq!(definitions(&text, "apps_api"), 1, "{text}");
+    let api = system(&text, "apps_api");
+    assert!(
+        api.contains("description: \"Accounts and orders\""),
+        "{api}"
+    );
+    let egress = &api[api.find("    egress:").unwrap()..api.find("    ingress:").unwrap()];
+    assert_eq!(egress.matches("fides_key: \"posthog\"").count(), 1, "{api}");
+    assert!(
+        egress.contains("\"user.contact.email\"") && egress.contains("\"user.device.ip_address\""),
+        "{api}"
+    );
+    assert!(api.contains("name: \"Analytics for Reporting\""), "{api}");
+    assert_eq!(
+        api.matches("name: \"Operate the account\"").count(),
+        1,
+        "{api}"
+    );
+    assert_eq!(datamap(d, &[]), 0);
+    assert_eq!(map(d), text);
+    assert_eq!(datamap(d, &["--check"]), 0);
+}
