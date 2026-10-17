@@ -6,6 +6,17 @@ All notable changes to this project are documented here. The format is based on
 
 ## [Unreleased]
 
+## [0.5.1] - 2026-10-17
+
+`piiflow datamap` writes each system once. A map that already held the privacy-datamap manifest's
+system under its own key got a second definition of the same system, which Fides rejects; a map
+written that way by 0.5.0 is repaired on the next run. The analysis is unchanged: for the same
+input, 0.5.1 reports the same flows and findings as 0.5.0.
+
+### Changed
+
+- The GitHub Action uploads SARIF with `github/codeql-action/upload-sarif` v4.38.3.
+
 ### Fixed
 
 - `piiflow datamap` no longer writes a system twice when the map already holds a system of the
@@ -350,7 +361,8 @@ No change to the analysis: for the same input, 0.1.1 reports the same flows, fin
   criterion benchmarks, a CI performance budget, and a release pipeline with artifact
   attestations, checksums and an SBOM.
 
-[Unreleased]: https://github.com/noru-tech/privacy-flow/compare/v0.5.0...HEAD
+[Unreleased]: https://github.com/noru-tech/privacy-flow/compare/v0.5.1...HEAD
+[0.5.1]: https://github.com/noru-tech/privacy-flow/compare/v0.5.0...v0.5.1
 [0.5.0]: https://github.com/noru-tech/privacy-flow/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/noru-tech/privacy-flow/compare/v0.3.1...v0.4.0
 [0.3.1]: https://github.com/noru-tech/privacy-flow/compare/v0.3.0...v0.3.1
