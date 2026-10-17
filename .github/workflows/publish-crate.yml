@@ -48,7 +48,7 @@ jobs:
         with:
           ref: refs/tags/${{ env.TAG }}
           persist-credentials: false
-      - uses: dtolnay/rust-toolchain@e2a55d2ffb04f378e9626c28d38b36d230d1e12f # master 2026-10
+      - uses: dtolnay/rust-toolchain@683b588c487a69d01f6c6ddf40f036ff682cc2c8 # master 2026-10
         with:
           toolchain: stable
       - name: The tag names the version in Cargo.toml
