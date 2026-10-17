@@ -543,15 +543,20 @@ fn datamap(a: DatamapArgs, quiet: bool) -> Outcome {
         .lock
         .unwrap_or_else(|| crate::datamap::lock::path_for(&out));
     let existing_text = std::fs::read_to_string(&out).ok();
-    let existing = match &existing_text {
+    let mut existing = match &existing_text {
         Some(t) => Some(
             crate::datamap::yaml::parse(t)
                 .map_err(|e| invalid(anyhow!("{}: {e}", out.display())))?,
         ),
         None => None,
     };
+    // One definition per key in the map a person keeps, before anything is matched against it.
+    let mut folded = existing
+        .as_mut()
+        .map(crate::datamap::consolidate::consolidate)
+        .unwrap_or_default();
     let lock_text = std::fs::read_to_string(&lock_path).ok();
-    let base = match (&lock_text, &existing) {
+    let mut base = match (&lock_text, &existing) {
         // A lock without its map: start again.
         (Some(t), Some(_)) => Some(
             crate::datamap::lock::parse(t)
@@ -559,6 +564,9 @@ fn datamap(a: DatamapArgs, quiet: bool) -> Outcome {
         ),
         _ => None,
     };
+    if let Some(b) = base.as_mut() {
+        crate::datamap::consolidate::consolidate(b);
+    }
     if existing.is_some() && base.is_none() {
         status(
             quiet,
@@ -627,6 +635,7 @@ fn datamap(a: DatamapArgs, quiet: bool) -> Outcome {
         manifest_notes =
             crate::datamap::manifest::apply(&mut generated, m, &roots, a.as_of.as_deref());
     }
+    folded.extend(crate::datamap::consolidate::consolidate(&mut generated));
     // Incomplete declarations are proposals, never filled in: in the lock too.
     let mut moved = crate::datamap::validate::quarantine(&mut generated);
     let (mut merged, report) =
@@ -635,6 +644,9 @@ fn datamap(a: DatamapArgs, quiet: bool) -> Outcome {
     if let Some(m) = &manifest {
         crate::datamap::manifest::apply(&mut merged, m, &roots, a.as_of.as_deref());
     }
+    folded.extend(crate::datamap::consolidate::consolidate(&mut merged));
+    let mut seen = std::collections::BTreeSet::new();
+    folded.retain(|n| seen.insert(n.clone()));
     moved.extend(crate::datamap::validate::quarantine(&mut merged));
     moved.sort();
     moved.dedup();
@@ -642,6 +654,7 @@ fn datamap(a: DatamapArgs, quiet: bool) -> Outcome {
         .lines()
         .into_iter()
         .chain(manifest_notes)
+        .chain(folded)
         .chain(moved)
     {
         status(quiet, format!("note: {line}"));

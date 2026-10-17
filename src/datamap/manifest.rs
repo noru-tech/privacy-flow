@@ -208,10 +208,15 @@ pub fn apply(
         let Some(Node::List(systems)) = systems.map(Node::bare_mut) else {
             continue;
         };
-        let Some(sys) = systems
-            .iter_mut()
-            .find(|s| str_of(get(s, "fides_key")) == Some(key.as_str()))
-        else {
+        // The system of its root, or one the map already has under the manifest's own key (a
+        // person adopted it, or an earlier run added it): never a second definition.
+        let found = [key.as_str(), mkey.as_str()].into_iter().find_map(|k| {
+            systems
+                .iter()
+                .position(|s| str_of(get(s, "fides_key")) == Some(k))
+                .map(|i| (i, k.to_string()))
+        });
+        let Some((i, key)) = found else {
             // Its declarations nobody decided stay under review.
             let undecided: Vec<String> = items(get(msys, "privacy_declarations"))
                 .into_iter()
@@ -232,6 +237,7 @@ pub fn apply(
             notes.push(format!("system {mkey}: from the privacy-datamap manifest"));
             continue;
         };
+        let sys = &mut systems[i];
         for md in items(get(msys, "privacy_declarations")) {
             if !decided(md) {
                 continue;

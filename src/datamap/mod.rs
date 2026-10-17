@@ -1,6 +1,7 @@
 //! Fides data maps: reading existing ones to seed classification (`ingest`), and writing the
 //! repository's full data map for `piiflow datamap` (`generate`, rendered by `yaml`).
 
+pub mod consolidate;
 pub mod generate;
 pub mod ingest;
 pub mod lock;

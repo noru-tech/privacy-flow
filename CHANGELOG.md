@@ -6,6 +6,20 @@ All notable changes to this project are documented here. The format is based on
 
 ## [Unreleased]
 
+### Fixed
+
+- `piiflow datamap` no longer writes a system twice when the map already holds a system of the
+  privacy-datamap manifest under the manifest's own key (for example `src_webapp` for the system
+  the code finds as `web_app`): the manifest's decisions apply to that system instead of adding a
+  second definition, which Fides rejects ("Each key must be unique within this resource type").
+- Elements of a data map that share a key (datasets, systems, collections, fields, DataFlows,
+  declarations) are merged into one definition: references, flows, categories and declarations
+  are kept from both, an acceptance in either stays accepted, and where both set a value
+  differently the first stays and the other is reported. A map written by an earlier version with
+  duplicate systems is repaired on the next run.
+- A map with a repeated `fides_key`, collection name or field name is not valid Fideslang and is
+  not written.
+
 ## [0.5.0] - 2026-10-15
 
 Findings a person can act on. A finding is now an exposure: one rule at one sink, with its flows

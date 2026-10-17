@@ -49,7 +49,7 @@ impl Report {
 }
 
 /// Lists whose items are matched by identity, by the key that holds them.
-fn identity(list_key: &str, item: &Node) -> Option<String> {
+pub(crate) fn identity(list_key: &str, item: &Node) -> Option<String> {
     let Node::Map(m) = item.bare() else {
         return None;
     };
@@ -313,7 +313,7 @@ fn renamed(
     out
 }
 
-fn rename(n: Node, name: &str) -> Node {
+pub(crate) fn rename(n: Node, name: &str) -> Node {
     match n {
         Node::Noted(notes, inner) => Node::Noted(notes, Box::new(rename(*inner, name))),
         Node::Map(m) => Node::Map(
@@ -331,7 +331,7 @@ fn rename(n: Node, name: &str) -> Node {
     }
 }
 
-fn short(n: &Node) -> String {
+pub(crate) fn short(n: &Node) -> String {
     match n {
         Node::Str(s) => format!("\"{s}\""),
         Node::List(items) => format!(

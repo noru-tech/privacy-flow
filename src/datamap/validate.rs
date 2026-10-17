@@ -1,6 +1,7 @@
 //! The Fideslang 3.1.3 rules a merged data map must keep, checked offline: required fields,
-//! DataFlow types, and declarations that name only their system's own DataFlows. CI checks the
-//! goldens with fideslang itself.
+//! DataFlow types, declarations that name only their system's own DataFlows, and keys that are
+//! unique (a `fides_key` within its resource type, a name within its collection or dataset). CI
+//! checks the goldens with fideslang itself.
 //!
 //! A declaration without a name or a data use is not filled in: it is moved out of
 //! `privacy_declarations` into the system's `meta.privacy_flow.proposals`, for a person.
@@ -37,9 +38,42 @@ fn is_key(s: &str) -> bool {
             .all(|c| c.is_ascii_alphanumeric() || "_.<>-".contains(c))
 }
 
+/// Each value of `of` that more than one element of `items` has, once, in order.
+fn repeated<'a>(items: &'a [Node], of: &str) -> Vec<&'a str> {
+    let mut seen = BTreeSet::new();
+    let mut out = Vec::new();
+    for k in items.iter().filter_map(|i| str_of(get(i, of))) {
+        if !seen.insert(k) && !out.contains(&k) {
+            out.push(k);
+        }
+    }
+    out
+}
+
+/// Field names repeated within one collection or one parent field, at any depth.
+fn repeated_fields(fields: &[Node], at: &str, out: &mut Vec<String>) {
+    for name in repeated(fields, "name") {
+        out.push(format!("{at}: field {name} is defined more than once"));
+    }
+    for f in fields {
+        let name = str_of(get(f, "name")).unwrap_or("");
+        repeated_fields(list(get(f, "fields")), &format!("{at}.{name}"), out);
+    }
+}
+
 /// What fideslang would reject, as messages.
 pub fn check(root: &Node) -> Vec<String> {
     let mut out = Vec::new();
+    for (kind, items) in [
+        ("dataset", list(get(root, "dataset"))),
+        ("system", list(get(root, "system"))),
+    ] {
+        for key in repeated(items, "fides_key") {
+            out.push(format!(
+                "{kind} {key}: defined more than once; each fides_key must be unique"
+            ));
+        }
+    }
     for ds in list(get(root, "dataset")) {
         let key = str_of(get(ds, "fides_key")).unwrap_or("");
         if !is_key(key) {
@@ -47,6 +81,11 @@ pub fn check(root: &Node) -> Vec<String> {
         }
         if !matches!(get(ds, "collections"), Some(Node::List(_))) {
             out.push(format!("dataset {key}: collections is required"));
+        }
+        for name in repeated(list(get(ds, "collections")), "name") {
+            out.push(format!(
+                "dataset {key}: collection {name} is defined more than once"
+            ));
         }
         for c in list(get(ds, "collections")) {
             let name = str_of(get(c, "name")).unwrap_or("");
@@ -56,6 +95,11 @@ pub fn check(root: &Node) -> Vec<String> {
             if !matches!(get(c, "fields"), Some(Node::List(_))) {
                 out.push(format!("dataset {key}.{name}: fields is required"));
             }
+            repeated_fields(
+                list(get(c, "fields")),
+                &format!("dataset {key}.{name}"),
+                &mut out,
+            );
         }
     }
     for sys in list(get(root, "system")) {
@@ -233,6 +277,23 @@ mod tests {
             problems.iter().any(|p| p.contains("data_use is required")),
             "{problems:?}"
         );
+    }
+
+    #[test]
+    fn keys_and_names_are_unique() {
+        let problems = check(&parse("dataset:\n  - fides_key: db\n    collections:\n      - name: users\n        fields:\n          - name: email\n          - name: email\n      - name: users\n        fields: []\n  - fides_key: db\n    collections: []\nsystem:\n  - fides_key: web\n    system_type: Service\n    privacy_declarations: []\n  - fides_key: web\n    system_type: Service\n    privacy_declarations: []\n  - fides_key: web\n    system_type: Service\n    privacy_declarations: []\n").unwrap());
+        for want in [
+            "dataset db: defined more than once",
+            "system web: defined more than once",
+            "dataset db: collection users is defined more than once",
+            "dataset db.users: field email is defined more than once",
+        ] {
+            assert_eq!(
+                problems.iter().filter(|p| p.starts_with(want)).count(),
+                1,
+                "{want}: {problems:?}"
+            );
+        }
     }
 
     #[test]
