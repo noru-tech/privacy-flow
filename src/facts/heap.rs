@@ -634,8 +634,7 @@ pub(super) fn resolve(
     }
     // A call that reaches only local functions holds what they return, as seen from the call
     // site.
-    for c in 0..f.sites.len() {
-        let site = f.sites[c];
+    for (c, &site) in f.sites.iter().enumerate() {
         if local_only(p, site.stmt) {
             let ret = p.funcs[site.func as usize].ret;
             let m = s.mapping(Mapping::Ret(c as u32));
