@@ -44,4 +44,6 @@ pr-run-mode = "plan"
 allow-dirty = ["ci"]
 
 [dist.github-custom-runners]
+# GitHub retired the macos-14 image that dist 0.33 picks for Apple Silicon by default.
+aarch64-apple-darwin = "macos-15"
 aarch64-unknown-linux-musl = "ubuntu-24.04-arm"
