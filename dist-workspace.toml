@@ -5,7 +5,7 @@ members = ["cargo:."]
 # beyond the documented least-privilege and pinning edits.
 [dist]
 # The preferred dist version to use in CI (Cargo.toml SemVer syntax)
-cargo-dist-version = "0.33.0"
+cargo-dist-version = "0.34.0"
 # CI backends to support
 ci = "github"
 # Homebrew only: there is no shell installer, so there is no `curl | sh` to offer.
